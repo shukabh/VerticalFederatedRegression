@@ -13,8 +13,10 @@ Compares, per synthetic configuration (cohort size n = n_intersect):
                           the audited PSI output and call the Phase-4/6 logic directly
                           (phase1_common.draw_noise / assemble / solve_and_correct).
 
-Everything the parties run is the user's unmodified code in scenario_b/ (plus the
-stand-in modules psi_common / phase1_common / he_backend).
+Everything the parties run is the user's unmodified code in scenario_b/, including the
+user's ORIGINAL psi_common / phase1_common / he_backend (earlier runs used stand-ins
+reconstructed from call sites; their results are kept in reports/accuracy/standin_baseline/
+for the comparison section of the report).
 
     python experiments/accuracy_study.py                         # full study (~15 min)
     python experiments/accuracy_study.py --quick                 # smoke test
@@ -257,11 +259,27 @@ def monte_carlo(st, sigma, reps, rho_target, rng):
         s = p1.solve_and_correct(Gt, ct, d_R, d_O, sigma, mode="auto", rho_target=rho_target)
         out["ridge"].append(s.beta_ridge); out["bc"].append(s.beta_bc)
         out["lam"].append(s.lam); out["psi"].append(s.Psi_mode)
-        out["rho"].append(s.rho); out["rho0"].append(s.rho0)
+        out["rho"].append(s.rho)
+        out["rho0"].append(float(np.linalg.eigvalsh(Gt)[0]) / (2.0 * sigma * np.sqrt(d_R + d_O)))
     for k in ("ridge", "bc", "lam", "rho", "rho0"):
         out[k] = np.asarray(out[k])
     out["psi"] = np.asarray(out["psi"])
     return out
+
+
+LAM_FLOOR = 1e-3        # phase1_common.auto_lambda(lam0=1e-3): the gate never returns less
+
+
+def clean_gram(ref):
+    """Noise-free G, c of the clipped data on the TRUE alignment (the protocol's target)."""
+    Z = np.hstack([ref["XRc"][ref["r_idx"]], ref["XOc"][ref["o_idx"]]])
+    return Z.T @ Z, Z.T @ ref["yc"][ref["o_idx"]]
+
+
+def ridge_target(ref, lam, psi_mode):
+    """The user's oracle_ridge on clipped data with the (lambda, Psi) a run actually used."""
+    G, c = clean_gram(ref)
+    return p1.oracle_ridge(G, c, D_R, D_O, float(lam), mode=psi_mode)
 
 
 def mask_matrix(p, d_R):
@@ -319,7 +337,8 @@ def study(args):
     results = {"settings": {
         "eps_grid": eps_grid, "delta": DELTA, "d_R": D_R, "d_O": D_O, "noise_std": NOISE_STD,
         "seed": SEED, "B_R": B_R, "B_O": B_O, "B_y": B_Y, "reps": args.reps,
-        "sigma_zero": SIGMA_ZERO, "rho_target": 2.0, "configs": [c[:4] for c in configs]},
+        "sigma_zero": SIGMA_ZERO, "rho_target": 2.0, "configs": [c[:4] for c in configs],
+        "modules": "user's original psi_common / phase1_common / he_backend"},
         "configs": {}}
 
     for name, n_R, n_O, n, required in configs:
@@ -350,9 +369,13 @@ def study(args):
             "Psi": run0["summary"]["Psi"], "lambda": run0["summary"]["lambda"],
             "max_abs_ridge_minus_clip": float(np.max(np.abs(run0["beta_ridge"] - ref["beta_clip"]))),
             "max_abs_bc_minus_clip": float(np.max(np.abs(run0["beta_bc"] - ref["beta_clip"]))),
+            "max_abs_bc_minus_ridge_target": float(np.max(np.abs(
+                run0["beta_bc"] - ridge_target(ref, run0["summary"]["lambda"], run0["summary"]["Psi"])))),
             "beta_bc": run0["beta_bc"].tolist()}
         print(f"  sigma~0 plaintext: PSI {audit}  max|bc-clip|="
-              f"{C['sigma0_plaintext']['max_abs_bc_minus_clip']:.2e}", flush=True)
+              f"{C['sigma0_plaintext']['max_abs_bc_minus_clip']:.2e}  max|bc-ridge target|="
+              f"{C['sigma0_plaintext']['max_abs_bc_minus_ridge_target']:.2e} "
+              f"(Psi={run0['summary']['Psi']}, lambda={run0['summary']['lambda']:g})", flush=True)
         if name == "n400":   # Problem-3 log: sigma~0 through run_protocol.py as well
             port += 1
             socket_run(dd, "plaintext", port, f"{name}: sigma={SIGMA_ZERO} run_protocol.py (plaintext)")
@@ -369,11 +392,15 @@ def study(args):
             C["psi_audit_openfhe"] = audit_o
             C["sigma0_openfhe"] = {
                 "time_s": dto, "n_matched": runo["summary"]["n_matched"],
+                "Psi": runo["summary"]["Psi"], "lambda": runo["summary"]["lambda"],
+                "max_abs_bc_minus_ridge_target": float(np.max(np.abs(
+                    runo["beta_bc"] - ridge_target(ref, runo["summary"]["lambda"], runo["summary"]["Psi"])))),
                 "max_abs_ridge_minus_clip": float(np.max(np.abs(runo["beta_ridge"] - ref["beta_clip"]))),
                 "max_abs_bc_minus_clip": float(np.max(np.abs(runo["beta_bc"] - ref["beta_clip"]))),
                 "max_abs_bc_minus_plaintext_sigma0": float(np.max(np.abs(runo["beta_bc"] - run0["beta_bc"])))}
             print(f"  sigma~0 OPENFHE: PSI {audit_o}  max|bc-clip|="
-                  f"{C['sigma0_openfhe']['max_abs_bc_minus_clip']:.2e}", flush=True)
+                  f"{C['sigma0_openfhe']['max_abs_bc_minus_clip']:.2e}  max|bc-ridge target|="
+                  f"{C['sigma0_openfhe']['max_abs_bc_minus_ridge_target']:.2e}", flush=True)
 
         # ---- reused PSI output -> noise-free Phase-1 statistics ----------------
         Xdot_psi = np.load(dump)
@@ -421,7 +448,9 @@ def study(args):
             t0 = time.time()
             mc = monte_carlo(st, sigma, args.reps, rho_t, rng)
             E["mc_time_s"] = time.time() - t0
-            E["frac_ridge"] = float(np.mean(mc["lam"] > 0))
+            E["frac_ridge"] = float(np.mean(mc["lam"] > LAM_FLOOR * (1 + 1e-9)))   # above the floor
+            E["frac_rho_below_target"] = float(np.mean(mc["rho"] < rho_t))
+            E["frac_rho0_below_target"] = float(np.mean(mc["rho0"] < rho_t))
             E["frac_full_ridge"] = float(np.mean(mc["psi"] == "I"))
             E["frac_O_ridge"] = float(np.mean(mc["psi"] == "O"))
             E["lam_median"] = float(np.median(mc["lam"]))
@@ -439,7 +468,7 @@ def study(args):
                         np.mean(e_mc <= E["socket"][f"rmse_{est}_vs_gt"]) * 100)
             # Theorem-1 prediction of the lambda=0 bias and first-order DP spread
             Pm = np.linalg.inv(G)
-            E["theory_bias_ols"] = (sigma ** 2 * p1.M(Pm, D_R) @ bcl).tolist()
+            E["theory_bias_ols"] = (sigma ** 2 * p1._bias_operator(Pm, D_R, D_O)(bcl)).tolist()
             cov1 = first_order_dp_cov(G, bcl, sigma, D_R)
             E["theory_rmse_first_order"] = float(np.sqrt(np.trace(cov1) / G.shape[0]))
             C["eps"][str(eps)] = E
@@ -476,7 +505,7 @@ def study(args):
                              "rmse_clip_vs_gt": float(np.sqrt(np.mean((bclip - bg) ** 2))),
                              "rmse_bc_vs_gt": err_metrics(mc["bc"], bg, D_R)["rmse"],
                              "rmse_ridge_vs_gt": err_metrics(mc["ridge"], bg, D_R)["rmse"],
-                             "frac_ridge": float(np.mean(mc["lam"] > 0))})
+                             "frac_ridge": float(np.mean(mc["lam"] > LAM_FLOOR * (1 + 1e-9)))})
         results["by_sensitivity"] = {"config": name, "rows": rows}
 
     with open(os.path.join(out_dir, "results.json"), "w") as fh:
