@@ -25,7 +25,7 @@ The threat model is **honest-but-curious**.
 | `scenario_b/psi_common.py`, `phase1_common.py`, `he_backend.py` | Imported modules: PSI primitives, the Phase-1 maths (noise, ridge gate, bias correction), and the plaintext/OpenFHE backends. |
 | `scenario_b/prepare_data.py` | Adapter: runs the generator and writes the `y_O.csv` the parties read. |
 | `experiments/accuracy_study.py` | Accuracy comparison: true β, OLS on the true matches, plaintext linkage + OLS, and the private protocol across ε and n. |
-| `tests/test_standins.py` | Tests for the stand-ins: PSI labels, the ρ gate, the bias operator, the noise structure. |
+| `tests/test_scenario_b.py` | Tests of the modules: bias operator vs exact second moment, noise structure, plaintext and OpenFHE PSI round trips, ridge-gate branches, framing. |
 | `reports/code_review.md` | The implementation checked against the draft. |
 | `reports/privacy/README.md` | Consolidated privacy risks under honest-but-curious; detailed reports and demos are alongside it. |
 | `reports/accuracy/accuracy_report.md` | Accuracy results, figures and CSV/JSON output. |

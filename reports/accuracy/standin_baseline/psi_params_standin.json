@@ -1,0 +1,29 @@
+{
+ "note": "PSI degree D / partitions alpha printed by party_o.py in the stand-in round (commit d76b0cc)",
+ "psi": {
+  "n200": {
+   "D": 4,
+   "alpha": 1
+  },
+  "n400": {
+   "D": 6,
+   "alpha": 1
+  },
+  "n1000": {
+   "D": 6,
+   "alpha": 1
+  },
+  "n4000": {
+   "D": 10,
+   "alpha": 1
+  },
+  "n16000": {
+   "D": 18,
+   "alpha": 1
+  },
+  "n64000": {
+   "D": 31,
+   "alpha": 1
+  }
+ }
+}

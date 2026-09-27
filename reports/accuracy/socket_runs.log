@@ -1,7 +1,7 @@
 Logs of every socket run and calibration performed by experiments/accuracy_study.py
 
 ====================================================================================================
-### calibrate n200 eps=1.0   (rc=0, 0.5s)
+### calibrate n200 eps=1.0   (rc=0, 0.4s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n200 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 250, 'n_O': 2000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -13,17 +13,17 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n200/dp_params.json
 
 ====================================================================================================
-### n200: sigma=1e-09 audited socket run (plaintext)   (R rc=0, O rc=0, 3.7s)
+### n200: sigma=1e-09 audited socket run (plaintext)   (R rc=0, O rc=0, 3.6s)
 ====================================================================================================
 --- party R (audited) ---
 [R] n_R=250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46001 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 50464)
+[R] O connected from ('127.0.0.1', 43080)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [R] PSI batch 1/1: total matched 200
 [R] Phase 0 done: n=200 matched (0.2s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=2.12e+09  -> Psi=none lambda=0 rho_hat=1785385727.94
+[R] sigma=1e-09  O-block ridge ceiling rho<=2.12e+09  -> Psi=O lambda=0.001 rho_hat=1785467296.62
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 223.3205)
 
 --- party O ---
@@ -31,11 +31,11 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [O] connected to R at 127.0.0.1:46001
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [O] PSI batch 1/1 answered
-[O] Phase 0 done (0.1s)
+[O] Phase 0 done (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 
 ====================================================================================================
-### calibrate n200 eps=0.25   (rc=0, 0.5s)
+### calibrate n200 eps=0.25   (rc=0, 0.4s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n200 --eps 0.25 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 250, 'n_O': 2000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -47,14 +47,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n200/dp_params.json
 
 ====================================================================================================
-### n200: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.0s)
+### n200: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.1s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 --backend plaintext --port 46002
 ====================================================================================================
 [R] n_R=250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46002 — start party_o.py ...
 [O] n_O=2000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46002
-[R] O connected from ('127.0.0.1', 38940)
+[R] O connected from ('127.0.0.1', 42466)
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [O] PSI batch 1/1 answered
@@ -63,18 +63,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 -
 [R] Phase 0 done: n=200 matched (0.1s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=404.1  O-block ridge ceiling rho<=0.00525  -> Psi=I lambda=6818 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 681.7488)
+[R] sigma=404.1  O-block ridge ceiling rho<=0.00525  -> Psi=I lambda=7372 rho_hat=2.25  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 455.5654)
 
 === verification ===
   matched by PSI : 200 / ground truth 200 -> OK
-  backend=plaintext  sigma=404.1  Psi=I lambda=6818 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.0964   ||. - beta_true|| = 3.0612
-  ||bias-corrected - beta_OLS|| = 3.0962   ||. - beta_true|| = 3.0610
+  backend=plaintext  sigma=404.1  Psi=I lambda=7372 rho_hat=2.25
+  ||private ridge  - beta_OLS|| = 3.0785   ||. - beta_true|| = 3.0416
+  ||bias-corrected - beta_OLS|| = 3.0796   ||. - beta_true|| = 3.0428
   ||beta_OLS - beta_true|| = 0.0723  (sampling only)
 
 ====================================================================================================
-### calibrate n200 eps=0.5   (rc=0, 0.4s)
+### calibrate n200 eps=0.5   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n200 --eps 0.5 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 250, 'n_O': 2000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -86,30 +86,30 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n200/dp_params.json
 
 ====================================================================================================
-### n200: eps=0.5 run_protocol.py (plaintext)   (rc=0, 3.2s)
+### n200: eps=0.5 run_protocol.py (plaintext)   (rc=0, 3.1s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 --backend plaintext --port 46003
 ====================================================================================================
 [R] n_R=250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46003 — start party_o.py ...
 [O] n_O=2000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46003
-[R] O connected from ('127.0.0.1', 47862)
+[R] O connected from ('127.0.0.1', 34644)
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.1s)
 [R] PSI batch 1/1: total matched 200
-[R] Phase 0 done: n=200 matched (0.1s)
+[R] Phase 0 done: n=200 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=213.9  O-block ridge ceiling rho<=0.00991  -> Psi=I lambda=3598 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = -93.9073)
+[R] sigma=213.9  O-block ridge ceiling rho<=0.00991  -> Psi=I lambda=4914 rho_hat=2.96  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 380.7663)
 
 === verification ===
   matched by PSI : 200 / ground truth 200 -> OK
-  backend=plaintext  sigma=213.9  Psi=I lambda=3598 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.0520   ||. - beta_true|| = 3.0149
-  ||bias-corrected - beta_OLS|| = 3.0528   ||. - beta_true|| = 3.0158
+  backend=plaintext  sigma=213.9  Psi=I lambda=4914 rho_hat=2.96
+  ||private ridge  - beta_OLS|| = 3.1610   ||. - beta_true|| = 3.1247
+  ||bias-corrected - beta_OLS|| = 3.1601   ||. - beta_true|| = 3.1239
   ||beta_OLS - beta_true|| = 0.0723  (sampling only)
 
 ====================================================================================================
@@ -132,7 +132,7 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 -
 [R] listening on 127.0.0.1:46004 — start party_o.py ...
 [O] n_O=2000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46004
-[R] O connected from ('127.0.0.1', 41002)
+[R] O connected from ('127.0.0.1', 32772)
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [O] PSI batch 1/1 answered
@@ -141,14 +141,14 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 -
 [R] Phase 0 done: n=200 matched (0.1s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=113.5  O-block ridge ceiling rho<=0.0187  -> Psi=I lambda=1821 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 256.0438)
+[R] sigma=113.5  O-block ridge ceiling rho<=0.0187  -> Psi=I lambda=2184 rho_hat=2.43  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 146.8085)
 
 === verification ===
   matched by PSI : 200 / ground truth 200 -> OK
-  backend=plaintext  sigma=113.5  Psi=I lambda=1821 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.1505   ||. - beta_true|| = 3.1157
-  ||bias-corrected - beta_OLS|| = 3.1492   ||. - beta_true|| = 3.1144
+  backend=plaintext  sigma=113.5  Psi=I lambda=2184 rho_hat=2.43
+  ||private ridge  - beta_OLS|| = 3.0524   ||. - beta_true|| = 3.0161
+  ||bias-corrected - beta_OLS|| = 3.0534   ||. - beta_true|| = 3.0171
   ||beta_OLS - beta_true|| = 0.0723  (sampling only)
 
 ====================================================================================================
@@ -171,7 +171,7 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 -
 [R] listening on 127.0.0.1:46005 — start party_o.py ...
 [O] n_O=2000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46005
-[R] O connected from ('127.0.0.1', 39258)
+[R] O connected from ('127.0.0.1', 50786)
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [O] PSI batch 1/1 answered
@@ -180,18 +180,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 -
 [R] Phase 0 done: n=200 matched (0.1s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=60.64  O-block ridge ceiling rho<=0.035  -> Psi=I lambda=1041 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 242.4636)
+[R] sigma=60.64  O-block ridge ceiling rho<=0.035  -> Psi=I lambda=1456 rho_hat=3.07  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 176.9251)
 
 === verification ===
   matched by PSI : 200 / ground truth 200 -> OK
-  backend=plaintext  sigma=60.64  Psi=I lambda=1041 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.0845   ||. - beta_true|| = 3.0481
-  ||bias-corrected - beta_OLS|| = 3.0847   ||. - beta_true|| = 3.0483
+  backend=plaintext  sigma=60.64  Psi=I lambda=1456 rho_hat=3.07
+  ||private ridge  - beta_OLS|| = 3.0912   ||. - beta_true|| = 3.0568
+  ||bias-corrected - beta_OLS|| = 3.0912   ||. - beta_true|| = 3.0568
   ||beta_OLS - beta_true|| = 0.0723  (sampling only)
 
 ====================================================================================================
-### calibrate n200 eps=4.0   (rc=0, 0.5s)
+### calibrate n200 eps=4.0   (rc=0, 0.4s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n200 --eps 4.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 250, 'n_O': 2000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -203,34 +203,34 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n200/dp_params.json
 
 ====================================================================================================
-### n200: eps=4.0 run_protocol.py (plaintext)   (rc=0, 3.3s)
+### n200: eps=4.0 run_protocol.py (plaintext)   (rc=0, 3.2s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 --backend plaintext --port 46006
 ====================================================================================================
 [R] n_R=250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46006 — start party_o.py ...
 [O] n_O=2000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46006
-[R] O connected from ('127.0.0.1', 50726)
+[R] O connected from ('127.0.0.1', 33080)
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [O] PSI batch 1/1 answered
-[O] Phase 0 done (0.1s)
+[O] Phase 0 done (0.2s)
 [R] PSI batch 1/1: total matched 200
-[R] Phase 0 done: n=200 matched (0.1s)
+[R] Phase 0 done: n=200 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=32.88  O-block ridge ceiling rho<=0.0645  -> Psi=I lambda=560.3 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 227.3662)
+[R] sigma=32.88  O-block ridge ceiling rho<=0.0645  -> Psi=I lambda=647.2 rho_hat=2.51  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 173.6213)
 
 === verification ===
   matched by PSI : 200 / ground truth 200 -> OK
-  backend=plaintext  sigma=32.88  Psi=I lambda=560.3 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.0590   ||. - beta_true|| = 3.0223
-  ||bias-corrected - beta_OLS|| = 3.0591   ||. - beta_true|| = 3.0224
+  backend=plaintext  sigma=32.88  Psi=I lambda=647.2 rho_hat=2.51
+  ||private ridge  - beta_OLS|| = 3.1152   ||. - beta_true|| = 3.0807
+  ||bias-corrected - beta_OLS|| = 3.1141   ||. - beta_true|| = 3.0796
   ||beta_OLS - beta_true|| = 0.0723  (sampling only)
 
 ====================================================================================================
-### calibrate n200 eps=8.0   (rc=0, 0.5s)
+### calibrate n200 eps=8.0   (rc=0, 0.4s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n200 --eps 8.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 250, 'n_O': 2000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -242,14 +242,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n200/dp_params.json
 
 ====================================================================================================
-### n200: eps=8.0 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n200: eps=8.0 run_protocol.py (plaintext)   (rc=0, 3.0s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 --backend plaintext --port 46007
 ====================================================================================================
 [R] n_R=250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46007 — start party_o.py ...
 [O] n_O=2000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46007
-[R] O connected from ('127.0.0.1', 42784)
+[R] O connected from ('127.0.0.1', 39384)
 [O] PSI preprocessing: D=4 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=4
 [O] PSI batch 1/1 answered
@@ -258,18 +258,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n200 -
 [R] Phase 0 done: n=200 matched (0.1s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=18.26  O-block ridge ceiling rho<=0.116  -> Psi=I lambda=295.8 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 240.5275)
+[R] sigma=18.26  O-block ridge ceiling rho<=0.116  -> Psi=I lambda=287.6 rho_hat=2.05  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 239.1170)
 
 === verification ===
   matched by PSI : 200 / ground truth 200 -> OK
-  backend=plaintext  sigma=18.26  Psi=I lambda=295.8 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.9958   ||. - beta_true|| = 2.9602
-  ||bias-corrected - beta_OLS|| = 2.9979   ||. - beta_true|| = 2.9623
+  backend=plaintext  sigma=18.26  Psi=I lambda=287.6 rho_hat=2.05
+  ||private ridge  - beta_OLS|| = 2.9644   ||. - beta_true|| = 2.9276
+  ||bias-corrected - beta_OLS|| = 2.9677   ||. - beta_true|| = 2.9309
   ||beta_OLS - beta_true|| = 0.0723  (sampling only)
 
 ====================================================================================================
-### calibrate n400 eps=1.0   (rc=0, 0.5s)
+### calibrate n400 eps=1.0   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n400 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 500, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -286,12 +286,12 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 --- party R (audited) ---
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46008 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 44216)
+[R] O connected from ('127.0.0.1', 45550)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [R] PSI batch 1/1: total matched 400
 [R] Phase 0 done: n=400 matched (0.2s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=4.56e+09  -> Psi=none lambda=0 rho_hat=3756859360.27
+[R] sigma=1e-09  O-block ridge ceiling rho<=4.56e+09  -> Psi=O lambda=0.001 rho_hat=3756935531.07
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 276.8361)
 
 --- party O ---
@@ -310,7 +310,7 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] listening on 127.0.0.1:46009 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46009
-[R] O connected from ('127.0.0.1', 51554)
+[R] O connected from ('127.0.0.1', 38866)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -319,28 +319,28 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=4.56e+09  -> Psi=none lambda=0 rho_hat=3756859360.30
+[R] sigma=1e-09  O-block ridge ceiling rho<=4.56e+09  -> Psi=O lambda=0.001 rho_hat=3756935531.14
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 276.8361)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=1e-09  Psi=none lambda=0 rho_hat=3756859360.30
-  ||private ridge  - beta_OLS|| = 0.0000   ||. - beta_true|| = 0.0522
-  ||bias-corrected - beta_OLS|| = 0.0000   ||. - beta_true|| = 0.0522
+  backend=plaintext  sigma=1e-09  Psi=O lambda=0.001 rho_hat=3756935531.14
+  ||private ridge  - beta_OLS|| = 0.0001   ||. - beta_true|| = 0.0522
+  ||bias-corrected - beta_OLS|| = 0.0001   ||. - beta_true|| = 0.0522
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
-### n400: sigma=1e-09 audited socket run (OPENFHE)   (R rc=0, O rc=0, 14.6s)
+### n400: sigma=1e-09 audited socket run (OPENFHE)   (R rc=0, O rc=0, 13.5s)
 ====================================================================================================
 --- party R (audited) ---
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46010 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 58544)
+[R] O connected from ('127.0.0.1', 52826)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [R] PSI batch 1/1: total matched 400
 [R] Phase 0 done: n=400 matched (1.4s)
-[R] Phase 1 aggregates decrypted (9.7s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=4.56e+09  -> Psi=none lambda=0 rho_hat=3756859360.52
+[R] Phase 1 aggregates decrypted (8.6s)
+[R] sigma=1e-09  O-block ridge ceiling rho<=4.56e+09  -> Psi=O lambda=0.001 rho_hat=3756935530.87
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 276.8361)
 
 --- party O ---
@@ -349,7 +349,7 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [O] PSI preprocessing: D=6 alpha=1 (0.5s)
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (1.3s)
-[O] Phase 1 done: 51 noised ciphertexts sent (8.6s)
+[O] Phase 1 done: 51 noised ciphertexts sent (7.3s)
 
 ====================================================================================================
 ### calibrate n400 eps=0.25   (rc=0, 0.4s)
@@ -364,30 +364,30 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n400/dp_params.json
 
 ====================================================================================================
-### n400: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n400: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 --backend plaintext --port 46011
 ====================================================================================================
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46011 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46011
-[R] O connected from ('127.0.0.1', 60762)
-[O] PSI preprocessing: D=6 alpha=1 (0.1s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
+[R] O connected from ('127.0.0.1', 60696)
+[O] PSI preprocessing: D=6 alpha=1 (0.1s)[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
+
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.2s)
 [R] PSI batch 1/1: total matched 400
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=404.1  O-block ridge ceiling rho<=0.0113  -> Psi=I lambda=6833 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 66.7668)
+[R] sigma=404.1  O-block ridge ceiling rho<=0.0113  -> Psi=I lambda=7372 rho_hat=2.30  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 70.9929)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=404.1  Psi=I lambda=6833 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.9489   ||. - beta_true|| = 2.9251
-  ||bias-corrected - beta_OLS|| = 2.9497   ||. - beta_true|| = 2.9259
+  backend=plaintext  sigma=404.1  Psi=I lambda=7372 rho_hat=2.30
+  ||private ridge  - beta_OLS|| = 2.8864   ||. - beta_true|| = 2.8654
+  ||bias-corrected - beta_OLS|| = 2.8880   ||. - beta_true|| = 2.8670
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
@@ -403,30 +403,30 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n400/dp_params.json
 
 ====================================================================================================
-### n400: eps=0.5 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n400: eps=0.5 run_protocol.py (plaintext)   (rc=0, 3.2s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 --backend plaintext --port 46012
 ====================================================================================================
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46012 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46012
-[R] O connected from ('127.0.0.1', 46596)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
+[R] O connected from ('127.0.0.1', 42920)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.2s)
 [R] PSI batch 1/1: total matched 400
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=213.9  O-block ridge ceiling rho<=0.0213  -> Psi=I lambda=3657 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 386.1009)
+[R] sigma=213.9  O-block ridge ceiling rho<=0.0213  -> Psi=I lambda=4914 rho_hat=2.76  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 236.3488)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=213.9  Psi=I lambda=3657 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.9269   ||. - beta_true|| = 2.9056
-  ||bias-corrected - beta_OLS|| = 2.9282   ||. - beta_true|| = 2.9068
+  backend=plaintext  sigma=213.9  Psi=I lambda=4914 rho_hat=2.76
+  ||private ridge  - beta_OLS|| = 2.9389   ||. - beta_true|| = 2.9169
+  ||bias-corrected - beta_OLS|| = 2.9389   ||. - beta_true|| = 2.9168
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
@@ -449,8 +449,8 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] listening on 127.0.0.1:46013 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46013
-[R] O connected from ('127.0.0.1', 35200)
-[O] PSI preprocessing: D=6 alpha=1 (0.2s)
+[R] O connected from ('127.0.0.1', 36776)
+[O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.2s)
@@ -458,45 +458,45 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=113.5  O-block ridge ceiling rho<=0.0402  -> Psi=I lambda=1855 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 92.3389)
+[R] sigma=113.5  O-block ridge ceiling rho<=0.0402  -> Psi=I lambda=2184 rho_hat=2.37  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 129.9865)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=113.5  Psi=I lambda=1855 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.9101   ||. - beta_true|| = 2.8871
-  ||bias-corrected - beta_OLS|| = 2.9116   ||. - beta_true|| = 2.8887
+  backend=plaintext  sigma=113.5  Psi=I lambda=2184 rho_hat=2.37
+  ||private ridge  - beta_OLS|| = 2.9189   ||. - beta_true|| = 2.8960
+  ||bias-corrected - beta_OLS|| = 2.9196   ||. - beta_true|| = 2.8967
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
-### n400: eps=1.0 run_protocol.py (OPENFHE)   (rc=0, 13.1s)
+### n400: eps=1.0 run_protocol.py (OPENFHE)   (rc=0, 13.8s)
 $ /tmp/claude-0/-home-user-VerticalFederatedRegression/efa2e795-381b-5bb8-8206-13c9bd0ddd5e/scratchpad/venv312/bin/python run_protocol.py --data_dir experiments/_work/data/n400 --backend openfhe --port 46014
 ====================================================================================================
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46014 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46014
-[R] O connected from ('127.0.0.1', 56686)
-[O] PSI preprocessing: D=6 alpha=1 (0.5s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
+[R] O connected from ('127.0.0.1', 48516)
+[O] PSI preprocessing: D=6 alpha=1 (0.5s)[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
+
 [O] PSI batch 1/1 answered
-[O] Phase 0 done (1.3s)
+[O] Phase 0 done (2.0s)
 [R] PSI batch 1/1: total matched 400
-[R] Phase 0 done: n=400 matched (1.3s)
-[O] Phase 1 done: 51 noised ciphertexts sent (7.7s)
-[R] Phase 1 aggregates decrypted (8.8s)
-[R] sigma=113.5  O-block ridge ceiling rho<=0.0402  -> Psi=I lambda=1756 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 296.2410)
+[R] Phase 0 done: n=400 matched (2.1s)
+[O] Phase 1 done: 51 noised ciphertexts sent (7.4s)
+[R] Phase 1 aggregates decrypted (8.5s)
+[R] sigma=113.5  O-block ridge ceiling rho<=0.0402  -> Psi=I lambda=2184 rho_hat=2.40  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 458.8860)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=openfhe  sigma=113.5  Psi=I lambda=1756 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.9169   ||. - beta_true|| = 2.8947
-  ||bias-corrected - beta_OLS|| = 2.9175   ||. - beta_true|| = 2.8954
+  backend=openfhe  sigma=113.5  Psi=I lambda=2184 rho_hat=2.40
+  ||private ridge  - beta_OLS|| = 2.9397   ||. - beta_true|| = 2.9161
+  ||bias-corrected - beta_OLS|| = 2.9406   ||. - beta_true|| = 2.9170
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
-### calibrate n400 eps=2.0   (rc=0, 0.4s)
+### calibrate n400 eps=2.0   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n400 --eps 2.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 500, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -508,14 +508,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n400/dp_params.json
 
 ====================================================================================================
-### n400: eps=2.0 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n400: eps=2.0 run_protocol.py (plaintext)   (rc=0, 3.2s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 --backend plaintext --port 46015
 ====================================================================================================
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46015 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46015
-[R] O connected from ('127.0.0.1', 50932)
+[R] O connected from ('127.0.0.1', 35978)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -524,18 +524,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=60.64  O-block ridge ceiling rho<=0.0753  -> Psi=I lambda=889.6 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 289.3669)
+[R] sigma=60.64  O-block ridge ceiling rho<=0.0753  -> Psi=I lambda=1456 rho_hat=3.21  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 217.6199)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=60.64  Psi=I lambda=889.6 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.8227   ||. - beta_true|| = 2.8025
-  ||bias-corrected - beta_OLS|| = 2.8256   ||. - beta_true|| = 2.8054
+  backend=plaintext  sigma=60.64  Psi=I lambda=1456 rho_hat=3.21
+  ||private ridge  - beta_OLS|| = 2.8822   ||. - beta_true|| = 2.8591
+  ||bias-corrected - beta_OLS|| = 2.8832   ||. - beta_true|| = 2.8602
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
-### calibrate n400 eps=4.0   (rc=0, 0.4s)
+### calibrate n400 eps=4.0   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n400 --eps 4.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 500, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -547,14 +547,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n400/dp_params.json
 
 ====================================================================================================
-### n400: eps=4.0 run_protocol.py (plaintext)   (rc=0, 3.2s)
+### n400: eps=4.0 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 --backend plaintext --port 46016
 ====================================================================================================
 [R] n_R=500 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46016 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46016
-[R] O connected from ('127.0.0.1', 36488)
+[R] O connected from ('127.0.0.1', 35642)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -563,14 +563,14 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=32.88  O-block ridge ceiling rho<=0.139  -> Psi=I lambda=500.1 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 265.1720)
+[R] sigma=32.88  O-block ridge ceiling rho<=0.139  -> Psi=I lambda=647.2 rho_hat=2.61  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 296.0849)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=32.88  Psi=I lambda=500.1 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.7455   ||. - beta_true|| = 2.7232
-  ||bias-corrected - beta_OLS|| = 2.7503   ||. - beta_true|| = 2.7280
+  backend=plaintext  sigma=32.88  Psi=I lambda=647.2 rho_hat=2.61
+  ||private ridge  - beta_OLS|| = 2.8289   ||. - beta_true|| = 2.8051
+  ||bias-corrected - beta_OLS|| = 2.8311   ||. - beta_true|| = 2.8073
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
@@ -593,7 +593,7 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] listening on 127.0.0.1:46017 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46017
-[R] O connected from ('127.0.0.1', 44626)
+[R] O connected from ('127.0.0.1', 46296)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -602,18 +602,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n400 -
 [R] Phase 0 done: n=400 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=18.26  O-block ridge ceiling rho<=0.25  -> Psi=I lambda=257.1 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 281.3641)
+[R] sigma=18.26  O-block ridge ceiling rho<=0.25  -> Psi=I lambda=287.6 rho_hat=2.12  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 287.5254)
 
 === verification ===
   matched by PSI : 400 / ground truth 400 -> OK
-  backend=plaintext  sigma=18.26  Psi=I lambda=257.1 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.5975   ||. - beta_true|| = 2.5728
-  ||bias-corrected - beta_OLS|| = 2.6070   ||. - beta_true|| = 2.5824
+  backend=plaintext  sigma=18.26  Psi=I lambda=287.6 rho_hat=2.12
+  ||private ridge  - beta_OLS|| = 2.6793   ||. - beta_true|| = 2.6569
+  ||bias-corrected - beta_OLS|| = 2.6864   ||. - beta_true|| = 2.6640
   ||beta_OLS - beta_true|| = 0.0522  (sampling only)
 
 ====================================================================================================
-### calibrate n1000 eps=1.0   (rc=0, 0.5s)
+### calibrate n1000 eps=1.0   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n1000 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 1250, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -630,12 +630,12 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 --- party R (audited) ---
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46018 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 44042)
+[R] O connected from ('127.0.0.1', 34148)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [R] PSI batch 1/1: total matched 1000
 [R] Phase 0 done: n=1000 matched (0.2s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=1.22e+10  -> Psi=none lambda=0 rho_hat=10251517911.19
+[R] sigma=1e-09  O-block ridge ceiling rho<=1.22e+10  -> Psi=O lambda=0.001 rho_hat=10251607074.46
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 1355.1784)
 
 --- party O ---
@@ -659,15 +659,15 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n1000/dp_params.json
 
 ====================================================================================================
-### n1000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n1000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 --backend plaintext --port 46019
 ====================================================================================================
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46019 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46019
-[R] O connected from ('127.0.0.1', 40148)
-[O] PSI preprocessing: D=6 alpha=1 (0.1s)
+[R] O connected from ('127.0.0.1', 43746)
+[O] PSI preprocessing: D=6 alpha=1 (0.2s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.2s)
@@ -675,18 +675,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 
 [R] Phase 0 done: n=1000 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=404.1  O-block ridge ceiling rho<=0.0301  -> Psi=I lambda=6637 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 1761.4756)
+[R] sigma=404.1  O-block ridge ceiling rho<=0.0301  -> Psi=I lambda=7372 rho_hat=2.36  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 831.3764)
 
 === verification ===
   matched by PSI : 1000 / ground truth 1000 -> OK
-  backend=plaintext  sigma=404.1  Psi=I lambda=6637 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.2356   ||. - beta_true|| = 3.2310
-  ||bias-corrected - beta_OLS|| = 3.2360   ||. - beta_true|| = 3.2314
+  backend=plaintext  sigma=404.1  Psi=I lambda=7372 rho_hat=2.36
+  ||private ridge  - beta_OLS|| = 3.2273   ||. - beta_true|| = 3.2221
+  ||bias-corrected - beta_OLS|| = 3.2288   ||. - beta_true|| = 3.2236
   ||beta_OLS - beta_true|| = 0.0269  (sampling only)
 
 ====================================================================================================
-### calibrate n1000 eps=0.5   (rc=0, 0.4s)
+### calibrate n1000 eps=0.5   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n1000 --eps 0.5 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 1250, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -698,14 +698,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n1000/dp_params.json
 
 ====================================================================================================
-### n1000: eps=0.5 run_protocol.py (plaintext)   (rc=0, 3.2s)
+### n1000: eps=0.5 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 --backend plaintext --port 46020
 ====================================================================================================
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46020 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46020
-[R] O connected from ('127.0.0.1', 40664)
+[R] O connected from ('127.0.0.1', 45888)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -714,14 +714,14 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 
 [R] Phase 0 done: n=1000 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=213.9  O-block ridge ceiling rho<=0.0569  -> Psi=I lambda=3396 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 1336.7737)
+[R] sigma=213.9  O-block ridge ceiling rho<=0.0569  -> Psi=I lambda=3276 rho_hat=2.15  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 1620.7424)
 
 === verification ===
   matched by PSI : 1000 / ground truth 1000 -> OK
-  backend=plaintext  sigma=213.9  Psi=I lambda=3396 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.1939   ||. - beta_true|| = 3.1887
-  ||bias-corrected - beta_OLS|| = 3.1958   ||. - beta_true|| = 3.1905
+  backend=plaintext  sigma=213.9  Psi=I lambda=3276 rho_hat=2.15
+  ||private ridge  - beta_OLS|| = 3.1271   ||. - beta_true|| = 3.1213
+  ||bias-corrected - beta_OLS|| = 3.1323   ||. - beta_true|| = 3.1264
   ||beta_OLS - beta_true|| = 0.0269  (sampling only)
 
 ====================================================================================================
@@ -737,34 +737,34 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n1000/dp_params.json
 
 ====================================================================================================
-### n1000: eps=1.0 run_protocol.py (plaintext)   (rc=0, 3.2s)
+### n1000: eps=1.0 run_protocol.py (plaintext)   (rc=0, 3.4s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 --backend plaintext --port 46021
 ====================================================================================================
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46021 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
-[O] connected to R at 127.0.0.1:46021
-[R] O connected from ('127.0.0.1', 50278)
-[O] PSI preprocessing: D=6 alpha=1 (0.1s)
+[R] O connected from ('127.0.0.1', 55958)[O] connected to R at 127.0.0.1:46021
+
+[O] PSI preprocessing: D=6 alpha=1 (0.2s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
-[O] Phase 0 done (0.2s)
+[O] Phase 0 done (0.3s)
 [R] PSI batch 1/1: total matched 1000
-[R] Phase 0 done: n=1000 matched (0.2s)
+[R] Phase 0 done: n=1000 matched (0.3s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=113.5  O-block ridge ceiling rho<=0.107  -> Psi=I lambda=1840 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 1151.2292)
+[R] sigma=113.5  O-block ridge ceiling rho<=0.107  -> Psi=I lambda=2184 rho_hat=2.56  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 1469.5753)
 
 === verification ===
   matched by PSI : 1000 / ground truth 1000 -> OK
-  backend=plaintext  sigma=113.5  Psi=I lambda=1840 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.1112   ||. - beta_true|| = 3.1051
-  ||bias-corrected - beta_OLS|| = 3.1153   ||. - beta_true|| = 3.1093
+  backend=plaintext  sigma=113.5  Psi=I lambda=2184 rho_hat=2.56
+  ||private ridge  - beta_OLS|| = 3.1169   ||. - beta_true|| = 3.1118
+  ||bias-corrected - beta_OLS|| = 3.1206   ||. - beta_true|| = 3.1155
   ||beta_OLS - beta_true|| = 0.0269  (sampling only)
 
 ====================================================================================================
-### calibrate n1000 eps=2.0   (rc=0, 0.4s)
+### calibrate n1000 eps=2.0   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n1000 --eps 2.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 1250, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -776,14 +776,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n1000/dp_params.json
 
 ====================================================================================================
-### n1000: eps=2.0 run_protocol.py (plaintext)   (rc=0, 3.2s)
+### n1000: eps=2.0 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 --backend plaintext --port 46022
 ====================================================================================================
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46022 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46022
-[R] O connected from ('127.0.0.1', 38888)
+[R] O connected from ('127.0.0.1', 45678)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -792,14 +792,14 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 
 [R] Phase 0 done: n=1000 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=60.64  O-block ridge ceiling rho<=0.201  -> Psi=I lambda=969.5 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 1470.8646)
+[R] sigma=60.64  O-block ridge ceiling rho<=0.201  -> Psi=I lambda=970.7 rho_hat=2.22  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 1368.2475)
 
 === verification ===
   matched by PSI : 1000 / ground truth 1000 -> OK
-  backend=plaintext  sigma=60.64  Psi=I lambda=969.5 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.1207   ||. - beta_true|| = 3.1165
-  ||bias-corrected - beta_OLS|| = 3.1244   ||. - beta_true|| = 3.1202
+  backend=plaintext  sigma=60.64  Psi=I lambda=970.7 rho_hat=2.22
+  ||private ridge  - beta_OLS|| = 3.0591   ||. - beta_true|| = 3.0541
+  ||bias-corrected - beta_OLS|| = 3.0642   ||. - beta_true|| = 3.0593
   ||beta_OLS - beta_true|| = 0.0269  (sampling only)
 
 ====================================================================================================
@@ -815,14 +815,14 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n1000/dp_params.json
 
 ====================================================================================================
-### n1000: eps=4.0 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n1000: eps=4.0 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 --backend plaintext --port 46023
 ====================================================================================================
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46023 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46023
-[R] O connected from ('127.0.0.1', 44342)
+[R] O connected from ('127.0.0.1', 40284)
 [O] PSI preprocessing: D=6 alpha=1 (0.1s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
@@ -831,18 +831,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 
 [R] Phase 0 done: n=1000 matched (0.2s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=32.88  O-block ridge ceiling rho<=0.37  -> Psi=I lambda=439.6 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 1373.0866)
+[R] sigma=32.88  O-block ridge ceiling rho<=0.37  -> Psi=I lambda=647.2 rho_hat=2.91  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 1356.8853)
 
 === verification ===
   matched by PSI : 1000 / ground truth 1000 -> OK
-  backend=plaintext  sigma=32.88  Psi=I lambda=439.6 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.8081   ||. - beta_true|| = 2.8034
-  ||bias-corrected - beta_OLS|| = 2.8208   ||. - beta_true|| = 2.8161
+  backend=plaintext  sigma=32.88  Psi=I lambda=647.2 rho_hat=2.91
+  ||private ridge  - beta_OLS|| = 2.9295   ||. - beta_true|| = 2.9244
+  ||bias-corrected - beta_OLS|| = 2.9348   ||. - beta_true|| = 2.9297
   ||beta_OLS - beta_true|| = 0.0269  (sampling only)
 
 ====================================================================================================
-### calibrate n1000 eps=8.0   (rc=0, 0.4s)
+### calibrate n1000 eps=8.0   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n1000 --eps 8.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 1250, 'n_O': 4000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -854,34 +854,34 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n1000/dp_params.json
 
 ====================================================================================================
-### n1000: eps=8.0 run_protocol.py (plaintext)   (rc=0, 3.1s)
+### n1000: eps=8.0 run_protocol.py (plaintext)   (rc=0, 3.3s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n1000 --backend plaintext --port 46024
 ====================================================================================================
 [R] n_R=1250 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46024 — start party_o.py ...
 [O] n_O=4000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46024
-[R] O connected from ('127.0.0.1', 52168)
-[O] PSI preprocessing: D=6 alpha=1 (0.1s)
+[R] O connected from ('127.0.0.1', 46134)
+[O] PSI preprocessing: D=6 alpha=1 (0.2s)
 [R] cuckoo: 1 batch(es); O will send 1 partition(s), D=6
 [O] PSI batch 1/1 answered
-[O] Phase 0 done (0.2s)
+[O] Phase 0 done (0.3s)
 [R] PSI batch 1/1: total matched 1000
-[R] Phase 0 done: n=1000 matched (0.2s)
+[R] Phase 0 done: n=1000 matched (0.3s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=18.26  O-block ridge ceiling rho<=0.666  -> Psi=I lambda=230.5 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 1350.1813)
+[R] sigma=18.26  O-block ridge ceiling rho<=0.666  -> Psi=I lambda=287.6 rho_hat=2.48  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 1323.1792)
 
 === verification ===
   matched by PSI : 1000 / ground truth 1000 -> OK
-  backend=plaintext  sigma=18.26  Psi=I lambda=230.5 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.2760   ||. - beta_true|| = 2.2714
-  ||bias-corrected - beta_OLS|| = 2.3089   ||. - beta_true|| = 2.3044
+  backend=plaintext  sigma=18.26  Psi=I lambda=287.6 rho_hat=2.48
+  ||private ridge  - beta_OLS|| = 2.4948   ||. - beta_true|| = 2.4904
+  ||bias-corrected - beta_OLS|| = 2.5111   ||. - beta_true|| = 2.5066
   ||beta_OLS - beta_true|| = 0.0269  (sampling only)
 
 ====================================================================================================
-### calibrate n4000 eps=1.0   (rc=0, 0.5s)
+### calibrate n4000 eps=1.0   (rc=0, 0.4s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n4000 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 5000, 'n_O': 8000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -898,24 +898,24 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 --- party R (audited) ---
 [R] n_R=5000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46025 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 51578)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 49550)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.5s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=5.08e+10  -> Psi=none lambda=0 rho_hat=48655132966.49
+[R] sigma=1e-09  O-block ridge ceiling rho<=5.08e+10  -> Psi=O lambda=0.001 rho_hat=48655266583.81
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 6225.8722)
 
 --- party O ---
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46025
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
+[O] PSI preprocessing: D=9 alpha=1 (0.4s)
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.5s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 
 ====================================================================================================
-### calibrate n4000 eps=0.25   (rc=0, 0.4s)
+### calibrate n4000 eps=0.25   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n4000 --eps 0.25 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 5000, 'n_O': 8000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -927,30 +927,30 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n4000/dp_params.json
 
 ====================================================================================================
-### n4000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.6s)
+### n4000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 3.5s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n4000 --backend plaintext --port 46026
 ====================================================================================================
 [R] n_R=5000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46026 — start party_o.py ...
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46026
-[R] O connected from ('127.0.0.1', 48666)
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 37404)
+[O] PSI preprocessing: D=9 alpha=1 (0.3s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.5s)
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.5s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=404.1  O-block ridge ceiling rho<=0.126  -> Psi=I lambda=6474 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 6556.3880)
+[R] sigma=404.1  O-block ridge ceiling rho<=0.126  -> Psi=I lambda=7372 rho_hat=2.44  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 6418.5943)
 
 === verification ===
   matched by PSI : 4000 / ground truth 4000 -> OK
-  backend=plaintext  sigma=404.1  Psi=I lambda=6474 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 4.0860   ||. - beta_true|| = 4.0802
-  ||bias-corrected - beta_OLS|| = 4.0899   ||. - beta_true|| = 4.0841
+  backend=plaintext  sigma=404.1  Psi=I lambda=7372 rho_hat=2.44
+  ||private ridge  - beta_OLS|| = 4.0299   ||. - beta_true|| = 4.0236
+  ||bias-corrected - beta_OLS|| = 4.0350   ||. - beta_true|| = 4.0287
   ||beta_OLS - beta_true|| = 0.0200  (sampling only)
 
 ====================================================================================================
@@ -973,27 +973,27 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n4000 
 [R] listening on 127.0.0.1:46027 — start party_o.py ...
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46027
-[R] O connected from ('127.0.0.1', 35596)
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 37244)
+[O] PSI preprocessing: D=9 alpha=1 (0.4s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [O] PSI batch 1/1 answered
-[O] Phase 0 done (0.5s)
+[O] Phase 0 done (0.6s)
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.6s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=213.9  O-block ridge ceiling rho<=0.238  -> Psi=I lambda=3094 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 6165.0458)
+[R] sigma=213.9  O-block ridge ceiling rho<=0.238  -> Psi=I lambda=4914 rho_hat=3.18  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 6242.6998)
 
 === verification ===
   matched by PSI : 4000 / ground truth 4000 -> OK
-  backend=plaintext  sigma=213.9  Psi=I lambda=3094 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.8292   ||. - beta_true|| = 3.8233
-  ||bias-corrected - beta_OLS|| = 3.8429   ||. - beta_true|| = 3.8370
+  backend=plaintext  sigma=213.9  Psi=I lambda=4914 rho_hat=3.18
+  ||private ridge  - beta_OLS|| = 3.9299   ||. - beta_true|| = 3.9242
+  ||bias-corrected - beta_OLS|| = 3.9343   ||. - beta_true|| = 3.9285
   ||beta_OLS - beta_true|| = 0.0200  (sampling only)
 
 ====================================================================================================
-### calibrate n4000 eps=1.0   (rc=0, 0.4s)
+### calibrate n4000 eps=1.0   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n4000 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 5000, 'n_O': 8000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1012,23 +1012,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n4000 
 [R] listening on 127.0.0.1:46028 — start party_o.py ...
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46028
-[R] O connected from ('127.0.0.1', 55928)
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 33274)
+[O] PSI preprocessing: D=9 alpha=1 (0.3s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.5s)
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.5s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=113.5  O-block ridge ceiling rho<=0.448  -> Psi=I lambda=1482 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 6237.7765)
+[R] sigma=113.5  O-block ridge ceiling rho<=0.448  -> Psi=I lambda=2184 rho_hat=2.72  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 6044.8123)
 
 === verification ===
   matched by PSI : 4000 / ground truth 4000 -> OK
-  backend=plaintext  sigma=113.5  Psi=I lambda=1482 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 3.4937   ||. - beta_true|| = 3.4888
-  ||bias-corrected - beta_OLS|| = 3.5143   ||. - beta_true|| = 3.5093
+  backend=plaintext  sigma=113.5  Psi=I lambda=2184 rho_hat=2.72
+  ||private ridge  - beta_OLS|| = 3.7280   ||. - beta_true|| = 3.7220
+  ||bias-corrected - beta_OLS|| = 3.7354   ||. - beta_true|| = 3.7294
   ||beta_OLS - beta_true|| = 0.0200  (sampling only)
 
 ====================================================================================================
@@ -1051,23 +1051,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n4000 
 [R] listening on 127.0.0.1:46029 — start party_o.py ...
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46029
-[R] O connected from ('127.0.0.1', 47686)
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 45250)
+[O] PSI preprocessing: D=9 alpha=1 (0.4s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.5s)
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.5s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=60.64  O-block ridge ceiling rho<=0.838  -> Psi=I lambda=668.8 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 6334.2549)
+[R] sigma=60.64  O-block ridge ceiling rho<=0.838  -> Psi=I lambda=970.7 rho_hat=2.51  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 6091.9645)
 
 === verification ===
   matched by PSI : 4000 / ground truth 4000 -> OK
-  backend=plaintext  sigma=60.64  Psi=I lambda=668.8 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.8107   ||. - beta_true|| = 2.8047
-  ||bias-corrected - beta_OLS|| = 2.8490   ||. - beta_true|| = 2.8431
+  backend=plaintext  sigma=60.64  Psi=I lambda=970.7 rho_hat=2.51
+  ||private ridge  - beta_OLS|| = 3.0842   ||. - beta_true|| = 3.0786
+  ||bias-corrected - beta_OLS|| = 3.1043   ||. - beta_true|| = 3.0987
   ||beta_OLS - beta_true|| = 0.0200  (sampling only)
 
 ====================================================================================================
@@ -1090,23 +1090,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n4000 
 [R] listening on 127.0.0.1:46030 — start party_o.py ...
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46030
-[R] O connected from ('127.0.0.1', 54526)
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 57478)
+[O] PSI preprocessing: D=9 alpha=1 (0.3s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.5s)
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.5s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=32.88  O-block ridge ceiling rho<=1.54  -> Psi=I lambda=221 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 6201.9763)
+[R] sigma=32.88  O-block ridge ceiling rho<=1.54  -> Psi=I lambda=287.6 rho_hat=2.25  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 6269.8096)
 
 === verification ===
   matched by PSI : 4000 / ground truth 4000 -> OK
-  backend=plaintext  sigma=32.88  Psi=I lambda=221 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 1.5362   ||. - beta_true|| = 1.5290
-  ||bias-corrected - beta_OLS|| = 1.6023   ||. - beta_true|| = 1.5952
+  backend=plaintext  sigma=32.88  Psi=I lambda=287.6 rho_hat=2.25
+  ||private ridge  - beta_OLS|| = 1.9998   ||. - beta_true|| = 1.9943
+  ||bias-corrected - beta_OLS|| = 2.0405   ||. - beta_true|| = 2.0349
   ||beta_OLS - beta_true|| = 0.0200  (sampling only)
 
 ====================================================================================================
@@ -1129,23 +1129,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n4000 
 [R] listening on 127.0.0.1:46031 — start party_o.py ...
 [O] n_O=8000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46031
-[R] O connected from ('127.0.0.1', 46956)
-[O] PSI preprocessing: D=10 alpha=1 (0.4s)
-[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=10
+[R] O connected from ('127.0.0.1', 48514)
+[O] PSI preprocessing: D=9 alpha=1 (0.3s)
+[R] cuckoo: 1 batch(es); O will send 1 partition(s), D=9
 [O] PSI batch 1/1 answered
 [O] Phase 0 done (0.5s)
 [R] PSI batch 1/1: total matched 4000
 [R] Phase 0 done: n=4000 matched (0.5s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.0s)
 [R] Phase 1 aggregates decrypted (0.0s)
-[R] sigma=18.26  O-block ridge ceiling rho<=2.78  -> Psi=none lambda=0 rho_hat=2.06
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 6210.9435)
+[R] sigma=18.26  O-block ridge ceiling rho<=2.78  -> Psi=O lambda=0.001 rho_hat=2.20
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 6208.6131)
 
 === verification ===
   matched by PSI : 4000 / ground truth 4000 -> OK
-  backend=plaintext  sigma=18.26  Psi=none lambda=0 rho_hat=2.06
-  ||private ridge  - beta_OLS|| = 0.2291   ||. - beta_true|| = 0.2346
-  ||bias-corrected - beta_OLS|| = 0.2571   ||. - beta_true|| = 0.2598
+  backend=plaintext  sigma=18.26  Psi=O lambda=0.001 rho_hat=2.20
+  ||private ridge  - beta_OLS|| = 0.4308   ||. - beta_true|| = 0.4348
+  ||bias-corrected - beta_OLS|| = 0.3946   ||. - beta_true|| = 0.3973
   ||beta_OLS - beta_true|| = 0.0200  (sampling only)
 
 ====================================================================================================
@@ -1161,31 +1161,31 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n16000/dp_params.json
 
 ====================================================================================================
-### n16000: sigma=1e-09 audited socket run (plaintext)   (R rc=0, O rc=0, 7.0s)
+### n16000: sigma=1e-09 audited socket run (plaintext)   (R rc=0, O rc=0, 6.8s)
 ====================================================================================================
 --- party R (audited) ---
 [R] n_R=20000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46032 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 39246)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 40268)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [R] PSI batch 1/2: total matched 11814
 [R] PSI batch 2/2: total matched 16000
-[R] Phase 0 done: n=16000 matched (3.3s)
+[R] Phase 0 done: n=16000 matched (3.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=2.07e+11  -> Psi=none lambda=0 rho_hat=202788060790.40
+[R] sigma=1e-09  O-block ridge ceiling rho<=2.07e+11  -> Psi=O lambda=0.001 rho_hat=202788116052.73
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 8367.3304)
 
 --- party O ---
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46032
-[O] PSI preprocessing: D=18 alpha=1 (2.6s)
+[O] PSI preprocessing: D=17 alpha=1 (2.3s)
 [O] PSI batch 1/2 answered
 [O] PSI batch 2/2 answered
-[O] Phase 0 done (3.2s)
+[O] Phase 0 done (3.1s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 
 ====================================================================================================
-### calibrate n16000 eps=0.25   (rc=0, 0.6s)
+### calibrate n16000 eps=0.25   (rc=0, 0.5s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n16000 --eps 0.25 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 20000, 'n_O': 32000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1197,36 +1197,36 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n16000/dp_params.json
 
 ====================================================================================================
-### n16000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 6.4s)
+### n16000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 6.2s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000 --backend plaintext --port 46033
 ====================================================================================================
 [R] n_R=20000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46033 — start party_o.py ...
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46033
-[R] O connected from ('127.0.0.1', 37754)
-[O] PSI preprocessing: D=18 alpha=1 (2.5s)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 50430)
+[O] PSI preprocessing: D=17 alpha=1 (2.2s)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [O] PSI batch 1/2 answered
 [R] PSI batch 1/2: total matched 11814
 [O] PSI batch 2/2 answered
-[O] Phase 0 done (3.1s)
+[O] Phase 0 done (2.9s)
 [R] PSI batch 2/2: total matched 16000
-[R] Phase 0 done: n=16000 matched (3.1s)
+[R] Phase 0 done: n=16000 matched (3.0s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=404.1  O-block ridge ceiling rho<=0.512  -> Psi=I lambda=5443 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 8475.9696)
+[R] sigma=404.1  O-block ridge ceiling rho<=0.512  -> Psi=I lambda=7372 rho_hat=2.82  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 8180.5690)
 
 === verification ===
   matched by PSI : 16000 / ground truth 16000 -> OK
-  backend=plaintext  sigma=404.1  Psi=I lambda=5443 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 2.0303   ||. - beta_true|| = 2.0308
-  ||bias-corrected - beta_OLS|| = 2.0409   ||. - beta_true|| = 2.0414
+  backend=plaintext  sigma=404.1  Psi=I lambda=7372 rho_hat=2.82
+  ||private ridge  - beta_OLS|| = 2.0405   ||. - beta_true|| = 2.0400
+  ||bias-corrected - beta_OLS|| = 2.0475   ||. - beta_true|| = 2.0469
   ||beta_OLS - beta_true|| = 0.0110  (sampling only)
 
 ====================================================================================================
-### calibrate n16000 eps=0.5   (rc=0, 0.5s)
+### calibrate n16000 eps=0.5   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n16000 --eps 0.5 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 20000, 'n_O': 32000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1245,25 +1245,25 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000
 [R] listening on 127.0.0.1:46034 — start party_o.py ...
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46034
-[R] O connected from ('127.0.0.1', 35082)
-[O] PSI preprocessing: D=18 alpha=1 (2.5s)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 54680)
+[O] PSI preprocessing: D=17 alpha=1 (2.2s)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [O] PSI batch 1/2 answered
 [R] PSI batch 1/2: total matched 11814
 [O] PSI batch 2/2 answered
 [O] Phase 0 done (3.0s)
 [R] PSI batch 2/2: total matched 16000
-[R] Phase 0 done: n=16000 matched (3.1s)
+[R] Phase 0 done: n=16000 matched (3.0s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=213.9  O-block ridge ceiling rho<=0.968  -> Psi=I lambda=2267 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 8238.6756)
+[R] sigma=213.9  O-block ridge ceiling rho<=0.968  -> Psi=I lambda=3276 rho_hat=2.37  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 8784.8175)
 
 === verification ===
   matched by PSI : 16000 / ground truth 16000 -> OK
-  backend=plaintext  sigma=213.9  Psi=I lambda=2267 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 1.6719   ||. - beta_true|| = 1.6714
-  ||bias-corrected - beta_OLS|| = 1.6887   ||. - beta_true|| = 1.6883
+  backend=plaintext  sigma=213.9  Psi=I lambda=3276 rho_hat=2.37
+  ||private ridge  - beta_OLS|| = 1.7983   ||. - beta_true|| = 1.7978
+  ||bias-corrected - beta_OLS|| = 1.8083   ||. - beta_true|| = 1.8079
   ||beta_OLS - beta_true|| = 0.0110  (sampling only)
 
 ====================================================================================================
@@ -1286,9 +1286,9 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000
 [R] listening on 127.0.0.1:46035 — start party_o.py ...
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46035
-[R] O connected from ('127.0.0.1', 45704)
-[O] PSI preprocessing: D=18 alpha=1 (2.5s)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 60912)
+[O] PSI preprocessing: D=17 alpha=1 (2.4s)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [O] PSI batch 1/2 answered
 [R] PSI batch 1/2: total matched 11814
 [O] PSI batch 2/2 answered
@@ -1297,18 +1297,18 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000
 [R] Phase 0 done: n=16000 matched (3.1s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=113.5  O-block ridge ceiling rho<=1.82  -> Psi=I lambda=672.7 rho_hat=2.00  (escalated to full ridge)
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 8248.7455)
+[R] sigma=113.5  O-block ridge ceiling rho<=1.82  -> Psi=I lambda=647.2 rho_hat=2.15  (escalated to full ridge)
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 8243.2107)
 
 === verification ===
   matched by PSI : 16000 / ground truth 16000 -> OK
-  backend=plaintext  sigma=113.5  Psi=I lambda=672.7 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 0.8780   ||. - beta_true|| = 0.8754
-  ||bias-corrected - beta_OLS|| = 0.9082   ||. - beta_true|| = 0.9059
+  backend=plaintext  sigma=113.5  Psi=I lambda=647.2 rho_hat=2.15
+  ||private ridge  - beta_OLS|| = 0.7191   ||. - beta_true|| = 0.7173
+  ||bias-corrected - beta_OLS|| = 0.7560   ||. - beta_true|| = 0.7544
   ||beta_OLS - beta_true|| = 0.0110  (sampling only)
 
 ====================================================================================================
-### calibrate n16000 eps=2.0   (rc=0, 0.5s)
+### calibrate n16000 eps=2.0   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n16000 --eps 2.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 20000, 'n_O': 32000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1320,32 +1320,32 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n16000/dp_params.json
 
 ====================================================================================================
-### n16000: eps=2.0 run_protocol.py (plaintext)   (rc=0, 6.5s)
+### n16000: eps=2.0 run_protocol.py (plaintext)   (rc=0, 6.2s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000 --backend plaintext --port 46036
 ====================================================================================================
 [R] n_R=20000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46036 — start party_o.py ...
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46036
-[R] O connected from ('127.0.0.1', 48600)
-[O] PSI preprocessing: D=18 alpha=1 (2.5s)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 52798)
+[O] PSI preprocessing: D=17 alpha=1 (2.2s)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [O] PSI batch 1/2 answered
 [R] PSI batch 1/2: total matched 11814
 [O] PSI batch 2/2 answered
-[O] Phase 0 done (3.2s)
+[O] Phase 0 done (2.9s)
 [R] PSI batch 2/2: total matched 16000
-[R] Phase 0 done: n=16000 matched (3.2s)
+[R] Phase 0 done: n=16000 matched (2.9s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=60.64  O-block ridge ceiling rho<=3.41  -> Psi=none lambda=0 rho_hat=2.80
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 8389.3695)
+[R] sigma=60.64  O-block ridge ceiling rho<=3.41  -> Psi=O lambda=0.001 rho_hat=2.54
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 8475.2237)
 
 === verification ===
   matched by PSI : 16000 / ground truth 16000 -> OK
-  backend=plaintext  sigma=60.64  Psi=none lambda=0 rho_hat=2.80
-  ||private ridge  - beta_OLS|| = 0.3006   ||. - beta_true|| = 0.3016
-  ||bias-corrected - beta_OLS|| = 0.3084   ||. - beta_true|| = 0.3096
+  backend=plaintext  sigma=60.64  Psi=O lambda=0.001 rho_hat=2.54
+  ||private ridge  - beta_OLS|| = 0.2535   ||. - beta_true|| = 0.2517
+  ||bias-corrected - beta_OLS|| = 0.2317   ||. - beta_true|| = 0.2300
   ||beta_OLS - beta_true|| = 0.0110  (sampling only)
 
 ====================================================================================================
@@ -1361,36 +1361,36 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n16000/dp_params.json
 
 ====================================================================================================
-### n16000: eps=4.0 run_protocol.py (plaintext)   (rc=0, 6.3s)
+### n16000: eps=4.0 run_protocol.py (plaintext)   (rc=0, 6.1s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000 --backend plaintext --port 46037
 ====================================================================================================
 [R] n_R=20000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46037 — start party_o.py ...
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46037
-[R] O connected from ('127.0.0.1', 41078)
-[O] PSI preprocessing: D=18 alpha=1 (2.4s)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 44500)
+[O] PSI preprocessing: D=17 alpha=1 (2.2s)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [O] PSI batch 1/2 answered
 [R] PSI batch 1/2: total matched 11814
 [O] PSI batch 2/2 answered
-[O] Phase 0 done (3.0s)
+[O] Phase 0 done (2.9s)
 [R] PSI batch 2/2: total matched 16000
-[R] Phase 0 done: n=16000 matched (3.0s)
+[R] Phase 0 done: n=16000 matched (2.9s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=32.88  O-block ridge ceiling rho<=6.29  -> Psi=none lambda=0 rho_hat=5.73
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 8396.6158)
+[R] sigma=32.88  O-block ridge ceiling rho<=6.29  -> Psi=O lambda=0.001 rho_hat=5.40
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 8359.4448)
 
 === verification ===
   matched by PSI : 16000 / ground truth 16000 -> OK
-  backend=plaintext  sigma=32.88  Psi=none lambda=0 rho_hat=5.73
-  ||private ridge  - beta_OLS|| = 0.2062   ||. - beta_true|| = 0.2093
-  ||bias-corrected - beta_OLS|| = 0.2099   ||. - beta_true|| = 0.2130
+  backend=plaintext  sigma=32.88  Psi=O lambda=0.001 rho_hat=5.40
+  ||private ridge  - beta_OLS|| = 0.1612   ||. - beta_true|| = 0.1566
+  ||bias-corrected - beta_OLS|| = 0.1620   ||. - beta_true|| = 0.1577
   ||beta_OLS - beta_true|| = 0.0110  (sampling only)
 
 ====================================================================================================
-### calibrate n16000 eps=8.0   (rc=0, 0.5s)
+### calibrate n16000 eps=8.0   (rc=0, 0.6s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n16000 --eps 8.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 20000, 'n_O': 32000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1402,36 +1402,36 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n16000/dp_params.json
 
 ====================================================================================================
-### n16000: eps=8.0 run_protocol.py (plaintext)   (rc=0, 6.3s)
+### n16000: eps=8.0 run_protocol.py (plaintext)   (rc=0, 6.2s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n16000 --backend plaintext --port 46038
 ====================================================================================================
 [R] n_R=20000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46038 — start party_o.py ...
 [O] n_O=32000  clip rates: X_O=0.000%  y=0.000%
 [O] connected to R at 127.0.0.1:46038
-[R] O connected from ('127.0.0.1', 47096)
-[O] PSI preprocessing: D=18 alpha=1 (2.5s)
-[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=18
+[R] O connected from ('127.0.0.1', 43086)
+[O] PSI preprocessing: D=17 alpha=1 (2.2s)
+[R] cuckoo: 2 batch(es); O will send 1 partition(s), D=17
 [O] PSI batch 1/2 answered
 [R] PSI batch 1/2: total matched 11814
 [O] PSI batch 2/2 answered
-[O] Phase 0 done (3.1s)
+[O] Phase 0 done (2.9s)
 [R] PSI batch 2/2: total matched 16000
-[R] Phase 0 done: n=16000 matched (3.1s)
+[R] Phase 0 done: n=16000 matched (3.0s)
 [O] Phase 1 done: 51 noised ciphertexts sent (0.1s)
 [R] Phase 1 aggregates decrypted (0.1s)
-[R] sigma=18.26  O-block ridge ceiling rho<=11.3  -> Psi=none lambda=0 rho_hat=10.81
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 8395.8010)
+[R] sigma=18.26  O-block ridge ceiling rho<=11.3  -> Psi=O lambda=0.001 rho_hat=10.74
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 8383.4168)
 
 === verification ===
   matched by PSI : 16000 / ground truth 16000 -> OK
-  backend=plaintext  sigma=18.26  Psi=none lambda=0 rho_hat=10.81
-  ||private ridge  - beta_OLS|| = 0.0646   ||. - beta_true|| = 0.0637
-  ||bias-corrected - beta_OLS|| = 0.0657   ||. - beta_true|| = 0.0649
+  backend=plaintext  sigma=18.26  Psi=O lambda=0.001 rho_hat=10.74
+  ||private ridge  - beta_OLS|| = 0.0761   ||. - beta_true|| = 0.0701
+  ||bias-corrected - beta_OLS|| = 0.0755   ||. - beta_true|| = 0.0695
   ||beta_OLS - beta_true|| = 0.0110  (sampling only)
 
 ====================================================================================================
-### calibrate n64000 eps=1.0   (rc=0, 0.8s)
+### calibrate n64000 eps=1.0   (rc=0, 0.7s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n64000 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 80000, 'n_O': 80000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1443,39 +1443,39 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n64000/dp_params.json
 
 ====================================================================================================
-### n64000: sigma=1e-09 audited socket run (plaintext)   (R rc=0, O rc=0, 18.4s)
+### n64000: sigma=1e-09 audited socket run (plaintext)   (R rc=0, O rc=0, 18.3s)
 ====================================================================================================
 --- party R (audited) ---
 [R] n_R=80000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46039 — start party_o.py ...
-[R] O connected from ('127.0.0.1', 34744)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 37582)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [R] PSI batch 1/6: total matched 11814
 [R] PSI batch 2/6: total matched 23612
 [R] PSI batch 3/6: total matched 35351
 [R] PSI batch 4/6: total matched 47171
 [R] PSI batch 5/6: total matched 58980
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.6s)
-[R] Phase 1 aggregates decrypted (0.9s)
-[R] sigma=1e-09  O-block ridge ceiling rho<=8.34e+11  -> Psi=none lambda=0 rho_hat=826126185687.96
+[R] Phase 0 done: n=64000 matched (14.3s)
+[R] Phase 1 aggregates decrypted (0.4s)
+[R] sigma=1e-09  O-block ridge ceiling rho<=8.34e+11  -> Psi=O lambda=0.001 rho_hat=826126258726.88
 [R] wrote beta_private.csv and run_summary.json  (y^T y = 543673.9434)
 
 --- party O ---
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46039
-[O] PSI preprocessing: D=31 alpha=1 (9.7s)
+[O] PSI preprocessing: D=32 alpha=1 (9.4s)
 [O] PSI batch 1/6 answered
 [O] PSI batch 2/6 answered
 [O] PSI batch 3/6 answered
 [O] PSI batch 4/6 answered
 [O] PSI batch 5/6 answered
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.5s)
-[O] Phase 1 done: 51 noised ciphertexts sent (0.9s)
+[O] Phase 0 done (14.2s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.3s)
 
 ====================================================================================================
-### calibrate n64000 eps=0.25   (rc=0, 0.8s)
+### calibrate n64000 eps=0.25   (rc=0, 0.7s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n64000 --eps 0.25 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 80000, 'n_O': 80000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1487,16 +1487,16 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n64000/dp_params.json
 
 ====================================================================================================
-### n64000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 17.9s)
+### n64000: eps=0.25 run_protocol.py (plaintext)   (rc=0, 17.6s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000 --backend plaintext --port 46040
 ====================================================================================================
 [R] n_R=80000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46040 — start party_o.py ...
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46040
-[R] O connected from ('127.0.0.1', 49774)
-[O] PSI preprocessing: D=31 alpha=1 (9.2s)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 54604)
+[O] PSI preprocessing: D=32 alpha=1 (9.1s)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [O] PSI batch 1/6 answered
 [R] PSI batch 1/6: total matched 11814
 [O] PSI batch 2/6 answered
@@ -1508,19 +1508,19 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [O] PSI batch 5/6 answered
 [R] PSI batch 5/6: total matched 58980
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.1s)
+[O] Phase 0 done (13.5s)
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.2s)
-[O] Phase 1 done: 51 noised ciphertexts sent (1.1s)
-[R] Phase 1 aggregates decrypted (1.1s)
-[R] sigma=404.1  O-block ridge ceiling rho<=2.06  -> Psi=O lambda=9611 rho_hat=2.00
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 543224.3928)
+[R] Phase 0 done: n=64000 matched (13.6s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.6s)
+[R] Phase 1 aggregates decrypted (0.5s)
+[R] sigma=404.1  O-block ridge ceiling rho<=2.06  -> Psi=O lambda=1.659e+04 rho_hat=2.01
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 543920.9048)
 
 === verification ===
   matched by PSI : 64000 / ground truth 64000 -> OK
-  backend=plaintext  sigma=404.1  Psi=O lambda=9611 rho_hat=2.00
-  ||private ridge  - beta_OLS|| = 1.3873   ||. - beta_true|| = 1.3885
-  ||bias-corrected - beta_OLS|| = 1.3947   ||. - beta_true|| = 1.3959
+  backend=plaintext  sigma=404.1  Psi=O lambda=1.659e+04 rho_hat=2.01
+  ||private ridge  - beta_OLS|| = 1.7521   ||. - beta_true|| = 1.7525
+  ||bias-corrected - beta_OLS|| = 1.7535   ||. - beta_true|| = 1.7540
   ||beta_OLS - beta_true|| = 0.0059  (sampling only)
 
 ====================================================================================================
@@ -1536,16 +1536,16 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n64000/dp_params.json
 
 ====================================================================================================
-### n64000: eps=0.5 run_protocol.py (plaintext)   (rc=0, 18.2s)
+### n64000: eps=0.5 run_protocol.py (plaintext)   (rc=0, 18.0s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000 --backend plaintext --port 46041
 ====================================================================================================
 [R] n_R=80000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46041 — start party_o.py ...
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46041
-[R] O connected from ('127.0.0.1', 55640)
-[O] PSI preprocessing: D=31 alpha=1 (9.7s)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 37084)
+[O] PSI preprocessing: D=32 alpha=1 (9.3s)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [O] PSI batch 1/6 answered
 [R] PSI batch 1/6: total matched 11814
 [O] PSI batch 2/6 answered
@@ -1557,23 +1557,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [O] PSI batch 5/6 answered
 [R] PSI batch 5/6: total matched 58980
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.4s)
+[O] Phase 0 done (14.1s)
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.5s)
-[O] Phase 1 done: 51 noised ciphertexts sent (1.2s)
-[R] Phase 1 aggregates decrypted (1.2s)
-[R] sigma=213.9  O-block ridge ceiling rho<=3.9  -> Psi=none lambda=0 rho_hat=3.38
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 543962.1431)
+[R] Phase 0 done: n=64000 matched (14.2s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.3s)
+[R] Phase 1 aggregates decrypted (0.3s)
+[R] sigma=213.9  O-block ridge ceiling rho<=3.9  -> Psi=O lambda=0.001 rho_hat=3.32
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 543569.2988)
 
 === verification ===
   matched by PSI : 64000 / ground truth 64000 -> OK
-  backend=plaintext  sigma=213.9  Psi=none lambda=0 rho_hat=3.38
-  ||private ridge  - beta_OLS|| = 0.3335   ||. - beta_true|| = 0.3358
-  ||bias-corrected - beta_OLS|| = 0.3394   ||. - beta_true|| = 0.3417
+  backend=plaintext  sigma=213.9  Psi=O lambda=0.001 rho_hat=3.32
+  ||private ridge  - beta_OLS|| = 0.1447   ||. - beta_true|| = 0.1426
+  ||bias-corrected - beta_OLS|| = 0.1292   ||. - beta_true|| = 0.1273
   ||beta_OLS - beta_true|| = 0.0059  (sampling only)
 
 ====================================================================================================
-### calibrate n64000 eps=1.0   (rc=0, 0.8s)
+### calibrate n64000 eps=1.0   (rc=0, 0.7s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n64000 --eps 1.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 80000, 'n_O': 80000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1592,9 +1592,9 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [R] listening on 127.0.0.1:46042 — start party_o.py ...
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46042
-[R] O connected from ('127.0.0.1', 60642)
-[O] PSI preprocessing: D=31 alpha=1 (9.2s)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 41818)
+[O] PSI preprocessing: D=32 alpha=1 (9.6s)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [O] PSI batch 1/6 answered
 [R] PSI batch 1/6: total matched 11814
 [O] PSI batch 2/6 answered
@@ -1606,23 +1606,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [O] PSI batch 5/6 answered
 [R] PSI batch 5/6: total matched 58980
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.1s)
+[O] Phase 0 done (14.2s)
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.3s)
-[O] Phase 1 done: 51 noised ciphertexts sent (1.2s)
-[R] Phase 1 aggregates decrypted (1.3s)
-[R] sigma=113.5  O-block ridge ceiling rho<=7.35  -> Psi=none lambda=0 rho_hat=6.73
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 543576.9297)
+[R] Phase 0 done: n=64000 matched (14.3s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.4s)
+[R] Phase 1 aggregates decrypted (0.4s)
+[R] sigma=113.5  O-block ridge ceiling rho<=7.35  -> Psi=O lambda=0.001 rho_hat=6.71
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 543658.2111)
 
 === verification ===
   matched by PSI : 64000 / ground truth 64000 -> OK
-  backend=plaintext  sigma=113.5  Psi=none lambda=0 rho_hat=6.73
-  ||private ridge  - beta_OLS|| = 0.1546   ||. - beta_true|| = 0.1517
-  ||bias-corrected - beta_OLS|| = 0.1501   ||. - beta_true|| = 0.1472
+  backend=plaintext  sigma=113.5  Psi=O lambda=0.001 rho_hat=6.71
+  ||private ridge  - beta_OLS|| = 0.1288   ||. - beta_true|| = 0.1305
+  ||bias-corrected - beta_OLS|| = 0.1282   ||. - beta_true|| = 0.1300
   ||beta_OLS - beta_true|| = 0.0059  (sampling only)
 
 ====================================================================================================
-### calibrate n64000 eps=2.0   (rc=0, 0.8s)
+### calibrate n64000 eps=2.0   (rc=0, 0.7s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n64000 --eps 2.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 80000, 'n_O': 80000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1641,9 +1641,9 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [R] listening on 127.0.0.1:46043 — start party_o.py ...
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46043
-[R] O connected from ('127.0.0.1', 42310)
-[O] PSI preprocessing: D=31 alpha=1 (9.1s)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 43308)
+[O] PSI preprocessing: D=32 alpha=1 (9.2s)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [O] PSI batch 1/6 answered
 [R] PSI batch 1/6: total matched 11814
 [O] PSI batch 2/6 answered
@@ -1655,23 +1655,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [O] PSI batch 5/6 answered
 [R] PSI batch 5/6: total matched 58980
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.0s)
+[O] Phase 0 done (13.7s)
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.1s)
-[O] Phase 1 done: 51 noised ciphertexts sent (1.0s)
-[R] Phase 1 aggregates decrypted (1.0s)
-[R] sigma=60.64  O-block ridge ceiling rho<=13.8  -> Psi=none lambda=0 rho_hat=13.15
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 543638.8033)
+[R] Phase 0 done: n=64000 matched (13.8s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.3s)
+[R] Phase 1 aggregates decrypted (0.3s)
+[R] sigma=60.64  O-block ridge ceiling rho<=13.8  -> Psi=O lambda=0.001 rho_hat=13.38
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 543738.0438)
 
 === verification ===
   matched by PSI : 64000 / ground truth 64000 -> OK
-  backend=plaintext  sigma=60.64  Psi=none lambda=0 rho_hat=13.15
-  ||private ridge  - beta_OLS|| = 0.1331   ||. - beta_true|| = 0.1323
-  ||bias-corrected - beta_OLS|| = 0.1345   ||. - beta_true|| = 0.1337
+  backend=plaintext  sigma=60.64  Psi=O lambda=0.001 rho_hat=13.38
+  ||private ridge  - beta_OLS|| = 0.0820   ||. - beta_true|| = 0.0807
+  ||bias-corrected - beta_OLS|| = 0.0809   ||. - beta_true|| = 0.0797
   ||beta_OLS - beta_true|| = 0.0059  (sampling only)
 
 ====================================================================================================
-### calibrate n64000 eps=4.0   (rc=0, 0.8s)
+### calibrate n64000 eps=4.0   (rc=0, 0.7s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n64000 --eps 4.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 80000, 'n_O': 80000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1683,16 +1683,16 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n64000/dp_params.json
 
 ====================================================================================================
-### n64000: eps=4.0 run_protocol.py (plaintext)   (rc=0, 18.2s)
+### n64000: eps=4.0 run_protocol.py (plaintext)   (rc=0, 18.1s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000 --backend plaintext --port 46044
 ====================================================================================================
 [R] n_R=80000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46044 — start party_o.py ...
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46044
-[R] O connected from ('127.0.0.1', 55870)
-[O] PSI preprocessing: D=31 alpha=1 (9.6s)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 41216)
+[O] PSI preprocessing: D=32 alpha=1 (9.3s)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [O] PSI batch 1/6 answered
 [R] PSI batch 1/6: total matched 11814
 [O] PSI batch 2/6 answered
@@ -1704,23 +1704,23 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [O] PSI batch 5/6 answered
 [R] PSI batch 5/6: total matched 58980
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.5s)
+[O] Phase 0 done (14.2s)
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.6s)
-[O] Phase 1 done: 51 noised ciphertexts sent (1.1s)
-[R] Phase 1 aggregates decrypted (1.1s)
-[R] sigma=32.88  O-block ridge ceiling rho<=25.4  -> Psi=none lambda=0 rho_hat=24.93
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 543677.7541)
+[R] Phase 0 done: n=64000 matched (14.3s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.3s)
+[R] Phase 1 aggregates decrypted (0.3s)
+[R] sigma=32.88  O-block ridge ceiling rho<=25.4  -> Psi=O lambda=0.001 rho_hat=24.82
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 543662.6227)
 
 === verification ===
   matched by PSI : 64000 / ground truth 64000 -> OK
-  backend=plaintext  sigma=32.88  Psi=none lambda=0 rho_hat=24.93
-  ||private ridge  - beta_OLS|| = 0.0445   ||. - beta_true|| = 0.0426
-  ||bias-corrected - beta_OLS|| = 0.0445   ||. - beta_true|| = 0.0426
+  backend=plaintext  sigma=32.88  Psi=O lambda=0.001 rho_hat=24.82
+  ||private ridge  - beta_OLS|| = 0.0471   ||. - beta_true|| = 0.0482
+  ||bias-corrected - beta_OLS|| = 0.0468   ||. - beta_true|| = 0.0480
   ||beta_OLS - beta_true|| = 0.0059  (sampling only)
 
 ====================================================================================================
-### calibrate n64000 eps=8.0   (rc=0, 0.8s)
+### calibrate n64000 eps=8.0   (rc=0, 0.7s)
 $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_work/data/n64000 --eps 8.0 --delta 1e-05 --B_R 2.23606797749979 --B_O 2.23606797749979 --B_y 5.0 --standardize none
 ====================================================================================================
 [calib] dims {'n_R': 80000, 'n_O': 80000, 'd_R': 5, 'd_O': 5, 'p': 10}
@@ -1732,16 +1732,16 @@ $ /usr/local/bin/python calibrate_hyperparameters.py --data_dir experiments/_wor
 [calib] wrote /home/user/VerticalFederatedRegression/experiments/_work/data/n64000/dp_params.json
 
 ====================================================================================================
-### n64000: eps=8.0 run_protocol.py (plaintext)   (rc=0, 18.1s)
+### n64000: eps=8.0 run_protocol.py (plaintext)   (rc=0, 18.0s)
 $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000 --backend plaintext --port 46045
 ====================================================================================================
 [R] n_R=80000 d_R=5  clip rate X_R=0.000%
 [R] listening on 127.0.0.1:46045 — start party_o.py ...
 [O] n_O=80000  clip rates: X_O=0.000%  y=0.320%
 [O] connected to R at 127.0.0.1:46045
-[R] O connected from ('127.0.0.1', 44952)
-[O] PSI preprocessing: D=31 alpha=1 (9.6s)
-[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=31
+[R] O connected from ('127.0.0.1', 45526)
+[O] PSI preprocessing: D=32 alpha=1 (9.3s)
+[R] cuckoo: 6 batch(es); O will send 1 partition(s), D=32
 [O] PSI batch 1/6 answered
 [R] PSI batch 1/6: total matched 11814
 [O] PSI batch 2/6 answered
@@ -1753,17 +1753,17 @@ $ /usr/local/bin/python run_protocol.py --data_dir experiments/_work/data/n64000
 [O] PSI batch 5/6 answered
 [R] PSI batch 5/6: total matched 58980
 [O] PSI batch 6/6 answered
-[O] Phase 0 done (13.6s)
+[O] Phase 0 done (14.0s)
 [R] PSI batch 6/6: total matched 64000
-[R] Phase 0 done: n=64000 matched (13.7s)
-[O] Phase 1 done: 51 noised ciphertexts sent (0.8s)
-[R] Phase 1 aggregates decrypted (0.9s)
-[R] sigma=18.26  O-block ridge ceiling rho<=45.7  -> Psi=none lambda=0 rho_hat=45.10
-[R] wrote beta_private.csv and run_summary.json  (y^T y = 543689.0866)
+[R] Phase 0 done: n=64000 matched (14.1s)
+[O] Phase 1 done: 51 noised ciphertexts sent (0.3s)
+[R] Phase 1 aggregates decrypted (0.3s)
+[R] sigma=18.26  O-block ridge ceiling rho<=45.7  -> Psi=O lambda=0.001 rho_hat=45.02
+[R] wrote beta_private.csv and run_summary.json  (y^T y = 543645.7167)
 
 === verification ===
   matched by PSI : 64000 / ground truth 64000 -> OK
-  backend=plaintext  sigma=18.26  Psi=none lambda=0 rho_hat=45.10
-  ||private ridge  - beta_OLS|| = 0.0421   ||. - beta_true|| = 0.0404
-  ||bias-corrected - beta_OLS|| = 0.0420   ||. - beta_true|| = 0.0403
+  backend=plaintext  sigma=18.26  Psi=O lambda=0.001 rho_hat=45.02
+  ||private ridge  - beta_OLS|| = 0.0276   ||. - beta_true|| = 0.0298
+  ||bias-corrected - beta_OLS|| = 0.0278   ||. - beta_true|| = 0.0299
   ||beta_OLS - beta_true|| = 0.0059  (sampling only)
