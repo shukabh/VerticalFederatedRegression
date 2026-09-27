@@ -16,6 +16,8 @@ with TenSEAL 0.3.18 / SEAL and numpy.
 
 ---
 
+> **Update after the original modules were provided:** C2 and C11 do not apply to the user's `he_backend.py`. Under OpenFHE every returned slot holds total + noise, and OpenFHE enforces 128-bit parameters. See `../code_review.md` ("The three imported modules") and `../checks/originals/`.
+
 ## Executive summary
 
 The protocol's *statistical* privacy story (DP on the O-dependent Gram/moment blocks) is

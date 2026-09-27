@@ -7,12 +7,10 @@ Files reviewed (user's originals, unmodified, in `scenario_b/`):
 `party_r.py`, `party_o.py`, `run_protocol.py`, `calibrate_hyperparameters.py`,
 `generate_vfl_data.py`.
 
-**Not reviewed: they were not provided.** `psi_common.py` (cuckoo hashing, binning,
-polynomial interpolation, hash-to-field), `phase1_common.py` (noise draw, assembly,
-the ρ gate, the bias correction) and `he_backend.py` (OpenFHE wrapper). These hold
-most of the mathematics. The stand-ins in `scenario_b/` were written from the call
-sites so that the pipeline can run. They are **not** the user's code, so any result
-that depends on them reflects the stand-in, not the original.
+The three modules the scripts import (`psi_common.py`, `phase1_common.py`,
+`he_backend.py`) arrived after the first pass. They are reviewed in the section
+[The three imported modules](#the-three-imported-modules). The findings table below
+comes from the first pass; rows that the originals settle are marked.
 
 ## Verdict
 
@@ -46,10 +44,10 @@ The problems are listed below, most serious first.
 | 2 | **High** (privacy) | `calibrate_hyperparameters.py:243-245, 248, 64-83, 257-274, 299-316` | **Calibration needs a party that sees both datasets, and it leaks what it computes.** `calibrate()` loads `X_R`, `X_O` and `y_O` in one process. It then writes data-derived values into `dp_params.json`, which *both* parties read: 0.99-quantile bounds, clip rates, and standardization centers and scales. So R receives statistics of O's data outside the DP budget, and O receives R's feature means and SDs. Separately, `--scale_source committed` offers no way to pass the constants: `_pick(None, computed)` quietly falls back to the data values while setting `dp_valid=True`, which also suppresses the warning. **Fix:** split calibration by party. R commits `B_R` and its own scaling; O commits `B_O`, `B_y` and σ. Share only those public constants. |
 | 3 | **High** (validity; paper and stand-in) | paper Thm 2 + Remark 4; `party_r.py:137` (`mode="auto"`) | **Choosing λ and Ψ from the noisy Gram breaks the "unbiased through O(σ⁴)" claim.** Theorem 2 assumes `λΨ` is fixed in advance. The gate picks λ from `λ_min(G̃)`, which depends on `E` at first order, so it adds an O(σ²) bias that the correction does not remove. In Monte Carlo (ρ≈2, `reports/checks/theorem1_and_adaptive_ridge_check.py`), fixed λ leaves a residual of about 5e-4 after correction. The adaptive gate leaves about 7e-2, **3–5× larger than the bias being corrected**. This only matters when the ridge is active; when λ=0 with high probability there's no issue. **Fix:** choose λ from quantities that don't depend on the noise. For example, use the certificate `λ = ρ_target·2σ√p` (already computed in calibration) for full ridge, or anything based only on `A`, σ and p. Alternatively, extend Theorem 2 to cover a λ that depends on the data. |
 | 4 | Medium (privacy) | `party_o.py:42-45, 69` | **O never permutes its own records.** PSI labels are O's row indices in file order, and R learns each matched person's index (`party_r.py:94`). If O's file is sorted by region, registration date or ID, the index reveals that attribute. Appendix B requires a secret permutation τ, but here only the data generator shuffles. **Fix:** O shuffles `(ids_O, X_O, y_O)` with a secret permutation right after loading. |
-| 5 | Medium (security; depends on `he_backend.py`) | `party_o.py:94-96, 112-131` | **Circuit privacy.** R holds the secret key and decrypts ciphertexts that O computed from its plaintext data. Nothing visible floods the noise or reduces to the last modulus level. The DP noise goes into the *message*, not the RLWE error. The crypto-layer report covers what this can leak. Also check that `inner_product` replicates the total into every slot. If other slots hold partial sums, then differences between adjacent slots expose single records, and the DP noise cancels out. |
+| 5 | Medium (security; depends on `he_backend.py`) | `party_o.py:94-96, 112-131` | **Circuit privacy.** R holds the secret key and decrypts ciphertexts that O computed from its plaintext data. Nothing visible floods the noise or reduces to the last modulus level. The DP noise goes into the *message*, not the RLWE error. The crypto-layer report covers what this can leak. **Slot layout, settled by the original `he_backend`:** under OpenFHE, `EvalInnerProduct` followed by `EvalAdd` leaves total + z in every slot (max deviation 2e-10, `checks/originals/check_slots.py`), so slot subtraction reveals nothing. The plaintext backend writes only slot 0. Circuit privacy (no flooding) still applies. |
 | 6 | Medium (scalability) | `party_r.py:112-113`; `calibrate_hyperparameters.py:288-289` | **`n_O` is limited to one CKKS ciphertext.** OpenFHE allows at most 65,536 slots. A national agency's `n_O` is in the millions. `n_chunks` is dead code: `batch` is always ≥ `n_O`, so it is always 1. **Fix:** split each column into chunks and add up the per-chunk inner products. |
 | 7 | Low (bug) | `party_o.py:87-91` | **Labels are lost when D == 1.** `ctL` becomes `Enc(0)` and the constant label `L_layers[a][0]` is never added, so every match decodes to O-row 0. This happens only for tiny `n_O`, where no bin has two items. **Fix:** `ctL = bfv.add_pt(bfv.mul_pt(powers[1], [0]*NB), L_layers[a][0])`. |
-| 8 | Low (tests) | `run_protocol.py:32-33`; `party_r.py:140` | **The verification only checks the match count, not the alignment.** A labeling error that gets the count right would pass. There is also no noise-free exactness test. σ=0 makes the ceiling at `party_r.py:140` `inf` (numpy RuntimeWarning, not an exception); whether `solve_and_correct` copes with σ=0 depends on the original `phase1_common`. With `center_scale`, the intercept model's slopes are compared with no-intercept OLS. |
+| 8 | Low (tests) | `run_protocol.py:32-33`; `party_r.py:140` | **The verification only checks the match count, not the alignment.** A labeling error that gets the count right would pass. There is also no noise-free exactness test. σ=0 makes the ceiling at `party_r.py:140` `inf` (a numpy RuntimeWarning, not an exception). The original `phase1_common` handles σ≤0 (no ridge, no correction), so a noise-free run works. With `center_scale`, the intercept model's slopes are compared with no-intercept OLS. |
 | 9 | Low (security) | `party_o.py:77, 92-93, 110` | The PSI masks and the DP noise use numpy PCG64, which is not a CSPRNG, and the Gaussian is floating-point (Mironov 2012). The draft already lists the latter as item (iv). Use `secrets` for the masks and a discrete or snapped Gaussian for the noise. |
 | 10 | Low (security) | `party_r.py:75, 89, 119`; `party_o.py:65, 79, 103, 106` | `pickle.loads` runs on bytes received from the peer, which allows arbitrary code execution, and the channel is unauthenticated with no TLS. The adversarial report covers this. |
 | 11 | Low | `party_o.py:74` | O sends R `alpha` and `D`, which depend on how O's IDs fall into bins. Fix both from public parameters (`d_cap` and `n_O`). |
@@ -96,3 +94,43 @@ The problems are listed below, most serious first.
 5. **Eq. (6) and the symmetric B block.** It uses the full Frobenius norm of `ΔB`,
    although only the upper triangle is released. That is conservative, and it
    partly offsets finding 1.
+
+## The three imported modules
+
+All three are checked against the draft. The scripts for the checks are in `reports/checks/originals/`.
+
+### Verified correct
+- **`phase1_common._bias_operator`** equals the Theorem 1/2 bracket, including the
+  single-draw `−P diag(P) Π_O` term. It matches the exact second moment of the masked
+  mechanism.
+- **`draw_noise`** matches eq. (8): the upper triangle of `B`, diagonal included, is iid
+  N(0,σ²) and mirrored; `C`, `c_R`, `c_O` and `yᵀy` are iid; `A` gets no noise.
+- **`assemble`** puts R's block first.
+- **`solve_and_correct`** handles σ≤0.
+- **CKKS slots** (`he_backend.py:244-249`). OpenFHE `EvalInnerProduct` over the context's
+  batch size, followed by `EvalAdd(ct, z)`, leaves the same `total + z` in every slot:
+  - n_O=12 / batch 16: max deviation 7e-13;
+  - n_O=3000 / batch 4096: max deviation 2e-10.
+
+  So R has no slot to subtract, and the crypto report's C2 (and the DP report's D6
+  slot case) does not occur. `_PlainCKKS` writes only slot 0.
+- **Parameter security.** OpenFHE defaults to `HEStd_128_classic` and enforces it.
+  Depth-4 BFV at ring 16384 used log₂Q of 300 / 360 / 420 bits for t ≈ 2^29 / 2^48 /
+  2^59, all within the 438-bit limit. A request for depth 8 at ring 16384 was refused,
+  and without a fixed ring OpenFHE moved to 32768. CKKS lets OpenFHE choose the ring.
+  The crypto report's C11 does not apply.
+- **PSI construction.** Chen–Laine–Rindal labeled PSI with SHA-256 bin hashes, dummy-root
+  padding to degree D, and Lagrange labels, with a guard against duplicate nodes.
+  `bin_and_interpolate` states that labels are CSV row indices and that "in production O
+  would apply tau here", which confirms finding 4.
+
+### New findings
+
+| # | Severity | Where | Finding |
+|---|---|---|---|
+| M1 | Medium (validity) | `phase1_common.py:124-160` | **The O-block ridge breaks down near its ceiling.** `select_ridge` chooses Ψ = Π_O whenever `λ_min(A)/(2σ√p) ≥ target`. As the ceiling approaches the target, the λ that O-block ridge needs grows without bound, because `λ_min(G+λΠ_O) → λ_min(A)` only as λ → ∞. If the target is never reached, `auto_lambda` silently returns its cap of 1e12. In `check_ceiling.py`, with the ceiling equal to the target, λ = 2.1e9 and `‖β_O‖` shrinks to 0.000 of OLS, where full ridge (λ = 25) would keep 0.94 of it (R block 0.95). With the ceiling at 1.01× the target, O-block ridge keeps 0.86 against full ridge's 0.94. **Fix:** prefer Π_O only with a margin (e.g. ceiling ≥ 1.25× target), or pick whichever Ψ shrinks the coefficients less. Make `auto_lambda` raise instead of returning the cap. |
+| M2 | Low (bug) | `psi_common.py:38, 88-96, 247-250` | **`DUMMY_ROOT` is fixed from `PLAIN_MODULUS`, not from the calibrated t.** The protocol runs mod t from `calibrate_hyperparameters.psi_plaintext_modulus` (366,379,009 for the base config), so `DUMMY_ROOT mod t` lies inside the range of `id_to_field`, and the "fix folded in" no longer holds. Any R identifier that hashes to that value matches every padded bin, with a made-up label (`check_dummy_root.py` shows P(y)=0 for an ID not in O). The probability per R identifier is 1/(t−1), which for n_R = 500 is 1.4e-6: that alone exceeds the whole δ_psi = 1e-6 budget. Out-of-range labels are dropped by `party_r.py:99`. An in-range label, or one hit before the true partition when α > 1, misaligns a record. **Fix:** use `DUMMY_ROOT = p − 1` inside `bin_and_interpolate`. |
+| M3 | Low | `phase1_common.py:124-133` | `auto_lambda` searches a geometric grid (×1.5 from 1e-3). The chosen λ can exceed the smallest valid one by up to 50%, which adds shrinkage, and λ is never 0. Use bisection, or the closed form `λ = target·2σ√p − λ_min(G̃)` for Ψ = I. |
+| M4 | Low | `phase1_common.py:49-53` | `joint_sensitivity_B` duplicates eq. (6), so finding 1 lives in two places. `sigma_gaussian` (the classical bound) is unused by the parties, which use the analytic σ from calibration. |
+| M5 | Low (security) | `he_backend.py:61, 85, 110, 164, 189, 216`; `psi_common.py:62-66` | More `pickle.loads` on peer data: O unpickles R's public blob, and the plaintext backend unpickles ciphertexts. `recv_msg` returns `None` on EOF, which the callers then pass to `pickle.loads`. |
+| M6 | Info | `psi_common.py:1-15, 30-33` | The header and the constants (`COEFF_MOD_BITS`, TenSEAL mentions) are stale. `PLAIN_MODULUS` now only feeds `DUMMY_ROOT` (M2). |

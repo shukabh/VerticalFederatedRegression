@@ -22,7 +22,7 @@ The threat model is **honest-but-curious**.
 | Path | What it is |
 |---|---|
 | `scenario_b/party_r.py`, `party_o.py`, `run_protocol.py`, `calibrate_hyperparameters.py`, `generate_vfl_data.py` | Protocol code, unmodified. |
-| `scenario_b/psi_common.py`, `phase1_common.py`, `he_backend.py` | **Stand-ins** rebuilt from the call sites, because the original modules were not available. Replace them with the originals. |
+| `scenario_b/psi_common.py`, `phase1_common.py`, `he_backend.py` | Imported modules: PSI primitives, the Phase-1 maths (noise, ridge gate, bias correction), and the plaintext/OpenFHE backends. |
 | `scenario_b/prepare_data.py` | Adapter: runs the generator and writes the `y_O.csv` the parties read. |
 | `experiments/accuracy_study.py` | Accuracy comparison: true β, OLS on the true matches, plaintext linkage + OLS, and the private protocol across ε and n. |
 | `tests/test_standins.py` | Tests for the stand-ins: PSI labels, the ρ gate, the bias operator, the noise structure. |

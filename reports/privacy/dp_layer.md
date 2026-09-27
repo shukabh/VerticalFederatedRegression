@@ -10,6 +10,8 @@
 
 ---
 
+> **Update after the original modules were provided:** D6 (slot case) does not apply to the user's `he_backend.py`. Under OpenFHE every returned slot holds total + noise, and OpenFHE enforces 128-bit parameters. See `../code_review.md` ("The three imported modules") and `../checks/originals/`.
+
 ## Executive summary
 
 - **A curious R, and a curious O, read the other side's raw-data statistics straight from `dp_params.json` (D1).** `calibrate_hyperparameters.py` reads both parties' raw data in one process and writes exact data statistics into the one file both parties load:
