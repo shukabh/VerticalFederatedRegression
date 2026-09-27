@@ -1,0 +1,41 @@
+=== 1. exact algorithm vs assumption-free brute force (layout: triu B, C, c_R, c_O, y'y)
+  B_R,B_O,B_y=(1.0, 1.0, 1.0)              brute=     10.0000 exact=     10.0000  eq6=      5.0000  ratio Delta_rep/Delta_6=1.4142
+  B_R,B_O,B_y=(3.0, 3.0, 3.0)              brute=    810.0000 exact=    810.0000  eq6=    405.0000  ratio Delta_rep/Delta_6=1.4142
+  B_R,B_O,B_y=(3.0, 3.0, 20.0)             brute= 167578.4181 exact= 167578.4181  eq6= 167362.0000  ratio Delta_rep/Delta_6=1.0006
+  B_R,B_O,B_y=(5.0, 1.0, 1.0)              brute=    200.0000 exact=    200.0000  eq6=     53.0000  ratio Delta_rep/Delta_6=1.9426
+  B_R,B_O,B_y=(1.0, 1.0, 5.0)              brute=    679.6761 exact=    679.6761  eq6=    677.0000  ratio Delta_rep/Delta_6=1.0020
+  B_R,B_O,B_y=(2.0, 1.0, 1.0)              brute=     32.0000 exact=     32.0000  eq6=     11.0000  ratio Delta_rep/Delta_6=1.7056
+  B_R,B_O,B_y=(1.0, 3.0, 1.0)              brute=    202.0000 exact=    202.0000  eq6=    101.0000  ratio Delta_rep/Delta_6=1.4142
+  B_R,B_O,B_y=(3.317, 3.873, 3.4)          brute=   1635.5968 exact=   1635.5968  eq6=    824.1936  ratio Delta_rep/Delta_6=1.4087
+  B_R,B_O,B_y=(3.28, 8.502, 5.556)         brute=  17998.5953 exact=  17998.5953  eq6=   9518.9883  ratio Delta_rep/Delta_6=1.3751
+  B_R,B_O,B_y=(0.809, 1.052, 7.826)        brute=   3863.1575 exact=   3863.1575  eq6=   3860.9215  ratio Delta_rep/Delta_6=1.0003
+  B_R,B_O,B_y=(0.375, 6.516, 5.988)        brute=   7320.0953 exact=   7320.0953  eq6=   4621.7689  ratio Delta_rep/Delta_6=1.2585
+  B_R,B_O,B_y=(1.892, 1.062, 0.975)        brute=     29.7609 exact=     29.7609  eq6=     10.6881  ratio Delta_rep/Delta_6=1.6687
+  max relative excess brute over exact: 0.00e+00  (<=0 means exact is the sup)
+
+=== 2. regime closed forms vs exact on a random grid
+  balanced formula exact in 8651/8651 draws of its regime
+  R-dominant formula exact in 5690/5690 draws of its regime
+  eq6 <= Delta_rep^2 <= min(4*eq6, rot-relaxed bound): held on all 20000 draws
+
+=== 3. representative bounds: sigma inflation and effective eps of the code's sigma
+  delta=1e-05
+  case                                                     D6     Drep  ratio | eps_claimed -> eps_actual (Def.4)
+  normalised, all bounds 1                              2.236    3.162  1.414 | 0.5->0.73  1->1.47  4->5.99  8->12.26
+  docstring example (3,3,20)                          409.099  409.363  1.001 | 0.5->0.50  1->1.00  4->4.00  8->8.01
+  generator data raw U[0,1], d_R=10,d_O=15             32.109   43.451  1.353 | 0.5->0.70  1->1.40  4->5.69  8->11.60
+  std+intercept d_R=10,d_O=15 (B_R=sqrt(1+4.1^2))      36.503   53.623  1.469 | 0.5->0.76  1->1.53  4->6.27  8->12.86
+  R-heavy std d_R=50,d_O=5 (+intercept)                37.899   69.757  1.841 | 0.5->0.97  1->1.96  4->8.21  8->17.16
+  same, no intercept                                   37.674   69.268  1.839 | 0.5->0.97  1->1.96  4->8.20  8->17.13
+
+=== 4. intercept: code sets B_R = sqrt(1 + B_R_rows^2); effect on ratio for B_O=B_y=1
+  B_R_rows=0.0  B_R=1.000  Delta_6=2.236  Delta_rep=3.162  ratio=1.414
+  B_R_rows=0.5  B_R=1.118  Delta_6=2.345  Delta_rep=3.396  ratio=1.448
+  B_R_rows=1.0  B_R=1.414  Delta_6=2.646  Delta_rep=4.062  ratio=1.535
+  B_R_rows=2.0  B_R=2.236  Delta_6=3.606  Delta_rep=6.325  ratio=1.754
+  B_R_rows=4.0  B_R=4.123  Delta_6=6.083  Delta_rep=11.662  ratio=1.917
+
+=== 5. range of Delta_rep/Delta_6 per regime (20000 random bound triples, log-uniform)
+  balanced  : n= 8174  min=1.070  median=1.414  max=1.650
+  R-dominant: n= 5985  min=1.416  median=1.945  max=2.000
+  y-dominant: n= 5841  min=1.000  median=1.001  max=1.412

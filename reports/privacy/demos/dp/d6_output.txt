@@ -1,0 +1,16 @@
+=== 1. bounds COMMITTED (B_R=B_O=B_y=3), standardize=none  -> the 'DP-valid' configuration
+  differs between neighbours: dp.bounds_suggested_from_quantile.B_y        3.8651883626273853 ->     3.8761368751329712
+  differs between neighbours: dp.clip_rate.y                                           0.0495 ->                   0.05
+  bounds_committed=True: R reads O's exact count of |y|>B_y: 99 people (incl. UNMATCHED ones); O reads R's clip rate 4.667% and 0.99-quantile of ||x_R|| 3.3323
+
+=== 2. bounds NOT committed (documented 'suggest, then commit' workflow)
+  B_y   : D=3.865188  D'=3.876137   (public sigma itself is a function of the data)
+  Delta2: D=28.875260  D'=28.952691   (public sigma itself is a function of the data)
+  sigma : D=107.722957  D'=108.011827   (public sigma itself is a function of the data)
+
+=== 3. standardize=center_scale, --scale_source committed (no way to pass constants)
+  dp_valid=True (warning suppressed)   center_y=0.071997910755  mean(y_O)=0.071997910755
+  R recovers the neighbour's change exactly: n_O*(center_y'-center_y) = 7.2050708019;  true y'-y = 7.2050708019
+
+=== 4. next data cycle adds ONE person to O's register; calibration re-run
+  y_new recovered = 1.234568 (true 1.2345678);  max |x_O,new error| = 4.2e-15

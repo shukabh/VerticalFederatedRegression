@@ -1,0 +1,8 @@
+sigma=8.342 (eps=1, bounds 1), grid gamma=0.00390625, CKKS error SD=1e-10
+  continuous Gaussian (current code)        : exact recovery of all 16 y_i in 0/20 trials; consistent candidates per trial: median 0
+  discrete Gaussian on grid, s not snapped  : exact recovery of all 16 y_i in 14/20 trials; consistent candidates per trial: median 1
+
+float granularity (for Mironov / Jin et al. 2022 style attacks on the float64 sampler):
+  ulp of a released value ~100: 1.4e-14; ~1000: 1.1e-13
+  CKKS decryption error at scale 2^50, depth 2 is typically 1e-12..1e-8 -> float artefacts are masked
+  under the openfhe backend but NOT under --backend plaintext (run_protocol.py's default).

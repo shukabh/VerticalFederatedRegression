@@ -15,6 +15,21 @@ A3_psi_enumeration, A4_malicious_O_integrity}.py` (pure-numpy local simulations 
 exact Phase-4 arithmetic; no networking, no crypto, no exploit code against anything
 outside the simulation).
 
+> **Scope note (added after the user confirmed the threat model is honest-but-curious).**
+> Under that model, A1, A2, A5, A6, A7 and A8 are **out of scope**: each needs a party to
+> send inputs or outputs that the protocol does not prescribe. They are kept here as a
+> record of what the semi-honest assumption rules out.
+> Items that still apply to an honest-but-curious deployment:
+> - **A4** — honest re-runs or retraining compose, and nothing tracks the budget.
+> - **A3** (partly) — the PSI reveals which of R's legitimate cohort appear in O's data.
+>   Def. 4 accepts this, but it matters when membership itself is sensitive.
+> - **A11** — calibration reads both datasets and shares data-derived values.
+> - **A12** — oracle files and logs on disk.
+> - **A14** — weak RNG.
+>
+> A9, A10 and A13 (pickle, TLS, DoS) are engineering hygiene, outside the cryptographic model.
+> `reports/privacy/README.md` has the consolidated in-scope list.
+
 ---
 
 ## Executive summary

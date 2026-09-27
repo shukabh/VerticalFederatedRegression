@@ -1,0 +1,59 @@
+=== 0. per-record noise-to-signal (typical record vs noise, per block), d_R=20, d_O=5
+  eps=0.5 sigma= 242.34 | NSR c_R= 302.9  C= 242.3  B= 187.7  -> one record is 0.003 noise-SDs in c_R
+  eps=1.0 sigma= 128.57 | NSR c_R= 160.7  C= 128.6  B=  99.6  -> one record is 0.006 noise-SDs in c_R
+  eps=4.0 sigma=  37.26 | NSR c_R=  46.6  C=  37.3  B=  28.9  -> one record is 0.021 noise-SDs in c_R
+  eps=8.0 sigma=  20.69 | NSR c_R=  25.9  C=  20.7  B=  16.0  -> one record is 0.039 noise-SDs in c_R
+
+=== 1. targeted worst case: R gives the target a dedicated column (x_R,i = B_R e_j)
+     c_R[j] = B_R*y_i + N(0,sigma^2), C[j,:] = B_R*x_O,i + noise  (per-coordinate SD sigma/B_R)
+  d_R=20,d_O=5             cont. y : eps=0.5: postSD/priorSD=1.000  eps=1: postSD/priorSD=0.999  eps=4: postSD/priorSD=0.987  eps=8: postSD/priorSD=0.959
+  d_R=20,d_O=5             binary y: eps=0.5: acc=0.506  eps=1: acc=0.511  eps=4: acc=0.539  eps=8: acc=0.570
+  d_R=50,d_O=5 (R-heavy)   cont. y : eps=0.5: postSD/priorSD=1.000  eps=1: postSD/priorSD=0.999  eps=4: postSD/priorSD=0.984  eps=8: postSD/priorSD=0.952
+  d_R=50,d_O=5 (R-heavy)   binary y: eps=0.5: acc=0.506  eps=1: acc=0.512  eps=4: acc=0.542  eps=8: acc=0.575
+  d_R=10,d_O=15            cont. y : eps=0.5: postSD/priorSD=1.000  eps=1: postSD/priorSD=1.000  eps=4: postSD/priorSD=0.995  eps=8: postSD/priorSD=0.985
+  d_R=10,d_O=15            binary y: eps=0.5: acc=0.503  eps=1: acc=0.506  eps=4: acc=0.522  eps=8: acc=0.539
+  d_R=20,d_O=1 (few controls) cont. y : eps=0.5: postSD/priorSD=0.999  eps=1: postSD/priorSD=0.998  eps=4: postSD/priorSD=0.975  eps=8: postSD/priorSD=0.926
+  d_R=20,d_O=1 (few controls) binary y: eps=0.5: acc=0.509  eps=1: acc=0.518  eps=4: acc=0.561  eps=8: acc=0.609
+  d_R=50,d_O=1 (few controls) cont. y : eps=0.5: postSD/priorSD=0.999  eps=1: postSD/priorSD=0.998  eps=4: postSD/priorSD=0.973  eps=8: postSD/priorSD=0.919
+  d_R=50,d_O=1 (few controls) binary y: eps=0.5: acc=0.510  eps=1: acc=0.519  eps=4: acc=0.564  eps=8: acc=0.614
+
+=== 2. whole-cohort reconstruction, continuous y (R^2 of y and of X_O; 0 = nothing learned)
+     n  d_R  d_O  eps   sigma mu_claim  mu_true   R2(y)  R2(X_O)
+    20   20    5  0.5  242.34    0.142    0.236  -0.000    0.001
+    20   20    5  1.0  128.57    0.268    0.444   0.002    0.001
+    20   20    5  4.0   37.26    0.925    1.533   0.011    0.014
+    20   20    5  8.0   20.69    1.666    2.762   0.042    0.041
+    50   50    5  0.5  316.51    0.142    0.257   0.000    0.000
+    50   50    5  1.0  167.92    0.268    0.484   0.002    0.002
+    50   50    5  4.0   48.66    0.925    1.672   0.016    0.021
+    50   50    5  8.0   27.02    1.666    3.011   0.054    0.058
+    50   10    5  0.5  208.11    0.142    0.221   0.000    0.000
+    50   10    5  1.0  110.41    0.268    0.416   0.001    0.001
+    50   10    5  4.0   32.00    0.925    1.435   0.011    0.008
+    50   10    5  8.0   17.76    1.666    2.585   0.026    0.024
+   200   20    5  0.5  242.34    0.142    0.236   0.001    0.000
+   200   20    5  1.0  128.57    0.268    0.444   0.001    0.001
+   200   20    5  4.0   37.26    0.925    1.533   0.013    0.012
+   200   20    5  8.0   20.69    1.666    2.762   0.032    0.031
+    20   20    1  0.5  176.58    0.142    0.253   0.000    0.000
+    20   20    1  1.0   93.68    0.268    0.477   0.002    0.002
+    20   20    1  4.0   27.15    0.925    1.645   0.018    0.018
+    20   20    1  8.0   15.07    1.666    2.963   0.064    0.079
+    50   50    1  0.5  237.70    0.142    0.267   0.002    0.001
+    50   50    1  1.0  126.11    0.268    0.504   0.003    0.004
+    50   50    1  4.0   36.55    0.925    1.740   0.033    0.031
+    50   50    1  8.0   20.29    1.666    3.134   0.090    0.098
+
+=== 3. binary y (e.g. benefit receipt, prevalence ~0.3), n=d_R=20: AUC of R's per-person score
+  d_O=5: eps=0.5: AUC=0.503  eps=1: AUC=0.511  eps=4: AUC=0.559  eps=8: AUC=0.568
+  d_O=1: eps=0.5: AUC=0.513  eps=1: AUC=0.526  eps=4: AUC=0.556  eps=8: AUC=0.601
+
+=== 4. same, after k silent re-runs averaged (no ledger): n=d_R=20, continuous y
+  eps/run=1.0 k=    1  R2(y)=0.000  R2(X_O)=0.001
+  eps/run=1.0 k=   10  R2(y)=0.014  R2(X_O)=0.011
+  eps/run=1.0 k=  100  R2(y)=0.096  R2(X_O)=0.095
+  eps/run=1.0 k= 1000  R2(y)=0.387  R2(X_O)=0.401
+  eps/run=4.0 k=    1  R2(y)=0.008  R2(X_O)=0.012
+  eps/run=4.0 k=   10  R2(y)=0.133  R2(X_O)=0.110
+  eps/run=4.0 k=  100  R2(y)=0.416  R2(X_O)=0.427
+  eps/run=4.0 k= 1000  R2(y)=0.760  R2(X_O)=0.761

@@ -1,0 +1,7 @@
+sigma (eps=1.0, bounds 3.0,3.0,3.0) = 75.078
+(a) honest, bound-respecting dedicated column: y_hat=-21.575  true y=+2.356   (SD of estimate sigma/B_R = 25.03)
+(b) R violates B_R (M=10000) and addresses 10 rows (5 matched, 5 NOT in the intersection):
+    max |y_hat - y| = 1.48e-02   max |x_O_hat - x_O| = 1.73e-02
+    Gaussian-DP parameter mu: claimed Delta/sigma=0.268; actual >= 1130  (no meaningful eps)
+(c) b = M*e_i for an unmatched row: y_i^2 from y'y: 0.7972 vs 0.8065;  x_O,i*y_i from c_O: max err 9.0e-03
+(d) Xdot = M on all 5000 rows (not just the 400 matched): c_R/M = 58.047 vs sum of y over O's ENTIRE register 58.054; unmatched people enter the release
