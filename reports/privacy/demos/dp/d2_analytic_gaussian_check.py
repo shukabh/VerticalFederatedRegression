@@ -1,5 +1,5 @@
 """
-D2 — audit calibrate_hyperparameters.analytic_gaussian_sigma against Balle & Wang (2018).
+Report item D9 — audit calibrate_hyperparameters.analytic_gaussian_sigma against Balle & Wang (2018).
 
 Reference: the exact privacy profile of the Gaussian mechanism (Balle-Wang Thm 8),
     delta(eps; mu) = Phi(mu/2 - eps/mu) - e^eps Phi(-mu/2 - eps/mu),   mu = Delta/sigma,

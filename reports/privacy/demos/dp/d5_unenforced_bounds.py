@@ -1,5 +1,5 @@
 """
-D5 — the sensitivity assumes ||x_R,i|| <= B_R, b in {0,1}^n_O and Xdot_R = 0 off the match
+Report item S1 (OUT OF SCOPE under the semi-honest model; needs R to deviate) — the sensitivity assumes ||x_R,i|| <= B_R, b in {0,1}^n_O and Xdot_R = 0 off the match
 set. O cannot check any of this (it only sees Enc(b), Enc(Xdot_R)), and party_o.py does not
 try. This script replays party_o.py's Phase-4 arithmetic in plaintext (HE is linear, so the
 decrypted values are the same up to CKKS error) with the code's own sigma, and shows what

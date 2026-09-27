@@ -1,5 +1,5 @@
 """
-D1 — l2 sensitivity of the Scenario-B release under Definition 4 (replace one matched
+Report item D2 — l2 sensitivity of the Scenario-B release under Definition 4 (replace one matched
 individual's O-side data (x_O, y) -> (x_O', y'); x_R and the intersection fixed).
 
 Released vector (what party_o.py actually noises, one N(0, sigma^2) draw per entry):
@@ -9,7 +9,7 @@ with B = sum x_O x_O^T, C = sum x_R x_O^T, c_R = sum x_R y, c_O = sum x_O y, y'y
 What this script does
   1. brute force: maximise ||phi(x_R,x_O,y) - phi(x_R,x_O',y')||^2 over the ACTUAL layout
      (triu, not Frobenius) with multistart BFGS, no structural assumptions;
-  2. exact 1-D algorithm (closed-form candidates, derivation in dp_layer.md, D1);
+  2. exact 1-D algorithm (closed-form candidates, derivation in dp_layer.md, D2);
   3. regime closed forms; eq. (6) (add/remove); 2*eq.(6) (triangle bound);
   4. sigma inflation factor and the EFFECTIVE eps of the code's sigma under Definition 4,
      using calibrate_hyperparameters.analytic_gaussian_sigma itself.

@@ -1,5 +1,5 @@
 """
-D7 — the paper's proposed fix (Sec. 7 iv: "discrete/snapped Gaussian to close the CKKS
+Report item D8 — the paper's proposed fix (Sec. 7 iv: "discrete/snapped Gaussian to close the CKKS
 decryption-error channel") is dangerous if done naively under encryption.
 
 O cannot snap/round the ENCRYPTED statistic s to a grid. If it adds discrete-Gaussian noise

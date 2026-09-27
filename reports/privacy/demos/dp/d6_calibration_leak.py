@@ -1,5 +1,5 @@
 """
-D6 — dp_params.json is a non-private release of both parties' raw data.
+Report items D1 and D3 — dp_params.json is a non-private release of both parties' raw data.
 
 calibrate_hyperparameters.calibrate() reads X_R, X_O and y_O in ONE process and writes, into
 the single file both party_r.py and party_o.py load:

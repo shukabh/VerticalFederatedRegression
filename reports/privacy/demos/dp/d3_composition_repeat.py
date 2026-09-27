@@ -1,5 +1,5 @@
 """
-D3 — what R gets by simply running the protocol again (no budget ledger exists anywhere).
+Report item D4 — what R gets by simply running the protocol again (no budget ledger exists anywhere).
 
 party_o.py draws FRESH noise (np.random.default_rng()) on every connection and has no
 counter, so k runs on the same data release k independent Gaussian perturbations of the

@@ -1,5 +1,5 @@
 """
-D4 — practical disclosure: how well can R reconstruct individual y_i / x_O,i from the
+Report items D10 and D4 — practical disclosure: how well can R reconstruct individual y_i / x_O,i from the
 noised c_R = X_R^T y + f_R and C = X_R^T X_O + E_C, knowing X_R of every matched person?
 
 Noise: sigma = analytic_gaussian_sigma(joint_sensitivity_B(B_R,B_O,B_y), eps, 1e-5) — the
