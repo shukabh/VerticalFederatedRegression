@@ -23,10 +23,13 @@ def _ev(coeffs, x, t):
 
 def test_framing_roundtrip():
     import socket
+    import threading
     a, b = socket.socketpair()
     payload = os.urandom(3_000_000)
-    pc.send_msg(a, payload)
+    th = threading.Thread(target=pc.send_msg, args=(a, payload))
+    th.start()
     assert pc.recv_msg(b) == payload
+    th.join()
     a.close(); b.close()
 
 
@@ -98,7 +101,9 @@ def test_ridge_gate_three_branches():
     rng = np.random.default_rng(2)
     d_R, d_O = 3, 4
     X = rng.uniform(size=(400, d_R + d_O))
+    X[:, -1] = X[:, -2] + 0.05 * rng.normal(size=400)    # near-collinear O block
     G = X.T @ X
+    assert np.linalg.eigvalsh(G)[0] < 0.5 * np.linalg.eigvalsh(G[:d_R, :d_R])[0]
     c = G @ rng.normal(size=d_R + d_O)
     lmin = np.linalg.eigvalsh(G)[0]
     lminA = np.linalg.eigvalsh(G[:d_R, :d_R])[0]

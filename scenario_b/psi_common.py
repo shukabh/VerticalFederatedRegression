@@ -115,11 +115,16 @@ def batch_ids(ids: Sequence, cap: int) -> List[list]:
 
 
 def build_cuckoo_table(chunk: Iterable, rng, NB: int, NH: int,
-                       max_kicks: int = 1000) -> Optional[Dict[int, int]]:
+                       max_kicks: int = 100_000) -> Optional[Dict[int, int]]:
     """Random-walk cuckoo insertion with NH hash functions into NB bins.
 
     Returns {slot: id} with every (distinct) id of `chunk` in one of its
     candidate bins, or None if some insertion exceeds `max_kicks` evictions.
+
+    calibrate_hyperparameters.py sets cuckoo_capacity = 0.9 * NB, close to the
+    ~0.918 load threshold of 3-hash cuckoo hashing: at that load single insertions
+    can need thousands of evictions (a 1000-kick limit failed 2 of 3 trials at
+    14745 ids / 16384 bins; 20000 succeeded 3/3 in ~0.6 s), hence the generous cap.
     """
     table: Dict[int, int] = {}
     for x0 in dict.fromkeys(int(v) for v in chunk):      # dedupe, keep order
