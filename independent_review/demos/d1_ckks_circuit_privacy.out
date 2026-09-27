@@ -1,0 +1,12 @@
+ring dim 16384  batch 4096  n_O 3000
+
+T1 slot spread: max|slot_i - slot_0| = 2.50e-10; slot0 - (s+z) = -1.95e-10  -> all slots carry s+z (no partial sums)
+T2 two evaluations with same inputs byte-identical: True
+T3 c1(reply | z) == c1(reply | z') for z=-110.68, z'=-124.61: True
+
+T4 add_scalar (as implemented), 20 trials each, fresh DP noise every trial:
+   matched record   (b=1): R identifies the true dataset in 100% of trials
+   UNMATCHED record (b=0): R identifies the true dataset in 100% of trials
+   (an (eps,delta)-DP view would cap the success rate at (e^eps+delta)/(1+e^eps) = 73% for eps=1)
+T5 fresh Enc(z) instead of add_scalar: c1 of the reply equals R's recomputation (correct candidate) in 0/20 trials -> byte test defeated; c1 is re-randomised, but the error-polynomial channel remains (see d2)
+(15s)

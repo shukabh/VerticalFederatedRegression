@@ -1,0 +1,8 @@
+1. --scale_source committed  ->  source = committed , dp_valid = True
+   centre_O equals O's sample means: True | scale_O equals O's sample SDs: True
+   centre_y/scale_y equal mean/SD of O's y: True True
+2. O-data statistics present in the dp_params.json that R loads:
+   bounds_suggested_from_quantile = {'B_R': 3.136, 'B_O': 3.159, 'B_y': 2.508}
+   clip_rate = {'X_R': 0.032, 'X_O': 0.03125, 'y': 0.0015}
+   centre_O = [0.494, 0.5028, 0.5022, 0.5066, 0.5077]
+3. max bin load D over 30 O-sets that differ from each other in ONE identifier: {7: 30}

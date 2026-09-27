@@ -1,0 +1,10 @@
+  B_R  B_O  B_y | Delta eq.(6) Delta replace  ratio | nominal eps  actual eps (replace)
+  1.0  1.0  1.0 |        2.236         3.162   1.41 |        1.00                  1.47
+  1.7  1.7  4.5 |       23.320        23.799   1.02 |        1.00                  1.02
+  3.3  3.3  2.6 |       20.739        30.407   1.47 |        1.00                  1.52
+  1.0  1.0  5.0 |       26.019        26.071   1.00 |        1.00                  1.00
+  2.0  2.0  1.0 |        6.403         9.618   1.50 |        1.00                  1.57
+
+witness x'=perp(x), y'=-y at B=1: |Delta| = 3.162  (eq.(6): 2.236)
+witness x'=-x,      y'=-y at B=1: |Delta| = 2.828
+generic upper bound: Delta_replace <= 2 * Delta_zero-out (triangle inequality)

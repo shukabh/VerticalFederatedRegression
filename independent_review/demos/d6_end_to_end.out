@@ -1,0 +1,8 @@
+[R] PSI batch 1/1: total matched 400
+[R] Phase 0 done: n=400 matched (0.2s)
+[R] sigma=154.1  O-block ridge ceiling rho<=0.0296  -> Psi=I lambda=3276 rho_hat=2.87  (escalated to full ridge)
+  matched by PSI : 400 / ground truth 400 -> OK
+  backend=plaintext  sigma=154.1  Psi=I lambda=3276 rho_hat=2.87
+  ||private ridge  - beta_OLS|| = 2.9226   ||. - beta_true|| = 2.9009
+  ||bias-corrected - beta_OLS|| = 2.9226   ||. - beta_true|| = 2.9009
+  ||beta_OLS - beta_true|| = 0.0522  (sampling only)

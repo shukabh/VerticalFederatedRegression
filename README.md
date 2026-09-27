@@ -29,6 +29,7 @@ The threat model is **honest-but-curious**.
 | `reports/code_review.md` | The implementation checked against the draft. |
 | `reports/privacy/README.md` | Consolidated privacy risks under honest-but-curious; detailed reports and demos are alongside it. |
 | `reports/accuracy/accuracy_report.md` | Accuracy results, figures and CSV/JSON output. |
+| `independent_review/critique.md` | An independent critique made from only the paper and the code, with demos; `reconciliation.md` compares it with the other reviews. |
 | `reports/checks/` | Numerical checks of Theorem 1, the adaptive ridge, and the replace-one sensitivity. |
 
 ## Run it

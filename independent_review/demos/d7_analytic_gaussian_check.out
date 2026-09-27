@@ -1,0 +1,5 @@
+Delta=  1.00 eps= 1.0 delta=1e-05: code 3.730632  scipy 3.730632  classical 4.8448  rel.diff 7.0e-13
+Delta=  1.00 eps= 0.5 delta=1e-06: code 8.057618  scipy 8.057618  classical 10.5976  rel.diff 2.3e-12
+Delta= 20.57 eps= 1.0 delta=1e-05: code 76.739093  scipy 76.739093  classical 99.6576  rel.diff 7.0e-13
+Delta= 23.30 eps= 4.0 delta=1e-05: code 25.191071  scipy 25.191071  classical 28.2210  rel.diff 5.7e-13
+Delta=  1.00 eps= 8.0 delta=1e-05: code 0.600229  scipy 0.600229  classical 0.6056  rel.diff 1.5e-10
