@@ -1,0 +1,20 @@
+n_O=12  matched=5  b.w+z = -12.172741
+
+true noise-free aggregate b.w = 1.383072   DP noise z = -13.555812
+
+[suffix      ] slot0=-12.172742  slot[2048]=-13.555812  slot0 - slot[2048]=  1.383071  max|(s_j - s_j+1) - b_j w_j|=8.00e-07
+          slot_j - slot_j+1 : [-1.00000e-06  0.00000e+00  3.03195e-01 -0.00000e+00  1.34042e-01
+  4.03113e-01  0.00000e+00  2.62313e-01]
+          b_j * w_j         : [0.       0.       0.303195 0.       0.134042 0.403113 0.       0.262313]
+[cyclic      ] slot0=-12.172742  slot[2048]=-12.172742  slot0 - slot[2048]=  0.000000  max|(s_j - s_j+1) - b_j w_j|=4.03e-01
+[masked+bcast] slot0=-12.172740  slot[2048]=-13.555812  slot0 - slot[2048]=  1.383072  max|(s_j - s_j+1) - b_j w_j|=1.38e+00
+[masked+slot0] slot0=-12.172740  slot[2048]=  0.000000  slot0 - slot[2048]=-12.172740  max|(s_j - s_j+1) - b_j w_j|=1.22e+01
+
+Reading:
+ suffix       : slot differences equal b_j*w_j (one record per slot pair, z cancels) AND any
+                slot outside the summation window holds exactly z, so slot0 - that slot is
+                the NOISE-FREE aggregate b.w.  DP is void against R.
+ cyclic       : total replicated in every slot, no per-record structure in the real parts.
+ masked+bcast : partial sums gone, but slots 1.. hold z alone -> noise-free b.w again.
+ masked+slot0 : correct fix; other slots ~0, slot0 = b.w + z.
+ Residual error-driven content (imaginary parts, ciphertext structure) is C1's subject.

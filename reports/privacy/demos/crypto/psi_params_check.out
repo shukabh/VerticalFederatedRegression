@@ -1,0 +1,25 @@
+1) PSI plaintext modulus t (delta_psi=1e-6, n_hash=3, ring=16384)
+         n_R        n_O t bits  E[false pos]
+         500       5000     29      9.98e-07
+        5000      50000     36      1.00e-06
+       20000    1000000     42      1.00e-06
+      100000   10000000     48      1.00e-06
+     1000000   40000000     53      1.00e-06
+   identifier spaces: 9-digit SIN ~ 2^29.9 (Luhn-valid ~ 2^26.6); generator IDs < 10^15 ~ 2^49.8
+   -> for moderate sizes t is ~2^29: IDs larger than t are reduced mod t (or hashed);
+      an unkeyed map of a ~2^27 identifier space is enumerable offline.
+
+2) O's simple-hashing max bin load (what alpha/D reveal); 20 trials each
+   n_O=      40: max load   1-2   -> alpha 1-1, D 1-2;  P(D=1)=0.70
+   n_O=     200: max load   2-4   -> alpha 1-1, D 2-4;  P(D=1)=0.00
+   n_O=    5000: max load   6-8   -> alpha 1-1, D 6-8;  P(D=1)=0.00
+   n_O=   50000: max load  22-25  -> alpha 1-1, D 22-25;  P(D=1)=0.00
+   n_O= 1000000: max load 234-249 -> alpha 4-4, D 59-63;  P(D=1)=0.00
+   (assumes D = ceil(load/alpha); psi_common.bin_and_interpolate was not provided)
+
+3) HE-Standard 128-bit classical max log2(QP), ternary secret
+   N=4096: 109  N=8192: 218  N=16384: 438  N=32768: 881
+   BFV t~2^30: rough log2(QP) need ~390 bits vs 438 allowed at N=16384 -> OK
+   BFV t~2^45: rough log2(QP) need ~465 bits vs 438 allowed at N=16384 -> EXCEEDS: N=32768 needed or security < 128
+   BFV t~2^60: rough log2(QP) need ~540 bits vs 438 allowed at N=16384 -> EXCEEDS: N=32768 needed or security < 128
+   CKKS depth 2, scale 2^50: log2(QP) ~ 220 (60 + 2x50 + 60 special) -> needs N>=16384 (218 max at N=8192); depth 3 (one-hot mask fix) ~270 -> still N=16384
