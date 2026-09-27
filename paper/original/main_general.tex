@@ -1,0 +1,821 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{microtype}
+\setlength{\emergencystretch}{3em}
+
+\geometry{
+  paper=letterpaper,
+  top=1.25in,
+  bottom=1.25in,
+  left=1.25in,
+  right=1.25in
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black
+}
+
+% ---------- theorem environments ----------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{protocol}{Protocol}[section]
+
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+
+% ---------- macros ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Enc}[1]{\mathsf{Enc}\!\left(#1\right)}
+\newcommand{\Dec}[1]{\mathsf{Dec}\!\left(#1\right)}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bXR}{\mathbf{X}_{R}}
+\newcommand{\bXO}{\mathbf{X}_{O}}
+\newcommand{\bXRI}{\mathbf{X}_{R}^{I}}
+\newcommand{\bXOI}{\mathbf{X}_{O}^{I}}
+\newcommand{\bZ}{\mathbf{Z}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bcR}{\mathbf{c}_{R}}
+\newcommand{\bcO}{\mathbf{c}_{O}}
+\newcommand{\dXR}{\dot{\mathbf{X}}_{R}}
+\newcommand{\dy}{\dot{\mathbf{y}}}
+\newcommand{\Party}[1]{\textsf{#1}}
+\newcommand{\pk}{\mathit{pk}}
+\newcommand{\sk}{\mathit{sk}}
+\newcommand{\sigm}{\sigma}
+
+\title{%
+  \textbf{Privacy-Preserving Vertical Federated Learning}\\[4pt]
+  \large for Joint Linear Regression\\[8pt]
+  \normalsize Working Draft
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ==============================================================
+\section{Introduction}
+% ==============================================================
+
+Organizations such as Statistics Canada (StatCan) hold administrative and survey datasets that span the full Canadian population. University researchers, by contrast, often hold smaller cohort datasets enriched with domain-specific variables---clinical measurements, survey responses, or behavioural signals---that StatCan does not collect. Neither dataset alone is sufficient to answer certain research questions: a policy researcher studying labour-market outcomes might hold a cohort's health and education records, while StatCan holds their tax filing history, employment insurance claims, and income trajectories. The scientific value of joining these datasets is evident; the barrier to doing so is equally clear. Privacy law, institutional policy, and the practical realities of data governance make direct data sharing infeasible.
+
+The Research Data Centre (RDC) model partially addresses this by letting researchers work with anonymized StatCan data inside a controlled environment. However, it does not permit a researcher to bring their own dataset and perform a record linkage against StatCan records in order to jointly train a statistical model---a process that typically requires six to eight weeks of vetting, human review, and institutional approvals. This overhead is a meaningful bottleneck on the pace and scope of Canadian policy research.
+
+This document proposes a cryptographically protocol for \emph{vertical federated learning} (VFL) between a researcher and StatCan. The term ``vertical'' refers to the structure of the data: both parties hold overlapping sets of individuals (rows) but non-overlapping sets of variables (columns). The goal is to jointly train a regression model over the combined column space without either party ever observing the other's raw data. The researcher holds a set of features and possibly an outcome variable; StatCan holds a superset of the population with additional features and possibly the outcome variable. The two datasets are linked by a common identifier (e.g.\ a hashed Social Insurance Number), but the linkage itself must remain private---StatCan should not learn which of its records belong to the researcher's cohort.
+
+Two concrete scenarios are developed:
+\begin{itemize}[noitemsep]
+  \item \textbf{Scenario~A.} The researcher holds the response variable $\by$ (e.g.\ a health outcome measured in the researcher's study).
+  \item \textbf{Scenario~B.} StatCan holds the response variable $\by$ (e.g.\ tax-reported income, a StatCan-derived outcome).
+\end{itemize}
+
+In both cases the protocol relies on \emph{homomorphic encryption} (HE) and \emph{private set intersection} (PSI) as its primary cryptographic tools, combined to preserve both \emph{input privacy} (no raw data is seen by the other party) and, with appropriate noise addition, \emph{output privacy} (the released model does not enable reconstruction of private inputs).
+
+% ==============================================================
+\section{Problem Setup and Notation}
+% ==============================================================
+
+Let $\Party{R}$ denote the researcher and $\Party{O}$ denote the organization (StatCan). Table~\ref{tab:notation} summarises the notation used throughout the document.
+
+\begin{table}[ht]
+\centering
+\caption{Notation}
+\label{tab:notation}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{8.6cm}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$n_{R}$ & Number of records held by $\Party{R}$ \\
+$n_{O}$ & Number of records held by $\Party{O}$; $n_{O} \geq n_{R}$ ($\Party{O}$ is a superset) \\
+$n$ & Number of matched records after linkage; $n \leq n_{R}$ \\
+$d_{R}$ & Number of features held by $\Party{R}$ \\
+$d_{O}$ & Number of features held by $\Party{O}$ \\
+$\bXR \in \R^{n_{R} \times d_{R}}$ & $\Party{R}$'s feature matrix \\
+$\bXO \in \R^{n_{O} \times d_{O}}$ & $\Party{O}$'s feature matrix \\
+$\by \in \R^{n_{O}}$ & Response vector (held by $\Party{R}$ in Scenario~A; by $\Party{O}$ in Scenario~B) \\
+$\by^{I} \in \R^{n}$ & Response vector restricted to matched records
+  (held by $\Party{R}$ in Scenario~A; by $\Party{O}$ in Scenario~B) \\
+$\bb \in \{0,1\}^{n_{O}}$ & Binary selection vector: $b_{i}=1$ iff $\Party{O}$-record $i$ is matched \\
+$I \subseteq [n_{R}]$ & Index set of $\Party{R}$'s matched records \\
+$\sigma$ & Bijection from $[n]$ to $\{i : b_{i}=1\}$ (matched $\Party{O}$-record indices) \\
+$\bXRI \in \R^{n \times d_{R}}$ & Matched rows of $\bXR$ \\
+$\bXOI \in \R^{n \times d_{O}}$ & Matched rows of $\bXO$ \\
+$\bZ = [\bXRI \mid \bXOI]$ & Combined feature matrix, $\bZ \in \R^{n \times (d_{R}+d_{O})}$ \\
+$\dXR \in \R^{n_{O} \times d_{R}}$ & $\Party{R}$'s features aligned to $\Party{O}$'s record order:
+  $\dXR[i,j] = X_{R,\sigma^{-1}(i),j}$ if $b_{i}=1$, else $0$ \\
+$\dy \in \R^{n_{O}}$ & $\Party{R}$'s outcomes aligned to $\Party{O}$'s order (Scenario~A):
+  $\dot{y}_{i} = y^{I}_{\sigma^{-1}(i)}$ if $b_{i}=1$, else $0$ \\
+$(\pk, \sk)$ & Public/private key pair for the HE scheme \\
+$\Enc{\cdot}$ & Homomorphic encryption under $\Party{R}$'s public key $\pk$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The target estimator for \textbf{linear regression} is the ordinary least squares (OLS) solution:
+\begin{equation}
+  \label{eq:ols}
+  \bbeta = (\bZ^{\top}\bZ)^{-1}\bZ^{\top}\by^{I},
+\end{equation}
+where the Gram matrix and moment vector decompose as
+\begin{equation}
+  \label{eq:gram}
+  \bZ^{\top}\bZ =
+  \begin{bmatrix}
+    {\bXRI}^{\top}\bXRI & {\bXRI}^{\top}\bXOI \\
+    {\bXOI}^{\top}\bXRI & {\bXOI}^{\top}\bXOI
+  \end{bmatrix}, \qquad
+  \bZ^{\top}\by =
+  \begin{bmatrix}
+    {\bXRI}^{\top}\by^{I} \\
+    {\bXOI}^{\top}\by^{I}
+  \end{bmatrix}.
+\end{equation}
+We use the shorthand $\bA = {\bXRI}^{\top}\bXRI$, $\bB = {\bXOI}^{\top}\bXOI$, $\bC = {\bXRI}^{\top}\bXOI$, $\bcR = {\bXRI}^{\top}\by^{I}$, and $\bcO = {\bXOI}^{\top}\by^{I}$.
+
+
+% ==============================================================
+\section{Input and Output Privacy: Definitions and Nuances}
+% ==============================================================
+
+\subsection{Definitions}
+
+\begin{definition}[Input Privacy --- Semi-Honest Model]
+A protocol $\Pi$ between $\Party{R}$ and $\Party{O}$ satisfies \emph{input privacy} in the semi-honest (honest-but-curious) model if, for each party $P \in \{\Party{R}, \Party{O}\}$, the view of $P$ during the execution of $\Pi$ is computationally indistinguishable from a distribution that can be simulated using only $P$'s own private input and the agreed-upon output. Neither party deviates from the protocol, but each attempts to infer additional information from every message it receives.
+\end{definition}
+
+\begin{definition}[Linkage Privacy]
+A protocol satisfies \emph{linkage privacy for $\Party{O}$} if $\Party{O}$'s view is computationally indistinguishable regardless of which subset of $\Party{O}$'s records participates in the intersection, i.e., $\Party{O}$ learns nothing about the identity of matched records beyond what is implied by the intersection cardinality $n$.
+\end{definition}
+
+\begin{definition}[$(\varepsilon,\delta)$-Output Privacy via Differential Privacy]
+Let $\mathcal{M}$ be a randomised mechanism that takes the training data as input and outputs a model $\bbeta$. $\mathcal{M}$ satisfies $(\varepsilon,\delta)$-\emph{differential privacy} if for every pair of adjacent datasets $D, D'$ (differing in one individual's record) and every measurable set $S$,
+\[
+  \Pr[\mathcal{M}(D) \in S] \;\leq\; e^{\varepsilon}\,\Pr[\mathcal{M}(D') \in S] + \delta.
+\]
+Rather than preventing all inference about an individual, this guarantee ensures that an adversary observing the released model cannot confidently determine whether any specific individual's data was included in the training set, thereby bounding the privacy risk incurred by participation.
+\end{definition}
+
+% ==============================================================
+\section{Scenario A: Response Variable Held by the Researcher}
+\label{sec:scenA}
+% ==============================================================
+
+\subsection{Setup}
+
+\begin{itemize}[noitemsep]
+  \item $\Party{R}$ holds: $\bXR$, $\by$, identifier column $\mathit{ID}_{R}$.
+  \item $\Party{O}$ holds: $\bXO$, identifier column $\mathit{ID}_{O}$; $\Party{O}$ has no access to $\by$.
+\end{itemize}
+
+$\Party{R}$'s goal is to obtain $\bbeta$ trained on $\bZ$ without exposing any element of $\bXR$, $\by$, or the linkage map $\sigma$ to $\Party{O}$. $\Party{O}$ must not expose any element of $\bXO$ to $\Party{R}$ beyond what is implied by $\bbeta$.
+
+\subsection{Protocol}
+
+\begin{protocol}[Scenario~A --- Linear Regression with $\by$ at $\Party{R}$]
+\label{prot:scenA}
+\hfill
+
+\smallskip
+\textbf{Phase 1 --- Key Generation.}
+$\Party{R}$ generates a public--private key pair $(\pk, \sk)$ for the CKKS scheme with parameters appropriate for the expected computation depth and plaintext precision. $\Party{R}$ sends $\pk$ to $\Party{O}$.
+
+\smallskip
+\textbf{Phase 2 --- Private Record Linkage.}
+$\Party{R}$ and $\Party{O}$ execute a one-sided PSI protocol on $\mathit{ID}_{R}$ and $\mathit{ID}_{O}$. Upon completion:
+\begin{itemize}[noitemsep]
+  \item $\Party{R}$ learns the intersection $I$ and the bijection $\sigma$.
+  \item $\Party{O}$ learns at most $n = |I|$.
+\end{itemize}
+$\Party{R}$ then constructs: the matched feature submatrix $\bXRI$; the matched outcome subvector $\by^{I}$; the binary selection vector $\bb \in \{0,1\}^{n_{O}}$; the aligned feature matrix $\dXR \in \R^{n_{O} \times d_{R}}$; and the aligned outcome vector $\dy \in \R^{n_{O}}$.
+
+\smallskip
+\textbf{Phase 3 --- Local Computation and Encrypted Upload by $\Party{R}$.}
+$\Party{R}$ computes the following in plaintext:
+\[
+  \bA = {\bXRI}^{\top}\bXRI \in \R^{d_{R} \times d_{R}}, \qquad
+  \bcR = {\bXRI}^{\top}\by^{I} \in \R^{d_{R}}.
+\]
+$\Party{R}$ retains $(\bA, \bcR)$ locally and sends to $\Party{O}$:
+\[
+  \Enc{\bb}, \quad \Enc{\dXR}, \quad \Enc{\dy}.
+\]
+
+\smallskip
+\textbf{Phase 4 --- Homomorphic Aggregation at $\Party{O}$.}
+$\Party{O}$ uses plaintext $\bXO$ together with the received ciphertexts. All multiplications are plaintext--ciphertext (depth 1).
+
+\emph{$\Party{O}$'s self-Gram for matched records,} $\bB = {\bXOI}^{\top}\bXOI$:
+\begin{equation}
+  \label{eq:B}
+  \Enc{B_{jk}} = \sum_{i=1}^{n_{O}} \Enc{b_{i}} \cdot X_{O,ij} \cdot X_{O,ik},
+  \qquad j,k \in [d_{O}].
+\end{equation}
+
+\emph{Cross-Gram,} $\bC = {\bXRI}^{\top}\bXOI$:
+\begin{equation}
+  \label{eq:C}
+  \Enc{C_{jk}} = \sum_{i=1}^{n_{O}} \Enc{\dot{X}_{R,ij}} \cdot X_{O,ik},
+  \qquad j \in [d_{R}],\; k \in [d_{O}].
+\end{equation}
+
+\emph{$\Party{O}$'s feature--outcome cross-product,} $\bcO = {\bXOI}^{\top}\by^{I}$:
+\begin{equation}
+  \label{eq:cO_A}
+  \Enc{c_{O,k}} = \sum_{i=1}^{n_{O}} \Enc{\dot{y}_{i}} \cdot X_{O,ik},
+  \qquad k \in [d_{O}].
+\end{equation}
+
+\smallskip
+\textbf{Phase 5 --- Transmission.}
+$\Party{O}$ sends $\Enc{\bB}$, $\Enc{\bC}$, $\Enc{\bcO}$ to $\Party{R}$.
+
+\smallskip
+\textbf{Phase 6 --- Decryption and Model Fitting.}
+$\Party{R}$ decrypts all received ciphertexts using $\sk$ to obtain $\bB$, $\bC$, $\bcO$. Together with the locally retained $\bA$ and $\bcR$, $\Party{R}$ assembles:
+\[
+  \bZ^{\top}\bZ =
+  \begin{bmatrix} \bA & \bC \\ \bC^{\top} & \bB \end{bmatrix}, \qquad
+  \bZ^{\top}\by =
+  \begin{bmatrix} \bcR \\ \bcO \end{bmatrix},
+\]
+and solves $\bbeta = (\bZ^{\top}\bZ)^{-1}\bZ^{\top}\by$.
+\end{protocol}
+
+
+\subsection{Privacy Considerations}
+
+In this scenario $\Party{O}$'s primary privacy risk is feature disclosure via $\bbeta$. The regression coefficients $\bbeta_{d_{R}+1:d_{R}+d_{O}}$ reflect the marginal contribution of $\Party{O}$'s columns to predicting $\Party{R}$'s outcome. Depending on the statistical strength of $\Party{O}$'s features, this may be disclosive about individual records in $\bXOI$. The appropriate mitigation is differential privacy noise injected into the encrypted aggregate blocks before they are transmitted to $\Party{R}$. However, because all of $\Party{O}$'s outputs --- $\Enc{\bB}$, $\Enc{\bC}$, and $\Enc{\bcO}$ --- are the results of homomorphic computations involving the encrypted selection vector $\Enc{\bb}$ or the encrypted researcher features $\Enc{\dXR}$, $\Party{O}$ never holds these aggregates in plaintext. $\Party{O}$ therefore cannot add noise before encrypting; instead it must inject noise directly into the encrypted domain.
+
+% ==============================================================
+\section{Scenario B: Response Variable Held by the Organization}
+\label{sec:scenB}
+% ==============================================================
+
+\subsection{Setup}
+
+\begin{itemize}[noitemsep]
+  \item $\Party{R}$ holds: $\bXR$, identifier column $\mathit{ID}_{R}$; $\Party{R}$ has no access to $\by$.
+  \item $\Party{O}$ holds: $\bXO$, $\by$, identifier column $\mathit{ID}_{O}$.
+\end{itemize}
+
+This scenario models the common case where $\by$ is an administrative outcome (income, employment status, benefit receipt) that exists only in StatCan's records. $\Party{R}$ wishes to assess whether their cohort-specific variables predict these outcomes, using $\Party{O}$'s covariates as controls.
+
+\subsection{Protocol}
+
+\begin{protocol}[Scenario~B --- Linear Regression with $\by$ at $\Party{O}$]
+\label{prot:scenB}
+\hfill
+
+\smallskip
+\textbf{Phases 1 and 2 --- Key Generation and PSI.} Identical to Protocol~\ref{prot:scenA}. $\Party{R}$ constructs $\bb$, $\dXR$, and $\sigma$ as before. $\Party{R}$ does \emph{not} construct $\dy$ (since $\Party{R}$ does not hold $\by$).
+
+\smallskip
+\textbf{Phase 3 --- Local Computation and Encrypted Upload by $\Party{R}$.}
+$\Party{R}$ computes:
+\[
+  \bA = {\bXRI}^{\top}\bXRI \in \R^{d_{R} \times d_{R}}.
+\]
+$\Party{R}$ sends to $\Party{O}$:
+\[
+  \Enc{\bb}, \quad \Enc{\dXR}, \quad \Enc{\bA}.
+\]
+Note that $\Enc{\bA}$ is required because $\Party{O}$ cannot compute ${\bXRI}^{\top}\bXRI$ without access to $\bXR$.
+
+\smallskip
+\textbf{Phase 4 --- Homomorphic Aggregation at $\Party{O}$.}
+$\Party{O}$ has access to plaintext $\bXO$ and $\by$, and to the ciphertexts received from $\Party{R}$.
+
+\emph{$\Party{O}$'s self-Gram,} $\bB$: identical to \eqref{eq:B}.
+
+\emph{Cross-Gram,} $\bC$: identical to \eqref{eq:C}.
+
+\emph{$\Party{O}$'s feature--outcome cross-product,} $\bcO = {\bXOI}^{\top}\by^{I}$:
+\begin{equation}
+  \label{eq:cO_B}
+  \Enc{c_{O,k}} = \sum_{i=1}^{n_{O}} \Enc{b_{i}} \cdot X_{O,ik} \cdot y_{i},
+  \qquad k \in [d_{O}].
+\end{equation}
+Here $\Party{O}$ multiplies the encrypted selection bit by its own plaintext feature value and outcome.
+
+\emph{$\Party{R}$'s feature--outcome cross-product,} $\bcR = {\bXRI}^{\top}\by^{I}$:
+\begin{equation}
+  \label{eq:cR_B}
+  \Enc{c_{R,j}} = \sum_{i=1}^{n_{O}} \Enc{\dot{X}_{R,ij}} \cdot y_{i},
+  \qquad j \in [d_{R}].
+\end{equation}
+Here $\Party{O}$ multiplies the encrypted aligned $\Party{R}$-feature values by its own plaintext outcome $y_{i}$. This is the central operation that enables the cross-term without either party observing the other's sensitive inputs.
+
+\smallskip
+\textbf{Phase 5 --- Transmission.}
+$\Party{O}$ sends $\Enc{\bB}$, $\Enc{\bC}$, $\Enc{\bcR}$, $\Enc{\bcO}$ to $\Party{R}$. ($\Enc{\bA}$ was received from $\Party{R}$ in Phase~3 and is retained by $\Party{R}$.)
+
+\smallskip
+\textbf{Phase 6 --- Decryption and Model Fitting.}
+$\Party{R}$ decrypts all ciphertexts to obtain $\bB$, $\bC$, $\bcR$, $\bcO$, and recalls $\bA$ from local storage. $\Party{R}$ assembles $\bZ^{\top}\bZ$ and $\bZ^{\top}\by$ as in \eqref{eq:gram} and solves for $\bbeta$.
+\end{protocol}
+
+\subsection{Privacy Considerations}
+
+In this scenario $\Party{O}$'s primary risk is that $\bcR = {\bXRI}^{\top}\by^{I}$, once decrypted, reveals the cross-product between $\Party{R}$'s own features and $\Party{O}$'s outcome over the matched cohort. This is the intended statistical result, but it also means $\Party{R}$ learns something about the joint distribution of $(\bXR, \by)$ restricted to $I$; in the extreme case where $d_{R} \geq n$ and $\bXRI$ has full row rank, $\Party{R}$ can recover individual outcome values $y_{i}$ exactly from $\bcR$ using the pseudo-inverse $\by = ({\bXRI}{\bXRI}^{\top})^{-1}{\bXRI}\bcR$. Even when $d_{R} \ll n$, $\Party{R}$ learns individual fitted values $\hat{y}_{i} = \mathbf{x}_{R,i}^{\top}\hat{\bbeta}_{R}$ that approximate $y_{i}$ when the regression coefficient $R^{2}$ is high. While $R$ cannot directly compute $R^2$ to learn goodness-of-fit the context may allow $R$ to learn plaintext $y$.
+The appropriate mitigation is differential privacy noise injected into the encrypted aggregates. 
+
+% ==============================================================
+\section{The Inference Gap: Prediction After Training}
+\label{sec:inference}
+% ==============================================================
+
+\subsection{The Fundamental Problem}
+
+After Protocol~\ref{prot:scenA} or~\ref{prot:scenB} completes, $\Party{R}$ holds the full coefficient vector
+\begin{equation}
+  \bbeta = \begin{bmatrix} \bbeta_{R} \\ \bbeta_{O} \end{bmatrix} \in \R^{d_{R}+d_{O}},
+\end{equation}
+where $\bbeta_{R} \in \R^{d_{R}}$ corresponds to $\Party{R}$'s own features and $\bbeta_{O} \in \R^{d_{O}}$ corresponds to $\Party{O}$'s features. For a new test individual $i$, the predicted outcome is
+\begin{equation}
+  \hat{y}_{i} = \mathbf{z}_{i}^{\top}\bbeta
+              = \underbrace{\mathbf{x}_{R,i}^{\top}\bbeta_{R}}_{\text{computable by }\Party{R}}
+              + \underbrace{\mathbf{x}_{O,i}^{\top}\bbeta_{O}}_{\text{requires }\Party{O}\text{'s data}}.
+\end{equation}
+$\Party{R}$ can evaluate the first term locally for any new individual in their possession. However, $\Party{R}$ has no access to $\mathbf{x}_{O,i}$. The model $\bbeta$ is therefore not self-contained from $\Party{R}$'s perspective: it cannot be used for inference without continued collaboration with $\Party{O}$.
+
+It motivates the question of how inference should be conducted once training is complete. We describe two approaches.
+
+\subsection{Approach 1: Split Inference via Encrypted Model Weights}
+\label{sec:inf:split}
+
+$\Party{R}$ retains the $\bbeta_{R}$ component locally and delegates only $\bbeta_{O}$ to $\Party{O}$, encrypted. This eliminates ct--ct multiplication entirely.
+
+\textbf{Model deployment (one-time).}
+$\Party{R}$ sends $\Enc{\bbeta_{O}}$ to $\Party{O}$. Since $\Party{O}$ does not hold $\sk$, it cannot recover $\bbeta_{O}$.
+
+\textbf{Per-batch inference.}
+
+\begin{enumerate}[noitemsep, label=\textbf{Step \arabic*.}]
+  \item \textbf{Linkage.} PSI on test identifiers.
+  \item \textbf{$\Party{O}$ computes its partial predictor.} For each matched test record $i$:
+  \begin{equation}
+    \Enc{p_{O,i}} = \sum_{k=1}^{d_{O}} X_{O,ik} \cdot \Enc{\beta_{O,k}}.
+  \end{equation}
+  
+  \item \textbf{$\Party{O}$ sends $\Enc{\mathbf{p}_{O}^{\mathrm{test}}}$ to $\Party{R}$.}
+  \item \textbf{$\Party{R}$ finalises predictions locally.} $\Party{R}$ decrypts and adds its own partial predictor:
+  \begin{equation}
+    \hat{y}_{i} = \mathbf{x}_{R,i}^{\top}\bbeta_{R} + \Dec{\Enc{p_{O,i}}}.
+  \end{equation}
+\end{enumerate}
+
+\subsubsection{Privacy considerations}
+
+$\Party{R}$ decrypts a scalar $p_{O,i} = \mathbf{x}_{O,i}^{\top}
+\bbeta_{O}$ for each test record. Since $\Party{R}$ also holds $\bbeta_{O}$
+in plaintext from the training phase, each decrypted scalar constitutes a
+\emph{known-direction projection}: one linear equation
+\[
+  \mathbf{x}_{O,i}^{\top}\bbeta_{O} \;=\; p_{O,i}
+\]
+in the $d_{O}$ unknown entries of $\mathbf{x}_{O,i}$. From this single
+equation, $\Party{R}$ can form the minimum-norm consistent estimate
+\[
+  \hat{\mathbf{x}}_{O,i}^{(1)}
+  \;=\; \frac{p_{O,i}}{\|\bbeta_{O}\|^{2}}\,\bbeta_{O},
+\]
+which recovers the component of $\mathbf{x}_{O,i}$ along $\bbeta_{O}$.
+When $\bbeta_{O}$ has many non-negligible entries, this one-dimensional
+approximation correlates simultaneously with several feature dimensions
+and is therefore a non-trivial disclosure even from a single query.
+
+\paragraph{Attack~1: noise averaging across repeated queries.}
+Suppose $\Party{O}$ adds independent per-response noise
+$\varepsilon_{t} \sim \mathcal{N}(0,\sigma_{\mathrm{inf}}^{2})$ before
+encrypting each batch, so $\Party{R}$ decrypts
+$p_{O,i}^{(t)} = \mathbf{x}_{O,i}^{\top}\bbeta_{O} + \varepsilon_{t}$
+at round $t$. If individual $i$ appears in $k$ inference batches,
+$\Party{R}$ can average:
+\[
+  \bar{p}_{O,i}
+  \;=\; \frac{1}{k}\sum_{t=1}^{k} p_{O,i}^{(t)}
+  \;=\; \mathbf{x}_{O,i}^{\top}\bbeta_{O}
+        + \frac{1}{k}\sum_{t=1}^{k}\varepsilon_{t}.
+\]
+The noise variance falls as $\sigma_{\mathrm{inf}}^{2}/k$, and for
+sufficiently large $k$ the per-response noise is averaged away entirely,
+converging to the noiseless projection. This attack is effective whenever
+per-response noise is drawn from a \emph{fixed} distribution and the same
+individual appears repeatedly across batches.
+
+If system constraints dictate that fresh, independent noise
+$\varepsilon_{t} \sim \mathcal{N}(0,\sigma_{\mathrm{inf}}^{2})$ must be
+sampled at every query, the mitigation relies on strictly bounding the
+query count and inflating the base variance. Calibration must account for
+$k_{\max}$, the absolute maximum number of times any individual can
+appear across batches. Under Rényi DP composition, the aggregate privacy
+cost grows as $O(\sqrt{k_{\max}}\,\varepsilon_{\mathrm{round}})$.
+Therefore, the per-query noise magnitude $\sigma_{\mathrm{inf}}$ must be
+scaled up such that even after $\Party{R}$ averages $k_{\max}$ responses,
+the residual variance $\sigma_{\mathrm{inf}}^{2}/k_{\max}$ remains
+sufficiently large to satisfy the global $(\varepsilon,\delta)$-DP budget.
+
+\paragraph{Attack~2: multi-direction reconstruction across model updates.}
+If the model is retrained or
+updated across sessions yielding a sequence of coefficient vectors
+$\bbeta_{O}^{(1)}, \bbeta_{O}^{(2)}, \ldots, \bbeta_{O}^{(T)}$.
+For any individual $i$ who appears in inference batches under multiple model
+versions, $\Party{R}$ accumulates
+\[
+  p_{O,i}^{(t)} = \mathbf{x}_{O,i}^{\top}\bbeta_{O}^{(t)},
+  \qquad t = 1,\ldots,T,
+\]
+building a system of $T$ linear equations with coefficient matrix
+$\mathbf{B}_{T} =
+  [\bbeta_{O}^{(1)} \mid \cdots \mid \bbeta_{O}^{(T)}]^{\top}
+  \in \mathbb{R}^{T \times d_{O}}$.
+When $T \geq d_{O}$ and $\mathbf{B}_{T}$ has rank $d_{O}$, $\Party{R}$
+can solve for $\mathbf{x}_{O,i}$ exactly in the noiseless case. Even for
+$T < d_{O}$, the least-norm solution
+\[
+  \hat{\mathbf{x}}_{O,i}^{(T)}
+  \;=\; \mathbf{B}_{T}^{\top}
+        \!\left(\mathbf{B}_{T}\mathbf{B}_{T}^{\top}\right)^{-1}
+        \mathbf{p}_{O,i}
+\]
+improves monotonically in reconstruction quality as $T$ increases,
+recovering an increasingly accurate approximation of $\mathbf{x}_{O,i}$
+with each new model version.
+
+DP noise in $\bbeta_{O}^{(t)}$ from the training protocol corrupts each
+row of $\mathbf{B}_{T}$ and introduces a reconstruction error proportional
+to the cumulative noise magnitude. However, if the per-round training noise
+$\sigma_{\mathrm{DP}}$ is small relative to $\|\bbeta_{O}\|_{2}$ many retraining
+rounds can erode this protection.
+
+\subsection{Approach 2: Knowledge Distillation to an $\Party{R}$-Only Model}
+\label{sec:inf:distill}
+
+A qualitatively different solution eliminates test-time interaction
+altogether: $\Party{R}$ trains a \emph{student model} $\hat{\bbeta}_{R}
+\in \mathbb{R}^{d_R}$ using only its own features and predicts at test time
+as $\hat{y}_{i}^{\mathrm{test}} = \mathbf{x}_{R,i}^{\top}\hat{\bbeta}_{R}$
+with no further communication with $\Party{O}$. This approach is
+meaningful only in Scenario~B; in Scenario~A, where $\Party{R}$ holds
+$\by^{I}$ directly, the student coefficient reduces to plain OLS of
+$\by^{I}$ on $\bXRI$.
+
+\subsubsection*{Student coefficient}
+
+The student model conceptually regresses the joint model's fitted values
+$\tilde{\mathbf{y}} = \bZ\hat{\bbeta}$ on $\bXRI$. Let 
+$H_{Z} = \bZ(\bZ^{\top}\bZ)^{-1}\bZ^{\top}$.  
+Since
+$\mathrm{col}(\bXRI) \subseteq \mathrm{col}(\bZ)$, we have
+${\bXRI}^{\top}H_{Z} = {\bXRI}^{\top}$, so
+${\bXRI}^{\top}\tilde{\mathbf{y}} = {\bXRI}^{\top}\by^{I} = \bcR$.
+Applying the first block row of the joint normal equations
+$\bA\bbeta_{R} + \bC\bbeta_{O} = \bcR$ then gives the full chain:
+\begin{equation}
+  \hat{\bbeta}_{R}
+  = \bA^{-1}{\bXRI}^{\top}\tilde{\mathbf{y}}
+  = \bA^{-1}\bcR
+  = \bbeta_{R} + \bA^{-1}\bC\bbeta_{O}.
+  \label{eq:studentcoef}
+\end{equation}
+All quantities ($\bbeta_{R}$, $\bbeta_{O}$, $\bA$, $\bC$, and $\bcR$) are available to $\Party{R}$ from training without any individual
+rows of $\bXO$.
+
+\subsubsection*{Distillation loss and viability diagnostic}
+
+The approximation cost of replacing the joint model with the student is
+measured by the squared residual against $\tilde{\mathbf{y}}$. Since
+$\tilde{\mathbf{y}} - \bXRI\hat{\bbeta}_{R} = \mathbf{M}_{R}\bXOI\bbeta_{O}$,
+where $\mathbf{M}_{R} = \mathbf{I} - H_{R}$ is the annihilator of
+$\mathrm{col}(\bXRI)$, expanding $\mathbf{M}_{R}$ gives:
+\begin{equation}
+  \lVert \tilde{\mathbf{y}} - \bXRI\hat{\bbeta}_{R} \rVert^{2}
+  = \boldsymbol{\beta}_{O}^{\top}(\bB - \bC^{\top}\bA^{-1}\bC)\,\bbeta_{O},
+  \label{eq:distloss}
+\end{equation}
+the quadratic form of $\bbeta_{O}$ against the Schur complement of $\bA$
+in $\bZ^{\top}\bZ$. This is zero if and only if
+$\bXOI\bbeta_{O} \in \mathrm{col}(\bXRI)$, i.e.\ $\Party{O}$'s
+predictive contribution lies entirely within the span of $\Party{R}$'s
+features. When it is large relative to $\lVert\bbeta_{O}\rVert$,
+$\Party{O}$'s features carry signal that $\Party{R}$'s cannot proxy, and
+Approach~1 should be preferred. 
+
+\subsubsection*{Scenario~A: why distillation is redundant and the correct
+diagnostic}
+\label{sec:inf:equiv}
+
+When $\Party{R}$ holds $\by^{I}$ (Scenario~A), equation~\eqref{eq:studentcoef}
+gives $\hat{\bbeta}_{R} = \bA^{-1}\bcR = \bA^{-1}{\bXRI}^{\top}\by^{I}$
+--- simply OLS of $\by^{I}$ on $\bXRI$, obtainable without the joint
+model. The distillation loss~\eqref{eq:distloss} is a component of the total loss. 
+\begin{align}
+  \lVert \by^{I} - \bXRI\hat{\bbeta}_{R} \rVert^{2}
+  &= \lVert \mathbf{M}_{R}\tilde{\mathbf{y}}
+     + (\by^{I} - \tilde{\mathbf{y}}) \rVert^{2}
+  \label{eq:rss_step1}\\
+  &= \underbrace{\lVert \mathbf{M}_{R}\tilde{\mathbf{y}} \rVert^{2}}_{\text{distillation loss \eqref{eq:distloss}}}
+   + \underbrace{\lVert \by^{I} - \tilde{\mathbf{y}} \rVert^{2}}_{\text{joint model RSS}},
+  \label{eq:rss_decomp}
+\end{align}
+where the first line uses $\tilde{\mathbf{y}} - \bXRI\hat{\bbeta}_{R} =
+\mathbf{M}_{R}\tilde{\mathbf{y}}$, which follows from $H_{R}H_{Z} = H_{R}$
+(since $\mathrm{col}(\bXRI) \subseteq \mathrm{col}(\bZ)$) giving
+$\bXRI\hat{\bbeta}_{R} = H_{R}\by^{I} = H_{R}\tilde{\mathbf{y}}$;
+and the second line uses the fact that
+$\mathbf{M}_{R}\tilde{\mathbf{y}} \in \mathrm{col}(\bZ)$
+and $\by^{I} - \tilde{\mathbf{y}} \perp \mathrm{col}(\bZ)$,
+so the cross-term vanishes.
+
+The distillation loss therefore is a lower bound on the true RSS by
+exactly the joint model's own RSS. In Scenario~A, \eqref{eq:rss_decomp} is the
+appropriate diagnostic; in Scenario~B, where $\by^{I}$ is unavailable,
+\eqref{eq:distloss} is the only computable alternative.
+
+The distillation
+loss~\eqref{eq:distloss} is the viability diagnostic: when small, Approach~2
+is appropriate; when large, Approach~1 should be used. As a secondary
+privacy consideration, $\hat{\bbeta}_{R}$ encodes $\Party{O}$'s feature
+structure through $\bA^{-1}\bC\bbeta_{O}$; if shared externally, it would
+partially disclose the cross-correlation structure between the two
+parties' features.
+
+
+% ==============================================================
+\section{Output Privacy: DP Noise Injection on Encrypted Data}
+\label{sec:dp}
+% ==============================================================
+
+
+\subsection{The Noise Injection Mechanism}
+\label{sec:dp:mech}
+
+The procedure for each encrypted aggregate block $\Enc{\mathbf{s}}$ (standing for any of $\bB$, $\bC$,
+$\bcR$, $\bcO$) is as follows.
+
+$\Party{O}$ draws a noise tensor $\mathbf{z}$ of the same shape as $\mathbf{s}$ from the calibrated Gaussian distribution $\mathbf{z} \sim \mathcal{N}(\mathbf{0},\, \sigma_{\mathbf{s}}^{2}\,\mathbf{I})$, where $\sigma_{\mathbf{s}}$ is determined by the sensitivity of $\mathbf{s}$ (Section~\ref{sec:dp:sens}). $\Party{O}$ retains $\mathbf{z}$ privately and never discloses it.
+ $\Party{O}$ encodes $\mathbf{z}$ as a CKKS plaintext polynomial and encrypts it under $\pk$ to obtain $\Enc{\mathbf{z}}$.   \begin{equation}
+    \Enc{\tilde{\mathbf{s}}} = \Enc{\mathbf{s}} + \Enc{\mathbf{z}} = \Enc{\mathbf{s} + \mathbf{z}}.
+    \label{eq:noise_inject}
+  \end{equation}
+  The noise vector $\mathbf{z}$ is not sent and $\Party{R}$ cannot decompose the received ciphertext into its two constituents. $\Party{R}$ applies $\sk$ to obtain $\tilde{\mathbf{s}} = \mathbf{s} + \mathbf{z}$ and uses this noisy aggregate in place of the true aggregate to compute $\bbeta$.
+
+
+
+\subsection{Sensitivity Analysis}
+\label{sec:dp:sens}
+
+The $\ell_{2}$-sensitivity $\Delta_{\mathbf{s}}$ of each aggregate block measures the maximum change in
+$\mathbf{s}$ when a single matched record is added to or removed from the training set. Let $B_{R} =
+\max_{i \in I}\|\mathbf{x}_{R,i}\|_{2}$, $B_{O} = \max_{i \in I}\|\mathbf{x}_{O,i}\|_{\infty}$, and
+$B_{y} = \max_{i \in I}|y_{i}|$ denote agreed-upon bounds on individual norms.
+
+
+
+\noindent A subtlety arises for $B_{R}$: because $\bXR$ is encrypted, $\Party{O}$ cannot compute
+$\|\mathbf{x}_{R,i}\|_{2}$ directly. $\Party{R}$ must commit to $B_{R}$ during the protocol setup
+phase --- before any data is exchanged --- as a public bound. This commitment  is a constraint on their scale that allows $\Party{O}$ to calibrate the
+noise without seeing the data.
+
+\subsection{Privacy Budget Control}
+
+$\Party{O}$ sets the target $(\varepsilon, \delta)$, derives $\sigma_{\mathbf{s}}$ for each block and samples the noise $\mathbf{z}$ before encrypting and adding it. Since
+$\mathbf{z}$ is unknown to $\Party{R}$ and the decomposition of $\tilde{\mathbf{s}}$ into $\mathbf{s}$
+and $\mathbf{z}$ is computationally infeasible without knowledge of $\mathbf{z}$, the privacy budget
+remains entirely under $\Party{O}$'s control.
+
+The resulting $\bbeta$ computed from the noisy aggregates satisfies $(\varepsilon, \delta)$-DP
+with respect to $\Party{O}$'s dataset (and hence with respect to individual outcome values $y_{i}$
+in particular). The post-processing immunity of DP ensures that any function of $\bbeta$ --- including
+the individual fitted values $\hat{y}_{i} = \mathbf{x}_{R,i}^{\top}\bbeta_{R}$ that $\Party{R}$ can
+compute --- inherits the same guarantee.
+
+\subsection{Choice of Noise Distribution}
+\label{sec:dp:noise_choice}
+
+The noise distribution is not a free choice: it determines the type of privacy guarantee, the
+magnitude of noise required (and hence the damage to statistical utility), and the correctness of
+the mechanism under finite-precision arithmetic. We compare the main options below.
+
+\paragraph{Laplace mechanism.}
+Adding noise $\mathbf{z} \sim \mathrm{Lap}(\mathbf{0},\, \Delta_{1}/\varepsilon)^{d}$ to a
+$d$-dimensional aggregate with $\ell_{1}$-sensitivity $\Delta_{1}$ achieves \emph{pure}
+$(\varepsilon, 0)$-DP. Pure DP is strictly stronger than approximate DP: the privacy bound holds
+without any failure probability $\delta$. However, the Laplace mechanism is calibrated to the
+$\ell_{1}$-sensitivity, and for a $d$-dimensional vector the relationship between $\ell_{1}$ and
+$\ell_{2}$ sensitivity is
+\begin{equation}
+  \Delta_{1} \;\leq\; \sqrt{d}\,\Delta_{2}
+  \label{eq:l1l2}
+\end{equation}
+by the Cauchy--Schwarz inequality, with equality when the sensitivity is spread uniformly across all
+coordinates. For our aggregate matrices --- $\bB$ of size $d_{O} \times d_{O}$, $\bC$ of size
+$d_{R} \times d_{O}$ --- the ambient dimension $d$ is on the order of $d_{O}^{2}$ or $d_{R} d_{O}$.
+The factor $\sqrt{d}$ can easily be 10 to 50, meaning Laplace noise adds up to $\sqrt{d}$ times more
+noise per entry than the Gaussian mechanism at the same $\varepsilon$.
+
+\paragraph{Gaussian mechanism.}
+Adding noise $\mathbf{z} \sim \mathcal{N}(\mathbf{0},\, \sigma^{2}\mathbf{I})$ with
+$\sigma \geq \Delta_{2}\sqrt{2\ln(1.25/\delta)}/\varepsilon$\label{eq:sigma_gaussian} achieves \emph{approximate}
+$(\varepsilon, \delta)$-DP. Because it is calibrated to the $\ell_{2}$-sensitivity $\Delta_{2}$
+rather than $\Delta_{1}$, it adds far less noise per coordinate for high-dimensional outputs. The
+cost is that the guarantee holds only up to a failure probability $\delta$, typically set to a
+cryptographically small value such as $10^{-5}$ or $n^{-2}$. For the aggregate dimensions in our
+protocol, the Gaussian mechanism is substantially more utility-efficient than the Laplace mechanism.
+The tighter \emph{analytic Gaussian mechanism} of Balle and Wang~\cite{balle2018improving}, which
+uses the normal CDF $\Phi$ to compute the exact $(\varepsilon,\delta)$ trade-off, should be used
+in place of the standard approximation~\eqref{eq:sigma_gaussian} to obtain the smallest valid
+$\sigma$ for a given $(\varepsilon,\delta)$.
+
+% =============================================================
+% ==============================================================
+\section{Summary and Next Steps}
+% ==============================================================
+
+
+\noindent Proposed next steps:
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Differential privacy calibration.} Formalise the sensitivity bounds for a specific matched cohort and feature set; determine the Gaussian noise $\sigma_{\mathrm{DP}}$ for a target $(\varepsilon,\delta)$-DP guarantee; and quantify how noise on $\bbeta_{O}$ bounds the repeated-projection leakage in split inference (Section~\ref{sec:inf:split}).
+  \item \textbf{Prototype implementation.} Implement both training scenarios and the split inference protocol in OpenFHE (CKKS backend); benchmark runtime and ciphertext size as functions of $n$, $d_{R}$, $d_{O}$.
+  \item \textbf{Distillation viability study.} For representative StatCan application domains, evaluate the closed-form distillation loss $\boldsymbol{\beta}_{O}^{\top}(\bB - \bC^{\top}\bA^{-1}\bC)\,\bbeta_{O}/n$ as a function of the relative predictive power of $\Party{O}$'s features to assess whether Approach~2 inference is a practical fallback.
+  \item \textbf{Logistic regression.} Extend the gradient aggregation protocol and evaluate sigmoid approximation error. Extend split inference to the logistic case.
+  \item \textbf{Security proof.} Formalise simulation-based proofs for the semi-honest model and enumerate the full leakage profile, including for the inference phase.
+\end{enumerate}
+
+\section{One-Sided Private Set Intersection with Record Alignment}
+\label{app:psi}
+
+The main protocol requires $\Party{R}$ to hold the intersection index set
+$I \subseteq [n_O]$ and the bijection $\sigma(k) = j \iff a_k = b_j$,
+while $\Party{O}$ learns at most $n = |I|$. Standard one-sided PSI gives
+$\Party{R}$ the set $I$ but not $\sigma$: knowing which positions $j \in
+[n_O]$ are matched does not reveal which $a_k = b_j$, since $\Party{R}$
+does not hold $\mathit{ID}_O$. The protocol below delivers both by using
+$\Party{O}$'s plaintext identifier $b_j$ as an encrypted payload, zero-gated
+by the polynomial evaluation so that only matched positions decrypt
+correctly. Both parties agree on a public prime $p$ with all identifiers
+distinct in $\mathbb{Z}_p$ and $p > n_O n_R / \delta$ to bound false-match
+probability below $\delta$ (Remark~\ref{rem:collision}).
+
+\begin{protocol}[Polynomial One-Sided PSI with Alignment]
+\label{prot:psi}
+\hfill
+
+\smallskip
+\textbf{Pre-processing (at $\Party{O}$).}
+$\Party{O}$ applies a uniformly random permutation $\tau \leftarrow
+\mathrm{Sym}(n_O)$ to its records, setting $b_j \leftarrow b_{\tau(j)}$
+and $\mathbf{x}_{O,j} \leftarrow \mathbf{x}_{O,\tau(j)}$ for all
+$j \in [n_O]$. All subsequent indices refer to this shuffled ordering
+(Remark~\ref{rem:shuffle}).
+
+\smallskip
+\textbf{Step 1 --- Membership Polynomial [$\Party{R}$].}
+$\Party{R}$ encodes $\mathit{ID}_R$ as the roots of a monic polynomial:
+\begin{equation}
+  P(x) \;:=\; \prod_{k=1}^{n_R}\bigl(x - a_k \bmod p\bigr)
+  \;\in\; \mathbb{Z}_p[x],
+  \label{eq:poly}
+\end{equation}
+with $P(b_j \bmod p) = 0 \iff b_j \in \mathit{ID}_R$. $\Party{R}$ encrypts
+the coefficients $c_0, \ldots, c_{n_R}$ under $\pk$ and sends
+$\bigl(\Enc{c_0}, \ldots, \Enc{c_{n_R}}\bigr)$, $p$, and $\pk$ to
+$\Party{O}$.
+
+\smallskip
+\textbf{Step 2 --- Encrypted Horner Evaluation [$\Party{O}$].}
+For each $j \in [n_O]$, setting $x_j := b_j \bmod p$, $\Party{O}$
+evaluates $\Enc{P(x_j)}$ via Horner's method using $n_R$ scalar-ciphertext
+multiplications and $n_R$ ciphertext additions per point. With SIMD slot
+packing (batch size $B = N/2$), the $n_O$ evaluations are processed in
+$\lceil n_O/B \rceil$ batches each costing $O(n_R)$ ciphertext operations.
+
+\smallskip
+\textbf{Step 3 --- Masking and Payload [$\Party{O}$].}
+For each $j \in [n_O]$, $\Party{O}$ samples
+$\tau_j, \gamma_j \overset{\mathrm{i.i.d.}}{\sim}
+\mathcal{U}(\mathbb{Z}_p \setminus \{0\})$ independently and computes:
+\begin{align}
+  \Enc{s_j} &\;\leftarrow\; \tau_j \cdot \Enc{P(x_j)},
+  \label{eq:flag} \\
+  \Enc{q_j} &\;\leftarrow\; \gamma_j \cdot \Enc{P(x_j)} \;+\; b_j,
+  \label{eq:payload}
+\end{align}
+where~\eqref{eq:payload} uses a plaintext scalar addition of $\Party{O}$'s
+known identifier $b_j$. The decrypted plaintexts satisfy:
+\[
+  s_j = 0 \iff j \in I,
+  \qquad
+  q_j = \begin{cases} b_j & j \in I, \\ b_j + \gamma_j P(x_j) \sim \mathcal{U}(\mathbb{Z}_p) & j \notin I. \end{cases}
+\]
+$\Party{O}$ sends $\bigl(\Enc{s_1},\ldots,\Enc{s_{n_O}}\bigr)$ and
+$\bigl(\Enc{q_1},\ldots,\Enc{q_{n_O}}\bigr)$ to $\Party{R}$.
+
+\smallskip
+\textbf{Step 4 --- Decryption and Bijection Recovery [$\Party{R}$].}
+$\Party{R}$ builds a lookup table $\mathcal{T}[a_k] = k$ from
+$\mathit{ID}_R$ and decrypts all $2n_O$ ciphertexts. It recovers:
+\[
+  I := \{j : \Dec{\Enc{s_j}} = 0 \bmod p\},
+  \qquad
+  \sigma(k) := j \;\text{ where }\; k = \mathcal{T}\!\bigl[\Dec{\Enc{q_j}}\bigr]
+  \;\text{ for each }\; j \in I,
+\]
+and constructs $\bb = (b_1, \ldots, b_{n_O})^\top \in \{0,1\}^{n_O}$ with
+$b_j = \mathbf{1}[j \in I]$.
+\end{protocol}
+
+
+\begin{remark}[Collision probability]
+\label{rem:collision}
+A false positive occurs if $b_j \bmod p = a_k \bmod p$ for some
+$b_j \neq a_k$. Choosing $p > n_O n_R / \delta$ bounds the total
+false-positive probability below $\delta$ by a union bound.
+\end{remark}
+
+\begin{remark}[Pre-shuffle necessity]
+\label{rem:shuffle}
+Without $\tau$, the indices $\sigma(k)$ recovered by $\Party{R}$ would
+reflect $\Party{O}$'s original database ordering, potentially leaking
+cohort characteristics independent of $\mathbf{X}_O$. The pre-shuffle
+makes index positions semantically inert.
+\end{remark}
+
+
+
+% ==============================================================
+% References (placeholder)
+% ==============================================================
+\begin{thebibliography}{9}
+
+\bibitem{cheon2017homomorphic}
+J.-H.~Cheon, A.~Kim, M.~Kim, and Y.~Song,
+``\href{https://doi.org/10.1007/978-3-319-70694-8_15}{Homomorphic encryption for arithmetic of approximate numbers},''
+in \textit{Proc.\ ASIACRYPT}, 2017, pp.\ 409--437.
+
+\bibitem{yang2019federated}
+Q.~Yang, Y.~Liu, T.~Chen, and Y.~Tong,
+``\href{https://dl.acm.org/doi/10.1145/3298981}{Federated machine learning: Concept and applications},''
+\textit{ACM Trans.\ Intell.\ Syst.\ Technol.}, vol.~10, no.~2, 2019.
+
+\bibitem{dwork2014dp}
+C.~Dwork and A.~Roth,
+\textit{\href{https://doi.org/10.1561/0400000042}{The Algorithmic Foundations of Differential Privacy}}.
+Now Publishers, 2014.
+
+\bibitem{freedman2004efficient}
+M.~J.~Freedman, K.~Nissim, and B.~Pinkas,
+``\href{https://doi.org/10.1007/978-3-540-24676-3_1}{Efficient private matching and set intersection},''
+in \textit{Proc.\ EUROCRYPT}, 2004, pp.\ 1--19.
+
+\bibitem{kim2018logistic}
+A.~Kim, Y.~Song, M.~Kim, K.~Lee, and J.-H.~Cheon,
+``\href{https://bmcmedgenomics.biomedcentral.com/articles/10.1186/s12920-018-0401-7}{Logistic regression model training based on the approximate homomorphic encryption},''
+\textit{BMC Med.\ Genomics}, vol.~11, 2018.
+
+\bibitem{mironov2012significance}
+I.~Mironov,
+``\href{https://dl.acm.org/doi/10.1145/2382196.2382264}{On significance of the least significant bits for differential privacy},''
+in \textit{Proc.\ ACM CCS}, 2012, pp.\ 650--661.
+
+\bibitem{mironov2017renyi}
+I.~Mironov,
+``\href{https://www.computer.org/csdl/proceedings-article/csf/2017/3217a263/12OmNzn38LX}{R\'{e}nyi differential privacy},''
+in \textit{Proc.\ IEEE CSF}, 2017, pp.\ 263--275.
+
+\bibitem{canonne2020discrete}
+C.~L.~Canonne, G.~Kamath, and T.~Steinke,
+``\href{https://proceedings.neurips.cc/paper/2020/hash/b53b3a3d6ab90ce0268229151c9bde11-Abstract.html}{The discrete Gaussian for differential privacy},''
+in \textit{Proc.\ NeurIPS}, 2020, pp.\ 15676--15688.
+
+\bibitem{balle2018improving}
+B.~Balle and Y.-X.~Wang,
+``\href{http://proceedings.mlr.press/v80/balle18a.html}{Improving the Gaussian mechanism for differential privacy: Analytical calibration and optimal denoising},''
+in \textit{Proc.\ ICML}, 2018, pp.\ 394--403.
+
+\end{thebibliography}
+
+\end{document}

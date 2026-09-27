@@ -113,7 +113,8 @@
 \rbdg{r3}{6}{0}
 \node[box, anchor=north, text width=7.0cm] (out) at ($(12,0 |- p3.south)+(0,-0.3)$) {%
   \textbf{Released by $R$:} $\hat\beta_{\mathrm{bc}}$, with $\hat\rho$, the ridge shrinkage\\
-  $-\lambda\tilde P_\lambda\Psi\tilde\beta_\lambda$, and $\widetilde{\mathrm{RSS}}=\widetilde{y^{\!\top}\!y}-\tilde c^{\!\top}\tilde\beta_\lambda$ (floored)\\[2pt]
+  $-\lambda\tilde P_\lambda\Psi\tilde\beta_\lambda$, and $\widetilde{\mathrm{RSS}}$ (floored at 0):\\
+  \hspace*{1em}$\widetilde{y^{\!\top}\!y}-2\tilde c^{\!\top}\tilde\beta_\lambda+\tilde\beta_\lambda^{\!\top}\tilde G\tilde\beta_\lambda$\\[2pt]
   $(\varepsilon,\delta)$-DP for $O$'s matched individuals $(x_O,y)$;\\
   $O$'s unmatched rows enter nothing $R$ can see};
 \draw[msg, dashed] (r3.east) -- (out.west |- r3.east);
@@ -123,8 +124,8 @@
 \node[box, anchor=north west, text width=19.2cm, draw=black!50, fill=black!3, font=\scriptsize] (key) at ($(-3.8,0 |- r3.south)+(0,-0.45)$) {%
   \renewcommand{\arraystretch}{1.25}%
   \begin{tabular}{@{}p{2.2cm}>{\raggedright\arraybackslash}p{16.6cm}@{}}
-  \textbf{Sanitize$_{\mathrm{BFV}}$} & $\textsf{ModSwitch}_0\big(\mathit{ct}\boxplus\mathrm{Enc}_{\mathit{pk}}(0;\,e_{\mathrm{fl}})\big)$, \;$\|e_{\mathrm{fl}}\|\approx2^{\kappa}B_{\mathrm{err}}$, $\kappa=40$: statistical flooding (BFV decrypts exactly, so the extra error costs only modulus bits).\\
-  \textbf{Sanitize$_{\mathrm{CKKS}}$} & $\textsf{ModSwitch}_0\big(\mathit{ct}\boxplus(e_{\mathrm{fl}},0)\big)$, \;$e_{\mathrm{fl}}\sim\mathcal{D}_{\mathbb{Z}^N,\tau}$, with $\tau$ set so the leftover error channel is $(\varepsilon_e,\delta_e)$-DP per record. DP-calibrated flooding needs a few bits above the error rather than $2^{40}$ (which would swamp CKKS precision); its cost $\rho_{\mathrm{err}}$ enters the ledger. The DP noise $z$ must be one value shared by all slots: independent per-slot noise could be averaged away.\\
+  \textbf{Sanitize$_{\mathrm{BFV}}$} & $\textsf{ModSwitch}_0(\mathit{ct})\boxplus\mathrm{Enc}_{\mathit{pk}}(0)\boxplus(e_{\mathrm{fl}},0)$, \;$\|e_{\mathrm{fl}}\|\approx2^{\kappa}B_{\mathrm{err}}$ with $N2^{-\kappa}\le2^{-40}$: statistical flooding (BFV decrypts exactly, so the extra error costs only modulus bits).\\
+  \textbf{Sanitize$_{\mathrm{CKKS}}$} & $\textsf{ModSwitch}_0(\mathit{ct})\boxplus(e_{\mathrm{fl}},0)$, \;$e_{\mathrm{fl}}\sim\mathcal{D}_{\mathbb{Z}^N,\varsigma}$, $\varsigma=S_{\mathrm{err}}/\sqrt{2\rho_{\mathrm{err}}}$, so the leftover error channel is $\rho_{\mathrm{err}}$-zCDP per record. DP-calibrated flooding needs a few bits above the error rather than $2^{40}$ (which would swamp CKKS precision); its cost $\rho_{\mathrm{err}}$ enters the ledger. The DP noise $z$ must be one value shared by all slots: independent per-slot noise could be averaged away.\\
   \textbf{Sensitivity} & $\Delta_{\mathrm{rep}}=\sup\|f(D)-f(D')\|_2$ over $D,D'$ differing in one matched $(x_O,y)$ with $x_R$ fixed; \;$\Delta_{(6)}\le\Delta_{\mathrm{rep}}\le2\Delta_{(6)}$ (closed form in \texttt{design.md}). Keeping $y^{\!\top}\!y$ costs nothing under replace-one.\\
   \textbf{Risks fixed} &
   \newcommand{\R}[3]{\makebox[#1][l]{\B{#2}\,#3}}%

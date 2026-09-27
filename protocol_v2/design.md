@@ -13,7 +13,7 @@ purpose; see [What it does not fix](#what-it-does-not-fix).
 
 | # | Risk (source) | Fix | Cost |
 |---|---|---|---|
-| 1 | **Circuit privacy (critical).** `EvalAdd(ct, float(z))` leaves c1 of O's reply independent of the noise, so R distinguishes neighbouring datasets with certainty, unmatched records included (independent review, d1). O's BFV PSI replies aren't sanitized either. | CKKS: O adds a **fresh `Enc_pk(z)`**, which re-randomises c1, then **floods the error** with a Gaussian calibrated so the error channel is (ε_e, δ_e)-DP per record, then switches to the last modulus level. BFV: **statistical flooding** (κ = 40) plus a modulus switch. | CKKS: a few extra modulus bits, plus a small ε_e in the budget. BFV: about κ + log B_err ≈ 60–70 more modulus bits. Ring 16384 still fits for t ≲ 2^40; larger t needs 32768. |
+| 1 | **Circuit privacy (critical).** `EvalAdd(ct, float(z))` leaves c1 of O's reply independent of the noise, so R distinguishes neighbouring datasets with certainty, unmatched records included (independent review, d1). O's BFV PSI replies aren't sanitized either. | CKKS: O adds a **fresh `Enc_pk(z)`**, which re-randomises c1, switches to the last modulus level, then **floods the error** with a discrete Gaussian of width ς = S_err/√(2ρ_err), so the error channel is ρ_err-zCDP per record. BFV: modulus switch, then **statistical flooding** with N·2^(−κ) ≤ 2^(−40). | CKKS: a few extra modulus bits, plus a small ε_e in the budget. BFV: about κ + log B_err ≈ 60–70 more modulus bits. Ring 16384 still fits for t ≲ 2^40; larger t needs 32768. |
 | 2 | **Calibration leak (critical) and the `committed` bug (high).** One process reads both datasets and writes data-derived statistics into the shared `dp_params.json`. | **Per-party commitments.** R standardizes with its own constants, which never leave R, and commits `B_R`. O standardizes with **public** constants (or DP-released ones under a separate budget) and commits `B_O` and `B_y`. Only public constants cross. Refuse to run otherwise. | None. Some utility, if the public constants are cruder than sample estimates. |
 | 3 | **Sensitivity (high).** Eq. (6) is add-one but Def. 4 is replace-one. | σ from **Δ_rep** (below). | σ rises by 1–2× Δ₍₆₎: +4% at the accuracy study's bounds, up to +41% at equal bounds, close to 2× when `B_R` dominates. |
 | 4 | **No privacy ledger (high).** | O keeps a **zCDP ledger** per (dataset, researcher) and refuses a run if ρ_used + ρ_run > ρ_cap, with ρ_run = Δ_rep²/2σ² + ρ_err. | Caps the number of re-runs, which is the point. |
@@ -48,7 +48,7 @@ no `pickle`.
 3. **O:**
    - evaluates `P(y)` and `L(y)` per partition (ciphertext × plaintext);
    - draws masks r₁, r₂ from a CSPRNG and forms `s = r₁P(y)`, `q = r₂P(y) + L(y)`;
-   - applies `Sanitize_BFV` to both and sends them.
+   - applies `Sanitize_BFV` to both (modulus switch, then flood) and sends them.
 4. **R:** decrypts to get `I = {k : s_k = 0}` and `k ↦ j = q_k`, where j is a uniformly random
    τ-position. It builds `b` and `Ẋ_R` in τ-order and computes `A = Ẋ_Rᵀ Ẋ_R` locally.
 
@@ -66,7 +66,7 @@ no `pickle`.
 1. Fix λ and Ψ from public inputs.
 2. Decrypt slot 0, and assemble `G̃ = [[A, C̃], [C̃ᵀ, B̃]]` and `c̃ = [c̃_R; c̃_O]`.
 3. Compute `β̃_λ = (G̃ + λΨ)⁻¹ c̃` and `β̂_bc = β̃_λ − σ² M(P̃_λ) β̃_λ` (Theorem 2, given ρ̂ ≥ 1).
-4. Release `β̂_bc`, together with ρ̂, the shrinkage `−λP̃_λΨβ̃_λ`, and `RSS̃ = ỹᵀy − c̃ᵀβ̃_λ` floored at zero.
+4. Release `β̂_bc`, together with ρ̂, the shrinkage `−λP̃_λΨβ̃_λ`, and `RSS̃ = ỹᵀy − 2c̃ᵀβ̃_λ + β̃_λᵀG̃β̃_λ` floored at zero.
 
 ## Parameters
 
@@ -99,11 +99,11 @@ bound settings above (`protocol_v2/check_sensitivity_no_yty.py`). The independen
 - The only data-dependent term is `e_data`. It depends on O's plaintext columns through R's
   known encryption error, the key-switching error and rounding. Let `S_err` be its per-record
   ℓ₂ sensitivity; this is a bound on how much one record can move it.
-- O adds `e_fl ~ D_{Z^N, τ}` with `ρ_err = S_err² / 2τ²` (zCDP). This is the DP-based flooding
+- O switches to the last level, then adds `e_fl ~ D_{Z^N, ς}` with `ρ_err = S_err² / 2ς²` (zCDP). (ς is the flooding width, not the permutation τ.) This is the DP-based flooding
   analysis of Li, Micciancio, Schultz and Sorrell (CRYPTO 2022), applied here to the
   evaluator-to-decryptor direction.
 
-Because `S_err` is roughly the size of the error, τ needs only a few bits above it, so the
+Because `S_err` is roughly the size of the error, ς needs only a few bits above it, so the
 decoded perturbation `e_fl/Δ` stays far below σ. Classical statistical flooding (2^40 × the
 error) would need a scale beyond 2^60 to keep precision, which the 64-bit OpenFHE build does not
 provide.
@@ -111,10 +111,10 @@ provide.
 **Why the noise must be the same in every slot.** EvalSum replicates the total into all N/2
 slots. If each slot carried independent noise, R could average them and remove it. So `z` must
 be one value shared by every slot. The flooding term does perturb each slot independently, but
-only by about `τ/Δ`, which is tiny. Averaging it away recovers `s + z`, never `s`.
+only by about `ς/Δ`, which is tiny. Averaging it away recovers `s + z`, never `s`.
 
 **BFV flooding.** BFV decrypts exactly (the rounding removes the error), so plain statistical
-flooding works: `‖e_fl‖ ≈ 2^40·B_err`, followed by `ModSwitch₀`. The cost is only modulus bits.
+flooding works: `ModSwitch₀`, then `‖e_fl‖ ≈ 2^κ·B_err` with N·2^(−κ) ≤ 2^(−40). The cost is only modulus bits.
 
 **Ledger.** zCDP adds up across channels and runs:
 - ρ_run = Δ_rep²/2σ² + ρ_err.
@@ -172,3 +172,5 @@ The proof obligations are listed below.
 | `psi_common.py` | Keyed `H_K`. `DUMMY_ROOT = p − 1` per call. Pad to public `D` and `α`. Count and report collisions. |
 | `party_o.py` | τ permutation on load. `secrets` for masks. Sanitize the PSI replies. Ledger file. Fix the `D == 1` label bug. |
 | `party_r.py` | Chunked `Enc(Ẋ_R)`. λ fixed before decryption. Report ρ̂, the shrinkage and `RSS̃`. |
+
+Pseudocode: `paper/algorithms.tex` (Algorithms 1–5), included in `paper/main.tex`.
