@@ -10,6 +10,19 @@ const fa = require("react-icons/fa");
 
 const ROOT = path.resolve(__dirname, "..");
 const P = (...p) => path.join(ROOT, ...p);
+const fs = require("fs");
+function readCsv(file) {
+  const [head, ...rows] = fs.readFileSync(file, "utf8").trim().split(/\r?\n/);
+  const keys = head.split(",");
+  return rows.map((r) => Object.fromEntries(r.split(",").map((v, i) => [keys[i], v])));
+}
+// AdaSSP benchmark outputs of experiments/adassp/run_benchmark.py
+const ADA9 = readCsv(P("reports", "adassp", "results.csv"));
+const ADA_ALL = readCsv(P("reports", "adassp", "all", "results.csv"));
+const ADA_CMP = readCsv(P("reports", "adassp", "all", "compare.csv"));
+// Error bars for native charts, keyed by chart title; added to the chart XML after writing (pptxgenjs has no API for them)
+const ERRBARS = {};
+const adaGet = (rows, ds, eps, m) => rows.find((r) => r.dataset === ds && Number(r.eps) === eps && r.method === m);
 
 // ---------- palette & type ----------
 const INK = "14213D";     // dominant dark
@@ -253,31 +266,29 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     s.addNotes("Central DP regression assumes a pooled table; VFL-with-HE work usually lacks output privacy; PSI gives linkage only. We combine private linkage, encrypted aggregation and DP.");
   }
 
-  // ======================= 8. Divider: our work =======================
-  divider(2, "What we did", "Reviewed the draft, found what breaks, and rebuilt it")
-    .addNotes("Part 2: the work we did and what we found.");
-
-  // ======================= 9. Timeline =======================
+  // ======================= 8. Divider: our work, with the timeline =======================
   {
-    const s = pres.addSlide(); title(s, "From draft to revised protocol");
+    const s = pres.addSlide(); s.background = { color: INK };
+    numCircle(s, 2, 0.9, 1.15, 1.3, EMBER, 36);
+    s.addText("What we did", { x: 2.6, y: 1.05, w: 9.5, h: 0.9, fontFace: HEAD, fontSize: 40, bold: true, color: WHITE, margin: 0, isTextBox: true });
+    s.addText("Reviewed the draft, found what breaks, and rebuilt it", { x: 2.6, y: 1.95, w: 9.5, h: 0.6, fontFace: BODY, fontSize: 18, color: "CAD5E6", margin: 0, isTextBox: true });
     const steps = [
       ["search", "Review", "Draft paper and code checked line by line"],
       ["cogs", "Run", "End-to-end over sockets: plaintext and real OpenFHE"],
       ["secret", "Attack", "Three privacy reviews plus an independent critique"],
       ["layers", "Redesign", "Revised protocol, TikZ figure, rewritten paper"],
       ["chart", "Simulate", "Accuracy and bias-correction studies"],
-      ["balance", "Benchmark", "AdaSSP on Wang's UCI datasets (set up, not yet run)"],
+      ["balance", "Benchmark", "AdaSSP on 29 of Wang's UCI datasets"],
     ];
-    const y = 2.55, gap = 2.02;
-    s.addShape(pres.shapes.LINE, { x: 1.05, y: y + 0.45, w: gap * 5, h: 0, line: { color: LINE, width: 2 } });
+    const y = 3.75, gap = 2.02;
+    s.addShape(pres.shapes.LINE, { x: 1.0, y: y + 0.4, w: gap * 5, h: 0, line: { color: "3D5A80", width: 2 } });
     steps.forEach(([ic, h, b], i) => {
       const x = 0.6 + i * gap;
-      circleIcon(s, ic, x, y, 0.9, i === 5 ? SLATE : (i === 2 ? EMBER : INK));
-      txt(s, `${i + 1}. ${h}`, { x: x - 0.25, y: y + 1.15, w: 1.9, h: 0.45, fontFace: HEAD, fontSize: 17, bold: true, color: INK });
-      txt(s, b, { x: x - 0.25, y: y + 1.65, w: 1.85, h: 1.5, fontSize: 13.5, color: MUTED });
+      circleIcon(s, ic, x, y, 0.8, i === 2 ? EMBER : SLATE);
+      s.addText(`${i + 1}. ${h}`, { x: x - 0.2, y: y + 1.0, w: 1.9, h: 0.45, fontFace: HEAD, fontSize: 17, bold: true, color: WHITE, margin: 0, isTextBox: true });
+      s.addText(b, { x: x - 0.2, y: y + 1.48, w: 1.85, h: 1.3, fontFace: BODY, fontSize: 13.5, color: "CAD5E6", margin: 0, valign: "top", isTextBox: true });
     });
-    chip(s, "Next", 0.6 + 5 * gap - 0.2, y - 0.6, 1.3, SLATE);
-    s.addNotes("The sequence of work: review, running the implementation, adversarial privacy reviews, redesign, simulations, and the AdaSSP benchmark, which is set up but not yet run.");
+    s.addNotes("Part 2. The sequence of work: review, running the implementation, adversarial privacy reviews, redesign, simulations, and the AdaSSP benchmark.");
   }
 
   // ======================= 10. Critical finding =======================
@@ -490,7 +501,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["db", "Simulation population", "Features on real-world scales (income, age, binary indicators, counts), correlated. Public standardization constants; committed 99.5% bounds; R² ∈ {0.3, 0.5, 0.9}."],
       ["flask", "Monte Carlo", "n from 100 to 100k matched records; ε ∈ {0.5, 1, 2, 4, 8}, δ = 10⁻⁵; 200 replicates, each with new data and a new DP release."],
       ["chart", "Metrics", "RMSE against the true β (standardized); per-coefficient efficiency ratio; interval coverage; MSE ratio corrected/uncorrected."],
-      ["book", "Benchmark", "Wang's 36 UCI regression datasets; AdaSSP as published and under our guarantee; test MSE, as in Wang (2018)."],
+      ["book", "Benchmark", "29 UCI datasets from Wang's published run, with his preprocessing; AdaSSP as published and under our guarantee; 10-fold test MSE."],
     ];
     cards.forEach(([ic, h, b], i) => {
       const x = 0.6 + (i % 2) * 6.15, y = 1.55 + Math.floor(i / 2) * 2.65;
@@ -601,20 +612,74 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     s.addNotes("When sigma is large, the ridge's shrinkage dominates. Intervals are reliable only when the ridge is off, and at large n clipping to the committed bounds moves the target.");
   }
 
-  // ======================= 28. AdaSSP placeholder =======================
+  // ======================= 28. AdaSSP benchmark at eps = 1 =======================
   {
-    const s = pres.addSlide(); title(s, "Benchmark against AdaSSP (Wang 2018)", "Test MSE at ε = 1, δ = 10⁻⁶ (efficiency vs non-private in brackets)");
-    chip(s, "Not yet run", 11.0, 1.15, 1.7, SLATE);
-    const tbd = { text: "to be done", options: { color: "9AA5B4", italic: true } };
+    const s = pres.addSlide(); title(s, "Benchmark against AdaSSP (Wang 2018)", "Test MSE at ε = 1, δ = 10⁻⁶, 10-fold CV. Ratio to non-private in brackets; bold = best private method");
+    const PRIV = ["adassp", "adassp_matched", "vfl", "vfl_uncorrected"];
+    const f3 = (v) => Number(v).toPrecision(3);
     const rows = [hdr(["Dataset", "n", "d", "Non-private", "AdaSSP (published)", "AdaSSP (matched)", "VFL, ours", "VFL, uncorrected"])];
-    // n, d from Wang's preprocessed data (experiments/adassp/datasets.py)
-    [["housing", "506", "13"], ["wine", "1,599", "11"], ["airfoil", "1,503", "5"], ["concrete", "1,030", "8"], ["bike", "17,379", "17"],
-     ["elevators", "16,599", "18"], ["pol", "15,000", "26"], ["kin40k", "40,000", "8"], ["protein", "45,730", "9"]].forEach(([d, n, k]) =>
-      rows.push([d, n, k, tbd, tbd, tbd, tbd, tbd]));
-    s.addTable(rows, Object.assign(tableOpts([1.4, 1.0, 0.6, 1.55, 1.95, 1.9, 1.75, 1.95]), { y: 1.75, rowH: 0.4, fontSize: 13 }));
-    txt(s, "Matched = AdaSSP's algorithm under our adjacency and accountant (A exact); it isolates the λ rule. Published AdaSSP protects the whole record, a stronger guarantee.",
-      { x: 0.6, y: 6.2, w: 12.1, h: 0.7, fontSize: 13, italic: true, color: MUTED });
-    s.addNotes("Placeholder: fill in once the AdaSSP benchmark is run (loaders are in experiments/adassp). Also add the per-dataset MSE-vs-epsilon grid and the cross-dataset summary.");
+    rows[0][6].options.fill = { color: EMBER };
+    ["housing", "wine", "airfoil", "concrete", "bike", "elevators", "pol", "kin40k", "protein"].forEach((ds) => {
+      const np = adaGet(ADA9, ds, 1, "nonprivate");
+      const vals = PRIV.map((m) => Number(adaGet(ADA9, ds, 1, m).test_mse));
+      const best = Math.min(...vals);
+      rows.push([ds, Number(np.n).toLocaleString("en-US"), np.d, f3(np.test_mse),
+        ...PRIV.map((m, k) => ({ text: `${f3(vals[k])} (${(vals[k] / Number(np.test_mse)).toFixed(2)}×)`,
+          options: vals[k] === best ? { bold: true, color: INK } : {} }))]);
+    });
+    s.addTable(rows, Object.assign(tableOpts([1.4, 1.0, 0.6, 1.4, 2.0, 1.95, 1.8, 1.95]), { y: 1.75, rowH: 0.4, fontSize: 13 }));
+    txt(s, "Published AdaSSP protects the whole record, a stronger guarantee than ours, and uses Wang's noise constants: at ε = 1 its per-entry noise on XᵀX (11.9) is below ours (13.4), which is still to be checked. Matched = AdaSSP's adaptive λ under our guarantee; idealized, since its λ_min step needs XᵀX in the clear.",
+      { x: 0.6, y: 5.95, w: 12.1, h: 0.95, fontSize: 12.5, italic: true, color: MUTED });
+    s.addNotes("From reports/adassp/results.csv. Our protocol beats the matched AdaSSP on every dataset here and is within a few percent of published AdaSSP at large n; published AdaSSP is ahead on the small datasets at eps = 1. Our AdaSSP re-implementation reproduces Wang's published MSE (median ratio 1.000 over 29 datasets and 10 values of eps).");
+  }
+
+  // ======================= 29. AdaSSP across eps =======================
+  {
+    const s = pres.addSlide(); title(s, "Across privacy levels", "Test MSE ÷ non-private, three datasets of increasing size; bars: 95% CI of the mean over the 10 folds");
+    const EPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10];
+    const SER = [["trivial", "Trivial (θ = 0)", "B8BEC8"], ["adassp", "AdaSSP (published)", "1BAF7A"],
+                 ["adassp_matched", "AdaSSP (matched)", "EDA100"], ["vfl", "VFL, ours", "2A78D6"]];
+    ["housing", "elevators", "protein"].forEach((ds, k) => {
+      const n = Number(adaGet(ADA9, ds, 1, "vfl").n).toLocaleString("en-US");
+      const data = SER.map(([m, name]) => ({ name, labels: EPS.map(String),
+        values: EPS.map((e) => Number(adaGet(ADA9, ds, e, m).ratio_to_nonprivate)) }));
+      const ctitle = `${ds}  (n = ${n})`;
+      ERRBARS[ctitle] = Object.fromEntries(SER.filter(([m]) => m !== "trivial").map(([m, name]) => [name, EPS.map((e) => {
+        const r = adaGet(ADA9, ds, e, m);
+        return (Number(r.ci95_hi) - Number(r.test_mse)) / Number(adaGet(ADA9, ds, e, "nonprivate").test_mse);
+      })]));
+      s.addChart(pres.charts.LINE, data, {
+        x: 0.6 + k * 4.1, y: 1.6, w: 3.95, h: 3.3,
+        chartColors: SER.map((r) => r[2]), lineSize: 2, lineDataSymbol: "circle", lineDataSymbolSize: 5,
+        showTitle: true, title: ctitle, titleFontFace: HEAD, titleFontSize: 13, titleColor: INK,
+        showLegend: false, valAxisMinVal: 1, valAxisLabelFormatCode: "0.0",
+        showValAxisTitle: k === 0, valAxisTitle: "MSE ÷ non-private", valAxisTitleFontSize: 10, valAxisTitleColor: MUTED,
+        showCatAxisTitle: true, catAxisTitle: "ε", catAxisTitleFontSize: 10, catAxisTitleColor: MUTED,
+        catAxisLabelFontSize: 9, valAxisLabelFontSize: 9, catAxisLabelColor: MUTED, valAxisLabelColor: MUTED,
+        valGridLine: { color: "E5E7EB", size: 0.5 }, catGridLine: { style: "none" },
+      });
+    });
+    SER.forEach(([, name, col], i) => {
+      const x = 2.6 + i * 2.35;
+      s.addShape(pres.shapes.LINE, { x, y: 5.12, w: 0.4, h: 0, line: { color: col, width: 2.5 } });
+      txt(s, name, { x: x + 0.5, y: 4.98, w: 1.8, h: 0.3, fontSize: 12, color: TEXT });
+    });
+    const N = new Set(ADA_CMP.map((r) => r.dataset)).size;
+    const E3 = [0.1, 1, 10];
+    const verdicts = (vs, e) => {
+      const v = ADA_CMP.filter((r) => r.vs === vs && Number(r.eps) === e).map((r) => r.verdict);
+      return `${v.filter((x) => x === "better").length} / ${v.filter((x) => x === "worse").length}`;
+    };
+    const trows = [hdr([`Ours better / worse (of ${N})`, "ε = 0.1", "ε = 1", "ε = 10"]),
+      ["vs AdaSSP (published)", ...E3.map((e) => verdicts("adassp", e))],
+      ["vs AdaSSP (matched)", ...E3.map((e) => verdicts("adassp_matched", e))],
+      ["Bias-corrected vs uncorrected", ...E3.map((e) => verdicts("vfl_uncorrected", e))]];
+    s.addTable(trows, Object.assign(tableOpts([3.0, 1.05, 1.05, 1.05]), { y: 5.4, rowH: 0.35, fontSize: 13 }));
+    txt(s, "Paired over folds, 95% CI; the rest show no significant difference.", { x: 0.6, y: 6.92, w: 6.2, h: 0.3, fontSize: 11, italic: true, color: MUTED });
+    card(s, 7.2, 5.4, 5.5, 1.45, EMBER_L);
+    txt(s, "At small ε the fixed ridge wins: AdaSSP spends a third of its budget on λ_min. From ε ≈ 0.5 AdaSSP's adaptive ridge wins (median 4% lower MSE at ε = 1); the gap shrinks as n grows.",
+      { x: 7.45, y: 5.58, w: 5.05, h: 1.25, fontSize: 14, color: INK, valign: "middle" });
+    s.addNotes("Native charts from reports/adassp/results.csv; paired verdicts from reports/adassp/all/compare.csv (all 29 datasets of Wang's published run, R = 50 draws per fold; a verdict needs the 95% CI of the paired fold difference to exclude 0). The bias correction changes test MSE by -2.8% to +2.3%: it helps at small eps and slightly hurts at large eps.");
   }
 
   // ======================= 29. Remaining placeholders =======================
@@ -641,21 +706,45 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     s.addText("Takeaways and next steps", { x: 0.6, y: 0.45, w: 12, h: 0.8, fontFace: HEAD, fontSize: 34, bold: true, color: WHITE, margin: 0, isTextBox: true });
     const take = ["The revised protocol closes the critical and high gaps under honest-but-curious parties",
       "Accuracy reaches 2× of non-private OLS at n ≈ 3k–100k, depending on ε",
-      "The bias correction is a small, free variance reduction; shrinkage dominates when σ is large"];
+      "Against AdaSSP: ahead at small ε, behind at large ε; the gap shrinks as n grows",
+      "The bias correction is a small effect (under 3% of test MSE); ridge shrinkage dominates when σ is large"];
     take.forEach((t, i) => {
-      numCircle(s, i + 1, 0.6, 1.65 + i * 1.35, 0.65, EMBER, 18);
-      s.addText(t, { x: 1.5, y: 1.62 + i * 1.35, w: 5.2, h: 1.1, fontFace: BODY, fontSize: 17, color: WHITE, margin: 0, valign: "top", isTextBox: true });
+      numCircle(s, i + 1, 0.6, 1.6 + i * 1.25, 0.6, EMBER, 17);
+      s.addText(t, { x: 1.45, y: 1.6 + i * 1.25, w: 5.3, h: 1.0, fontFace: BODY, fontSize: 16, color: WHITE, margin: 0, valign: "top", isTextBox: true });
     });
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 7.2, y: 1.5, w: 5.5, h: 5.2, fill: { color: "1F3050" }, line: { color: "1F3050" }, rectRadius: 0.08 });
     s.addText("Next", { x: 7.5, y: 1.7, w: 5, h: 0.5, fontFace: HEAD, fontSize: 22, bold: true, color: "E7A77C", margin: 0, isTextBox: true });
-    const nxt = ["Finish the AdaSSP benchmark and real-data sweeps", "Implement the revised protocol in OpenFHE and measure its cost",
+    const nxt = ["Real-data intersection-size sweeps", "Check Wang's noise constants; use the joint row bound to tighten our Δ",
+      "Implement the revised protocol in OpenFHE and measure its cost",
       "Prove the S_err bound; complete finite-precision accounting", "Standard errors; membership-private variant for sensitive registers"];
     s.addText(nxt.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < nxt.length - 1, paraSpaceAfter: 10 } })),
       { x: 7.5, y: 2.35, w: 4.95, h: 4.2, fontFace: BODY, fontSize: 16, color: WHITE, margin: 0, valign: "top", isTextBox: true });
-    s.addNotes("Three takeaways and four next steps.");
+    s.addNotes("Four takeaways and five next steps.");
   }
 
   const out = P("slides", "vfl_scenarioB_deck.pptx");
-  await pres.writeFile({ fileName: out });
+  const JSZip = require("jszip");
+  const zip = await JSZip.loadAsync(await pres.write({ outputType: "nodebuffer" }));
+  const lit = (vals) => `<c:numLit><c:formatCode>General</c:formatCode><c:ptCount val="${vals.length}"/>` +
+    vals.map((v, i) => `<c:pt idx="${i}"><c:v>${v.toPrecision(4)}</c:v></c:pt>`).join("") + "</c:numLit>";
+  let nBars = 0;
+  for (const f of Object.keys(zip.files).filter((f) => /^ppt\/charts\/chart\d+\.xml$/.test(f))) {
+    let xml = await zip.file(f).async("string");
+    const key = Object.keys(ERRBARS).find((t) => xml.includes(t.replace(/&/g, "&amp;")));
+    if (!key) continue;
+    xml = xml.replace(/<c:ser>[\s\S]*?<\/c:ser>/g, (ser) => {
+      const name = Object.keys(ERRBARS[key]).find((nm) => ser.includes(`<c:v>${nm}</c:v>`));
+      if (!name) return ser;
+      const col = (ser.match(/<a:srgbClr val="([0-9A-Fa-f]{6})"/) || [, "5B6576"])[1];
+      const v = ERRBARS[key][name];
+      nBars++;
+      return ser.replace("<c:cat>", `<c:errBars><c:errDir val="y"/><c:errBarType val="both"/><c:errValType val="cust"/>` +
+        `<c:noEndCap val="0"/><c:plus>${lit(v)}</c:plus><c:minus>${lit(v)}</c:minus>` +
+        `<c:spPr><a:ln w="12700"><a:solidFill><a:srgbClr val="${col}"/></a:solidFill></a:ln></c:spPr></c:errBars><c:cat>`);
+    });
+    zip.file(f, xml);
+  }
+  fs.writeFileSync(out, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+  console.log("error-bar series added:", nBars);
   console.log("wrote", out);
 })();

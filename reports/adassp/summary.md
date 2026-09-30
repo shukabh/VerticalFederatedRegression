@@ -45,6 +45,16 @@ Command: `experiments/adassp/run_benchmark.py`
 | kin40k | 40,000 | 8 | 0.06336 (1.00) | 0.06325 (1.00) | 0.06325 (1.00) | 0.06325 (1.00) | 0.06325 (1.00) | 0.06325 (1.00) | 0.06325 (1.00) | 100% |
 | protein | 45,730 | 9 | 0.1671 (1.40) | 0.1189 (1.00) | 0.1189 (1.00) | 0.119 (1.00) | 0.119 (1.00) | 0.1191 (1.00) | 0.1191 (1.00) | 100% |
 
+## Paired comparisons (95% CI over folds)
+
+Number of datasets where the first method has lower / higher test MSE than the second, or no significant difference.
+
+| comparison | ε = 0.01 | ε = 0.02 | ε = 0.05 | ε = 0.1 | ε = 0.2 | ε = 0.5 | ε = 1 | ε = 2 | ε = 5 | ε = 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| VFL, ours vs AdaSSP (published) | 6 / 0 / 3 | 5 / 2 / 2 | 6 / 3 / 0 | 3 / 4 / 2 | 2 / 7 / 0 | 0 / 8 / 1 | 0 / 8 / 1 | 0 / 8 / 1 | 0 / 7 / 2 | 0 / 7 / 2 |
+| VFL, ours vs AdaSSP (matched) | 9 / 0 / 0 | 9 / 0 / 0 | 9 / 0 / 0 | 9 / 0 / 0 | 9 / 0 / 0 | 8 / 0 / 1 | 8 / 0 / 1 | 8 / 0 / 1 | 6 / 1 / 2 | 5 / 2 / 2 |
+| VFL, ours vs VFL, uncorrected | 6 / 3 / 0 | 5 / 4 / 0 | 5 / 4 / 0 | 2 / 4 / 3 | 1 / 7 / 1 | 0 / 8 / 1 | 0 / 8 / 1 | 0 / 8 / 1 | 0 / 8 / 1 | 0 / 7 / 2 |
+
 ## Check against Wang's published run (code/exp_results.mat)
 
 Ratio ours / published, median and range over datasets and ε. Values near 1 mean the re-implementation reproduces Wang's numbers (different random folds and noise, so small-n, small-ε cells differ most).

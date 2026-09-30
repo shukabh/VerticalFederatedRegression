@@ -27,9 +27,16 @@ Outputs (default `reports/adassp/`, change with `--out`):
 
 | file | content |
 |---|---|
-| `results.csv` | one row per dataset × ε × method: test MSE, standard error over folds, ratio to non-private, Wang's published MSE where it exists, VFL gate pass rate, mean λ |
-| `summary.md` | tables at ε = 0.1, 1, 10 and a check of our AdaSSP against Wang's published numbers |
+| `results.csv` | one row per dataset × ε × method: test MSE, standard error and 95% CI over folds, middle 95% of individual runs, ratio to non-private, Wang's published MSE where it exists, VFL gate pass rate, mean λ |
+| `compare.csv` | paired comparisons of ours against AdaSSP, matched AdaSSP and the uncorrected estimate: mean difference, 95% CI half-width, verdict (better / worse / no difference) |
+| `summary.md` | tables at ε = 0.1, 1, 10, counts of paired verdicts, and a check of our AdaSSP against Wang's published numbers |
 | `fig_mse_vs_eps.png` | test MSE against ε, one panel per dataset |
+
+Uncertainty: a run is one CV fold × one noise draw. The folds are the independent units, so a
+method's 95% CI uses the t distribution over the 10 fold means (error bars in the figure); the shaded
+bands are the middle 95% of individual runs. Fold-to-fold variation is shared by all methods, so
+per-method intervals overlap even when one method is consistently better: compare methods with the
+paired tests in `compare.csv`.
 
 Useful options: `--datasets bike pol`, `--eps 0.5 1 2`, `--R 100` (noise draws per fold),
 `--d-r 3` (features held by R; default ⌊d/2⌋), `--rho-star 2.5` (ridge constant), `--seed 1`.

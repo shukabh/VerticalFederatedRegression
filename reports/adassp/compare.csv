@@ -1,0 +1,271 @@
+dataset,eps,method,vs,mean_diff,ci95_halfwidth,rel_diff,verdict
+housing,0.01,vfl,adassp,-0.005651,0.00376,-0.04676,better
+housing,0.01,vfl,adassp_matched,-0.009634,0.00368,-0.07718,better
+housing,0.01,vfl,vfl_uncorrected,-0.0006361,0.000144,-0.005491,better
+housing,0.02,vfl,adassp,-0.003808,0.00387,-0.03249,no difference
+housing,0.02,vfl,adassp_matched,-0.006333,0.00395,-0.05289,better
+housing,0.02,vfl,vfl_uncorrected,-0.0004747,0.000162,-0.004168,better
+housing,0.05,vfl,adassp,-0.00246,0.00175,-0.02153,better
+housing,0.05,vfl,adassp_matched,-0.00974,0.00279,-0.08014,better
+housing,0.05,vfl,vfl_uncorrected,-0.000322,0.000171,-0.002872,better
+housing,0.1,vfl,adassp,-0.003106,0.00293,-0.02809,better
+housing,0.1,vfl,adassp_matched,-0.005932,0.00225,-0.05232,better
+housing,0.1,vfl,vfl_uncorrected,-0.0001012,0.000122,-0.0009408,no difference
+housing,0.2,vfl,adassp,0.003557,0.00247,0.03572,worse
+housing,0.2,vfl,adassp_matched,-0.003566,0.00287,-0.03342,better
+housing,0.2,vfl,vfl_uncorrected,8.22e-05,0.000109,0.0007976,no difference
+housing,0.5,vfl,adassp,0.004059,0.00216,0.04791,worse
+housing,0.5,vfl,adassp_matched,-0.004416,0.00113,-0.04739,better
+housing,0.5,vfl,vfl_uncorrected,0.0005267,0.000182,0.005969,worse
+housing,1,vfl,adassp,0.006623,0.00238,0.09291,worse
+housing,1,vfl,adassp_matched,-0.004031,0.00121,-0.0492,better
+housing,1,vfl,vfl_uncorrected,0.0005873,0.0002,0.007596,worse
+housing,2,vfl,adassp,0.006785,0.00218,0.1152,worse
+housing,2,vfl,adassp_matched,-0.002498,0.000912,-0.03664,better
+housing,2,vfl,vfl_uncorrected,0.0005411,0.000171,0.008308,worse
+housing,5,vfl,adassp,0.005315,0.00141,0.1114,worse
+housing,5,vfl,adassp_matched,-0.002451,0.000821,-0.04417,better
+housing,5,vfl,vfl_uncorrected,0.0003237,0.000126,0.006141,worse
+housing,10,vfl,adassp,0.003495,0.00174,0.08075,worse
+housing,10,vfl,adassp_matched,-0.001501,0.000374,-0.0311,better
+housing,10,vfl,vfl_uncorrected,0.0001679,8.37e-05,0.003602,worse
+wine,0.01,vfl,adassp,-0.005947,0.00175,-0.08785,better
+wine,0.01,vfl,adassp_matched,-0.01001,0.00228,-0.1395,better
+wine,0.01,vfl,vfl_uncorrected,-0.0007696,8.99e-05,-0.01231,better
+wine,0.02,vfl,adassp,-0.005482,0.00192,-0.08288,better
+wine,0.02,vfl,adassp_matched,-0.008901,0.0024,-0.128,better
+wine,0.02,vfl,vfl_uncorrected,-0.000667,6.25e-05,-0.01088,better
+wine,0.05,vfl,adassp,-0.005159,0.00119,-0.08159,better
+wine,0.05,vfl,adassp_matched,-0.00742,0.00134,-0.1133,better
+wine,0.05,vfl,vfl_uncorrected,-0.0004176,6.51e-05,-0.00714,better
+wine,0.1,vfl,adassp,-0.002128,0.000979,-0.03688,better
+wine,0.1,vfl,adassp_matched,-0.007032,0.0012,-0.1123,better
+wine,0.1,vfl,vfl_uncorrected,-0.0002051,6.15e-05,-0.003677,better
+wine,0.2,vfl,adassp,-0.0007684,0.000618,-0.01498,better
+wine,0.2,vfl,adassp_matched,-0.0053,0.00159,-0.09492,better
+wine,0.2,vfl,vfl_uncorrected,5.15e-05,3.85e-05,0.00102,worse
+wine,0.5,vfl,adassp,0.002404,0.000851,0.05958,worse
+wine,0.5,vfl,adassp_matched,-0.003256,0.000985,-0.07076,better
+wine,0.5,vfl,vfl_uncorrected,0.0002334,4.61e-05,0.005489,worse
+wine,1,vfl,adassp,0.00314,0.00042,0.09276,worse
+wine,1,vfl,adassp_matched,-0.002126,0.000694,-0.05436,better
+wine,1,vfl,vfl_uncorrected,0.0002332,3.41e-05,0.006344,worse
+wine,2,vfl,adassp,0.003192,0.000447,0.1123,worse
+wine,2,vfl,adassp_matched,-0.001457,0.000345,-0.04406,better
+wine,2,vfl,vfl_uncorrected,0.0001741,2.75e-05,0.005537,worse
+wine,5,vfl,adassp,0.003837,0.000918,0.1725,worse
+wine,5,vfl,adassp_matched,0.0001565,0.000326,0.006035,no difference
+wine,5,vfl,vfl_uncorrected,8.719e-05,1.73e-05,0.003354,worse
+wine,10,vfl,adassp,0.003036,0.00124,0.1493,worse
+wine,10,vfl,adassp_matched,0.00137,0.000585,0.06228,worse
+wine,10,vfl,vfl_uncorrected,4.227e-05,1.05e-05,0.001812,worse
+airfoil,0.01,vfl,adassp,-0.02118,0.0037,-0.1584,better
+airfoil,0.01,vfl,adassp_matched,-0.02839,0.00621,-0.2015,better
+airfoil,0.01,vfl,vfl_uncorrected,-0.00153,0.000177,-0.01342,better
+airfoil,0.02,vfl,adassp,-0.01862,0.0042,-0.1455,better
+airfoil,0.02,vfl,adassp_matched,-0.03104,0.00661,-0.2211,better
+airfoil,0.02,vfl,vfl_uncorrected,-0.001164,0.000149,-0.01054,better
+airfoil,0.05,vfl,adassp,-0.009466,0.00424,-0.08308,better
+airfoil,0.05,vfl,adassp_matched,-0.01776,0.0036,-0.1453,better
+airfoil,0.05,vfl,vfl_uncorrected,-0.0007024,0.000216,-0.006679,better
+airfoil,0.1,vfl,adassp,-0.002071,0.00294,-0.02126,no difference
+airfoil,0.1,vfl,adassp_matched,-0.01532,0.00453,-0.1384,better
+airfoil,0.1,vfl,vfl_uncorrected,-0.0001039,0.000117,-0.001089,no difference
+airfoil,0.2,vfl,adassp,0.00408,0.00165,0.05017,worse
+airfoil,0.2,vfl,adassp_matched,-0.006011,0.0025,-0.06575,better
+airfoil,0.2,vfl,vfl_uncorrected,0.0002206,7.07e-05,0.00259,worse
+airfoil,0.5,vfl,adassp,0.004184,0.00131,0.064,worse
+airfoil,0.5,vfl,adassp_matched,-0.00363,0.00108,-0.0496,better
+airfoil,0.5,vfl,vfl_uncorrected,0.0002607,6.23e-05,0.003762,worse
+airfoil,1,vfl,adassp,0.003756,0.00162,0.06482,worse
+airfoil,1,vfl,adassp_matched,-0.0008347,0.00103,-0.01335,no difference
+airfoil,1,vfl,vfl_uncorrected,0.000128,3.95e-05,0.002079,worse
+airfoil,2,vfl,adassp,0.002383,0.00173,0.04384,worse
+airfoil,2,vfl,adassp_matched,7.64e-05,0.000568,0.001348,no difference
+airfoil,2,vfl,vfl_uncorrected,4.329e-05,2.08e-05,0.0007636,worse
+airfoil,5,vfl,adassp,0.0007128,0.00124,0.01332,no difference
+airfoil,5,vfl,adassp_matched,0.0002911,0.0013,0.005395,no difference
+airfoil,5,vfl,vfl_uncorrected,7.505e-06,6.91e-06,0.0001384,worse
+airfoil,10,vfl,adassp,0.0002382,0.000746,0.004465,no difference
+airfoil,10,vfl,adassp_matched,7.3e-05,0.000692,0.001364,no difference
+airfoil,10,vfl,vfl_uncorrected,1.681e-06,2.63e-06,3.138e-05,no difference
+concrete,0.01,vfl,adassp,-0.01334,0.00322,-0.09119,better
+concrete,0.01,vfl,adassp_matched,-0.01427,0.00335,-0.09695,better
+concrete,0.01,vfl,vfl_uncorrected,-0.0008559,0.000119,-0.006396,better
+concrete,0.02,vfl,adassp,-0.01335,0.00347,-0.09294,better
+concrete,0.02,vfl,adassp_matched,-0.01449,0.00591,-0.1001,better
+concrete,0.02,vfl,vfl_uncorrected,-0.0006474,0.000133,-0.004944,better
+concrete,0.05,vfl,adassp,-0.006855,0.00329,-0.05094,better
+concrete,0.05,vfl,adassp_matched,-0.0122,0.00266,-0.08718,better
+concrete,0.05,vfl,vfl_uncorrected,-0.0004819,0.000176,-0.003759,better
+concrete,0.1,vfl,adassp,-0.001913,0.00347,-0.01572,no difference
+concrete,0.1,vfl,adassp_matched,-0.01154,0.00332,-0.08782,better
+concrete,0.1,vfl,vfl_uncorrected,-2.657e-05,0.00013,-0.0002216,no difference
+concrete,0.2,vfl,adassp,0.004022,0.00256,0.0377,worse
+concrete,0.2,vfl,adassp_matched,-0.00748,0.00328,-0.06329,better
+concrete,0.2,vfl,vfl_uncorrected,0.0003608,0.000158,0.00327,worse
+concrete,0.5,vfl,adassp,0.01058,0.00315,0.1305,worse
+concrete,0.5,vfl,adassp_matched,-0.002858,0.00303,-0.03026,no difference
+concrete,0.5,vfl,vfl_uncorrected,0.0006495,0.000108,0.00714,worse
+concrete,1,vfl,adassp,0.00935,0.00155,0.1423,worse
+concrete,1,vfl,adassp_matched,-0.00234,0.00168,-0.03023,better
+concrete,1,vfl,vfl_uncorrected,0.0005736,0.000101,0.0077,worse
+concrete,2,vfl,adassp,0.007003,0.00147,0.1275,worse
+concrete,2,vfl,adassp_matched,-0.001283,0.000788,-0.02029,better
+concrete,2,vfl,vfl_uncorrected,0.0003544,7.09e-05,0.005755,worse
+concrete,5,vfl,adassp,0.003436,0.00105,0.07145,worse
+concrete,5,vfl,adassp_matched,-0.000623,0.000364,-0.01195,better
+concrete,5,vfl,vfl_uncorrected,0.0001188,3.96e-05,0.00231,worse
+concrete,10,vfl,adassp,0.00185,0.000829,0.04028,worse
+concrete,10,vfl,adassp_matched,-0.0003377,0.000192,-0.007018,better
+concrete,10,vfl,vfl_uncorrected,4.202e-05,2.13e-05,0.0008801,worse
+bike,0.01,vfl,adassp,-0.001013,0.00127,-0.01071,no difference
+bike,0.01,vfl,adassp_matched,-0.004794,0.00192,-0.04873,better
+bike,0.01,vfl,vfl_uncorrected,0.000503,4.47e-05,0.005404,worse
+bike,0.02,vfl,adassp,0.00124,0.0017,0.01537,no difference
+bike,0.02,vfl,adassp_matched,-0.004175,0.00169,-0.04847,better
+bike,0.02,vfl,vfl_uncorrected,0.0008655,6.23e-05,0.01067,worse
+bike,0.05,vfl,adassp,0.004069,0.000995,0.06807,worse
+bike,0.05,vfl,adassp_matched,-0.002876,0.00101,-0.04311,better
+bike,0.05,vfl,vfl_uncorrected,0.0009462,2.92e-05,0.01504,worse
+bike,0.1,vfl,adassp,0.003634,0.000575,0.07886,worse
+bike,0.1,vfl,adassp_matched,-0.003113,0.000634,-0.05893,better
+bike,0.1,vfl,vfl_uncorrected,0.0007036,2.45e-05,0.01436,worse
+bike,0.2,vfl,adassp,0.002872,0.000132,0.07837,worse
+bike,0.2,vfl,adassp_matched,-0.001937,0.000221,-0.04673,better
+bike,0.2,vfl,vfl_uncorrected,0.0004008,1.28e-05,0.01025,worse
+bike,0.5,vfl,adassp,0.001446,8.19e-05,0.04734,worse
+bike,0.5,vfl,adassp_matched,-0.0008533,0.000111,-0.02598,better
+bike,0.5,vfl,vfl_uncorrected,0.0001353,6.32e-06,0.004249,worse
+bike,1,vfl,adassp,0.0007022,8.73e-05,0.02436,worse
+bike,1,vfl,adassp_matched,-0.0004098,5.65e-05,-0.01369,better
+bike,1,vfl,vfl_uncorrected,4.823e-05,3.66e-06,0.001636,worse
+bike,2,vfl,adassp,0.0002973,5.8e-05,0.01054,worse
+bike,2,vfl,adassp_matched,-0.0001539,3.56e-05,-0.005372,better
+bike,2,vfl,vfl_uncorrected,1.493e-05,1.9e-06,0.0005243,worse
+bike,5,vfl,adassp,8.144e-05,2.88e-05,0.002911,worse
+bike,5,vfl,adassp_matched,-4.1e-05,7.63e-06,-0.001459,better
+bike,5,vfl,vfl_uncorrected,2.861e-06,7.89e-07,0.000102,worse
+bike,10,vfl,adassp,2.916e-05,1.79e-05,0.001044,worse
+bike,10,vfl,adassp_matched,-1.872e-05,4.32e-06,-0.0006689,better
+bike,10,vfl,vfl_uncorrected,8.126e-07,4.01e-07,2.906e-05,worse
+elevators,0.01,vfl,adassp,-0.002475,0.00113,-0.06665,better
+elevators,0.01,vfl,adassp_matched,-0.003726,0.000927,-0.09705,better
+elevators,0.01,vfl,vfl_uncorrected,-3.047e-05,2.75e-05,-0.0008782,better
+elevators,0.02,vfl,adassp,-0.001526,0.000825,-0.04578,better
+elevators,0.02,vfl,adassp_matched,-0.003238,0.000529,-0.09237,better
+elevators,0.02,vfl,vfl_uncorrected,7.433e-05,1.3e-05,0.002341,worse
+elevators,0.05,vfl,adassp,-0.0003779,0.000168,-0.01346,better
+elevators,0.05,vfl,adassp_matched,-0.002221,0.000394,-0.07424,better
+elevators,0.05,vfl,vfl_uncorrected,0.0001233,1.07e-05,0.004471,worse
+elevators,0.1,vfl,adassp,0.0005634,0.00029,0.0232,worse
+elevators,0.1,vfl,adassp_matched,-0.001204,0.000255,-0.04621,better
+elevators,0.1,vfl,vfl_uncorrected,0.0001246,1.26e-05,0.005041,worse
+elevators,0.2,vfl,adassp,0.001138,0.000154,0.05466,worse
+elevators,0.2,vfl,adassp_matched,-0.0008459,0.000152,-0.03708,better
+elevators,0.2,vfl,vfl_uncorrected,0.0001307,6.3e-06,0.005988,worse
+elevators,0.5,vfl,adassp,0.001736,0.000186,0.1068,worse
+elevators,0.5,vfl,adassp_matched,-0.0006491,0.000138,-0.03483,better
+elevators,0.5,vfl,vfl_uncorrected,0.0001404,3.52e-06,0.007867,worse
+elevators,1,vfl,adassp,0.001735,9.53e-05,0.1321,worse
+elevators,1,vfl,adassp_matched,-0.0005605,8.36e-05,-0.03632,better
+elevators,1,vfl,vfl_uncorrected,0.0001274,4e-06,0.008644,worse
+elevators,2,vfl,adassp,0.001369,7.37e-05,0.1274,worse
+elevators,2,vfl,adassp_matched,-0.0003466,8.13e-05,-0.02781,better
+elevators,2,vfl,vfl_uncorrected,9.185e-05,3.79e-06,0.007638,worse
+elevators,5,vfl,adassp,0.0006742,4.24e-05,0.07345,worse
+elevators,5,vfl,adassp_matched,-0.0002024,2.66e-05,-0.02012,better
+elevators,5,vfl,vfl_uncorrected,4.04e-05,2.21e-06,0.004117,worse
+elevators,10,vfl,adassp,0.0003226,3.52e-05,0.03675,worse
+elevators,10,vfl,adassp_matched,-9.55e-05,1.81e-05,-0.01038,better
+elevators,10,vfl,vfl_uncorrected,1.735e-05,1.67e-06,0.00191,worse
+pol,0.01,vfl,adassp,-0.0006283,0.00201,-0.001936,no difference
+pol,0.01,vfl,adassp_matched,-0.002926,0.000624,-0.008954,better
+pol,0.01,vfl,vfl_uncorrected,0.0007732,6.45e-05,0.002393,worse
+pol,0.02,vfl,adassp,0.002937,0.00143,0.009701,worse
+pol,0.02,vfl,adassp_matched,-0.005622,0.00159,-0.01806,better
+pol,0.02,vfl,vfl_uncorrected,0.001346,6.32e-05,0.004423,worse
+pol,0.05,vfl,adassp,0.009953,0.0017,0.03863,worse
+pol,0.05,vfl,adassp_matched,-0.007587,0.00153,-0.02757,better
+pol,0.05,vfl,vfl_uncorrected,0.002089,7.91e-05,0.007867,worse
+pol,0.1,vfl,adassp,0.01351,0.000926,0.06236,worse
+pol,0.1,vfl,adassp_matched,-0.007945,0.000901,-0.03336,better
+pol,0.1,vfl,vfl_uncorrected,0.00218,6.76e-05,0.009558,worse
+pol,0.2,vfl,adassp,0.013,0.000756,0.07245,worse
+pol,0.2,vfl,adassp_matched,-0.007228,0.00079,-0.0362,better
+pol,0.2,vfl,vfl_uncorrected,0.001695,6.19e-05,0.008886,worse
+pol,0.5,vfl,adassp,0.007765,0.000499,0.05202,worse
+pol,0.5,vfl,adassp_matched,-0.00437,0.00027,-0.02708,better
+pol,0.5,vfl,vfl_uncorrected,0.0007304,3.36e-05,0.004674,worse
+pol,1,vfl,adassp,0.003714,0.000254,0.02654,worse
+pol,1,vfl,adassp_matched,-0.002477,0.000161,-0.01695,better
+pol,1,vfl,vfl_uncorrected,0.0002702,1.66e-05,0.001884,worse
+pol,2,vfl,adassp,0.00152,0.000158,0.01113,worse
+pol,2,vfl,adassp_matched,-0.001007,9.33e-05,-0.007243,better
+pol,2,vfl,vfl_uncorrected,7.955e-05,8.07e-06,0.0005765,worse
+pol,5,vfl,adassp,0.0004172,0.0001,0.003083,worse
+pol,5,vfl,adassp_matched,-0.0002635,4.66e-05,-0.001938,better
+pol,5,vfl,vfl_uncorrected,1.305e-05,2.74e-06,9.613e-05,worse
+pol,10,vfl,adassp,0.0001424,5.32e-05,0.001054,worse
+pol,10,vfl,adassp_matched,-9.456e-05,3.01e-05,-0.0006985,better
+pol,10,vfl,vfl_uncorrected,3.244e-06,1.3e-06,2.398e-05,worse
+kin40k,0.01,vfl,adassp,-0.005004,0.000626,-0.06928,better
+kin40k,0.01,vfl,adassp_matched,-0.007735,0.000909,-0.1032,better
+kin40k,0.01,vfl,vfl_uncorrected,-0.0002169,2.03e-05,-0.003216,better
+kin40k,0.02,vfl,adassp,-0.005138,0.000555,-0.07239,better
+kin40k,0.02,vfl,adassp_matched,-0.009283,0.000857,-0.1236,better
+kin40k,0.02,vfl,vfl_uncorrected,-8.312e-05,6.16e-06,-0.001261,better
+kin40k,0.05,vfl,adassp,-0.001875,0.000209,-0.02837,better
+kin40k,0.05,vfl,adassp_matched,-0.004967,0.000391,-0.0718,better
+kin40k,0.05,vfl,vfl_uncorrected,-1.156e-05,9.23e-07,-0.0001799,better
+kin40k,0.1,vfl,adassp,-0.0003274,3.02e-05,-0.005119,better
+kin40k,0.1,vfl,adassp_matched,-0.001048,0.0001,-0.0162,better
+kin40k,0.1,vfl,vfl_uncorrected,-1.683e-06,1.84e-07,-2.645e-05,better
+kin40k,0.2,vfl,adassp,-4.623e-05,1.4e-05,-0.0007289,better
+kin40k,0.2,vfl,adassp_matched,-0.0002843,3.36e-05,-0.004466,better
+kin40k,0.2,vfl,vfl_uncorrected,-1.929e-07,4.38e-08,-3.044e-06,better
+kin40k,0.5,vfl,adassp,-1.094e-06,6.92e-06,-1.729e-05,no difference
+kin40k,0.5,vfl,adassp_matched,-4.19e-05,9.27e-06,-0.0006617,better
+kin40k,0.5,vfl,vfl_uncorrected,-9.447e-09,1.13e-08,-1.493e-07,no difference
+kin40k,1,vfl,adassp,6.988e-07,3.66e-06,1.105e-05,no difference
+kin40k,1,vfl,adassp_matched,-7.988e-06,6.05e-06,-0.0001263,better
+kin40k,1,vfl,vfl_uncorrected,-1.402e-09,3.36e-09,-2.216e-08,no difference
+kin40k,2,vfl,adassp,1.539e-06,1.89e-06,2.433e-05,no difference
+kin40k,2,vfl,adassp_matched,-3.083e-06,2.64e-06,-4.873e-05,better
+kin40k,2,vfl,vfl_uncorrected,-2.811e-10,1.01e-09,-4.445e-09,no difference
+kin40k,5,vfl,adassp,4.76e-07,7.04e-07,7.525e-06,no difference
+kin40k,5,vfl,adassp_matched,-1.049e-06,1.03e-06,-1.659e-05,better
+kin40k,5,vfl,vfl_uncorrected,-5.631e-11,2.01e-10,-8.902e-10,no difference
+kin40k,10,vfl,adassp,1.34e-07,2.71e-07,2.118e-06,no difference
+kin40k,10,vfl,adassp_matched,-2.709e-07,3.47e-07,-4.283e-06,no difference
+kin40k,10,vfl,vfl_uncorrected,-1.693e-11,6.18e-11,-2.677e-10,no difference
+protein,0.01,vfl,adassp,-5.563e-05,0.000911,-0.0003805,no difference
+protein,0.01,vfl,adassp_matched,-0.002769,0.00114,-0.01859,better
+protein,0.01,vfl,vfl_uncorrected,0.0002252,1.75e-05,0.001543,worse
+protein,0.02,vfl,adassp,0.001035,0.000423,0.007483,worse
+protein,0.02,vfl,adassp_matched,-0.002162,0.00067,-0.01529,better
+protein,0.02,vfl,vfl_uncorrected,0.0002091,1.32e-05,0.001504,worse
+protein,0.05,vfl,adassp,0.001661,0.00031,0.01275,worse
+protein,0.05,vfl,adassp_matched,-0.0007505,0.000381,-0.005654,better
+protein,0.05,vfl,vfl_uncorrected,0.0001605,1.26e-05,0.001217,worse
+protein,0.1,vfl,adassp,0.001695,0.000289,0.01346,worse
+protein,0.1,vfl,adassp_matched,-0.0005853,0.000123,-0.004565,better
+protein,0.1,vfl,vfl_uncorrected,0.0001138,1.14e-05,0.0008925,worse
+protein,0.2,vfl,adassp,0.00133,0.000203,0.01083,worse
+protein,0.2,vfl,adassp_matched,-0.0004712,0.000158,-0.00378,better
+protein,0.2,vfl,vfl_uncorrected,6.781e-05,8.55e-06,0.0005464,worse
+protein,0.5,vfl,adassp,0.0007541,0.000177,0.00625,worse
+protein,0.5,vfl,adassp_matched,-0.0002092,5.93e-05,-0.00172,better
+protein,0.5,vfl,vfl_uncorrected,2.394e-05,4.6e-06,0.0001972,worse
+protein,1,vfl,adassp,0.0004671,9.99e-05,0.003898,worse
+protein,1,vfl,adassp_matched,-9.27e-05,4.07e-05,-0.0007699,better
+protein,1,vfl,vfl_uncorrected,1.03e-05,2.31e-06,8.56e-05,worse
+protein,2,vfl,adassp,0.0002965,6.24e-05,0.002484,worse
+protein,2,vfl,adassp_matched,-6.241e-05,2.56e-05,-0.0005213,better
+protein,2,vfl,vfl_uncorrected,4.935e-06,1.01e-06,4.124e-05,worse
+protein,5,vfl,adassp,0.0002079,5.11e-05,0.001747,worse
+protein,5,vfl,adassp_matched,2.728e-05,8.7e-06,0.0002288,worse
+protein,5,vfl,vfl_uncorrected,1.866e-06,3.86e-07,1.565e-05,worse
+protein,10,vfl,adassp,0.0001265,6.69e-05,0.001063,worse
+protein,10,vfl,adassp_matched,7.137e-05,2.85e-05,0.0005997,worse
+protein,10,vfl,vfl_uncorrected,7.906e-07,2.45e-07,6.64e-06,worse

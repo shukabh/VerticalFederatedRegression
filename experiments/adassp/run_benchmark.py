@@ -25,7 +25,10 @@ Usage (repo root; WANG_REPO points at a clone of github.com/yuxiangw/optimal_dp_
   python experiments/adassp/run_benchmark.py --quick     # 3 small datasets, 3 eps, a few seconds
   python experiments/adassp/run_benchmark.py             # the 9 datasets of the deck
   python experiments/adassp/run_benchmark.py --all       # all 29 datasets of Wang's published run
-Outputs go to reports/adassp/ (or --out): results.csv, summary.md, fig_mse_vs_eps.png.
+Outputs go to reports/adassp/ (or --out): results.csv, compare.csv, summary.md, fig_mse_vs_eps.png.
+Uncertainty: a run is one CV fold x one noise draw. The CI of a method's mean uses the t distribution
+over the k fold means (the folds, not the draws, are the independent units). Method comparisons
+(compare.csv) are paired over folds, because the fold-to-fold variation is shared by all methods.
 """
 from __future__ import annotations
 
@@ -36,6 +39,7 @@ import sys
 import time
 
 import numpy as np
+from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -50,6 +54,20 @@ LABEL = {"trivial": "Trivial (θ = 0)", "nonprivate": "Non-private", "ssp": "SSP
          "adassp": "AdaSSP (published)", "adassp_matched": "AdaSSP (matched)",
          "vfl": "VFL, ours", "vfl_uncorrected": "VFL, uncorrected"}
 PUB_INDEX = {"trivial": 0, "nonprivate": 1, "ssp": 2, "adassp": 6}   # rows of exp_results.mat
+PAIRS = [("vfl", "adassp"), ("vfl", "adassp_matched"), ("vfl", "vfl_uncorrected")]
+
+
+def t95(k):
+    return float(stats.t.ppf(0.975, k - 1))
+
+
+def paired(fold_a, fold_b):
+    """Paired comparison over folds: mean difference a - b, its CI half-width, verdict for a."""
+    dlt = fold_a - fold_b
+    k = len(dlt)
+    half = t95(k) * dlt.std(ddof=1) / np.sqrt(k)
+    m = dlt.mean()
+    return m, half, ("better" if m + half < 0 else "worse" if m - half > 0 else "no difference")
 
 
 def run_dataset(name, eps_list, delta, R, k, d_R_arg, rho_star, seed):
@@ -57,7 +75,7 @@ def run_dataset(name, eps_list, delta, R, k, d_R_arg, rho_star, seed):
     X, y, n, d = ds.X, ds.y, ds.n, ds.d
     d_R = max(1, min(d - 1, d // 2 if d_R_arg is None else d_R_arg))
     folds = D.kfold(n, k, seed)
-    mse = {m: np.zeros((len(eps_list), k)) for m in ORDER}
+    mse = {m: np.zeros((len(eps_list), k, R)) for m in ORDER}      # every run: eps x fold x draw
     gate = np.zeros((len(eps_list), k))
     lam_vfl = np.zeros((len(eps_list), k))
     lam_ada = np.zeros((len(eps_list), k))
@@ -72,25 +90,26 @@ def run_dataset(name, eps_list, delta, R, k, d_R_arg, rho_star, seed):
             rng = np.random.default_rng([seed, f, e, sum(map(ord, name))])
             mse["trivial"][e, f] = m_triv
             mse["nonprivate"][e, f] = m_np
-            mse["ssp"][e, f] = M.test_mse(Xte, yte, M.ssp(G0, c, eps, delta, R, rng)).mean()
+            mse["ssp"][e, f] = M.test_mse(Xte, yte, M.ssp(G0, c, eps, delta, R, rng))
             th, lam = M.adassp(G0, c, eps, delta, R, rng, lmin=lmin, return_lam=True)
-            mse["adassp"][e, f] = M.test_mse(Xte, yte, th).mean()
+            mse["adassp"][e, f] = M.test_mse(Xte, yte, th)
             lam_ada[e, f] = lam.mean()
             sig_m = M.sigma_matched(eps, delta)[0]
             Gt, ct, _ = sc.release(G0, c, yty, d_R, sig_m, R, rng)
             th = M.adassp_matched(G0, Gt, ct, eps, delta, rng, lmin=lmin)
-            mse["adassp_matched"][e, f] = M.test_mse(Xte, yte, th).mean()
+            mse["adassp_matched"][e, f] = M.test_mse(Xte, yte, th)
             sig = M.sigma_vfl(eps, delta)
             Gt, ct, _ = sc.release(G0, c, yty, d_R, sig, R, rng)
             b, bc, lam = M.vfl_fixed(Gt, ct, sig, d_R, len(tr), ell=0.0, rho_star=rho_star)
             ok = sc.rho_hat(Gt, lam, sig) >= 1.0
             b[~ok] = 0.0
             bc[~ok] = 0.0
-            mse["vfl"][e, f] = M.test_mse(Xte, yte, bc).mean()
-            mse["vfl_uncorrected"][e, f] = M.test_mse(Xte, yte, b).mean()
+            mse["vfl"][e, f] = M.test_mse(Xte, yte, bc)
+            mse["vfl_uncorrected"][e, f] = M.test_mse(Xte, yte, b)
             gate[e, f] = ok.mean()
             lam_vfl[e, f] = lam
-    return dict(name=name, n=n, d=d, d_R=d_R, mse=mse, gate=gate, lam_vfl=lam_vfl, lam_ada=lam_ada)
+    return dict(name=name, n=n, d=d, d_R=d_R, runs=mse, mse={m: v.mean(2) for m, v in mse.items()},
+                gate=gate, lam_vfl=lam_vfl, lam_ada=lam_ada)
 
 
 def published_lookup():
@@ -106,8 +125,8 @@ def published_lookup():
 def write_csv(path, results, eps_list, pub):
     with open(path, "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["dataset", "n", "d", "d_R", "eps", "method", "test_mse", "se_over_folds",
-                    "ratio_to_nonprivate", "published_mse", "vfl_gate_pass", "lambda_mean"])
+        w.writerow(["dataset", "n", "d", "d_R", "eps", "method", "test_mse", "se_over_folds", "ci95_lo", "ci95_hi",
+                    "run_p2.5", "run_p97.5", "ratio_to_nonprivate", "published_mse", "vfl_gate_pass", "lambda_mean"])
         for r in results:
             k = r["gate"].shape[1]
             for e, eps in enumerate(eps_list):
@@ -116,11 +135,26 @@ def write_csv(path, results, eps_list, pub):
                     v = r["mse"][m][e]
                     p = pub(m, eps, r["name"]) if pub else None
                     lam = r["lam_vfl"][e].mean() if m.startswith("vfl") else (r["lam_ada"][e].mean() if m == "adassp" else "")
+                    se = v.std(ddof=1) / np.sqrt(k)
+                    lo, hi = np.percentile(r["runs"][m][e], [2.5, 97.5])
                     w.writerow([r["name"], r["n"], r["d"], r["d_R"], eps, m, f"{v.mean():.6g}",
-                                f"{v.std(ddof=1) / np.sqrt(k):.3g}", f"{v.mean() / npv:.4g}",
+                                f"{se:.3g}", f"{v.mean() - t95(k) * se:.6g}", f"{v.mean() + t95(k) * se:.6g}",
+                                f"{lo:.6g}", f"{hi:.6g}", f"{v.mean() / npv:.4g}",
                                 "" if p is None else f"{p:.6g}",
                                 f"{r['gate'][e].mean():.3f}" if m.startswith("vfl") else "",
                                 lam if lam == "" else f"{lam:.4g}"])
+
+
+def write_compare(path, results, eps_list):
+    with open(path, "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["dataset", "eps", "method", "vs", "mean_diff", "ci95_halfwidth", "rel_diff", "verdict"])
+        for r in results:
+            for e, eps in enumerate(eps_list):
+                for a, b in PAIRS:
+                    m, half, verdict = paired(r["mse"][a][e], r["mse"][b][e])
+                    w.writerow([r["name"], eps, a, b, f"{m:.4g}", f"{half:.3g}",
+                                f"{m / r['mse'][b][e].mean():.4g}", verdict])
 
 
 def write_summary(path, results, eps_list, pub, args):
@@ -138,6 +172,18 @@ def write_summary(path, results, eps_list, pub, args):
             cells = [f"{r['mse'][m][e].mean():.4g} ({r['mse'][m][e].mean() / npv:.2f})" for m in ORDER]
             lines.append(f"| {r['name']} | {r['n']:,} | {r['d']} | " + " | ".join(cells) + f" | {r['gate'][e].mean():.0%} |")
         lines.append("")
+    lines += ["## Paired comparisons (95% CI over folds)", "",
+              "Number of datasets where the first method has lower / higher test MSE than the second, "
+              "or no significant difference.", "",
+              "| comparison | " + " | ".join(f"ε = {eps:g}" for eps in eps_list) + " |",
+              "|---|" + "---|" * len(eps_list)]
+    for a, b in PAIRS:
+        cells = []
+        for e in range(len(eps_list)):
+            v = [paired(r["mse"][a][e], r["mse"][b][e])[2] for r in results]
+            cells.append(f"{v.count('better')} / {v.count('worse')} / {v.count('no difference')}")
+        lines.append(f"| {LABEL[a]} vs {LABEL[b]} | " + " | ".join(cells) + " |")
+    lines.append("")
     if pub:
         lines += ["## Check against Wang's published run (code/exp_results.mat)", "",
                   "Ratio ours / published, median and range over datasets and ε. Values near 1 mean the "
@@ -164,8 +210,17 @@ def make_figure(path, results, eps_list):
     nr = int(np.ceil(len(results) / nc))
     fig, axes = plt.subplots(nr, nc, figsize=(4.2 * nc, 3.3 * nr), squeeze=False)
     for ax, r in zip(axes.flat, results):
+        k = r["mse"]["vfl"].shape[1]
+        for m in ("adassp", "vfl"):                           # middle 95% of individual runs
+            lo, hi = np.percentile(r["runs"][m].reshape(len(eps_list), -1), [2.5, 97.5], axis=1)
+            ax.fill_between(eps_list, lo, hi, color=style[m]["color"], alpha=0.12, lw=0)
         for m in ["trivial", "nonprivate", "ssp", "adassp", "adassp_matched", "vfl_uncorrected", "vfl"]:
-            ax.plot(eps_list, r["mse"][m].mean(1), label=LABEL[m], **style[m])
+            mean = r["mse"][m].mean(1)
+            if m in ("trivial", "nonprivate", "ssp"):         # references; SSP's CI spans decades
+                ax.plot(eps_list, mean, label=LABEL[m], **style[m])
+            else:                                             # 95% CI of the mean, t over folds
+                half = t95(k) * r["mse"][m].std(1, ddof=1) / np.sqrt(k)
+                ax.errorbar(eps_list, mean, yerr=half, capsize=2, elinewidth=1, label=LABEL[m], **style[m])
         top = 3 * r["mse"]["trivial"].mean()
         ax.set(xscale="log", yscale="log", title=f"{r['name']}  (n = {r['n']:,}, d = {r['d']})", xlabel="ε")
         ax.set_ylim(top=top)
@@ -177,8 +232,10 @@ def make_figure(path, results, eps_list):
     axes[0, 0].set_ylabel("test MSE (10-fold CV)")
     h, l = axes[0, 0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=len(l), frameon=False, fontsize=9)
-    fig.suptitle("Test MSE vs ε: AdaSSP (Wang 2018) and the revised VFL protocol", fontsize=12, y=0.995)
-    fig.tight_layout(rect=(0, 0.05, 1, 0.98))
+    fig.suptitle("Test MSE vs ε: AdaSSP (Wang 2018) and the revised VFL protocol\n"
+                 "points: mean over folds × noise draws;  bars: 95% CI of the mean (t over the 10 folds);  "
+                 "bands: middle 95% of individual runs (VFL, AdaSSP)", fontsize=11, y=0.995)
+    fig.tight_layout(rect=(0, 0.05, 1, 0.965))
     fig.savefig(path, dpi=160)
     plt.close(fig)
 
@@ -218,10 +275,11 @@ def main():
 
     pub = published_lookup()
     write_csv(os.path.join(args.out, "results.csv"), results, eps_list, pub)
+    write_compare(os.path.join(args.out, "compare.csv"), results, eps_list)
     write_summary(os.path.join(args.out, "summary.md"), results, eps_list, pub, args)
     if not args.no_figure:
         make_figure(os.path.join(args.out, "fig_mse_vs_eps.png"), results, eps_list)
-    print(f"wrote {os.path.abspath(args.out)}/results.csv, summary.md" + ("" if args.no_figure else ", fig_mse_vs_eps.png"))
+    print(f"wrote {os.path.abspath(args.out)}/results.csv, compare.csv, summary.md" + ("" if args.no_figure else ", fig_mse_vs_eps.png"))
 
 
 if __name__ == "__main__":
