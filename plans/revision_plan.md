@@ -16,12 +16,17 @@ The accuracy study (`reports/accuracy/results.json`) already contains the answer
 It used the user's original modules, whose ridge is adaptive. Errors are measured against the
 protocol's target, the clipped OLS.
 
-| Regime | Cells | MSE change from the correction | Share of MSE that is bias, without correction |
+| Regime | Cells | MSE change from the correction (vs the clipped OLS target) | Share of MSE that is bias, without correction |
 |---|---|---|---|
-| ρ₀ < ~2: full ridge forced (σ large relative to λ_min(G)) | 26 cells, e.g. n = 4,000 at ε ≤ 4 | **0 to −6.6%** (slightly worse) | 88–99.8%, almost all of it deterministic ridge shrinkage |
-| ρ₀ ≈ 2.7–4, no ridge | n = 4,000 at ε = 8; n = 16,000 at ε = 2; n = 64,000 at ε = 0.5 | **+5 to +11%** | 0.9–1.4% |
-| ρ₀ ≈ 6–7 | n = 16,000 at ε = 4; n = 64,000 at ε = 1 | +1.4 to +2% | 0.3% |
-| ρ₀ > 10 | remaining large-n cells | < 1% | ≤ 0.2% |
+| ρ₀ < ~2: full ridge forced (σ large relative to λ_min(G)) | 26 cells, e.g. n = 4,000 at ε ≤ 4 | **+0 to +6.6%** (slightly worse) | 88–99.8%, almost all of it deterministic ridge shrinkage |
+| ρ₀ ≈ 2.7–4, no ridge | n = 4,000 at ε = 8; n = 16,000 at ε = 2; n = 64,000 at ε = 0.5 | **−5 to −11%** (better) | 0.9–1.4% |
+| ρ₀ ≈ 6–7 | n = 16,000 at ε = 4; n = 64,000 at ε = 1 | −1.4 to −2% | 0.3% |
+| ρ₀ > 10 | remaining large-n cells | under 1% | ≤ 0.2% |
+
+*Correction:* an earlier version of this table labelled the column "MSE change" but gave the gain
+(1 − MSE ratio), so its signs read backwards. The values above are MSE changes; negative means the
+correction helps. The Workstream 1 study (`reports/bias_correction/report.md`) supersedes this
+table.
 
 (ρ₀ = λ_min(G)/(2σ√p) on the clean Gram; "no ridge" means λ = 0 in every draw.)
 

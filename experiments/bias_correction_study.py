@@ -874,7 +874,7 @@ def fig_stress(plt, st):
 
 
 def fig_signal(plt, sig):
-    fig, ax = plt.subplots(1, 1, figsize=(5.6, 3.6))
+    fig, ax = plt.subplots(1, 1, figsize=(6.2, 3.8))
     cells = sorted({(r["eps"], r["n"]) for r in sig}, key=lambda t: t[1])
     cols = [RAMP[0], RAMP[2], RAMP[3], RAMP[4]]
     for col, (eps, n) in zip(cols, cells):
@@ -888,7 +888,8 @@ def fig_signal(plt, sig):
     ax.set_xlabel(r"$\|\hat{\beta}\|$   (signal scaled by k = 1, 2, 4, 8; $\varepsilon$ = 1)")
     ax.set_ylabel("MSE(corrected) / MSE(uncorrected), vs " + BL)
     ax.set_title("value of the correction vs signal strength", loc="left")
-    ax.legend(loc="upper left")
+    ax.set_ylim(0.77, 1.01)
+    ax.legend(loc="lower left")
     fig.tight_layout()
     savefig(fig, "fig8_signal_strength")
     plt.close(fig)
@@ -965,9 +966,77 @@ def e2_table(res):
     return rows
 
 
+def summary_block(res):
+    """Headline numbers used in report.md (all recomputable from the per-cell results)."""
+    e1, e1z = res["E1"]["main"], res["E1"]["zero"]
+    edges = [0, 1, RHO_SWITCH, 5, 10, 30, float("inf")]
+
+    def binned(cells, key):
+        rows = []
+        for a, b in zip(edges[:-1], edges[1:]):
+            cs = [c for c in cells if a <= c["rho0"] < b]
+            if cs:
+                rows.append(dict(rho0_from=a, rho0_to=b, cells=len(cs),
+                                 mse_ratio_min=min(c[key]["mse_ratio"] for c in cs),
+                                 mse_ratio_max=max(c[key]["mse_ratio"] for c in cs),
+                                 bias_share_unc_max=max(c[key]["unc"]["bias_share"] for c in cs),
+                                 max_bias_over_sd_unc_max=max(c[key]["unc"]["max_bias_over_sd"] for c in cs),
+                                 gain_bias_part_mean=float(np.mean([c[key]["gain_bias_part"] for c in cs])),
+                                 gain_var_part_mean=float(np.mean([c[key]["gain_var_part"] for c in cs]))))
+        return rows
+
+    const = np.array([(1 - c["vs_lam"]["mse_ratio"]) * c["rho_lam"] ** 2 for c in e1])
+    lz = np.array([(c["rho0"], c["e3"]["K_cross_10pct"], c["e3"]["K_bias_eq_var"]) for c in e1 if c["lam"] == 0])
+    b10, a10 = np.polyfit(np.log(lz[:, 0]), np.log(lz[:, 1]), 1)
+    bbv, abv = np.polyfit(np.log(lz[:, 0]), np.log(lz[:, 2]), 1)
+    harm_ols = [dict(eps=c["eps"], n=c["n"], rho0=c["rho0"], lam=c["lam"],
+                     lam_over_lmin=c["lam"] / (c["rho0"] * 2 * c["sigma"] * np.sqrt(P)),
+                     mse_ratio_vs_ols=c["vs_ols"]["mse_ratio"]) for c in e1 if c["vs_ols"]["mse_ratio"] > 1]
+    out = dict(
+        vs_lambda_target_main=binned(e1, "vs_lam"), vs_lambda_target_ell0=binned(e1z, "vs_lam"),
+        vs_ols_main=binned(e1, "vs_ols"),
+        max_mse_ratio_vs_lambda_all_cells=max(c["vs_lam"]["mse_ratio"] for c in e1 + e1z),
+        max_mse_ratio_vs_lambda_any_seed=max(c["vs_lam"]["mse_ratio_seed_max"] for c in e1 + e1z),
+        gain_times_rho_lam_sq=dict(median=float(np.median(const)), min=float(const.min()), max=float(const.max())),
+        harm_vs_ols_cells=harm_ols,
+        e3_fit_lambda0=dict(K_10pct=f"{np.exp(a10):.3g} * rho0^{b10:.3f}", K_bias_eq_var=f"{np.exp(abv):.3g} * rho0^{bbv:.3f}"),
+        e3_min_K_bias_eq_var=min(c["e3"]["K_bias_eq_var"] for c in e1),
+        gate_refusals=[dict(ell=c["ell"], eps=c["eps"], n=c["n"], rho_lam=c["rho_lam"], refused=1 - c["gate_pass"])
+                       for c in e1 + e1z if c["gate_pass"] < 0.9999])
+    if "FULL" in res:
+        fm = res["FULL"]["cells"]["main"]
+        out["coverage_diff_bc_minus_unc"] = dict(min=min(c["bc"]["cover_true_mean"] - c["unc"]["cover_true_mean"] for c in fm),
+                                                 max=max(c["bc"]["cover_true_mean"] - c["unc"]["cover_true_mean"] for c in fm))
+        out["mse_ratio_vs_true_full_mode"] = dict(min=min(c["mse_ratio_true"] for c in fm),
+                                                  max=max(c["mse_ratio_true"] for c in fm))
+    if "E1s" in res:
+        rr = [x for x in res["E1s"]["ridge"] + res["E1s"]["ols"] if (x.get("vs_lam") or x.get("vs_ols"))]
+        out["stress_max_ratio"] = max((x.get("vs_lam") or x.get("vs_ols"))["mse_ratio"] for x in rr)
+    if "E4" in res:
+        rid = [c for c in res["E4"] if c["lam_fixed"] > 0]
+        out["e4"] = dict(
+            fixed_residual_over_bias=[min(c["fixed_vs_lam"]["residual_over_bias"] for c in rid),
+                                      max(c["fixed_vs_lam"]["residual_over_bias"] for c in rid)],
+            adaptive_residual_over_bias=[min(c["adaptive_vs_target"]["residual_over_bias"] for c in rid),
+                                         max(c["adaptive_vs_target"]["residual_over_bias"] for c in rid)],
+            adaptive_residual_over_bias_median=float(np.median([c["adaptive_vs_target"]["residual_over_bias"] for c in rid])),
+            fixed_mse_ratio=[min(c["fixed_vs_lam"]["mse_ratio"] for c in rid), max(c["fixed_vs_lam"]["mse_ratio"] for c in rid)],
+            adaptive_mse_ratio=[min(c["adaptive_vs_target"]["mse_ratio"] for c in rid),
+                                max(c["adaptive_vs_target"]["mse_ratio"] for c in rid)],
+            adaptive_bc_over_fixed_bc_vs_ols=[min(c["adaptive_bc_over_fixed_bc_vs_ols"]["ratio"] for c in rid),
+                                              max(c["adaptive_bc_over_fixed_bc_vs_ols"]["ratio"] for c in rid)])
+    out["rule"] = ("Apply the correction to every release that passes the gate rho_hat >= 1 (rho_bc = the gate): "
+                   "vs the protocol target beta_lambda the MSE ratio is < 1 in every cell and seed, with gain "
+                   "~ 0.36 / rho_lambda^2 (>= 1% for rho_lambda <~ 6, < 0.1% beyond ~ 19). If the estimand is OLS / "
+                   "true beta and the ridge is on with lambda comparable to lambda_min(G), the corrected estimate is "
+                   "0.3-4.3% worse in MSE; the fix there is the ridge (ell, n, eps), not dropping the correction.")
+    return out
+
+
 def stage_report(res):
     plt = plot_style()
     res["E2"] = e2_table(res)
+    res["summary"] = summary_block(res)
     fig_mse_ratio(plt, res["E1"])
     fig_decomposition(plt, res["E1"], res["FULL"])
     fig_releases(plt, res["E1"])
