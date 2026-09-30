@@ -12,3 +12,4 @@ protocol_v2/*.aux
 protocol_v2/*.log
 reports/coef_accuracy/raw_estimates_*.npz
 reports/bias_correction/*.npz
+reports/bias_correction/quick/
