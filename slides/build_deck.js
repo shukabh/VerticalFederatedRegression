@@ -20,6 +20,7 @@ function readCsv(file) {
 const ADA9 = readCsv(P("reports", "adassp", "results.csv"));
 const ADA_ALL = readCsv(P("reports", "adassp", "all", "results.csv"));
 const ADA_CMP = readCsv(P("reports", "adassp", "all", "compare.csv"));
+const SWEEP_X = readCsv(P("reports", "adassp", "sweep", "crossings.csv"));   // experiments/adassp/sweep_n.py
 // Error bars for native charts, keyed by chart title; added to the chart XML after writing (pptxgenjs has no API for them)
 const ERRBARS = {};
 const adaGet = (rows, ds, eps, m) => rows.find((r) => r.dataset === ds && Number(r.eps) === eps && r.method === m);
@@ -517,7 +518,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   divider(4, "Results", "What we have so far, and what is still to run")
     .addNotes("Part 4: results. Slides marked as placeholders are still to be run.");
 
-  // ======================= 22. Correctness =======================
+  // ======================= 22. Correctness, and the cost still to measure =======================
   {
     const s = pres.addSlide(); title(s, "The cryptographic layer is exact", "Draft protocol, run end-to-end over sockets with plaintext and real OpenFHE backends");
     const stats = [["0", "misaligned rows", "PSI recovered exactly the true match set in all 6 cohorts, plaintext and OpenFHE"],
@@ -525,14 +526,18 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["13.8 s", "end-to-end on OpenFHE", "n_O = 4,000 records, n = 400 matched (plaintext backend: 3.2 s)"]];
     stats.forEach(([v, l, d], i) => {
       const x = 0.6 + i * 4.15;
-      card(s, x, 1.9, 3.9, 3.6);
-      txt(s, v, { x: x + 0.3, y: 2.15, w: 3.4, h: 1.1, fontFace: HEAD, fontSize: 48, bold: true, color: i === 1 ? EMBER : INK });
-      txt(s, l, { x: x + 0.3, y: 3.3, w: 3.4, h: 0.45, fontSize: 16, bold: true, color: SLATE });
-      txt(s, d, { x: x + 0.3, y: 3.8, w: 3.35, h: 1.5, fontSize: 14, color: MUTED });
+      card(s, x, 1.75, 3.9, 2.45);
+      txt(s, v, { x: x + 0.3, y: 1.9, w: 3.4, h: 0.85, fontFace: HEAD, fontSize: 38, bold: true, color: i === 1 ? EMBER : INK });
+      txt(s, l, { x: x + 0.3, y: 2.78, w: 3.4, h: 0.4, fontSize: 15, bold: true, color: SLATE });
+      txt(s, d, { x: x + 0.3, y: 3.2, w: 3.35, h: 0.9, fontSize: 13, color: MUTED });
     });
-    txt(s, "All error comes from the DP noise and the ridge it forces. The revised protocol's sanitization has not been implemented in OpenFHE yet (see the placeholder slide).",
-      { x: 0.6, y: 5.85, w: 12.1, h: 0.8, fontSize: 14.5, italic: true, color: MUTED });
-    s.addNotes("Correctness of linkage and aggregation: exact alignment and 1e-10 agreement with plaintext OLS when noise is off.");
+    txt(s, "Cost of the revised protocol in OpenFHE", { x: 0.6, y: 4.5, w: 8, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
+    chip(s, "To be run", 11.0, 4.55, 1.7, SLATE);
+    const tbd = { text: "tbd", options: { color: "9AA5B4", italic: true } };
+    const rows = [hdr(["Register size n_O", "d", "PSI time (s)", "Aggregation time (s)", "Traffic (MB)", "Sanitization overhead"]),
+      ["4,000", "10", tbd, tbd, tbd, tbd], ["32,000", "10", tbd, tbd, tbd, tbd], ["65,536", "20", tbd, tbd, tbd, tbd], ["10⁶ (chunked)", "20", tbd, tbd, tbd, tbd]];
+    s.addTable(rows, Object.assign(tableOpts([2.3, 0.8, 1.9, 2.4, 2.0, 2.7]), { y: 5.05, rowH: 0.34, fontSize: 12.5 }));
+    s.addNotes("Correctness of linkage and aggregation: exact alignment and 1e-10 agreement with plaintext OLS when noise is off. All error comes from the DP noise and the ridge it forces. The table is a placeholder: the revised protocol's sanitization (fresh encryption, modulus switch, flooding) is not yet implemented in OpenFHE.");
   }
 
   // ======================= 23. Figure A =======================
@@ -682,22 +687,31 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     s.addNotes("Native charts from reports/adassp/results.csv; paired verdicts from reports/adassp/all/compare.csv (all 29 datasets of Wang's published run, R = 50 draws per fold; a verdict needs the 95% CI of the paired fold difference to exclude 0). The bias correction changes test MSE by -2.8% to +2.3%: it helps at small eps and slightly hurts at large eps.");
   }
 
-  // ======================= 29. Remaining placeholders =======================
+  // ======================= 29. Intersection-size sweep on real data =======================
   {
-    const s = pres.addSlide(); title(s, "Still to run");
-    placeholder(s, 0.6, 1.55, 5.95, 5.15, "Intersection-size sweep on real data",
-      "Graphic to be done: test MSE vs matched cohort size n (log) for bike, elevators, pol, kin40k and protein, one panel per dataset, lines for ε ∈ {0.5, 1, 2, 4}; AdaSSP and non-private for reference.");
-    txt(s, "Cost of the revised protocol in OpenFHE", { x: 6.85, y: 1.6, w: 5.8, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
-    const tbd = { text: "tbd", options: { color: "9AA5B4", italic: true } };
-    const rows = [hdr(["n_O", "d", "PSI (s)", "Agg. (s)", "Traffic (MB)", "Flood cost"]),
-      ["4,000", "10", tbd, tbd, tbd, tbd], ["32,000", "10", tbd, tbd, tbd, tbd], ["65,536", "20", tbd, tbd, tbd, tbd], ["10⁶ (chunked)", "20", tbd, tbd, tbd, tbd]];
-    s.addTable(rows, { x: 6.85, y: 2.15, colW: [1.35, 0.5, 0.85, 0.9, 1.1, 1.15], fontFace: BODY, fontSize: 11.5, color: TEXT,
-      border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", margin: [3, 4, 3, 4], rowH: 0.48 });
-    card(s, 6.85, 4.85, 5.85, 1.85, EMBER_L);
-    txt(s, "Also pending", { x: 7.1, y: 4.98, w: 5.4, h: 0.4, fontSize: 15, bold: true, color: EMBER });
-    bullets(s, ["Proof of the CKKS error-sensitivity bound S_err", "Finite-precision accounting for the discrete Gaussian", "Standard errors for the ridge regime"],
-      { x: 7.1, y: 5.4, w: 5.4, h: 1.25, fontSize: 13.5 });
-    s.addNotes("Placeholders for results that need new runs: real-data intersection sweeps, and runtime and communication of the revised protocol once implemented in OpenFHE.");
+    const SWF = P("reports", "adassp", "sweep", "fig_sweep_n_deck.png");
+    const hdrPng = fs.readFileSync(SWF);                       // PNG IHDR: width, height at bytes 16-23
+    const [FIGW, FIGH] = [hdrPng.readUInt32BE(16), hdrPng.readUInt32BE(20)];
+    const s = pres.addSlide(); title(s, "Intersection size on real data", "Test MSE ÷ non-private at the same n; nested subsets of the training folds; bars: 95% CI over folds");
+    img(s, SWF, 0.4, 1.6, 7.4, 5.75, FIGW, FIGH);
+    txt(s, "Matched records to come within 10% of non-private", { x: 8.05, y: 1.65, w: 4.7, h: 0.7, fontFace: HEAD, fontSize: 16, bold: true, color: INK });
+    txt(s, "Ours (AdaSSP published)", { x: 8.05, y: 2.35, w: 4.7, h: 0.3, fontSize: 12, italic: true, color: MUTED });
+    const EPS4 = [0.5, 1, 2, 4];
+    const nfmt = (v) => (v < 1000 ? String(Math.round(v)) : v < 10000 ? (v / 1000).toFixed(1) + "k" : Math.round(v / 1000) + "k");
+    const cross = (ds, e, m) => {
+      const r = SWEEP_X.find((x) => x.dataset === ds && Number(x.threshold) === 1.1 && Number(x.eps) === e && x.method === m);
+      return r.n_cross === "" ? `>${Math.floor(Number(r.n_max) / 1000)}k` : nfmt(Number(r.n_cross));
+    };
+    const rows = [hdr(["", ...EPS4.map((e) => `ε = ${e}`)])];
+    ["bike", "elevators", "pol", "protein"].forEach((ds) =>
+      rows.push([ds, ...EPS4.map((e) => ({ text: [{ text: cross(ds, e, "vfl"), options: { bold: true, breakLine: true } },
+        { text: `(${cross(ds, e, "adassp")})`, options: { color: MUTED, fontSize: 11 } }] }))]));
+    s.addTable(rows, { x: 8.05, y: 2.7, colW: [1.1, 0.9, 0.9, 0.9, 0.9], fontFace: BODY, fontSize: 12.5, color: TEXT,
+      border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", align: "center", margin: [2, 3, 2, 3], rowH: [0.36, 0.56, 0.56, 0.56, 0.56] });
+    bullets(s, ["Doubling ε roughly halves the records needed",
+      "Ours needs about 1.5–2× the records AdaSSP needs for the same cost",
+      "elevators stays above 10% at every size available (up to 14.9k)"], { x: 8.05, y: 5.5, w: 4.7, h: 1.5, fontSize: 13.5 });
+    s.addNotes("Real-data analogue of Figure A. From reports/adassp/sweep (experiments/adassp/sweep_n.py): bike, elevators, pol and protein, the four of Wang's datasets with at least 15k rows and a real linear signal (kin40k has none: non-private is no better than predicting zero). For each fold, the training folds are shuffled once and the first n rows are the matched set; the held-out fold is the test set. Crossings are log-linear interpolations of the mean curve; '>15k' means never within 10% at the sizes available.");
   }
 
   // ======================= 30. Conclusions =======================
@@ -705,8 +719,8 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const s = pres.addSlide(); s.background = { color: INK };
     s.addText("Takeaways and next steps", { x: 0.6, y: 0.45, w: 12, h: 0.8, fontFace: HEAD, fontSize: 34, bold: true, color: WHITE, margin: 0, isTextBox: true });
     const take = ["The revised protocol closes the critical and high gaps under honest-but-curious parties",
-      "Accuracy reaches 2× of non-private OLS at n ≈ 3k–100k, depending on ε",
-      "Against AdaSSP: ahead at small ε, behind at large ε; the gap shrinks as n grows",
+      "Within 2× of non-private OLS at n ≈ 3k–100k (simulation); within 10% at 1.4k–11k records for ε = 1–2 (real data)",
+      "Against AdaSSP: ahead at small ε, behind at large ε, where it needs about 1.5–2× the matched records",
       "The bias correction is a small effect (under 3% of test MSE); ridge shrinkage dominates when σ is large"];
     take.forEach((t, i) => {
       numCircle(s, i + 1, 0.6, 1.6 + i * 1.25, 0.6, EMBER, 17);
@@ -714,7 +728,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     });
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 7.2, y: 1.5, w: 5.5, h: 5.2, fill: { color: "1F3050" }, line: { color: "1F3050" }, rectRadius: 0.08 });
     s.addText("Next", { x: 7.5, y: 1.7, w: 5, h: 0.5, fontFace: HEAD, fontSize: 22, bold: true, color: "E7A77C", margin: 0, isTextBox: true });
-    const nxt = ["Real-data intersection-size sweeps", "Check Wang's noise constants; use the joint row bound to tighten our Δ",
+    const nxt = ["Check Wang's noise constants; use the joint row bound to tighten our Δ",
       "Implement the revised protocol in OpenFHE and measure its cost",
       "Prove the S_err bound; complete finite-precision accounting", "Standard errors; membership-private variant for sensitive registers"];
     s.addText(nxt.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < nxt.length - 1, paraSpaceAfter: 10 } })),

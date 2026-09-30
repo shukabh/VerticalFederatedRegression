@@ -38,6 +38,19 @@ bands are the middle 95% of individual runs. Fold-to-fold variation is shared by
 per-method intervals overlap even when one method is consistently better: compare methods with the
 paired tests in `compare.csv`.
 
+### Intersection-size sweep
+
+```bash
+python experiments/adassp/sweep_n.py            # bike, elevators, pol, protein: ~20 s
+```
+
+Test MSE against the matched-set size n on real data, for ours and AdaSSP at ε ∈ {0.5, 1, 2, 4}.
+For each fold the training folds are shuffled once and the first n rows form the matched set
+(nested across n); the held-out fold is the test set. Results are relative to non-private at the
+same n. Outputs in `reports/adassp/sweep/`: `sweep.csv`, `crossings.csv` (n needed to come within
+10% / 25% of non-private), `summary.md`, `fig_sweep_n.png` and a slide version `fig_sweep_n_deck.png`.
+kin40k is left out: its linear fit is no better than predicting zero.
+
 Useful options: `--datasets bike pol`, `--eps 0.5 1 2`, `--R 100` (noise draws per fold),
 `--d-r 3` (features held by R; default ⌊d/2⌋), `--rho-star 2.5` (ridge constant), `--seed 1`.
 `python experiments/adassp/datasets.py` checks the data loaders against Wang's published
