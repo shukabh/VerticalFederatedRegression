@@ -1,6 +1,6 @@
 # AdaSSP vs revised VFL protocol: benchmark summary
 
-Command: `experiments/adassp/run_benchmark.py --all --out reports/adassp/all --no-figure`  
+Command: `experiments/adassp/run_benchmark.py --all --out reports/adassp/all`  
 10-fold CV, R = 50 noise draws per fold, δ = 1e-06, ρ* = 2, R holds the first ⌊d/2⌋ features. Cells: mean test MSE (ratio to non-private).
 
 ## ε = 0.1
