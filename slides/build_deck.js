@@ -523,7 +523,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const s = pres.addSlide(); title(s, "The cryptographic layer is exact", "Draft protocol, run end-to-end over sockets with plaintext and real OpenFHE backends");
     const stats = [["0", "misaligned rows", "PSI recovered exactly the true match set in all 6 cohorts, plaintext and OpenFHE"],
       ["≈10⁻¹⁰", "max |β − β_OLS|", "with the noise switched off: encryption adds no error"],
-      ["13.8 s", "end-to-end on OpenFHE", "n_O = 4,000 records, n = 400 matched (plaintext backend: 3.2 s)"]];
+      ["≈13 s", "end-to-end on OpenFHE", "n = 400 matched out of n_O = 4,000 records (OpenFHE 1.5.1)"]];
     stats.forEach(([v, l, d], i) => {
       const x = 0.6 + i * 4.15;
       card(s, x, 1.75, 3.9, 2.45);
@@ -684,7 +684,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     card(s, 7.2, 5.4, 5.5, 1.45, EMBER_L);
     txt(s, "At small ε the fixed ridge wins: AdaSSP spends a third of its budget on λ_min. From ε ≈ 0.5 AdaSSP's adaptive ridge wins (median 4% lower MSE at ε = 1); the gap shrinks as n grows.",
       { x: 7.45, y: 5.58, w: 5.05, h: 1.25, fontSize: 14, color: INK, valign: "middle" });
-    s.addNotes("Native charts from reports/adassp/results.csv; paired verdicts from reports/adassp/all/compare.csv (all 29 datasets of Wang's published run, R = 50 draws per fold; a verdict needs the 95% CI of the paired fold difference to exclude 0). The bias correction changes test MSE by -2.8% to +2.3%: it helps at small eps and slightly hurts at large eps.");
+    s.addNotes("Native charts from reports/adassp/results.csv; paired verdicts from reports/adassp/all/compare.csv (all 29 datasets of Wang's published run, R = 50 draws per fold; a verdict needs the 95% CI of the paired fold difference to exclude 0). The bias correction changes test MSE by -3.7% to +2.3% across all eps: it helps at small eps and slightly hurts at large eps.");
   }
 
   // ======================= 29. Intersection-size sweep on real data =======================
@@ -721,7 +721,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const take = ["The revised protocol closes the critical and high gaps under honest-but-curious parties",
       "Within 2× of non-private OLS at n ≈ 3k–100k (simulation); within 10% at 1.4k–11k records for ε = 1–2 (real data)",
       "Against AdaSSP: ahead at small ε, behind at large ε, where it needs about 1.5–2× the matched records",
-      "The bias correction is a small effect (under 3% of test MSE); ridge shrinkage dominates when σ is large"];
+      "The bias correction is a small effect (under 4% of test MSE); ridge shrinkage dominates when σ is large"];
     take.forEach((t, i) => {
       numCircle(s, i + 1, 0.6, 1.6 + i * 1.25, 0.6, EMBER, 17);
       s.addText(t, { x: 1.45, y: 1.6 + i * 1.25, w: 5.3, h: 1.0, fontFace: BODY, fontSize: 16, color: WHITE, margin: 0, valign: "top", isTextBox: true });

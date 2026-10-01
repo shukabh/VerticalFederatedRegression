@@ -92,7 +92,7 @@
 \maketitle
 
 \begin{abstract}
-We study two-party vertical federated ordinary least squares (OLS) between a researcher $\Party{R}$ and an organization $\Party{O}$ (e.g.\ a national statistical agency) in the regime where the response $\by$ is held by $\Party{O}$. Records are linked by labeled private set intersection, the O-dependent blocks of the joint Gram matrix are aggregated under homomorphic encryption, and differential privacy (DP) noise is injected in the encrypted domain; $\Party{R}$'s own Gram block is computed locally and never transmitted. Relative to earlier drafts, the protocol is revised to close gaps that invalidate the stated guarantees against an honest-but-curious $\Party{R}$: $\Party{O}$'s replies are sanitized (fresh re-encryption and noise flooding), because a plaintext-scalar noise addition leaves the ciphertext's randomness a deterministic function of $\Party{O}$'s data; the noise is calibrated to the replace-one sensitivity that the adjacency relation actually requires; calibration is split between the parties so that only committed public constants are exchanged; $\Party{O}$ keeps a zero-concentrated DP ledger across runs; and the ridge parameter is fixed from public inputs. We then characterize the finite-noise bias of the private estimator as a conditional expectation, give a correction that costs no privacy budget, and state the remaining proof obligations explicitly.
+We study two-party vertical federated ordinary least squares (OLS) between a researcher $\Party{R}$ and an organization $\Party{O}$ (e.g.\ a national statistical agency) in the regime where the response $\by$ is held by $\Party{O}$. Records are linked by labeled private set intersection, the O-dependent blocks of the joint Gram matrix are aggregated under homomorphic encryption, and differential privacy (DP) noise is injected in the encrypted domain; $\Party{R}$'s own Gram block is computed locally and never transmitted. Relative to earlier drafts, the protocol is revised to close gaps that invalidate the stated guarantees against an honest-but-curious $\Party{R}$: $\Party{O}$'s replies are sanitized (fresh re-encryption and noise flooding), because a plaintext-scalar noise addition leaves the ciphertext's randomness a deterministic function of $\Party{O}$'s data; the noise is calibrated to the replace-one sensitivity that the adjacency relation actually requires; calibration is split between the parties so that only committed public constants are exchanged; $\Party{O}$ keeps a zero-concentrated DP ledger across runs; and the ridge parameter is fixed from public inputs. We then characterize the finite-noise bias of the private estimator as a conditional expectation, give a correction that costs no privacy budget, and state the remaining proof obligations explicitly. Empirically, the cryptographic layer reproduces plaintext OLS to about $10^{-10}$. On real data the private estimate comes within 10\% of non-private test error at $1.4$k--$11$k matched records for $\varepsilon \in \{1, 2\}$; against centralized AdaSSP on 29 UCI datasets it is ahead at small $\varepsilon$ and needs $1.4$--$2.1$ times the records at moderate $\varepsilon$, and under the same guarantee it beats AdaSSP's adaptive ridge on 27 of 29 datasets. Coefficient-level accuracy needs roughly ten times more data than prediction, and the bias correction changes test error by under 4\%.
 \end{abstract}
 
 \tableofcontents
@@ -115,6 +115,7 @@ This document proposes a cryptographic protocol for \emph{vertical federated lea
   \item A corrected data flow in which $\Party{R}$'s Gram block $\bA$ is computed locally and never transmitted or noised (Section~\ref{sec:protocol}).
   \item A revised protocol that is sound against an honest-but-curious $\Party{R}$ who holds the secret key: sanitization of every ciphertext $\Party{O}$ returns (Section~\ref{sec:circuit}), replace-one sensitivity and a privacy ledger (Section~\ref{sec:dp}), per-party calibration, and a PSI whose labels and metadata are data-independent (Appendix~\ref{app:psi}). Pseudocode is given in Algorithms~\ref{alg:setup}--\ref{alg:sub}.
   \item The leading-order bias of the private OLS and ridge estimators, stated as conditional expectations with explicit validity conditions, and a bias correction that is pure post-processing (Section~\ref{sec:bias}).
+  \item An empirical evaluation: exactness of the cryptographic layer, coefficient accuracy against intersection size, the practical value of the correction, a benchmark against AdaSSP on 29 UCI datasets, and an intersection-size sweep on real data (Section~\ref{sec:eval}).
 \end{enumerate}
 
 % ==============================================================
@@ -590,7 +591,7 @@ We therefore fix the ridge from public inputs before decryption:
   \Psi = \bI, \qquad \lambda = \max\bigl\{0,\; 2\rho^{\star}\sigma\sqrt{p} - n\ell\bigr\},
   \label{eq:lambda_rule}
 \end{equation}
-where $\rho^{\star} > 1$ is the validity target and $\ell \ge 0$ is a committed public lower bound on $\lambda_{\min}(\bG/n)$ for the standardized design (with $\ell = 0$, \eqref{eq:lambda_rule} is a certificate that always reaches $\rho_{\lambda} \ge \rho^{\star}$). If $\ell$ is optimistic, the release gate of Remark~\ref{rem:gate} reports it. The $\Party{O}$-block ridge may be used with a $\lambda$ likewise fixed in advance when a committed lower bound on $\lambda_{\min}(\bS)/n$ is available.
+where $\rho^{\star} > 1$ is the validity target and $\ell \ge 0$ is a committed public lower bound on $\lambda_{\min}(\bG/n)$ for the standardized design (with $\ell = 0$, \eqref{eq:lambda_rule} is a certificate that always reaches $\rho_{\lambda} \ge \rho^{\star}$). If $\ell$ is optimistic, the release gate of Remark~\ref{rem:gate} reports it. In simulation $\rho^{\star} \approx 2.5$ made gate refusals negligible, and $\ell = 0$ left the ridge on at every $n$, with poor interval coverage (Section~\ref{sec:eval:bias}). The $\Party{O}$-block ridge may be used with a $\lambda$ likewise fixed in advance when a committed lower bound on $\lambda_{\min}(\bS)/n$ is available.
 
 \subsection{Zero-budget correction}
 \label{sec:bias:correction}
@@ -600,13 +601,13 @@ Since $\sigma$, $d_{R}$, $d_{O}$ and $\PiO$ are public and $\tilde{\bG}$ is alre
   \hat{\bbeta}_{\mathrm{bc}} = \tilde{\bbeta}_{\lambda} - \sigma^{2}M(\tilde{\bP}_{\lambda})\,\tilde{\bbeta}_{\lambda}.
   \label{eq:bc}
 \end{equation}
-Substituting $\tilde{\bG}$ for $\bG$ inside a term already of order $\sigma^{2}$ injects only $O(\sigma^{3})$ fluctuation and $O(\sigma^{4})$ bias, so $\hat{\bbeta}_{\mathrm{bc}}$ is conditionally unbiased for $\hat{\bbeta}_{\lambda}$ through $O(\sigma^{4})$; by post-processing it carries the same guarantee. One must not additionally invert the deterministic shrinkage: de-shrinking multiplies coordinate $j$ by $(g_{j} + \lambda)/g_{j}$ and re-amplifies precisely the directions the ridge protects. The honest deliverable is $\hat{\bbeta}_{\mathrm{bc}}$ with the shrinkage $-\lambda\tilde{\bP}_{\lambda}\Psi\tilde{\bbeta}_{\lambda}$ reported separately.
+Substituting $\tilde{\bG}$ for $\bG$ inside a term already of order $\sigma^{2}$ injects only $O(\sigma^{3})$ fluctuation and $O(\sigma^{4})$ bias, so $\hat{\bbeta}_{\mathrm{bc}}$ is conditionally unbiased for $\hat{\bbeta}_{\lambda}$ through $O(\sigma^{4})$; by post-processing it carries the same guarantee. One must not additionally invert the deterministic shrinkage: de-shrinking multiplies coordinate $j$ by $(g_{j} + \lambda)/g_{j}$ and re-amplifies precisely the directions the ridge protects. The honest deliverable is $\hat{\bbeta}_{\mathrm{bc}}$ with the shrinkage $-\lambda\tilde{\bP}_{\lambda}\Psi\tilde{\bbeta}_{\lambda}$ reported separately. In practice the bias removed is small; Section~\ref{sec:eval:bias} shows that the correction acts mainly as a variance reduction around $\hat{\bbeta}_{\lambda}$.
 
 \subsection{Bridge to inference, magnitude and regime}
 
 The first-order expansion behind Theorem~\ref{thm:bias} is $\tilde{\bbeta} \approx \hat{\bbeta} + \bP\bff - \bP\bE\hat{\bbeta}$, with $\bP\bff$ and $\bP\bE\hat{\bbeta}$ uncorrelated. A variance decomposition $\mathrm{Var}(\tilde{\bbeta}) \approx s^{2}\bP + (\text{mechanism block})$ follows, with the residual scale estimated from $\widetilde{\mathrm{RSS}} = \widetilde{\by^{\top}\by} - 2\tilde{\bc}^{\top}\tilde{\bbeta} + \tilde{\bbeta}^{\top}\tilde{\bG}\tilde{\bbeta}$ (floored at zero; it needs a small Jensen correction). Valid standard errors are developed in a companion note.
 
-For a single release the mechanism standard deviation is $O(\sigma)$ while the bias is $O(\sigma^{2})$, so the first-order inference error is undercoverage from ignoring the mechanism variance, not the biased point estimate. Both DP effects scale like $1/n^{2}$ against the sampling term's $1/n$, so they are asymptotically negligible but not in the small-to-moderate cohorts typical of research-data-centre use. In simulations with $d_{R} = d_{O} = 5$ uniform features, $B_{R} = B_{O} = \sqrt{5}$ and $B_{y} = 5$, at $\varepsilon = 1$ the validity target forced a full ridge unless $n \gtrsim 1.7 \times 10^{4}$, and a 10\% relative error required $n \approx 3.6 \times 10^{4}$ (about $5.8 \times 10^{3}$ at $\varepsilon = 8$); committed-scale standardization is the largest lever on these numbers.
+For a single release the mechanism standard deviation is $O(\sigma)$ while the bias is $O(\sigma^{2})$, so the first-order inference error is undercoverage from ignoring the mechanism variance, not the biased point estimate. Both DP effects scale like $1/n^{2}$ against the sampling term's $1/n$, so they are asymptotically negligible but not in the small-to-moderate cohorts typical of research-data-centre use. In simulations with $d_{R} = d_{O} = 5$ uniform features, $B_{R} = B_{O} = \sqrt{5}$ and $B_{y} = 5$, at $\varepsilon = 1$ the validity target forced a full ridge unless $n \gtrsim 1.7 \times 10^{4}$, and a 10\% relative error required $n \approx 3.6 \times 10^{4}$ (about $5.8 \times 10^{3}$ at $\varepsilon = 8$); committed-scale standardization is the largest lever on these numbers. Section~\ref{sec:eval:sim} repeats this study with realistic feature scales and committed quantile bounds.
 
 % ==============================================================
 \section{The Inference Gap: Prediction After Training}
@@ -660,15 +661,215 @@ Since $\tilde{\by} - \bXRI\hat{\bbeta}_{R}^{\mathrm{st}} = \mathbf{M}_{R}\bXOI\b
 the quadratic form of $\bbeta_{O}$ against the Schur complement of $\bA$. It is zero iff $\bXOI\bbeta_{O} \in \mathrm{col}(\bXRI)$. When it is small, Approach~2 is appropriate; when large, $\Party{O}$'s features carry signal that $\Party{R}$'s cannot proxy and Approach~1 should be used. Because $\by^{I}$ is unavailable to $\Party{R}$, \eqref{eq:distloss} is the only computable diagnostic. As a secondary consideration, $\hat{\bbeta}_{R}^{\mathrm{st}}$ encodes the cross-correlation structure $\bA^{-1}\bC\bbeta_{O}$ and should be treated as a release.
 
 % ==============================================================
+\section{Empirical Evaluation}
+\label{sec:eval}
+% ==============================================================
+
+We evaluate four things: the cryptographic layer of the earlier implementation, end to end (Section~\ref{sec:eval:crypto}); the accuracy of the private estimator against the true coefficients on a synthetic population (Section~\ref{sec:eval:sim}); whether the zero-budget correction matters when $\sigma$ is large (Section~\ref{sec:eval:bias}); and utility on real data, against AdaSSP~\cite{wang2018revisiting} and as a function of the intersection size (Sections~\ref{sec:eval:adassp}--\ref{sec:eval:sweep}). Section~\ref{sec:eval:lessons} explains where the protocol loses utility. The scripts that produce every number below are in the \texttt{experiments/} directory of the project repository.
+
+The revised sanitization (Section~\ref{sec:circuit}) is not yet implemented. Sections~\ref{sec:eval:sim}--\ref{sec:eval:lessons} therefore simulate the release of Algorithm~\ref{alg:aggregate} in plaintext: a single Gaussian draw per released entry, symmetric, on every $\Party{O}$-dependent entry of $(\bG, \bc)$, with $\bA$ exact and $\sigma$ from the analytic Gaussian mechanism~\cite{balle2018improving}. Section~\ref{sec:eval:crypto} shows that encryption adds no error beyond this. The flooding noise of $\textsc{SanitizeCKKS}$ and the discretization of the noise are not modelled; both are small by design (Sections~\ref{sec:dp:noise_choice} and~\ref{sec:circuit}).
+
+\subsection{The cryptographic layer is exact}
+\label{sec:eval:crypto}
+
+We ran the earlier implementation of the protocol end to end, over sockets, on six cohorts ($n = 200$ to $64{,}000$ matched records) with a plaintext backend, and on one cohort ($n = 400$ matched records out of $n_{O} = 4{,}000$) with OpenFHE~1.5.1 (BFV, $N = 16{,}384$, for the linkage; CKKS with scale $2^{50}$ for the aggregation). Labeled PSI recovered exactly the true match set in every run, with no misaligned rows. With the DP noise switched off, the released estimate agreed with its plaintext target to $2.9 \times 10^{-10}$ with the plaintext backend and $1.7 \times 10^{-10}$ with OpenFHE. The OpenFHE run took about 13~s end to end. The 20-of-20 ciphertext distinguishing attack of Section~\ref{sec:circuit} was also run with OpenFHE. All error in the private estimate therefore comes from the DP noise and the ridge it forces.
+
+\subsection{Coefficient accuracy against intersection size}
+\label{sec:eval:sim}
+
+\paragraph{Setup.} The population has $d_{R} = 4$ and $d_{O} = 6$ features on realistic raw scales (a score, a binary indicator, lognormal income and assets, a count and an age), Toeplitz-correlated with coefficient $0.3$. They are standardized with public population constants and clipped to committed $99.5\%$ bounds ($B_{R} = 5.59$, $B_{O} = 6.24$, $B_{y} = 2.89$). The generating slopes give $R^{2} \in \{0.3, 0.5, 0.9\}$. The replace-one sensitivity is $\Delta = 86.2$; with $\delta = 10^{-5}$ the analytic Gaussian gives $\sigma = 606, 322, 172, 93, 52$ for $\varepsilon = 0.5, 1, 2, 4, 8$. The ridge follows~\eqref{eq:lambda_rule} with $\rho^{\star} = 2$, $p = 11$ and the committed bound $\ell = 0.8\,\lambda_{\min}(\bG/n) = 0.494$ of the population. For each $n \in [10^{2}, 10^{5}]$ we draw 200 cohorts and an independent release per $\varepsilon$, and report the bias-corrected estimate~\eqref{eq:bc}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/sim_rmse_vs_n.png}
+  \caption{RMSE of the bias-corrected slopes against the true coefficients (standardized scale), against the intersection size $n$, at $R^{2} = 0.5$. Lines: median over 200 runs, each with a new cohort and a new release. Bands: 2.5--97.5\% of runs. Error bars: bootstrap 95\% CI of the mean. Hollow markers: the ridge is active. Grey: non-private OLS on the true matches.}
+  \label{fig:sim_rmse}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Median RMSE of the standardized slopes against the true coefficients, $R^{2} = 0.5$, with the ratio to the non-private OLS floor in brackets.}
+  \label{tab:sim_rmse}
+  \begin{tabular}{@{}rcccccc@{}}
+    \toprule
+    $n$ & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ & $\varepsilon = 8$ & OLS floor \\
+    \midrule
+    $10^{3}$ & 0.231 (9.9) & 0.213 (9.1) & 0.181 (7.7) & 0.138 (5.9) & 0.078 (3.3) & 0.0234 \\
+    $10^{4}$ & 0.092 (12.3) & 0.044 (5.8) & 0.025 (3.4) & 0.014 (1.9) & 0.010 (1.3) & 0.0075 \\
+    $10^{5}$ & 0.0087 (3.4) & 0.0051 (2.0) & 0.0034 (1.4) & 0.0029 (1.2) & 0.0026 (1.0) & 0.0025 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Results.} Figure~\ref{fig:sim_rmse} and Table~\ref{tab:sim_rmse} show three regimes. While the ridge is active ($n < 16.3$k, $8.6$k, $4.6$k, $2.5$k and $1.4$k for $\varepsilon = 0.5, \dots, 8$), the estimate is shrunk towards zero. Once the ridge switches off, the DP error falls faster than the sampling error and merges into the OLS floor. The error reaches twice the floor at $n \approx 3.2$k ($\varepsilon = 8$), $9.4$k ($\varepsilon = 4$) and $34$k ($\varepsilon = 2$); at $\varepsilon = 1$ the ratio is still $2.04$ at $n = 10^{5}$ (about $105$k by extrapolation). A stronger signal lowers the floor but not the DP error, so the ratio is largest at $R^{2} = 0.9$, where the same crossings are at $13$k, $30$k and $66$k.
+
+\paragraph{Coefficients on different scales.} Raw-scale errors cannot be compared across coefficients: on this population they span 5.6 orders of magnitude purely through units, and 87\% of a pooled raw MSE comes from the two binary coefficients. We therefore report the \emph{efficiency ratio} $\mathrm{RMSE}_{\mathrm{DP},j}/\mathrm{SE}_{\mathrm{OLS},j}$, which does not change when $x_{j}$ or $y$ is rescaled and has a direct reading: a ratio $r$ means the release is about as accurate as OLS on $n/r^{2}$ records (Figure~\ref{fig:sim_eff}). Once $\lambda = 0$ the ratios agree to within about $\pm 15\%$ across coefficients, with $\Party{O}$-block coefficients about 10\% higher than $\Party{R}$-block ones. While the ridge is on, the coefficients with the largest $|\beta_{j}|$ suffer most.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/sim_efficiency_ratio.png}
+  \caption{Efficiency ratio $\mathrm{RMSE}_{\mathrm{DP},j}/\mathrm{SE}_{\mathrm{OLS},j}$ per coefficient against $n$, $R^{2} = 0.5$. Top row: $\Party{R}$'s block; bottom row: $\Party{O}$'s block.}
+  \label{fig:sim_eff}
+\end{figure}
+
+\paragraph{Inference.} With $\lambda = 0$, Wald intervals built from the first-order variance (sampling plus mechanism) cover the true slopes $93.5$--$95.9\%$ of the time for $n \le 5 \times 10^{4}$, and the plug-in standard errors match the empirical spread within $0.99$--$1.03$. With the ridge on, coverage collapses for the large coefficients. At large $n$ coverage of the generating coefficients declines for OLS and the private estimate alike, because clipping at the committed bounds moves the target; against the clipped-population target the same intervals cover $93$--$96\%$. Coverage studies at large $n$ should report both targets.
+
+\subsection{Does the bias correction matter when \texorpdfstring{$\sigma$}{sigma} is large?}
+\label{sec:eval:bias}
+
+On the same population (Figure~\ref{fig:bias}), the answer is: not as a bias correction. In a single release the mechanism bias of Theorem~\ref{thm:ridge} is at most $0.75\%$ of the MSE, and the largest coefficient bias is at most $0.14$ of its standard deviation. When $\sigma$ is large the ridge is on, and $72$--$90\%$ of the error against the true coefficients is deterministic shrinkage (Proposition~\ref{prop:shrink}), which the correction leaves alone by design.
+
+The correction is still worth applying. Because $M(\tilde{\bP}_{\lambda})$ is computed from the noisy Gram matrix, the correction also removes part of the noise: against the protocol's estimand $\hat{\bbeta}_{\lambda}$ it lowers the MSE by $7$--$12\%$ when the ridge is on and by under $0.5\%$ once $\rho_{0} = \lambda_{\min}(\bG)/(2\sigma\sqrt{p}) > 10$. The gain follows $1 - \mathrm{MSE}_{\mathrm{bc}}/\mathrm{MSE} \approx 0.36/\rho_{\lambda}^{2}$ (constant $0.35$--$0.47$ over 45 settings), and it never increased this MSE in any setting. Against the sample OLS estimate or the true coefficients, with a moderate ridge on, it costs $0.3$--$4.3\%$, because it removes a noise-driven inflation that had offset part of the shrinkage. The bias itself matters only if many releases of the same data are averaged: at least about 130, growing like $23\rho_{0}^{2}$. On the real datasets of Section~\ref{sec:eval:adassp} the correction changed test MSE by between $-3.7\%$ and $+2.3\%$, helping at small $\varepsilon$ and slightly hurting at large $\varepsilon$ (Table~\ref{tab:verdicts}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/bias_mse_ratio.png}
+  \caption{MSE of the bias-corrected estimate divided by that of the uncorrected one, against $\rho_{0} = \lambda_{\min}(\bG)/(2\sigma\sqrt{p})$, one line per $\varepsilon$. (a)~Against the protocol's estimand $\hat{\bbeta}_{\lambda}$; (b)~against the sample OLS estimate; (c)~with $\ell = 0$, so that the ridge never switches off. Values below 1 favour the correction.}
+  \label{fig:bias}
+\end{figure}
+
+Two choices in~\eqref{eq:lambda_rule} matter more than the correction. First, the release gate (Remark~\ref{rem:gate}) refused up to $1.6\%$ of releases at $\rho^{\star} = 2$; a refused release still spends budget, and $\rho^{\star} \approx 2.5$ makes refusals negligible. Second, $\ell = 0$ keeps the ridge on at every $n$: at $n = 1.28 \times 10^{5}$ and $\varepsilon = 0.5$, $\lambda$ was still $10\%$ of $\lambda_{\min}(\bG)$, and at that $n$ Wald coverage was $42$--$81\%$ across $\varepsilon$. A committed $\ell > 0$ should be used whenever a defensible bound is available.
+
+\subsection{Benchmark against AdaSSP}
+\label{sec:eval:adassp}
+
+AdaSSP~\cite{wang2018revisiting} perturbs the same sufficient statistics and solves a ridge whose penalty adapts to a private estimate of $\lambda_{\min}(\bX^{\top}\bX)$. It assumes one curator holding the joined table, which our setting rules out, so the comparison measures the utility cost of never pooling the data.
+
+\paragraph{Setup.} We use the 29 UCI datasets~\cite{dua2019uci} of Wang's published evaluation, with his preprocessing (z-scored features, rows scaled to unit norm, $y/\max|y|$), 10-fold cross-validation, test MSE, $\delta = 10^{-6}$ and 50 noise draws per fold. Our re-implementation of Wang's procedures reproduces his published test MSE (median ratio $1.000$ over 29 datasets and 10 values of $\varepsilon$; range $0.75$--$1.46$). $\Party{R}$ holds the first $\lfloor d/2 \rfloor$ features. The preprocessing gives $\|\mathbf{x}_{R}\|, \|\mathbf{x}_{O}\|, |y| \le 1$, so $B_{R} = B_{O} = B_{y} = 1$ and $\Delta = \sqrt{10}$. No public lower bound on $\lambda_{\min}$ is available for these designs (several are rank-deficient), so $\ell = 0$. We compare four private methods:
+\begin{itemize}[noitemsep]
+  \item \emph{AdaSSP (published):} Wang's algorithm and constants. It protects the whole record $(\mathbf{x}, y)$, a stronger guarantee than ours.
+  \item \emph{AdaSSP (matched):} AdaSSP's adaptive ridge under our adjacency and accountant, with $\bA$ exact; $\varepsilon/3$ is spent on $\lambda_{\min}$. It is an idealized reference, since the private $\lambda_{\min}$ step needs $\bX^{\top}\bX$ in the clear.
+  \item \emph{VFL, ours:} the revised protocol with the correction~\eqref{eq:bc}; a draw that fails the release gate releases nothing ($\hat{\bbeta} = 0$).
+  \item \emph{VFL, uncorrected:} the same release and ridge without the correction.
+\end{itemize}
+Every method sees the same folds. Fold-to-fold variation is shared by all methods, so we compare methods by paired tests over folds (95\% CI of the mean difference, $t$ with 9 degrees of freedom).
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Test MSE at $\varepsilon = 1$, as a ratio to non-private ridge regression on the same folds. Bold: lowest private method.}
+  \label{tab:adassp}
+  \begin{tabular}{@{}lrrrcccc@{}}
+    \toprule
+    & & & Non-private & AdaSSP & AdaSSP & VFL, & VFL, \\
+    Dataset & $n$ & $d$ & test MSE & (published) & (matched) & ours & uncorrected \\
+    \midrule
+    housing & 506 & 13 & 0.0396 & \textbf{1.80} & 2.07 & 1.97 & 1.95 \\
+    wine & 1{,}599 & 11 & 0.0201 & \textbf{1.68} & 1.95 & 1.84 & 1.83 \\
+    airfoil & 1{,}503 & 5 & 0.0533 & \textbf{1.09} & 1.17 & 1.16 & 1.16 \\
+    concrete & 1{,}030 & 8 & 0.0444 & \textbf{1.48} & 1.74 & 1.69 & 1.68 \\
+    bike & 17{,}379 & 17 & 0.0279 & \textbf{1.03} & 1.07 & 1.06 & 1.06 \\
+    elevators & 16{,}599 & 18 & 0.00868 & \textbf{1.51} & 1.78 & 1.71 & 1.70 \\
+    pol & 15{,}000 & 26 & 0.135 & \textbf{1.04} & 1.08 & 1.06 & 1.06 \\
+    kin40k & 40{,}000 & 8 & 0.0632 & \textbf{1.00} & 1.00 & 1.00 & 1.00 \\
+    protein & 45{,}730 & 9 & 0.119 & \textbf{1.01} & 1.01 & 1.01 & 1.01 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Paired comparisons over all 29 datasets: number of datasets where our protocol has significantly lower / higher test MSE (95\% CI over folds). The remaining datasets show no significant difference.}
+  \label{tab:verdicts}
+  \begin{tabular}{@{}lcccc@{}}
+    \toprule
+    Ours, compared with & $\varepsilon = 0.01$ & $\varepsilon = 0.1$ & $\varepsilon = 1$ & $\varepsilon = 10$ \\
+    \midrule
+    vs AdaSSP (published) & 21 / 0 & 14 / 8 & 6 / 19 & 1 / 21 \\
+    vs AdaSSP (matched) & 27 / 0 & 27 / 0 & 27 / 0 & 21 / 3 \\
+    vs Uncorrected VFL & 23 / 6 & 14 / 8 & 6 / 19 & 3 / 19 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/adassp_mse_vs_eps.png}
+  \caption{Test MSE against $\varepsilon$ on nine of the datasets. Points: mean over 10 folds and 50 noise draws. Error bars: 95\% CI of the mean ($t$ over folds). Bands: middle 95\% of individual runs.}
+  \label{fig:adassp}
+\end{figure}
+
+\paragraph{Results.} Tables~\ref{tab:adassp}--\ref{tab:verdicts} and Figure~\ref{fig:adassp} give the comparison. At small $\varepsilon$ our protocol is ahead of the published AdaSSP, which spends a third of its budget on $\lambda_{\min}$ (better on 21 datasets and worse on none at $\varepsilon = 0.01$). From $\varepsilon \approx 0.5$ AdaSSP is ahead: at $\varepsilon = 1$ our test MSE is a median $4\%$ higher (range $-6\%$ to $+31\%$), and the gap shrinks with $n$ (bike: $1.06$ against $1.03$; protein: $1.01$ against $1.01$). Under the same guarantee our protocol beats AdaSSP's adaptive ridge on 27 of 29 datasets at $\varepsilon \le 1$.
+
+The published column should be read with one caveat. At $\varepsilon = 1$ AdaSSP adds noise of standard deviation $11.9$ to each diagonal entry of $\bX^{\top}\bX$ and $8.4$ to each off-diagonal entry, against our $\sigma = 13.4$, although its guarantee covers the whole record and it splits $\varepsilon$ three ways. We have not reconciled this difference, which may reflect a looser adjacency in Wang's calibration constant; until it is resolved, the published column may overstate AdaSSP's advantage.
+
+\subsection{Intersection size on real data}
+\label{sec:eval:sweep}
+
+Figure~\ref{fig:sweep} repeats the experiment of Figure~\ref{fig:sim_rmse} on real data. We use the four datasets with at least 15,000 rows and a real linear signal: bike, elevators, pol and protein (kin40k is left out because its linear fit is no better than predicting zero). For each fold, the training folds are shuffled once and the first $n$ rows form the matched set, so the subsets are nested across $n$; the held-out fold is the test set. We report test MSE divided by non-private test MSE at the same $n$ and fold, with 40 noise draws per fold and $n$. Table~\ref{tab:sweep} gives the $n$ at which each method comes within $10\%$ of non-private.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/sweep_n.png}
+  \caption{Test MSE divided by non-private test MSE at the same $n$, against the number of matched records. Solid: our protocol; dashed: AdaSSP (published); colour: $\varepsilon$. Error bars: 95\% CI over folds.}
+  \label{fig:sweep}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Matched records needed to come within $10\%$ of non-private test MSE: our protocol, with AdaSSP (published) in brackets. Log-linear interpolation of the mean curve; ``$>$'' means not reached at the sizes available.}
+  \label{tab:sweep}
+  \begin{tabular}{@{}lrcccc@{}}
+    \toprule
+    Dataset & $n$ available & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ \\
+    \midrule
+    bike & 15{,}641 & $>$15k (15k) & 11k (7.5k) & 5.9k (3.8k) & 3.1k (1.8k) \\
+    elevators & 14{,}939 & $>$14k ($>$14k) & $>$14k ($>$14k) & $>$14k ($>$14k) & $>$14k (14k) \\
+    pol & 13{,}500 & $>$13k ($>$13k) & 10k (7.0k) & 5.3k (3.5k) & 2.8k (1.7k) \\
+    protein & 41{,}157 & 5.4k (3.7k) & 2.8k (1.7k) & 1.4k (784) & 619 (295) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Doubling $\varepsilon$ roughly halves the records needed (bike: $11$k, $5.9$k, $3.1$k for $\varepsilon = 1, 2, 4$). Over this range of $\varepsilon$ our protocol needs $1.4$--$2.1$ times the records AdaSSP needs for the same relative cost. On bike, pol and protein, prediction comes within $10\%$ of non-private at $1.4$k--$11$k matched records for $\varepsilon \in \{1, 2\}$. elevators never does at the sizes available: at its full $14.9$k records our test MSE is still $1.7$ times non-private at $\varepsilon = 1$.
+
+\subsection{Where the utility goes}
+\label{sec:eval:lessons}
+
+\paragraph{Prediction is not interpretation.} Test MSE includes the irreducible noise, so it is forgiving: on real data the private fit is close to the non-private one at a few thousand matched records. The coefficients themselves, which are what a researcher asking ``do my variables predict this outcome?'' needs, take about ten times more data (Section~\ref{sec:eval:sim}: twice the OLS error at $34$k records for $\varepsilon = 2$ and about $105$k for $\varepsilon = 1$), and confidence intervals are valid only once the ridge is off.
+
+\paragraph{The gap to AdaSSP is the noise level, not the ridge rule.} Table~\ref{tab:ablation} replaces the fixed ridge by an oracle one ($\ell = 0.8\,\lambda_{\min}(\bG/n)$, computed without privacy) and by no ridge. The oracle changes test MSE by at most $1.2\%$ at $\varepsilon = 1$; only at $\varepsilon = 10$ on a well-conditioned design (wine) does it close most of the gap. Removing the ridge is far worse (27 times non-private on housing at $\varepsilon = 1$). What separates the methods is $\sigma$. Our sensitivity bounds $\mathbf{x}_{R}$, $\mathbf{x}_{O}$ and $y$ separately, while the preprocessing bounds the whole row, $\|(\mathbf{x}_{R}, \mathbf{x}_{O})\| \le 1$. A replace-one sensitivity under a joint row bound would reduce $\sigma$ directly.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Ridge ablation at full $n$ (test MSE divided by non-private; 10 folds, 30 noise draws per fold).}
+  \label{tab:ablation}
+  \begin{tabular}{@{}lrcccc@{}}
+    \toprule
+    Dataset & $\varepsilon$ & AdaSSP (published) & VFL, $\ell = 0$ & VFL, oracle $\ell$ & VFL, no ridge \\
+    \midrule
+    housing & 1 & 1.852 & 2.031 & 2.026 & 27 \\
+    housing & 10 & 1.084 & 1.180 & 1.163 & 2.55 \\
+    wine & 1 & 1.686 & 1.858 & 1.835 & 9.85 \\
+    wine & 10 & 1.014 & 1.162 & 1.058 & 1.03 \\
+    elevators & 1 & 1.514 & 1.722 & 1.722 & 2.37 \\
+    elevators & 10 & 1.013 & 1.051 & 1.051 & 1.28 \\
+    bike & 1 & 1.031 & 1.057 & 1.057 & 1.33 \\
+    bike & 10 & 1.001 & 1.002 & 1.002 & 1.28 \\
+    pol & 1 & 1.037 & 1.065 & 1.065 & 1.19 \\
+    pol & 10 & 1.001 & 1.003 & 1.003 & 1.01 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{How well the data fill their bounds matters as much as $n$.} The noise is sized for the committed bounds, so headroom the data do not use is lost signal. After Wang's scaling by $\max|y|$, the typical $|y|$ is only $0.19$ of its bound on elevators and $0.24$ on wine, because a tail reaches $1.41$ times the $99.5\%$ quantile; on the other datasets it is $0.33$--$0.59$. These are the two worst performers relative to their size. The protocol's own preprocessing avoids the worst of this: bounds are committed from domain knowledge and enforced by clipping (Section~\ref{sec:protocol}), not set by the data maximum. Choosing bounds that typical records come close to, and units or transforms that make this possible (for example, log income), is part of using the protocol well.
+
+\paragraph{Budget.} Every release, including a refused one, is charged to $\Party{O}$'s ledger. Model search and exploratory re-runs therefore spend the budget quickly; the protocol suits a pre-specified model per research question.
+
+% ==============================================================
 \section{Summary and Next Steps}
 % ==============================================================
 
-We restricted the design to the case in which the organization holds the response and revised it so that its guarantees hold against an honest-but-curious researcher who holds the decryption keys: $\Party{O}$'s replies are sanitized, the noise matches the declared adjacency, calibration exchanges only committed constants, a ledger caps cumulative privacy loss, the linkage labels and metadata are data-independent, and the ridge is fixed from public inputs so that the bias theory applies. Proposed next steps:
+We restricted the design to the case in which the organization holds the response and revised it so that its guarantees hold against an honest-but-curious researcher who holds the decryption keys: $\Party{O}$'s replies are sanitized, the noise matches the declared adjacency, calibration exchanges only committed constants, a ledger caps cumulative privacy loss, the linkage labels and metadata are data-independent, and the ridge is fixed from public inputs so that the bias theory applies. Empirically (Section~\ref{sec:eval}), the private estimate is usable for prediction at a few thousand matched records for $\varepsilon \in \{1, 2\}$, coefficient-level conclusions need tens of thousands, the utility gap to centralized AdaSSP comes from the noise level rather than the ridge rule, and how well the data fill the committed bounds matters as much as $n$. Proposed next steps:
 \begin{enumerate}[noitemsep]
   \item \textbf{Proof obligations.} Bound $S_{\mathrm{err}}$ (Obligation~\ref{obl:serr}); complete the discrete-Gaussian and finite-precision accounting (Obligation~\ref{obl:precision}); write out the conditional $O(\sigma^{4})$ constants of Theorems~\ref{thm:bias}--\ref{thm:ridge}.
   \item \textbf{Implementation.} Implement the revised protocol in OpenFHE (fresh-encryption noise, flooding and modulus switching, per-party calibration, ledger, permutation and PSI padding, fixed ridge) and benchmark it as a function of $n$, $d_{R}$, $d_{O}$.
   \item \textbf{Standard errors.} Develop the variance decomposition and coverage.
-  \item \textbf{Utility.} Choose $\lambda$ by an MSE criterion computed from public inputs, and quantify the gain from committed-scale standardization.
+  \item \textbf{Utility.} Derive the replace-one sensitivity under a joint row bound $\|(\mathbf{x}_{R}, \mathbf{x}_{O})\| \le B$, which would lower $\sigma$ directly; use $\rho^{\star} \approx 2.5$ and a committed $\ell > 0$ where defensible; quantify the gain from bounds that the data fill; and reconcile AdaSSP's published noise constants with ours (Section~\ref{sec:eval:adassp}).
   \item \textbf{Extensions.} Logistic regression; the membership-private variant (Remark~\ref{rem:revealed}); malicious security (zero-knowledge proofs that $\bb \in \{0,1\}^{n_{O}}$ and $\|\mathbf{x}_{R,k}\| \le B_{R}$).
 \end{enumerate}
 
@@ -859,6 +1060,17 @@ in \textit{Proc.\ IEEE CSF}, 2017, pp.\ 263--275.
 C.~L.~Canonne, G.~Kamath, and T.~Steinke,
 ``\href{https://proceedings.neurips.cc/paper/2020/hash/b53b3a3d6ab90ce0268229151c9bde11-Abstract.html}{The discrete Gaussian for differential privacy},''
 in \textit{Proc.\ NeurIPS}, 2020, pp.\ 15676--15688.
+
+\bibitem{wang2018revisiting}
+Y.-X.~Wang.
+\newblock Revisiting differentially private linear regression: optimal and adaptive prediction \& estimation in unbounded domain.
+\newblock In \emph{Proceedings of the 34th Conference on Uncertainty in Artificial Intelligence (UAI)}, 2018.
+\newblock Code and data: \url{https://github.com/yuxiangw/optimal_dp_linear_regression}.
+
+\bibitem{dua2019uci}
+D.~Dua and C.~Graff.
+\newblock {UCI} Machine Learning Repository.
+\newblock University of California, Irvine, School of Information and Computer Sciences, 2019.
 
 \bibitem{balle2018improving}
 B.~Balle and Y.-X.~Wang,
