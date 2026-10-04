@@ -21,6 +21,20 @@ const ADA9 = readCsv(P("reports", "adassp", "results.csv"));
 const ADA_ALL = readCsv(P("reports", "adassp", "all", "results.csv"));
 const ADA_CMP = readCsv(P("reports", "adassp", "all", "compare.csv"));
 const SWEEP_X = readCsv(P("reports", "adassp", "sweep", "crossings.csv"));   // experiments/adassp/sweep_n.py
+// Tables of reports/calibration/heuristic.md (experiments/calibration_heuristic.py), keyed by the "## " heading
+function mdTables(file) {
+  const out = {};
+  let head = "";
+  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+    if (line.startsWith("## ")) { head = line.slice(3).trim(); continue; }
+    if (!line.startsWith("|") || /^\|[-|: ]+\|$/.test(line)) continue;
+    const cells = line.slice(1, -1).split("|").map((c) => c.trim());
+    (out[head] = out[head] || []).push(cells);
+  }
+  return out;
+}
+const CAL = mdTables(P("reports", "calibration", "heuristic.md"));
+const calSec = (prefix) => CAL[Object.keys(CAL).find((k) => k.startsWith(prefix))];
 // Error bars for native charts, keyed by chart title; added to the chart XML after writing (pptxgenjs has no API for them)
 const ERRBARS = {};
 const adaGet = (rows, ds, eps, m) => rows.find((r) => r.dataset === ds && Number(r.eps) === eps && r.method === m);
@@ -712,6 +726,90 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       "Ours needs about 1.5–2× the records AdaSSP needs for the same cost",
       "elevators stays above 10% at every size available (up to 14.9k)"], { x: 8.05, y: 5.5, w: 4.7, h: 1.5, fontSize: 13.5 });
     s.addNotes("Real-data analogue of Figure A. From reports/adassp/sweep (experiments/adassp/sweep_n.py): bike, elevators, pol and protein, the four of Wang's datasets with at least 15k rows and a real linear signal (kin40k has none: non-private is no better than predicting zero). For each fold, the training folds are shuffled once and the first n rows are the matched set; the held-out fold is the test set. Crossings are log-linear interpolations of the mean curve; '>15k' means never within 10% at the sizes available.");
+  }
+
+  // ======================= Calibration in practice (1/3): the chain =======================
+  {
+    const s = pres.addSlide(); title(s, "Calibration in practice: from ε to σ and λ", "Every input is public and committed before any data are seen");
+    const steps = [
+      ["δ", "δ ≤ 1/(10N)", "N = people O protects. 10⁻⁵ → 10⁻⁸ raises σ by only 25–50%"],
+      ["Budget", "one release: (ε, δ)\nk releases: ρ = (√(L+ε) − √L)² / k", "L = ln(1/δ); zCDP adds up across releases"],
+      ["Δ", "Δ² = (2O + R + Y)²/2 + 2RY", "R, O, Y = B_R², B_O², B_y² (usual case). Δ grows with bound²"],
+      ["σ", "σ = Δ · s(ε, δ)\nor Δ / √(2ρ) for k releases", "s: analytic-Gaussian multiplier (table below)"],
+      ["λ", "λ = max{0, 2ρ*σ√p − nℓ}", "ρ* = 2.5; ℓ from public data, else 0. Ridge off from n = 2ρ*σ√p / ℓ"],
+    ];
+    const gap = 2.45;
+    s.addShape(pres.shapes.LINE, { x: 0.95, y: 1.95, w: gap * 4, h: 0, line: { color: LINE, width: 2 } });
+    steps.forEach(([h, f, b], i) => {
+      const x = 0.6 + i * gap;
+      numCircle(s, i + 1, x, 1.6, 0.7, i === 3 ? EMBER : INK, 18);
+      txt(s, h, { x: x + 0.82, y: 1.72, w: 1.5, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
+      card(s, x, 2.5, 2.3, 2.15);
+      txt(s, f, { x: x + 0.15, y: 2.62, w: 2.0, h: 0.95, fontFace: HEAD, fontSize: 13, color: INK });
+      txt(s, b, { x: x + 0.15, y: 3.6, w: 2.0, h: 1.0, fontSize: 11.5, color: MUTED });
+    });
+    const t1 = calSec("1.");                                    // first table: s(eps, delta) by delta
+    const rows = [hdr(["σ/Δ  δ \\ ε", ...t1[0].slice(1).map((h) => h.replace("ε = ", ""))])];
+    t1.slice(1).filter((r) => ["1e-05", "1e-06", "1e-08"].includes(r[0])).forEach((r) =>
+      rows.push([`δ = ${r[0].replace("1e-0", "10⁻")}`, ...r.slice(1)]));
+    s.addTable(rows, Object.assign(tableOpts([1.05, 0.86, 0.86, 0.86, 0.86, 0.86, 0.86, 0.86]), { y: 5.0, rowH: 0.36, fontSize: 12 }));
+    card(s, 7.9, 4.95, 4.8, 1.75, EMBER_L);
+    txt(s, "Planning formula", { x: 8.15, y: 5.05, w: 4.4, h: 0.35, fontSize: 14, bold: true, color: EMBER });
+    txt(s, "σ ≈ Δ (√(2 ln(1/δ)) − 1) / ε^0.92", { x: 8.15, y: 5.42, w: 4.4, h: 0.45, fontFace: HEAD, fontSize: 17, color: INK });
+    txt(s, "Within −8% to +3% of exact for ε ∈ [0.1, 8], δ ∈ [10⁻⁸, 10⁻⁵]. For planning only: O computes the exact σ for each release.",
+      { x: 8.15, y: 5.92, w: 4.4, h: 0.75, fontSize: 11.5, color: MUTED });
+    s.addNotes("The calibration chain, from experiments/calibration_heuristic.py (reports/calibration/heuristic.md). The privacy budget is the only real decision; the rest follows from public, committed constants. The zCDP route is needed when several releases share one budget; for a single release the analytic Gaussian gives a 13-36% smaller sigma at delta = 1e-6.");
+  }
+
+  // ======================= Calibration in practice (2/3): scaling laws =======================
+  {
+    const s = pres.addSlide(); title(s, "From σ to the matched records you need", "Two scaling laws, exact at first order; one pilot figure carries over to any ε");
+    const laws = [
+      ["Prediction", "n ∝ σ ∝ Δ / ε", "With ℓ = 0 the ridge is proportional to σ, so the excess test error depends on n only through n / σ. Doubling ε roughly halves the records."],
+      ["Coefficients", "n ∝ σ² ∝ (Δ / ε)²", "Once the ridge is off, DP error / sampling error ≈ σ²(1+‖β‖²) tr(Σ⁻²) / (n s² tr(Σ⁻¹)). Doubling ε cuts the records by about 3.5×."],
+    ];
+    laws.forEach(([h, f, b], i) => {
+      const x = 0.6 + i * 6.15;
+      card(s, x, 1.55, 5.95, 2.05, i === 0 ? MIST : EMBER_L);
+      txt(s, h, { x: x + 0.3, y: 1.7, w: 2.6, h: 0.4, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
+      txt(s, f, { x: x + 2.9, y: 1.68, w: 2.85, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: i === 0 ? SLATE : EMBER, align: "right" });
+      txt(s, b, { x: x + 0.3, y: 2.3, w: 5.4, h: 1.2, fontSize: 13.5, color: TEXT });
+    });
+    const t2 = calSec("2."), t3 = calSec("3.");
+    const sim = (r2, e) => t2.find((r) => r[0] === r2 && r[1] === e);
+    const real = (ds, e) => t3.find((r) => r[0] === ds && r[1] === e);
+    const rows = [hdr(["Target", "Setting", "First-order calculator", "Transfer (× σ or × σ²)", "Observed"])];
+    [["bike", "2"], ["pol", "4"], ["protein", "4"]].forEach(([ds, e]) => {
+      const r = real(ds, e);
+      rows.push(["Prediction within 10%", `${ds}, ε = ${e} (from ε = 1)`, r[3], r[4], { text: r[5], options: { bold: true } }]);
+    });
+    [["0.5", "4"], ["0.5", "8"], ["0.3", "1"]].forEach(([r2, e]) => {
+      const r = sim(r2, e);
+      rows.push(["Coefficients within 2× OLS", `R² = ${r2}, ε = ${e} (from ε = 2)`, r[3], r[5], { text: r[6], options: { bold: true } }]);
+    });
+    s.addTable(rows, Object.assign(tableOpts([2.75, 3.5, 2.0, 2.25, 1.6]), { y: 3.85, rowH: 0.34, fontSize: 12.5 }));
+    txt(s, "Prediction: real-data sweep; coefficients: simulation. Breaks down for ill-conditioned designs (use the calculator's eigen-sums), at high R² where clipping bias dominates, and at small n. Flooding noise and the discrete Gaussian are not modelled.",
+      { x: 0.6, y: 6.6, w: 12.1, h: 0.6, fontSize: 11.5, italic: true, color: MUTED });
+    s.addNotes("Prediction targets come from the real-data sweep (reports/adassp/sweep), coefficient targets from the Monte Carlo (reports/coef_accuracy). The first-order calculator is coef_ratio / pred_ratio in experiments/calibration_heuristic.py; it needs the design's second moments, the coefficients and the residual variance from public reference data or a pilot.");
+  }
+
+  // ======================= Calibration in practice (3/3): knobs and a worked example =======================
+  {
+    const s = pres.addSlide(); title(s, "What each choice costs", "Defaults: δ = 10⁻⁶, ρ* = 2.5, ℓ from public data, tight bounds, k fixed in advance");
+    const rows = [hdr(["Change", "σ", "Records for prediction", "Records for coefficients"]),
+      ["Bounds 2× closer to the data (no extra clipping)", "× 1/4", "× 1/4", "× 1/16"],
+      ["Double ε", "× 0.52–0.55", "× 0.52–0.55", "× 0.27–0.30"],
+      ["δ from 10⁻⁶ to 10⁻⁸", "× 1.15–1.26", "× 1.15–1.26", "× 1.3–1.6"],
+      ["Same budget over k = 5 releases instead of 1", "× 2.6–2.9", "× 2.6–2.9", "× 6.5–8.7"]];
+    rows.slice(1).forEach((r) => { r[0] = { text: r[0], options: { bold: true } }; });
+    s.addTable(rows, Object.assign(tableOpts([5.5, 1.9, 2.35, 2.35]), { y: 1.7, rowH: 0.4, fontSize: 13 }));
+    txt(s, "Worked example: the simulation population at n = 10,000, δ = 10⁻⁶", { x: 0.6, y: 3.95, w: 12.1, h: 0.4, fontFace: HEAD, fontSize: 15, bold: true, color: INK });
+    txt(s, "B_R = 5.59, B_O = 6.24, B_y = 2.89, p = 11, ℓ = 0.494, ρ* = 2.5", { x: 0.6, y: 4.35, w: 12.1, h: 0.3, fontSize: 12, italic: true, color: MUTED });
+    const t4 = calSec("4.");
+    const ex = [hdr(["ε", "Δ", "σ, one release", "zCDP cost ρ", "λ at n = 10k", "Ridge off from n", "σ, each of 5 releases"])];
+    t4.slice(1).forEach((r) => ex.push([r[0], r[2], r[3], r[4], r[5], r[6], r[7]]));
+    s.addTable(ex, Object.assign(tableOpts([1.0, 1.3, 1.9, 1.7, 1.8, 2.1, 2.3]), { y: 4.75, rowH: 0.34, fontSize: 12.5 }));
+    s.addNotes("Multipliers from the s(eps, delta) table and the worked example in reports/calibration/heuristic.md. 'Bounds 2x closer' means the bounds were loose relative to the data, so tightening them adds no clipping; Delta is homogeneous of degree 2 in the bounds. Five releases: the sqrt(5) budget split times the looser zCDP conversion.");
   }
 
   // ======================= 30. Conclusions =======================
