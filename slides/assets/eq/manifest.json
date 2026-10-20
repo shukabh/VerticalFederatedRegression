@@ -1,0 +1,82 @@
+{
+ "ols": {
+  "file": "ols.png",
+  "w_pt": 176.558,
+  "h_pt": 15.027
+ },
+ "agg": {
+  "file": "agg.png",
+  "w_pt": 160.919,
+  "h_pt": 79.702
+ },
+ "ridge": {
+  "file": "ridge.png",
+  "w_pt": 172.02,
+  "h_pt": 12.354
+ },
+ "gate": {
+  "file": "gate.png",
+  "w_pt": 142.865,
+  "h_pt": 14.035
+ },
+ "ridge_est": {
+  "file": "ridge_est.png",
+  "w_pt": 81.533,
+  "h_pt": 13.766
+ },
+ "bc": {
+  "file": "bc.png",
+  "w_pt": 105.76,
+  "h_pt": 14.031
+ },
+ "thm": {
+  "file": "thm.png",
+  "w_pt": 238.137,
+  "h_pt": 15.81
+ },
+ "mp": {
+  "file": "mp.png",
+  "w_pt": 179.313,
+  "h_pt": 30.227
+ },
+ "cal_delta": {
+  "file": "cal_delta.png",
+  "w_pt": 56.846,
+  "h_pt": 11.955
+ },
+ "cal_budget": {
+  "file": "cal_budget.png",
+  "w_pt": 103.674,
+  "h_pt": 42.978
+ },
+ "cal_Delta": {
+  "file": "cal_Delta.png",
+  "w_pt": 99.477,
+  "h_pt": 29.131
+ },
+ "cal_sigma": {
+  "file": "cal_sigma.png",
+  "w_pt": 106.099,
+  "h_pt": 27.895
+ },
+ "cal_lambda": {
+  "file": "cal_lambda.png",
+  "w_pt": 105.976,
+  "h_pt": 28.892
+ },
+ "planning": {
+  "file": "planning.png",
+  "w_pt": 132.728,
+  "h_pt": 15.281
+ },
+ "law_pred": {
+  "file": "law_pred.png",
+  "w_pt": 65.733,
+  "h_pt": 11.955
+ },
+ "law_coef": {
+  "file": "law_coef.png",
+  "w_pt": 84.668,
+  "h_pt": 13.091
+ }
+}

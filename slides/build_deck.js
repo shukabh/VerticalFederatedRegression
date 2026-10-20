@@ -1,6 +1,7 @@
 // Build the Scenario-B VFL deck.
 // Requires: npm install pptxgenjs react-icons react react-dom sharp
 // Run from the repo root:  node slides/build_deck.js
+// Display equations are LaTeX images: after editing slides/equations.json, run  python slides/make_equations.py  first.
 const path = require("path");
 const pptxgen = require("pptxgenjs");
 const React = require("react");
@@ -39,6 +40,68 @@ const calSec = (prefix) => CAL[Object.keys(CAL).find((k) => k.startsWith(prefix)
 const ERRBARS = {};
 const adaGet = (rows, ds, eps, m) => rows.find((r) => r.dataset === ds && Number(r.eps) === eps && r.method === m);
 
+// ---------- math in slide text ----------
+// Every addText/addTable string is scanned for sub- and superscripts and split into runs:
+//   X_R, c_O,k, Δ_{rep}  -> subscript      2^61.5, e^ε, n_R^max, x^{...} -> superscript
+//   Unicode marks (ᵀ ⁻¹ ² ᴵ, ₀ ₁ ₂) and ρ* become real sub/superscript runs too.
+const SUPC = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9", "⁻": "−", "⁺": "+", "ᵀ": "T", "ᴵ": "I" };
+const SUBC = { "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9" };
+const IDC = "A-Za-z0-9α-ωΑ-Ωℓℤ";
+const MATH_RX = new RegExp(`_\\{([^}]*)\\}|_([${IDC}]+(?:,[${IDC}]+)*)` +
+  `|\\^\\{([^}]*)\\}|\\^([−+-]?(?:[0-9]+(?:\\.[0-9]+)?|[A-Za-zα-ωΑ-Ω]+))` +
+  `|([${Object.keys(SUPC).join("")}]+)|([${Object.keys(SUBC).join("")}]+)|(?<=[ρϑθ])(\\*)`, "gu");
+const PARA_KEYS = ["bullet", "paraSpaceAfter", "paraSpaceBefore", "align", "indentLevel", "lineSpacing", "lineSpacingMultiple"];
+const hasMath = (t) => { MATH_RX.lastIndex = 0; return typeof t === "string" && MATH_RX.test(t); };
+function mathRuns(text, opts) {
+  const out = [];
+  const push = (t, extra) => { if (t) out.push({ text: t, options: Object.assign({}, opts, extra) }); };
+  let last = 0, m;
+  MATH_RX.lastIndex = 0;
+  while ((m = MATH_RX.exec(text))) {
+    push(text.slice(last, m.index));
+    if (m[1] !== undefined || m[2] !== undefined) push(m[1] ?? m[2], { subscript: true });
+    else if (m[3] !== undefined || m[4] !== undefined) push(m[3] ?? m[4], { superscript: true });
+    else if (m[5]) push([...m[5]].map((c) => SUPC[c]).join(""), { superscript: true });
+    else if (m[6]) push([...m[6]].map((c) => SUBC[c]).join(""), { subscript: true });
+    else push("*", { superscript: true });
+    last = MATH_RX.lastIndex;
+  }
+  push(text.slice(last));
+  return out.length ? out : [{ text: "", options: Object.assign({}, opts) }];
+}
+// Split text items into runs: paragraph options stay on the first run of each line, breakLine on the last.
+function mathItems(items) {
+  const res = [];
+  items.forEach((it) => {
+    const o = it.options || {}, run = {}, para = {};
+    Object.entries(o).forEach(([k, v]) => { if (k !== "breakLine") (PARA_KEYS.includes(k) ? para : run)[k] = v; });
+    const lines = String(it.text ?? "").split(/\r?\n/);
+    lines.forEach((line, li) => {
+      const pieces = mathRuns(line, run);
+      Object.assign(pieces[0].options, para);
+      if (li < lines.length - 1 || o.breakLine) pieces[pieces.length - 1].options.breakLine = true;
+      res.push(...pieces);
+    });
+  });
+  return res;
+}
+function mathText(t) {
+  if (typeof t === "string") return hasMath(t) ? mathItems([{ text: t }]) : t;
+  if (Array.isArray(t)) {
+    const items = t.map((x) => (typeof x === "string" ? { text: x } : x));
+    return items.some((x) => hasMath(x.text)) ? mathItems(items) : t;
+  }
+  return t;
+}
+const mathCell = (c) => {
+  if (typeof c === "string") return hasMath(c) ? { text: mathItems([{ text: c }]) } : c;
+  if (c && typeof c.text === "string") return hasMath(c.text) ? { text: mathItems([{ text: c.text }]), options: c.options } : c;
+  if (c && Array.isArray(c.text)) return c.text.some((x) => hasMath(x.text)) ? { text: mathItems(c.text), options: c.options } : c;
+  return c;
+};
+// Display equations typeset by slides/make_equations.py (LaTeX, 10 pt); scaled to `size` pt, shrunk to fit maxW/maxH
+const EQ = JSON.parse(fs.readFileSync(P("slides", "assets", "eq", "manifest.json"), "utf8"));
+
 // ---------- palette & type ----------
 const INK = "14213D";     // dominant dark
 const SLATE = "3D5A80";   // secondary
@@ -74,6 +137,14 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   for (const [k, I] of Object.entries(need)) icons[k] = await iconPng(I);
 
   const pres = new pptxgen();
+  const addSlide0 = pres.addSlide.bind(pres);
+  pres.addSlide = (...a) => {                 // route all slide text through the math formatter
+    const s = addSlide0(...a);
+    const addText0 = s.addText.bind(s), addTable0 = s.addTable.bind(s);
+    s.addText = (t, o) => addText0(mathText(t), o);
+    s.addTable = (rows, o) => addTable0(rows.map((r) => r.map(mathCell)), o);
+    return s;
+  };
   pres.layout = "LAYOUT_WIDE";
   pres.author = "VFL Scenario B project";
   pres.title = "Privacy-Preserving Vertical Federated Linear Regression";
@@ -124,6 +195,14 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       fontSize: 16, bold: true, color: INK, margin: 0, isTextBox: true });
     s.addText(body, { x: x + 0.4, y: y + h / 2 + 0.3, w: w - 0.8, h: h / 2 - 0.45, align: "center", fontFace: BODY,
       fontSize: 12.5, color: MUTED, margin: 0, valign: "top", isTextBox: true });
+  };
+  const latex = (s, key, x, y, { size = 18, w = 0, maxW, maxH, align = "l" } = {}) => {
+    const e = EQ[key], k = size / 10 / 72;
+    const f = Math.min(1, maxW ? maxW / (e.w_pt * k) : 1, maxH ? maxH / (e.h_pt * k) : 1);
+    const ew = e.w_pt * k * f, eh = e.h_pt * k * f;
+    const ex = align === "c" ? x + (w - ew) / 2 : align === "r" ? x + w - ew : x;
+    s.addImage({ path: P("slides", "assets", "eq", e.file), x: ex, y, w: ew, h: eh });
+    return { w: ew, h: eh };
   };
   const tableOpts = (colW) => ({ x: 0.6, colW, fontFace: BODY, fontSize: 12.5, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 },
     valign: "middle", margin: [3, 6, 3, 6] });
@@ -212,14 +291,14 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   // ======================= 5. Joint OLS =======================
   {
     const s = pres.addSlide(); title(s, "What has to be computed", "OLS on the matched join needs a Gram matrix that spans both parties");
-    txt(s, "β̂ = (ZᵀZ)⁻¹ Zᵀy,    Z = [ X_Rᴵ | X_Oᴵ ]", { x: 0.6, y: 1.75, w: 7, h: 0.6, fontFace: HEAD, fontSize: 24, color: INK });
+    latex(s, "ols", 0.6, 1.78, { size: 26, maxW: 7 });
     const gx = 0.9, gy = 2.7, c = 1.55;
     const cell = (x, y, label, sub, fill, color = INK, sup) => {
       s.addShape(pres.shapes.RECTANGLE, { x, y, w: c, h: c, fill: { color: fill }, line: { color: WHITE, width: 2 } });
       const head = [{ text: label, options: { fontFace: HEAD, fontSize: 24, bold: true, color, breakLine: !sup } }];
       if (sup) head.push({ text: sup, options: { fontFace: HEAD, fontSize: 24, bold: true, color, superscript: true, breakLine: true } });
       s.addText([...head,
-                 { text: sub, options: { fontFace: BODY, fontSize: 11, color } }],
+                 { text: sub, options: { fontFace: BODY, fontSize: 14, color } }],
         { x, y, w: c, h: c, align: "center", valign: "middle", margin: 2, isTextBox: true });
     };
     cell(gx, gy, "A", "X_Rᵀ X_R", "D6E0EE");
@@ -417,14 +496,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   {
     const s = pres.addSlide(); title(s, "Phase 2: encrypted aggregation", "O multiplies R's encrypted vectors by its own plaintext columns (depth 1)");
     card(s, 0.6, 1.8, 7.1, 3.35, "F7F9FC");
-    const eq = [
-      "Enc(B_jk)   = Σᵢ Enc(bᵢ) · X_O,ij · X_O,ik",
-      "Enc(C_jk)   = Σᵢ Enc(Ẋ_R,ij) · X_O,ik",
-      "Enc(c_O,k) = Σᵢ Enc(bᵢ) · X_O,ik · yᵢ",
-      "Enc(c_R,j) = Σᵢ Enc(Ẋ_R,ij) · yᵢ",
-    ];
-    s.addText(eq.map((e, i) => ({ text: e, options: { breakLine: i < eq.length - 1 } })),
-      { x: 0.95, y: 2.0, w: 6.6, h: 2.3, fontFace: HEAD, fontSize: 19, color: INK, margin: 0, valign: "top", paraSpaceAfter: 10, isTextBox: true });
+    latex(s, "agg", 0.95, 2.0, { size: 22, maxW: 6.6, maxH: 2.3 });
     txt(s, "b: selection vector;  Ẋ_R: R's features in O's order (zero off the match set)", { x: 0.95, y: 4.45, w: 6.6, h: 0.5, fontSize: 12.5, color: MUTED, italic: true });
     circleIcon(s, "lock", 8.1, 1.85, 0.75, SLATE);
     txt(s, "A = Ẋ_Rᵀ Ẋ_R stays with R", { x: 9.05, y: 1.95, w: 3.7, h: 0.5, fontSize: 17, bold: true, color: INK });
@@ -496,20 +568,20 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const s = pres.addSlide(); title(s, "Phase 3: fixed ridge and zero-budget bias correction");
     card(s, 0.6, 1.55, 6.0, 5.15, "F7F9FC");
     const lines = [
-      ["Ridge, fixed before decryption", "λ = max{ 0, 2ρ*σ√p − nℓ },  Ψ = I"],
-      ["Release gate", "ρ̂ = λ_min(G̃ + λI) / (2σ√p) ≥ 1"],
-      ["Private ridge estimate", "β̃_λ = (G̃ + λI)⁻¹ c̃"],
-      ["Bias correction (optional in v3.1; off by default)", "β̂_bc = β̃_λ − σ² M(P̃_λ) β̃_λ"],
+      ["Ridge, fixed before decryption", "ridge"],
+      ["Release gate", "gate"],
+      ["Private ridge estimate", "ridge_est"],
+      ["Bias correction (optional in v3.1; off by default)", "bc"],
     ];
     lines.forEach(([h, e], i) => {
       txt(s, h, { x: 0.9, y: 1.8 + i * 1.2, w: 5.5, h: 0.4, fontSize: 14, bold: true, color: SLATE });
-      txt(s, e, { x: 0.9, y: 2.2 + i * 1.2, w: 5.5, h: 0.55, fontFace: HEAD, fontSize: 18, color: INK });
+      latex(s, e, 0.9, 2.24 + i * 1.2, { size: 20, maxW: 5.5 });
     });
     card(s, 6.85, 1.55, 5.85, 2.8);
     txt(s, "Theorem (conditional bias)", { x: 7.1, y: 1.72, w: 5.4, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
-    txt(s, "E[ β̃ | ℰ_η ] − β̂ = σ² M(P) β̂ + O(σ⁴) + O(exp(−p(ηρ−1)²/2))", { x: 7.1, y: 2.25, w: 5.45, h: 0.6, fontFace: HEAD, fontSize: 15.5, color: INK });
-    txt(s, "M(P) = (P² + tr(P)P − P diag(P)) Π_O + (P Π_O P + tr(Π_O P) P) Π_R", { x: 7.1, y: 2.92, w: 5.45, h: 0.6, fontFace: HEAD, fontSize: 13.5, color: MUTED });
-    txt(s, "The plain mean does not exist, hence the conditioning on ℰ_η.", { x: 7.1, y: 3.65, w: 5.45, h: 0.6, fontSize: 13, italic: true, color: MUTED });
+    latex(s, "thm", 7.1, 2.25, { size: 17, maxW: 5.45 });
+    latex(s, "mp", 7.1, 2.85, { size: 15, maxW: 5.45 });
+    txt(s, "The plain mean does not exist, hence the conditioning on ℰ_η.", { x: 7.1, y: 3.75, w: 5.45, h: 0.5, fontSize: 13, italic: true, color: MUTED });
     card(s, 6.85, 4.55, 5.85, 2.15, EMBER_L);
     txt(s, "Why λ must not depend on the noise", { x: 7.1, y: 4.67, w: 5.4, h: 0.4, fontSize: 15, bold: true, color: EMBER });
     txt(s, "Chosen from G̃, λ moves with the noise, and the correction removed none of the bias (1.0–1.6× left); with fixed λ it removes 87–98%. But ℓ needs the joint Gram, so in practice ℓ = 0. v3.1 picks λ from a separate stage-1 release instead.",
@@ -744,11 +816,11 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   {
     const s = pres.addSlide(); title(s, "Calibration in practice: from ε to σ and λ", "Every input is public and committed before any data are seen");
     const steps = [
-      ["δ", "δ ≤ 1/(10N)", "N = people O protects. 10⁻⁵ → 10⁻⁸ raises σ by only 25–50%"],
-      ["Budget", "one release: (ε, δ)\nk releases: ρ = (√(L+ε) − √L)² / k", "L = ln(1/δ); zCDP adds up across releases"],
-      ["Δ", "Δ² = (2O + R + Y)²/2 + 2RY", "R, O, Y = B_R², B_O², B_y² (usual case, exact). yᵀy is free if Y ≤ 2(R + O)"],
-      ["σ", "σ = Δ · s(ε, δ)\nor Δ / √(2ρ) for k releases", "s: analytic-Gaussian multiplier (table below)"],
-      ["λ", "λ = max{0, 2ρ*σ√p − nℓ}", "ρ* = 2.5; ℓ public, else 0; ridge off from n = 2ρ*σ√p / ℓ. v3.1: λ from stage 1"],
+      ["δ", "cal_delta", "N = people O protects. 10⁻⁵ → 10⁻⁸ raises σ by only 25–50%"],
+      ["Budget", "cal_budget", "L = ln(1/δ); zCDP adds up across releases"],
+      ["Δ", "cal_Delta", "R, O, Y = B_R², B_O², B_y² (usual case, exact). yᵀy is free if Y ≤ 2(R + O)"],
+      ["σ", "cal_sigma", "s: analytic-Gaussian multiplier (table below)"],
+      ["λ", "cal_lambda", "ρ* = 2.5; ℓ public, else 0; ridge off from n = 2ρ*σ√p / ℓ. v3.1: λ from stage 1"],
     ];
     const gap = 2.45;
     s.addShape(pres.shapes.LINE, { x: 0.95, y: 1.95, w: gap * 4, h: 0, line: { color: LINE, width: 2 } });
@@ -757,17 +829,17 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       numCircle(s, i + 1, x, 1.6, 0.7, i === 3 ? EMBER : INK, 18);
       txt(s, h, { x: x + 0.82, y: 1.72, w: 1.5, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
       card(s, x, 2.5, 2.3, 2.15);
-      txt(s, f, { x: x + 0.15, y: 2.62, w: 2.0, h: 0.95, fontFace: HEAD, fontSize: 13, color: INK });
+      latex(s, f, x + 0.15, 2.65, { size: 15, maxW: 2.0, maxH: 0.92 });
       txt(s, b, { x: x + 0.15, y: 3.6, w: 2.0, h: 1.0, fontSize: 11, color: MUTED });
     });
     const t1 = calSec("1.");                                    // first table: s(eps, delta) by delta
     const rows = [hdr(["σ/Δ  δ \\ ε", ...t1[0].slice(1).map((h) => h.replace("ε = ", ""))])];
     t1.slice(1).filter((r) => ["1e-05", "1e-06", "1e-08"].includes(r[0])).forEach((r) =>
-      rows.push([`δ = ${r[0].replace("1e-0", "10⁻")}`, ...r.slice(1)]));
+      rows.push([`δ = ${r[0].replace(/^1e-0?/, "10^−")}`, ...r.slice(1)]));
     s.addTable(rows, Object.assign(tableOpts([1.05, 0.86, 0.86, 0.86, 0.86, 0.86, 0.86, 0.86]), { y: 5.0, rowH: 0.36, fontSize: 12 }));
     card(s, 7.9, 4.95, 4.8, 1.75, EMBER_L);
     txt(s, "Planning formula", { x: 8.15, y: 5.05, w: 4.4, h: 0.35, fontSize: 14, bold: true, color: EMBER });
-    txt(s, "σ ≈ Δ (√(2 ln(1/δ)) − 1) / ε^0.92", { x: 8.15, y: 5.42, w: 4.4, h: 0.45, fontFace: HEAD, fontSize: 17, color: INK });
+    latex(s, "planning", 8.15, 5.45, { size: 19, maxW: 4.4 });
     txt(s, "Within −8% to +3% of exact for ε ∈ [0.1, 8], δ ∈ [10⁻⁸, 10⁻⁵]. For planning only: O computes the exact σ for each release.",
       { x: 8.15, y: 5.92, w: 4.4, h: 0.75, fontSize: 11.5, color: MUTED });
     s.addNotes("The calibration chain, from experiments/calibration_heuristic.py (reports/calibration/heuristic.md). The privacy budget is the only real decision; the rest follows from public, committed constants. The zCDP route is needed when several releases share one budget; for a single release the analytic Gaussian gives a 13-36% smaller sigma at delta = 1e-6. The zCDP-to-(eps, delta) conversion shown here is the simple one; v3.1 uses the tighter Canonne-Kamath-Steinke conversion. The Delta formula is the exact supremum in the usual regime (proven for d_O >= 2); yT y adds nothing when B_y^2 <= 2(B_R^2 + B_O^2). The lambda rule is v2's: since a public l is rarely available, v3.1 chooses lambda from a small stage-1 release instead, so the ridge-off sizes here are a v2 figure.");
@@ -777,14 +849,14 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   {
     const s = pres.addSlide(); title(s, "From σ to the matched records you need", "Two scaling laws, exact at first order; one pilot figure carries over to any ε");
     const laws = [
-      ["Prediction", "n ∝ σ ∝ Δ / ε", "With ℓ = 0 the ridge is proportional to σ, so the excess test error depends on n only through n / σ. Doubling ε roughly halves the records."],
-      ["Coefficients", "n ∝ σ² ∝ (Δ / ε)²", "Once the ridge is off, DP error / sampling error ≈ σ²(1+‖β‖²) tr(Σ⁻²) / (n s² tr(Σ⁻¹)). Doubling ε cuts the records by about 3.5×."],
+      ["Prediction", "law_pred", "With ℓ = 0 the ridge is proportional to σ, so the excess test error depends on n only through n / σ. Doubling ε roughly halves the records."],
+      ["Coefficients", "law_coef", "Once the ridge is off, DP error / sampling error ≈ σ²(1+‖β‖²) tr(Σ⁻²) / (n s² tr(Σ⁻¹)). Doubling ε cuts the records by about 3.5×."],
     ];
     laws.forEach(([h, f, b], i) => {
       const x = 0.6 + i * 6.15;
       card(s, x, 1.55, 5.95, 2.05, i === 0 ? MIST : EMBER_L);
       txt(s, h, { x: x + 0.3, y: 1.7, w: 2.6, h: 0.4, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
-      txt(s, f, { x: x + 2.9, y: 1.68, w: 2.85, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: i === 0 ? SLATE : EMBER, align: "right" });
+      latex(s, f, x + 2.9, 1.74, { size: 22, w: 2.85, maxW: 2.85, align: "r" });
       txt(s, b, { x: x + 0.3, y: 2.3, w: 5.4, h: 1.2, fontSize: 13.5, color: TEXT });
     });
     const t2 = calSec("2."), t3 = calSec("3.");
@@ -964,6 +1036,24 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     });
     zip.file(f, xml);
   }
+  // pptxgenjs writes an <a:pPr> before every run of a multi-run paragraph; OOXML allows one, at the start.
+  // Keep only that one, and use PowerPoint's own subscript offset (-25%) instead of pptxgenjs's -40%.
+  const PPR = /<a:pPr\b[^>]*?(?:\/>|>[\s\S]*?<\/a:pPr>)/g;
+  let nDup = 0;
+  for (const f of Object.keys(zip.files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))) {
+    let xml = await zip.file(f).async("string");
+    xml = xml.replace(/<a:p>([\s\S]*?)<\/a:p>/g, (para, body) => {
+      const firstRun = body.search(/<a:(r|br|fld)\b/);
+      let kept = false;
+      const clean = body.replace(PPR, (ppr, at) => {
+        if (!kept && (firstRun < 0 || at < firstRun)) { kept = true; return ppr; }
+        nDup++; return "";
+      });
+      return `<a:p>${clean}</a:p>`;
+    }).replace(/baseline="-40000"/g, 'baseline="-25000"');
+    zip.file(f, xml);
+  }
+  console.log("duplicate paragraph properties removed:", nDup);
   fs.writeFileSync(out, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
   console.log("error-bar series added:", nBars);
   console.log("wrote", out);

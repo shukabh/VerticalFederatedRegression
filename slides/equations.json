@@ -1,0 +1,66 @@
+{
+ "ols": {
+  "color": "14213D",
+  "tex": "\\hat\\beta = (Z^\\top Z)^{-1} Z^\\top y, \\qquad Z = \\bigl[\\, X_R^{I} \\;\\big|\\; X_O^{I} \\,\\bigr]"
+ },
+ "agg": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\mathrm{Enc}(B_{jk}) &= \\sum\\nolimits_i \\mathrm{Enc}(b_i)\\, X_{O,ij}\\, X_{O,ik} \\\\ \\mathrm{Enc}(C_{jk}) &= \\sum\\nolimits_i \\mathrm{Enc}(\\dot X_{R,ij})\\, X_{O,ik} \\\\ \\mathrm{Enc}(c_{O,k}) &= \\sum\\nolimits_i \\mathrm{Enc}(b_i)\\, X_{O,ik}\\, y_i \\\\ \\mathrm{Enc}(c_{R,j}) &= \\sum\\nolimits_i \\mathrm{Enc}(\\dot X_{R,ij})\\, y_i \\end{aligned}"
+ },
+ "ridge": {
+  "color": "14213D",
+  "tex": "\\lambda = \\max\\{\\,0,\\; 2\\rho^{*}\\sigma\\sqrt{p} - n\\ell\\,\\}, \\qquad \\Psi = I"
+ },
+ "gate": {
+  "color": "14213D",
+  "tex": "\\hat\\rho = \\lambda_{\\min}(\\tilde G + \\lambda I)\\,/\\,(2\\sigma\\sqrt{p}) \\;\\ge\\; 1"
+ },
+ "ridge_est": {
+  "color": "14213D",
+  "tex": "\\tilde\\beta_\\lambda = (\\tilde G + \\lambda I)^{-1}\\,\\tilde c"
+ },
+ "bc": {
+  "color": "14213D",
+  "tex": "\\hat\\beta_{\\mathrm{bc}} = \\tilde\\beta_\\lambda - \\sigma^2 M(\\tilde P_\\lambda)\\,\\tilde\\beta_\\lambda"
+ },
+ "thm": {
+  "color": "14213D",
+  "tex": "\\mathbb{E}[\\,\\tilde\\beta \\mid \\mathcal{E}_\\eta\\,] - \\hat\\beta = \\sigma^2 M(P)\\,\\hat\\beta + O(\\sigma^4) + O\\bigl(e^{-p(\\eta\\rho-1)^2/2}\\bigr)"
+ },
+ "mp": {
+  "color": "5B6576",
+  "tex": "\\begin{aligned} M(P) = {}& \\bigl(P^2 + \\operatorname{tr}(P)\\,P - P\\operatorname{diag}(P)\\bigr)\\,\\Pi_O \\\\ &+ \\bigl(P\\,\\Pi_O P + \\operatorname{tr}(\\Pi_O P)\\,P\\bigr)\\,\\Pi_R \\end{aligned}"
+ },
+ "cal_delta": {
+  "color": "14213D",
+  "tex": "\\delta \\le 1/(10N)"
+ },
+ "cal_budget": {
+  "color": "14213D",
+  "tex": "\\begin{array}{@{}l@{}} \\text{one release: } (\\varepsilon, \\delta) \\\\[2pt] k \\text{ releases:} \\\\[1pt] \\rho = \\bigl(\\sqrt{L+\\varepsilon} - \\sqrt{L}\\bigr)^2 / k \\end{array}"
+ },
+ "cal_Delta": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\Delta^2 = {}& \\tfrac12 (2O + R + Y)^2 \\\\ &+ 2RY \\end{aligned}"
+ },
+ "cal_sigma": {
+  "color": "14213D",
+  "tex": "\\begin{array}{@{}l@{}} \\sigma = \\Delta \\cdot s(\\varepsilon, \\delta) \\\\[2pt] \\text{or } \\Delta / \\sqrt{2\\rho} \\text{ for } k \\text{ releases} \\end{array}"
+ },
+ "cal_lambda": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\lambda = \\max\\{&0, \\\\ &2\\rho^{*}\\sigma\\sqrt{p} - n\\ell\\} \\end{aligned}"
+ },
+ "planning": {
+  "color": "14213D",
+  "tex": "\\sigma \\approx \\Delta\\,\\bigl(\\sqrt{2\\ln(1/\\delta)} - 1\\bigr) \\,/\\, \\varepsilon^{0.92}"
+ },
+ "law_pred": {
+  "color": "3D5A80",
+  "tex": "\\bm{n \\propto \\sigma \\propto \\Delta / \\varepsilon}"
+ },
+ "law_coef": {
+  "color": "C45A0C",
+  "tex": "\\bm{n \\propto \\sigma^2 \\propto (\\Delta / \\varepsilon)^2}"
+ }
+}
