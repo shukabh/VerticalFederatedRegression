@@ -62,5 +62,93 @@
  "law_coef": {
   "color": "C45A0C",
   "tex": "\\bm{n \\propto \\sigma^2 \\propto (\\Delta / \\varepsilon)^2}"
+ },
+ "dp_def": {
+  "color": "14213D",
+  "tex": "\\Pr[\\mathcal{M}(D) \\in S] \\;\\le\\; e^{\\varepsilon}\\,\\Pr[\\mathcal{M}(D') \\in S] + \\delta"
+ },
+ "gauss": {
+  "color": "14213D",
+  "tex": "\\mathcal{M}(D) = f(D) + \\mathcal{N}(0, \\sigma^2 I), \\qquad \\sigma = \\Delta \\cdot s(\\varepsilon, \\delta)"
+ },
+ "sens": {
+  "color": "14213D",
+  "tex": "\\Delta = \\max_{D \\sim D'} \\lVert f(D) - f(D') \\rVert_2"
+ },
+ "delta_rep": {
+  "color": "14213D",
+  "tex": "\\Delta^2 = \\tfrac12 (2O + R + Y)^2 + 2RY, \\qquad (R, O, Y) = (B_R^2,\\, B_O^2,\\, B_y^2)"
+ },
+ "zcdp": {
+  "color": "14213D",
+  "tex": "\\rho_s = \\frac{\\Delta_s^2}{2\\sigma_s^2}, \\qquad \\rho_{\\mathrm{run}} = \\rho_1 + \\rho_2"
+ },
+ "zcdp_conv": {
+  "color": "14213D",
+  "tex": "\\sqrt{\\rho_{\\mathrm{run}}} \\;\\gtrsim\\; \\sqrt{L + \\varepsilon} - \\sqrt{L}, \\qquad L = \\ln(1/\\delta)"
+ },
+ "ckks_dec": {
+  "color": "14213D",
+  "tex": "c_0 + c_1 s \\;=\\; \\mathrm{Ecd}(z) + e \\pmod{q}"
+ },
+ "thresh": {
+  "color": "14213D",
+  "tex": "s = s_R + s_O: \\qquad c_0 + c_1 s \\;=\\; \\underbrace{(c_0 + c_1 s_O)}_{\\text{needs } \\mathsf{O}} \\;+\\; \\underbrace{c_1 s_R}_{\\text{needs } \\mathsf{R}}"
+ },
+ "upload": {
+  "color": "14213D",
+  "tex": "\\mathsf{R}:\\ \\ c_0 = -a\\,s_R + e + \\mathrm{Ecd}(v),\\ \\ a = \\mathrm{PRG}(\\mathrm{seed}) \\qquad\\quad \\mathsf{O}:\\ \\ c_0 \\leftarrow c_0 - a\\,s_O"
+ },
+ "release": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\mathsf{O}:\\quad & c_0' = c_0 + p_0 u + e_0, \\qquad c_1' = c_1 + a u + e_1 \\\\ & h_O = c_0' + c_1' s_O + \\eta, \\qquad \\eta \\sim \\mathcal{N}_{\\mathbb{Z}}(0, \\sigma_c^2)^N \\\\ & \\text{send } (c_1',\\, h_O) \\\\ \\mathsf{R}:\\quad & v = h_O + c_1' s_R = \\mathrm{Ecd}(z) + e + \\eta \\end{aligned}"
+ },
+ "lam_rule": {
+  "color": "14213D",
+  "tex": "\\lambda = \\max\\{0,\\; 2\\vartheta^\\star\\sigma_2\\sqrt{p} + r_1 - \\lambda_{\\min}(\\hat G_1)\\}, \\qquad r_1 = \\sigma_1\\bigl(2\\sqrt{p} + 2\\sqrt{\\ln(1/\\alpha_L)}\\bigr)"
+ },
+ "estimate": {
+  "color": "14213D",
+  "tex": "\\tilde\\theta = (\\hat G_2 + \\lambda\\Psi)^{-1}\\hat c_2, \\qquad \\hat\\vartheta = \\frac{\\lambda_{\\min}(\\hat G_2 + \\lambda\\Psi)}{2\\sigma_2\\sqrt{p}} \\;\\ge\\; 1"
+ },
+ "estimands": {
+  "color": "14213D",
+  "tex": "\\theta_\\lambda = (G + \\lambda\\Psi)^{-1} c \\qquad\\text{and}\\qquad \\beta = G^{-1} c"
+ },
+ "ci_theta": {
+  "color": "14213D",
+  "tex": "\\tilde\\theta_j \\;\\pm\\; z_{1-\\alpha/2}\\,\\sqrt{(V_{\\mathrm{mech}})_{jj}}"
+ },
+ "ci_beta": {
+  "color": "14213D",
+  "tex": "\\tilde\\theta_j \\;\\pm\\; \\mathrm{cv}_\\alpha\\!\\bigl(\\bar b_j / \\sqrt{V_{jj}}\\bigr)\\sqrt{V_{jj}}, \\qquad \\bar b_j = \\lambda\\,\\lVert \\Psi\\tilde P e_j \\rVert\\, \\hat B_\\beta"
+ },
+ "smudge": {
+  "color": "14213D",
+  "tex": "\\mathrm{SD}(\\eta + e,\\ \\eta) \\;\\le\\; \\frac{\\lVert e \\rVert_2}{\\sqrt{2\\pi}\\,\\sigma_c} \\;\\le\\; 2^{-\\kappa} \\quad\\text{if}\\quad \\sigma_c \\ge \\frac{2^{\\kappa} B_{\\mathrm{tot}}}{\\sqrt{2\\pi}}"
+ },
+ "sigma_slot": {
+  "color": "14213D",
+  "tex": "\\sigma_2 = \\sigma_c \\sqrt{N/2}\\,/\\,\\Omega"
+ },
+ "scale": {
+  "color": "14213D",
+  "tex": "\\log_2 \\Omega \\;\\approx\\; \\underbrace{\\kappa}_{40} + \\underbrace{\\log_2 B_{\\mathrm{tot}}}_{25.3} + \\underbrace{\\log_2\\!\\sqrt{N/2}}_{6.5} - \\underbrace{\\log_2\\!\\sqrt{2\\pi}}_{1.3} - \\underbrace{\\log_2 \\sigma_2}_{9.0} \\;\\approx\\; 61.5"
+ },
+ "c_rho": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} &\\text{tight conversion of } (\\varepsilon, \\delta) \\\\ &\\sqrt{\\rho_{\\mathrm{run}}} \\gtrsim \\sqrt{L+\\varepsilon} - \\sqrt{L} \\end{aligned}"
+ },
+ "c_sigma": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\sigma_1 &= \\Delta_G / \\sqrt{2 f_1 \\rho_{\\mathrm{run}}} \\\\ \\sigma_2 &= \\Delta / \\sqrt{2 (1 - f_1) \\rho_{\\mathrm{run}}} \\end{aligned}"
+ },
+ "c_lambda": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\lambda \\approx \\max\\{&0,\\ 2\\vartheta^\\star\\sigma_2\\sqrt{p} \\\\ &+ r_1 - n\\ell\\} \\end{aligned}"
+ },
+ "plan2": {
+  "color": "14213D",
+  "tex": "\\sigma_2 \\;\\le\\; \\frac{\\Delta}{\\sqrt{2(1-f_1)}\\,\\bigl(\\sqrt{L+\\varepsilon} - \\sqrt{L}\\bigr)}"
  }
 }

@@ -78,5 +78,115 @@
   "file": "law_coef.png",
   "w_pt": 84.668,
   "h_pt": 13.091
+ },
+ "dp_def": {
+  "file": "dp_def.png",
+  "w_pt": 179.438,
+  "h_pt": 12.471
+ },
+ "gauss": {
+  "file": "gauss.png",
+  "w_pt": 205.876,
+  "h_pt": 13.091
+ },
+ "sens": {
+  "file": "sens.png",
+  "w_pt": 119.808,
+  "h_pt": 17.403
+ },
+ "delta_rep": {
+  "file": "delta_rep.png",
+  "w_pt": 269.243,
+  "h_pt": 14.419
+ },
+ "zcdp": {
+  "file": "zcdp.png",
+  "w_pt": 129.193,
+  "h_pt": 26.139
+ },
+ "zcdp_conv": {
+  "file": "zcdp_conv.png",
+  "w_pt": 181.074,
+  "h_pt": 14.581
+ },
+ "ckks_dec": {
+  "file": "ckks_dec.png",
+  "w_pt": 140.994,
+  "h_pt": 11.955
+ },
+ "thresh": {
+  "file": "thresh.png",
+  "w_pt": 228.277,
+  "h_pt": 26.628
+ },
+ "upload": {
+  "file": "upload.png",
+  "w_pt": 323.098,
+  "h_pt": 11.955
+ },
+ "release": {
+  "file": "release.png",
+  "w_pt": 203.943,
+  "h_pt": 60.286
+ },
+ "lam_rule": {
+  "file": "lam_rule.png",
+  "w_pt": 323.24,
+  "h_pt": 15.281
+ },
+ "estimate": {
+  "file": "estimate.png",
+  "w_pt": 220.512,
+  "h_pt": 28.36
+ },
+ "estimands": {
+  "file": "estimands.png",
+  "w_pt": 179.689,
+  "h_pt": 13.091
+ },
+ "ci_theta": {
+  "file": "ci_theta.png",
+  "w_pt": 108.534,
+  "h_pt": 20.324
+ },
+ "ci_beta": {
+  "file": "ci_beta.png",
+  "w_pt": 214.851,
+  "h_pt": 14.916
+ },
+ "smudge": {
+  "file": "smudge.png",
+  "w_pt": 224.747,
+  "h_pt": 25.641
+ },
+ "sigma_slot": {
+  "file": "sigma_slot.png",
+  "w_pt": 78.873,
+  "h_pt": 14.346
+ },
+ "scale": {
+  "file": "scale.png",
+  "w_pt": 294.338,
+  "h_pt": 28.67
+ },
+ "c_rho": {
+  "file": "c_rho.png",
+  "w_pt": 107.555,
+  "h_pt": 31.238
+ },
+ "c_sigma": {
+  "file": "c_sigma.png",
+  "w_pt": 105.482,
+  "h_pt": 32.754
+ },
+ "c_lambda": {
+  "file": "c_lambda.png",
+  "w_pt": 96.271,
+  "h_pt": 28.892
+ },
+ "plan2": {
+  "file": "plan2.png",
+  "w_pt": 152.518,
+  "h_pt": 27.246
  }
 }

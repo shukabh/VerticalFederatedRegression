@@ -1,219 +1,34 @@
-// Build the Scenario-B VFL deck.
-// Requires: npm install pptxgenjs react-icons react react-dom sharp
+// Build the Scenario-B VFL deck with its development history (draft, first and second revision).
+// The self-contained introduction for new team members is slides/build_intro_deck.js.
+// Requires: npm install pptxgenjs jszip react-icons react react-dom sharp
 // Run from the repo root:  node slides/build_deck.js
 // Display equations are LaTeX images: after editing slides/equations.json, run  python slides/make_equations.py  first.
-const path = require("path");
-const pptxgen = require("pptxgenjs");
-const React = require("react");
-const ReactDOMServer = require("react-dom/server");
-const sharp = require("sharp");
-const fa = require("react-icons/fa");
-
-const ROOT = path.resolve(__dirname, "..");
-const P = (...p) => path.join(ROOT, ...p);
 const fs = require("fs");
-function readCsv(file) {
-  const [head, ...rows] = fs.readFileSync(file, "utf8").trim().split(/\r?\n/);
-  const keys = head.split(",");
-  return rows.map((r) => Object.fromEntries(r.split(",").map((v, i) => [keys[i], v])));
-}
+const fa = require("react-icons/fa");
+const { P, readCsv, mdTables, C, HEAD, BODY, newDeck, writeDeck } = require("./deck_lib");
+const { INK, SLATE, MIST, LINE, EMBER, EMBER_L, TEAL, TEXT, MUTED, WHITE } = C;
+
 // AdaSSP benchmark outputs of experiments/adassp/run_benchmark.py
 const ADA9 = readCsv(P("reports", "adassp", "results.csv"));
-const ADA_ALL = readCsv(P("reports", "adassp", "all", "results.csv"));
 const ADA_CMP = readCsv(P("reports", "adassp", "all", "compare.csv"));
 const SWEEP_X = readCsv(P("reports", "adassp", "sweep", "crossings.csv"));   // experiments/adassp/sweep_n.py
-// Tables of reports/calibration/heuristic.md (experiments/calibration_heuristic.py), keyed by the "## " heading
-function mdTables(file) {
-  const out = {};
-  let head = "";
-  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
-    if (line.startsWith("## ")) { head = line.slice(3).trim(); continue; }
-    if (!line.startsWith("|") || /^\|[-|: ]+\|$/.test(line)) continue;
-    const cells = line.slice(1, -1).split("|").map((c) => c.trim());
-    (out[head] = out[head] || []).push(cells);
-  }
-  return out;
-}
+// Tables of reports/calibration/heuristic.md (experiments/calibration_heuristic.py)
 const CAL = mdTables(P("reports", "calibration", "heuristic.md"));
 const calSec = (prefix) => CAL[Object.keys(CAL).find((k) => k.startsWith(prefix))];
-// Error bars for native charts, keyed by chart title; added to the chart XML after writing (pptxgenjs has no API for them)
+// Error bars for native charts, keyed by chart title; added to the chart XML by writeDeck
 const ERRBARS = {};
 const adaGet = (rows, ds, eps, m) => rows.find((r) => r.dataset === ds && Number(r.eps) === eps && r.method === m);
 
-// ---------- math in slide text ----------
-// Every addText/addTable string is scanned for sub- and superscripts and split into runs:
-//   X_R, c_O,k, Δ_{rep}  -> subscript      2^61.5, e^ε, n_R^max, x^{...} -> superscript
-//   Unicode marks (ᵀ ⁻¹ ² ᴵ, ₀ ₁ ₂) and ρ* become real sub/superscript runs too.
-const SUPC = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9", "⁻": "−", "⁺": "+", "ᵀ": "T", "ᴵ": "I" };
-const SUBC = { "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9" };
-const IDC = "A-Za-z0-9α-ωΑ-Ωℓℤ";
-const MATH_RX = new RegExp(`_\\{([^}]*)\\}|_([${IDC}]+(?:,[${IDC}]+)*)` +
-  `|\\^\\{([^}]*)\\}|\\^([−+-]?(?:[0-9]+(?:\\.[0-9]+)?|[A-Za-zα-ωΑ-Ω]+))` +
-  `|([${Object.keys(SUPC).join("")}]+)|([${Object.keys(SUBC).join("")}]+)|(?<=[ρϑθ])(\\*)`, "gu");
-const PARA_KEYS = ["bullet", "paraSpaceAfter", "paraSpaceBefore", "align", "indentLevel", "lineSpacing", "lineSpacingMultiple"];
-const hasMath = (t) => { MATH_RX.lastIndex = 0; return typeof t === "string" && MATH_RX.test(t); };
-function mathRuns(text, opts) {
-  const out = [];
-  const push = (t, extra) => { if (t) out.push({ text: t, options: Object.assign({}, opts, extra) }); };
-  let last = 0, m;
-  MATH_RX.lastIndex = 0;
-  while ((m = MATH_RX.exec(text))) {
-    push(text.slice(last, m.index));
-    if (m[1] !== undefined || m[2] !== undefined) push(m[1] ?? m[2], { subscript: true });
-    else if (m[3] !== undefined || m[4] !== undefined) push(m[3] ?? m[4], { superscript: true });
-    else if (m[5]) push([...m[5]].map((c) => SUPC[c]).join(""), { superscript: true });
-    else if (m[6]) push([...m[6]].map((c) => SUBC[c]).join(""), { subscript: true });
-    else push("*", { superscript: true });
-    last = MATH_RX.lastIndex;
-  }
-  push(text.slice(last));
-  return out.length ? out : [{ text: "", options: Object.assign({}, opts) }];
-}
-// Split text items into runs: paragraph options stay on the first run of each line, breakLine on the last.
-function mathItems(items) {
-  const res = [];
-  items.forEach((it) => {
-    const o = it.options || {}, run = {}, para = {};
-    Object.entries(o).forEach(([k, v]) => { if (k !== "breakLine") (PARA_KEYS.includes(k) ? para : run)[k] = v; });
-    const lines = String(it.text ?? "").split(/\r?\n/);
-    lines.forEach((line, li) => {
-      const pieces = mathRuns(line, run);
-      Object.assign(pieces[0].options, para);
-      if (li < lines.length - 1 || o.breakLine) pieces[pieces.length - 1].options.breakLine = true;
-      res.push(...pieces);
-    });
-  });
-  return res;
-}
-function mathText(t) {
-  if (typeof t === "string") return hasMath(t) ? mathItems([{ text: t }]) : t;
-  if (Array.isArray(t)) {
-    const items = t.map((x) => (typeof x === "string" ? { text: x } : x));
-    return items.some((x) => hasMath(x.text)) ? mathItems(items) : t;
-  }
-  return t;
-}
-const mathCell = (c) => {
-  if (typeof c === "string") return hasMath(c) ? { text: mathItems([{ text: c }]) } : c;
-  if (c && typeof c.text === "string") return hasMath(c.text) ? { text: mathItems([{ text: c.text }]), options: c.options } : c;
-  if (c && Array.isArray(c.text)) return c.text.some((x) => hasMath(x.text)) ? { text: mathItems(c.text), options: c.options } : c;
-  return c;
-};
-// Display equations typeset by slides/make_equations.py (LaTeX, 10 pt); scaled to `size` pt, shrunk to fit maxW/maxH
-const EQ = JSON.parse(fs.readFileSync(P("slides", "assets", "eq", "manifest.json"), "utf8"));
-
-// ---------- palette & type ----------
-const INK = "14213D";     // dominant dark
-const SLATE = "3D5A80";   // secondary
-const MIST = "EEF2F7";    // light panels
-const LINE = "C9D3E0";
-const EMBER = "C45A0C";   // accent (matches the protocol figure's "new/changed" orange)
-const EMBER_L = "F6E3D6";
-const TEAL = "1B8A7A";
-const TEXT = "1F2937";
-const MUTED = "5B6576";
-const WHITE = "FFFFFF";
-const HEAD = "Cambria";
-const BODY = "Calibri";
-
-const W = 13.333, H = 7.5;
-
-async function iconPng(Icon, color = "#FFFFFF", size = 256) {
-  const svg = ReactDOMServer.renderToStaticMarkup(React.createElement(Icon, { color, size: String(size) }));
-  const buf = await sharp(Buffer.from(svg)).png().toBuffer();
-  return "image/png;base64," + buf.toString("base64");
-}
-
 (async () => {
-  const icons = {};
-  const need = {
+  const { pres, icons, h } = await newDeck("Privacy-Preserving Vertical Federated Linear Regression", {
     user: fa.FaUserGraduate, bank: fa.FaLandmark, link: fa.FaLink, lock: fa.FaLock,
     shield: fa.FaShieldAlt, secret: fa.FaUserSecret, chart: fa.FaChartLine, flask: fa.FaFlask,
     db: fa.FaDatabase, key: fa.FaKey, warn: fa.FaExclamationTriangle, check: fa.FaCheckCircle,
     search: fa.FaSearch, cogs: fa.FaCogs, book: fa.FaBook, table: fa.FaTable, clock: fa.FaClock,
     layers: fa.FaLayerGroup, random: fa.FaRandom, balance: fa.FaBalanceScale, eye: fa.FaEyeSlash,
     ledger: fa.FaClipboardList, hourglass: fa.FaHourglassHalf, code: fa.FaCode, calc: fa.FaCalculator,
-  };
-  for (const [k, I] of Object.entries(need)) icons[k] = await iconPng(I);
-
-  const pres = new pptxgen();
-  const addSlide0 = pres.addSlide.bind(pres);
-  pres.addSlide = (...a) => {                 // route all slide text through the math formatter
-    const s = addSlide0(...a);
-    const addText0 = s.addText.bind(s), addTable0 = s.addTable.bind(s);
-    s.addText = (t, o) => addText0(mathText(t), o);
-    s.addTable = (rows, o) => addTable0(rows.map((r) => r.map(mathCell)), o);
-    return s;
-  };
-  pres.layout = "LAYOUT_WIDE";
-  pres.author = "VFL Scenario B project";
-  pres.title = "Privacy-Preserving Vertical Federated Linear Regression";
-
-  // ---------- helpers ----------
-  const title = (s, t, sub) => {
-    s.addText(t, { x: 0.6, y: 0.35, w: 12.1, h: 0.8, fontFace: HEAD, fontSize: 32, bold: true,
-      color: INK, margin: 0, isTextBox: true });
-    if (sub) s.addText(sub, { x: 0.6, y: 1.12, w: 12.1, h: 0.45, fontFace: BODY, fontSize: 16,
-      color: MUTED, italic: true, margin: 0, isTextBox: true });
-  };
-  const circleIcon = (s, key, x, y, d, fill = INK) => {
-    s.addShape(pres.shapes.OVAL, { x, y, w: d, h: d, fill: { color: fill }, line: { color: fill } });
-    const pad = d * 0.24;
-    s.addImage({ data: icons[key], x: x + pad, y: y + pad, w: d - 2 * pad, h: d - 2 * pad });
-  };
-  const numCircle = (s, n, x, y, d, fill = EMBER, fs = 16) => {
-    s.addShape(pres.shapes.OVAL, { x, y, w: d, h: d, fill: { color: fill }, line: { color: fill } });
-    s.addText(String(n), { x, y, w: d, h: d, align: "center", valign: "middle", fontFace: BODY,
-      fontSize: fs, bold: true, color: WHITE, margin: 0, isTextBox: true });
-  };
-  const card = (s, x, y, w, h, fill = MIST) =>
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, fill: { color: fill }, line: { color: fill }, rectRadius: 0.08 });
-  const txt = (s, t, o) => s.addText(t, Object.assign({ fontFace: BODY, fontSize: 15, color: TEXT, margin: 0,
-    valign: "top", isTextBox: true }, o));
-  const bullets = (s, items, o) => s.addText(items.map((it, i) => ({
-    text: typeof it === "string" ? it : it.text,
-    options: Object.assign({ bullet: true, breakLine: i < items.length - 1, paraSpaceAfter: 6 },
-      typeof it === "string" ? {} : it.options || {}),
-  })), Object.assign({ fontFace: BODY, fontSize: 15, color: TEXT, margin: 0, valign: "top", isTextBox: true }, o));
-  const chip = (s, t, x, y, w, fill, color = WHITE) => {
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h: 0.32, fill: { color: fill }, line: { color: fill }, rectRadius: 0.08 });
-    s.addText(t, { x, y, w, h: 0.32, align: "center", valign: "middle", fontFace: BODY, fontSize: 11, bold: true,
-      color, margin: 0, isTextBox: true });
-  };
-  const img = (s, file, x, y, maxW, maxH, pxW, pxH) => {
-    const r = pxW / pxH;
-    let w = maxW, h = maxW / r;
-    if (h > maxH) { h = maxH; w = maxH * r; }
-    s.addImage({ path: file, x: x + (maxW - w) / 2, y, w, h });
-    return { w, h };
-  };
-  const placeholder = (s, x, y, w, h, head, body) => {
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, fill: { color: "FAFBFD" },
-      line: { color: SLATE, width: 1.25, dashType: "dash" }, rectRadius: 0.08 });
-    circleIcon(s, "hourglass", x + w / 2 - 0.35, y + h / 2 - 0.95, 0.7, SLATE);
-    s.addText(head, { x: x + 0.3, y: y + h / 2 - 0.15, w: w - 0.6, h: 0.45, align: "center", fontFace: BODY,
-      fontSize: 16, bold: true, color: INK, margin: 0, isTextBox: true });
-    s.addText(body, { x: x + 0.4, y: y + h / 2 + 0.3, w: w - 0.8, h: h / 2 - 0.45, align: "center", fontFace: BODY,
-      fontSize: 12.5, color: MUTED, margin: 0, valign: "top", isTextBox: true });
-  };
-  const latex = (s, key, x, y, { size = 18, w = 0, maxW, maxH, align = "l" } = {}) => {
-    const e = EQ[key], k = size / 10 / 72;
-    const f = Math.min(1, maxW ? maxW / (e.w_pt * k) : 1, maxH ? maxH / (e.h_pt * k) : 1);
-    const ew = e.w_pt * k * f, eh = e.h_pt * k * f;
-    const ex = align === "c" ? x + (w - ew) / 2 : align === "r" ? x + w - ew : x;
-    s.addImage({ path: P("slides", "assets", "eq", e.file), x: ex, y, w: ew, h: eh });
-    return { w: ew, h: eh };
-  };
-  const tableOpts = (colW) => ({ x: 0.6, colW, fontFace: BODY, fontSize: 12.5, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 },
-    valign: "middle", margin: [3, 6, 3, 6] });
-  const hdr = (cells) => cells.map((c) => ({ text: c, options: { bold: true, color: WHITE, fill: { color: INK } } }));
-  const divider = (n, t, sub) => {
-    const s = pres.addSlide(); s.background = { color: INK };
-    numCircle(s, n, 0.9, 2.55, 1.3, EMBER, 36);
-    s.addText(t, { x: 2.6, y: 2.45, w: 9.5, h: 0.9, fontFace: HEAD, fontSize: 40, bold: true, color: WHITE, margin: 0, isTextBox: true });
-    s.addText(sub, { x: 2.6, y: 3.35, w: 9.5, h: 0.6, fontFace: BODY, fontSize: 18, color: "CAD5E6", margin: 0, isTextBox: true });
-    return s;
-  };
+  });
+  const { title, circleIcon, numCircle, card, txt, bullets, chip, img, latex, tableOpts, hdr, divider } = h;
 
   // ======================= 1. Title =======================
   {
@@ -1014,47 +829,5 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     s.addNotes("Four takeaways and five next steps. The comparison with AdaSSP is now stated the right way round: published AdaSSP is mu = 0.198 Gaussian DP against our 0.237, so it is more private under a stronger adjacency and still ahead from eps of about 0.5. At very small eps both are often no better than predicting zero. Splitting one row bound between the parties cuts our sigma by 1.56x and should narrow the gap.");
   }
 
-  const out = P("slides", "vfl_scenarioB_deck.pptx");
-  const JSZip = require("jszip");
-  const zip = await JSZip.loadAsync(await pres.write({ outputType: "nodebuffer" }));
-  const lit = (vals) => `<c:numLit><c:formatCode>General</c:formatCode><c:ptCount val="${vals.length}"/>` +
-    vals.map((v, i) => `<c:pt idx="${i}"><c:v>${v.toPrecision(4)}</c:v></c:pt>`).join("") + "</c:numLit>";
-  let nBars = 0;
-  for (const f of Object.keys(zip.files).filter((f) => /^ppt\/charts\/chart\d+\.xml$/.test(f))) {
-    let xml = await zip.file(f).async("string");
-    const key = Object.keys(ERRBARS).find((t) => xml.includes(t.replace(/&/g, "&amp;")));
-    if (!key) continue;
-    xml = xml.replace(/<c:ser>[\s\S]*?<\/c:ser>/g, (ser) => {
-      const name = Object.keys(ERRBARS[key]).find((nm) => ser.includes(`<c:v>${nm}</c:v>`));
-      if (!name) return ser;
-      const col = (ser.match(/<a:srgbClr val="([0-9A-Fa-f]{6})"/) || [, "5B6576"])[1];
-      const v = ERRBARS[key][name];
-      nBars++;
-      return ser.replace("<c:cat>", `<c:errBars><c:errDir val="y"/><c:errBarType val="both"/><c:errValType val="cust"/>` +
-        `<c:noEndCap val="0"/><c:plus>${lit(v)}</c:plus><c:minus>${lit(v)}</c:minus>` +
-        `<c:spPr><a:ln w="12700"><a:solidFill><a:srgbClr val="${col}"/></a:solidFill></a:ln></c:spPr></c:errBars><c:cat>`);
-    });
-    zip.file(f, xml);
-  }
-  // pptxgenjs writes an <a:pPr> before every run of a multi-run paragraph; OOXML allows one, at the start.
-  // Keep only that one, and use PowerPoint's own subscript offset (-25%) instead of pptxgenjs's -40%.
-  const PPR = /<a:pPr\b[^>]*?(?:\/>|>[\s\S]*?<\/a:pPr>)/g;
-  let nDup = 0;
-  for (const f of Object.keys(zip.files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))) {
-    let xml = await zip.file(f).async("string");
-    xml = xml.replace(/<a:p>([\s\S]*?)<\/a:p>/g, (para, body) => {
-      const firstRun = body.search(/<a:(r|br|fld)\b/);
-      let kept = false;
-      const clean = body.replace(PPR, (ppr, at) => {
-        if (!kept && (firstRun < 0 || at < firstRun)) { kept = true; return ppr; }
-        nDup++; return "";
-      });
-      return `<a:p>${clean}</a:p>`;
-    }).replace(/baseline="-40000"/g, 'baseline="-25000"');
-    zip.file(f, xml);
-  }
-  console.log("duplicate paragraph properties removed:", nDup);
-  fs.writeFileSync(out, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
-  console.log("error-bar series added:", nBars);
-  console.log("wrote", out);
+  await writeDeck(pres, P("slides", "vfl_scenarioB_deck.pptx"), ERRBARS);
 })();
