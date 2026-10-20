@@ -125,32 +125,35 @@ const adaGet = (rows, ds, eps, m) => rows.find((r) => r.dataset === ds && Number
 
   {
     const s = pres.addSlide(); title(s, "What has to be computed", "Least squares needs only a few sums over the matched rows, and those sums span both parties");
-    latex(s, "ols", 0.6, 1.78, { size: 26, maxW: 7 });
+    latex(s, "ols_I", 0.6, 1.78, { size: 26, maxW: 7 });
     const gx = 0.9, gy = 2.7, c = 1.55;
-    const cell = (x, y, label, sub, fill, color = INK, sup) => {
+    const cell = (x, y, label, sub, fill, color = INK) => {
       s.addShape(pres.shapes.RECTANGLE, { x, y, w: c, h: c, fill: { color: fill }, line: { color: WHITE, width: 2 } });
-      const head = [{ text: label, options: { fontFace: HEAD, fontSize: 24, bold: true, color, breakLine: !sup } }];
-      if (sup) head.push({ text: sup, options: { fontFace: HEAD, fontSize: 24, bold: true, color, superscript: true, breakLine: true } });
-      s.addText([...head, { text: sub, options: { fontFace: BODY, fontSize: 14, color } }],
+      s.addText([{ text: label, options: { fontFace: HEAD, fontSize: 24, bold: true, color, breakLine: !!sub } },
+        ...(sub ? [{ text: sub, options: { fontFace: BODY, fontSize: 14, color } }] : [])],
         { x, y, w: c, h: c, align: "center", valign: "middle", margin: 2, isTextBox: true });
     };
-    cell(gx, gy, "A", "X_Rᵀ X_R", "C9DCF5");
-    cell(gx + c, gy, "C", "X_Rᵀ X_O", EMBER, WHITE);
-    cell(gx, gy + c, "C", "", EMBER, WHITE, "T");
-    cell(gx + c, gy + c, "B", "X_Oᵀ X_O", "F3D2BC");
-    cell(gx + 2 * c + 0.4, gy, "c_R", "X_Rᵀ y", EMBER, WHITE);
-    cell(gx + 2 * c + 0.4, gy + c, "c_O", "X_Oᵀ y", "F3D2BC");
-    txt(s, "G = ZᵀZ", { x: gx, y: gy + 2 * c + 0.1, w: 2 * c, h: 0.4, align: "center", fontFace: HEAD, fontSize: 16, color: MUTED });
-    txt(s, "c = Zᵀy", { x: gx + 2 * c + 0.4, y: gy + 2 * c + 0.1, w: c, h: 0.4, align: "center", fontFace: HEAD, fontSize: 16, color: MUTED });
-    const lg = [["C9DCF5", "R alone: computed exactly, never leaves R"], ["F3D2BC", "O's data, restricted to the matched rows"], [EMBER, "Cross-party: needs both parties' data"]];
+    // every block is a sum over the matched rows I, hence the superscript
+    cell(gx, gy, "A^I", "X_R^{I⊤} X_R^I", "C9DCF5");
+    cell(gx + c, gy, "C^I", "X_R^{I⊤} X_O^I", EMBER, WHITE);
+    cell(gx, gy + c, "C^{I⊤}", "", EMBER, WHITE);
+    cell(gx + c, gy + c, "B^I", "X_O^{I⊤} X_O^I", "F3D2BC");
+    cell(gx + 2 * c + 0.4, gy, "c_R^I", "X_R^{I⊤} y^I", EMBER, WHITE);
+    cell(gx + 2 * c + 0.4, gy + c, "c_O^I", "X_O^{I⊤} y^I", "F3D2BC");
+    txt(s, "G^I = ZᵀZ", { x: gx, y: gy + 2 * c + 0.1, w: 2 * c, h: 0.4, align: "center", fontFace: HEAD, fontSize: 16, color: MUTED });
+    txt(s, "c^I = Zᵀy^I", { x: gx + 2 * c + 0.4, y: gy + 2 * c + 0.1, w: c, h: 0.4, align: "center", fontFace: HEAD, fontSize: 16, color: MUTED });
+    const lg = [["C9DCF5", "R's rows in I only: R computes it exactly, and it never leaves R"],
+      ["F3D2BC", "O's rows π(I) only, as is (yᵀy)^I: depends on which rows match, not on how they pair"],
+      [EMBER, "Cross-party: pairs R's row i with O's row π(i), so it depends on the bijection π"]];
     lg.forEach(([col, t], i) => {
-      s.addShape(pres.shapes.RECTANGLE, { x: 6.7, y: 2.75 + i * 0.62, w: 0.4, h: 0.4, fill: { color: col }, line: { color: col } });
-      txt(s, t, { x: 7.25, y: 2.78 + i * 0.62, w: 5.4, h: 0.4, fontSize: 15 });
+      s.addShape(pres.shapes.RECTANGLE, { x: 6.7, y: 2.72 + i * 0.72, w: 0.4, h: 0.4, fill: { color: col }, line: { color: col } });
+      txt(s, t, { x: 7.25, y: 2.7 + i * 0.72, w: 5.45, h: 0.65, fontSize: 14.5 });
     });
-    card(s, 6.7, 4.8, 6.0, 1.6, EMBER_L);
-    txt(s, "Only A belongs to R alone. Everything that touches O's data (B, C, c_R, c_O and yᵀy) is computed under encryption and released to R only with noise.",
-      { x: 6.95, y: 4.98, w: 5.5, h: 1.3, fontSize: 16, color: INK });
-    s.addNotes("Ordinary least squares needs the Gram matrix G = ZᵀZ and the vector c = Zᵀy over the matched rows. These are sufficient statistics: once you have them, you never need the rows again. G splits into blocks. A is R's own and is computed exactly at R. B and c_O are O's data restricted to matched rows, so they depend on which rows match. C and c_R mix both parties' data. The sum of squares yᵀy is also needed, for the residual variance. The protocol computes the O-dependent sums under encryption and releases them to R only after adding noise.");
+    card(s, 6.7, 4.95, 6.0, 1.85, EMBER_L);
+    txt(s, [{ text: "I", options: { bold: true } }, { text: " = the cohort members found in O's register. " },
+      { text: "π", options: { bold: true } }, { text: " = the bijection from I to O's matching rows; X_O^I and y^I list O's rows π(i) in the order of I. Everything that touches O's data is computed under encryption and released to R only with noise. From here on we drop the superscript I." }],
+      { x: 6.95, y: 5.07, w: 5.55, h: 1.65, fontSize: 13.5, color: INK, valign: "middle" });
+    s.addNotes("Ordinary least squares needs the Gram matrix G = ZᵀZ and the vector c = Zᵀy over the matched rows. These are sufficient statistics: once you have them, you never need the rows again. Every block is a sum over the matched set I, which is why each carries a superscript I. They differ in what they need to know about the matching. A^I uses only R's rows in I, so R computes it exactly and it never leaves R. B^I, c_O^I and the sum of squares (yᵀy)^I use only O's matched rows π(I): they depend on which rows match but not on how R's and O's rows pair up. C^I and c_R^I multiply R's row i by O's row π(i), so they depend on the bijection π itself; this is why the linkage step must give R the position of every match, not just the match set. The protocol computes all O-dependent sums under encryption and releases them to R only after adding noise. On later slides the superscript I is dropped.");
   }
 
   {

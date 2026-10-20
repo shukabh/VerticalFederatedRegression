@@ -150,5 +150,9 @@
  "plan2": {
   "color": "14213D",
   "tex": "\\sigma_2 \\;\\le\\; \\frac{\\Delta}{\\sqrt{2(1-f_1)}\\,\\bigl(\\sqrt{L+\\varepsilon} - \\sqrt{L}\\bigr)}"
+ },
+ "ols_I": {
+  "color": "14213D",
+  "tex": "\\hat\\beta = \\bigl(Z^\\top Z\\bigr)^{-1} Z^\\top y^{I}, \\qquad Z = \\bigl[\\, X_R^{I} \\;\\big|\\; X_O^{I} \\,\\bigr]"
  }
 }
