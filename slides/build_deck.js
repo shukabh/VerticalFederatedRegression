@@ -147,10 +147,10 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     s.addImage({ data: icons.lock, x: 10.15, y: 2.95, w: 0.5, h: 0.5 });
     s.addText("Privacy-Preserving Vertical Federated Linear Regression", { x: 0.8, y: 1.6, w: 6.6, h: 1.9,
       fontFace: HEAD, fontSize: 38, bold: true, color: WHITE, margin: 0, valign: "top", isTextBox: true });
-    s.addText("When the organization holds the response: protocol, privacy analysis and evaluation", { x: 0.8, y: 3.6, w: 6.6, h: 0.9,
+    s.addText("When the organization holds the response: protocol, proofs and evaluation", { x: 0.8, y: 3.6, w: 6.6, h: 0.9,
       fontFace: BODY, fontSize: 18, color: "CAD5E6", margin: 0, valign: "top", isTextBox: true });
-    s.addText("Working draft  ·  September 2026", { x: 0.8, y: 6.3, w: 7, h: 0.4, fontFace: BODY, fontSize: 13, color: "8FA6C4", margin: 0, isTextBox: true });
-    s.addNotes("Two-party linear regression between a researcher and a national statistical agency, where the agency holds the outcome. We cover the problem, what we found when reviewing the draft protocol, the revised protocol, and results so far.");
+    s.addText("Working draft  ·  October 2026", { x: 0.8, y: 6.3, w: 7, h: 0.4, fontFace: BODY, fontSize: 13, color: "8FA6C4", margin: 0, isTextBox: true });
+    s.addNotes("Two-party linear regression between a researcher and a national statistical agency, where the agency holds the outcome. We cover the problem, what we found when reviewing the draft protocol, the first revision (v2) and its evaluation, and the second revision (v3.1) with its proofs.");
   }
 
   // ======================= 2. Divider: problem =======================
@@ -237,7 +237,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       txt(s, t, { x: 7.25, y: 2.78 + i * 0.62, w: 5.4, h: 0.4, fontSize: 15 });
     });
     card(s, 6.7, 4.8, 6.0, 1.6, EMBER_L);
-    txt(s, "Only A is purely R's. Everything that touches O's data is computed under R's encryption key and noised by O before R sees it.",
+    txt(s, "Only A is purely R's. Everything that touches O's data is computed under encryption and noised by O before R sees it.",
       { x: 6.95, y: 5.0, w: 5.5, h: 1.3, fontSize: 16, color: INK });
     s.addNotes("The Gram matrix splits into blocks. A is the researcher's own; B and c_O are the organization's data restricted to matched rows; C and c_R are genuinely cross-party.");
   }
@@ -248,7 +248,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const items = [
       ["eye", "Input privacy", "Each party's view can be simulated from its own input and the agreed output. Neither sees the other's raw data.", SLATE],
       ["link", "Linkage privacy", "O learns nothing about which of its records match R's cohort (only public sizes).", TEAL],
-      ["shield", "Output privacy", "What R receives is differentially private for each matched person's O-side data (x_O, y), with R's features held fixed (replace-one).", EMBER],
+      ["shield", "Output privacy", "What R receives is differentially private (SIM-CDP) for each matched person's O-side data (x_O, y), with R's features held fixed (replace-one).", EMBER],
     ];
     items.forEach(([ic, h, b, col], i) => {
       const x = 0.6 + i * 4.15;
@@ -259,9 +259,9 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     });
     card(s, 0.6, 5.55, 12.1, 1.25, "F7F9FC");
     circleIcon(s, "key", 0.85, 5.78, 0.8, INK);
-    txt(s, "Parties follow the protocol but analyse everything they receive. R holds all decryption keys and learns the match set by design; O controls the privacy budget.",
+    txt(s, "Parties follow the protocol but analyse everything they receive. In v3.1, R and O each hold a share of the decryption key (in v2, R held all of it). R learns the match set by design; O controls the privacy budget.",
       { x: 1.9, y: 5.8, w: 10.6, h: 0.85, fontSize: 15.5, color: INK, valign: "middle" });
-    s.addNotes("Threat model: semi-honest. Three guarantees: cryptographic input privacy, linkage privacy for the organization, and differential privacy on what the researcher receives.");
+    s.addNotes("Threat model: semi-honest. Three guarantees: cryptographic input privacy, linkage privacy for the organization, and differential privacy on what the researcher receives. The guarantee is computational (SIM-CDP), and it holds only if R follows the protocol: a malicious R could skip clipping. v3.1 splits the decryption key between R and O.");
   }
 
   // ======================= 7. Positioning =======================
@@ -286,24 +286,26 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const s = pres.addSlide(); s.background = { color: INK };
     numCircle(s, 2, 0.9, 1.15, 1.3, EMBER, 36);
     s.addText("What we did", { x: 2.6, y: 1.05, w: 9.5, h: 0.9, fontFace: HEAD, fontSize: 40, bold: true, color: WHITE, margin: 0, isTextBox: true });
-    s.addText("Reviewed the draft, found what breaks, and rebuilt it", { x: 2.6, y: 1.95, w: 9.5, h: 0.6, fontFace: BODY, fontSize: 18, color: "CAD5E6", margin: 0, isTextBox: true });
+    s.addText("Reviewed the draft and rebuilt it; had the rebuild refereed, then rebuilt and proved it", { x: 2.6, y: 1.95, w: 10.2, h: 0.6, fontFace: BODY, fontSize: 18, color: "CAD5E6", margin: 0, isTextBox: true });
     const steps = [
       ["search", "Review", "Draft paper and code checked line by line"],
-      ["cogs", "Run", "End-to-end over sockets: plaintext and real OpenFHE"],
-      ["secret", "Attack", "Three privacy reviews plus an independent critique"],
-      ["layers", "Redesign", "Revised protocol, TikZ figure, rewritten paper"],
+      ["cogs", "Run", "End-to-end over sockets: plaintext and OpenFHE"],
+      ["secret", "Attack", "Three privacy reviews and a critique"],
+      ["layers", "Redesign", "First revision (v2) and rewritten paper"],
       ["chart", "Simulate", "Accuracy and bias-correction studies"],
       ["balance", "Benchmark", "AdaSSP on 29 of Wang's UCI datasets"],
+      ["book", "Referee", "Journal-style review; key claims re-checked"],
+      ["check", "Prove", "Second revision (v3.1) with a proofs appendix"],
     ];
-    const y = 3.75, gap = 2.02;
-    s.addShape(pres.shapes.LINE, { x: 1.0, y: y + 0.4, w: gap * 5, h: 0, line: { color: "3D5A80", width: 2 } });
+    const y = 3.6, gap = 1.56;
+    s.addShape(pres.shapes.LINE, { x: 1.0, y: y + 0.36, w: gap * 7, h: 0, line: { color: "3D5A80", width: 2 } });
     steps.forEach(([ic, h, b], i) => {
       const x = 0.6 + i * gap;
-      circleIcon(s, ic, x, y, 0.8, i === 2 ? EMBER : SLATE);
-      s.addText(`${i + 1}. ${h}`, { x: x - 0.2, y: y + 1.0, w: 1.9, h: 0.45, fontFace: HEAD, fontSize: 17, bold: true, color: WHITE, margin: 0, isTextBox: true });
-      s.addText(b, { x: x - 0.2, y: y + 1.48, w: 1.85, h: 1.3, fontFace: BODY, fontSize: 13.5, color: "CAD5E6", margin: 0, valign: "top", isTextBox: true });
+      circleIcon(s, ic, x, y, 0.72, i === 2 || i === 7 ? EMBER : SLATE);
+      s.addText(`${i + 1}. ${h}`, { x: x - 0.1, y: y + 0.92, w: 1.58, h: 0.42, fontFace: HEAD, fontSize: 13.5, bold: true, color: WHITE, margin: 0, isTextBox: true });
+      s.addText(b, { x: x - 0.1, y: y + 1.38, w: 1.42, h: 1.5, fontFace: BODY, fontSize: 12.5, color: "CAD5E6", margin: 0, valign: "top", isTextBox: true });
     });
-    s.addNotes("Part 2. The sequence of work: review, running the implementation, adversarial privacy reviews, redesign, simulations, and the AdaSSP benchmark.");
+    s.addNotes("Part 2. The sequence of work: review, running the implementation, adversarial privacy reviews, the first redesign (v2), simulations, the AdaSSP benchmark, a journal-style referee review of the paper, and the second redesign (v3.1) with its proofs.");
   }
 
   // ======================= 10. Critical finding =======================
@@ -321,27 +323,30 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     card(s, 8.85, 1.65, 3.85, 4.6, EMBER_L); txt(s, "Fix", { x: 9.1, y: 1.85, w: 3.4, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: EMBER });
     bullets(s, ["Add a fresh encryption of the noise, which re-randomizes c₁",
       "Switch to the last modulus level, then flood the error term",
-      "BFV linkage replies: statistical flooding; CKKS: DP-calibrated flooding"], { x: 9.1, y: 2.4, w: 3.4, h: 3.7, fontSize: 14.5 });
+      "BFV linkage replies: statistical flooding; CKKS: DP-calibrated flooding",
+      { text: "v3.1 goes further: the key is split, and O's decryption share carries the noise", options: { bold: true } }], { x: 9.1, y: 2.4, w: 3.4, h: 3.7, fontSize: 14.5 });
     s.addNotes("The most important finding. The DP argument reasoned about the decrypted value, but R holds the key and sees the whole ciphertext. With plaintext-scalar noise, the c1 component is independent of the noise.");
   }
 
   // ======================= 11. Review scorecard =======================
   {
-    const s = pres.addSlide(); title(s, "Review scorecard");
+    const s = pres.addSlide(); title(s, "Review scorecard", "Findings on the draft, how the first revision (v2) handled them, and where they stand in v3.1");
     const sev = (t, col) => ({ text: t, options: { bold: true, color: col } });
+    const weak = (t) => ({ text: t, options: { color: "9AA5B4", italic: true } });   // v2 fix the referee found incomplete
     const rows = [
-      hdr(["Finding", "Severity", "Status in the revised protocol"]),
-      ["Plaintext-scalar noise leaks through the ciphertext", sev("Critical", EMBER), "Fixed: fresh encryption plus flooding"],
-      ["Calibration step shares raw-data statistics", sev("Critical", EMBER), "Fixed: per-party commitments, public constants only"],
-      ["Add/remove sensitivity vs replace-one adjacency (true ε up to ~2× the claim)", sev("High", "B7791F"), "Fixed: replace-one Δ, closed form"],
-      ["No privacy ledger across runs", sev("High", "B7791F"), "Fixed: zCDP ledger at O"],
-      ["PSI reveals O's row order and bin loads", sev("High", "B7791F"), "Fixed: secret permutation, public padding"],
-      ["Adaptive λ cancels the bias correction", sev("Validity", SLATE), "Fixed: λ set from public inputs"],
-      ["CKKS slot leak; HE parameter security", sev("Checked", TEAL), "Not an issue with OpenFHE"],
-      ["R learns which of its cohort are in the register", sev("By design", MUTED), "Stated in Definition 4"],
+      hdr(["Finding on the draft", "Severity", "First revision (v2)", "Now (v3.1)"]),
+      ["Plaintext-scalar noise leaks through the ciphertext", sev("Critical", EMBER), weak("Fresh encryption plus flooding"), "Split key; O's decryption share carries the noise (proven)"],
+      ["Calibration step shares raw-data statistics", sev("Critical", EMBER), "Per-party commitments, public constants only", "Unchanged"],
+      ["Add/remove sensitivity vs replace-one adjacency (true ε up to ~2× the claim)", sev("High", "B7791F"), "Replace-one Δ, closed form", "Δ proven exact; yᵀy released only where it is free"],
+      ["No privacy ledger across runs", sev("High", "B7791F"), weak("zCDP ledger at O"), "(ρ, δ) ledger per register; flooding costs only δ"],
+      ["PSI reveals O's row order and bin loads", sev("High", "B7791F"), "Secret permutation, public padding", "Also OPRF-based; R's cohort capped and padded"],
+      ["Adaptive λ cancels the bias correction", sev("Validity", SLATE), weak("λ set from public inputs"), "λ from a stage-1 release, independent of stage 2 (proven)"],
+      ["CKKS slot leak; HE parameter security", sev("Checked", TEAL), "Not an issue with OpenFHE", "CKKS scale must rise to ≈2^61.5 (proofs)"],
+      ["R learns which of its cohort are in the register", sev("By design", MUTED), "Stated in Definition 4", "Unchanged"],
     ];
-    s.addTable(rows, Object.assign(tableOpts([6.0, 1.5, 4.6]), { y: 1.5, rowH: 0.56, fontSize: 13.5 }));
-    s.addNotes("Summary of findings across the code review, three privacy reviews and an independent critique, with how the revised protocol handles each.");
+    s.addTable(rows, Object.assign(tableOpts([4.0, 1.25, 3.0, 3.85]), { y: 1.75, rowH: 0.5, fontSize: 12.5 }));
+    txt(s, "Grey: fixes that the referee later found incomplete (Part 5).", { x: 0.6, y: 6.5, w: 8, h: 0.3, fontSize: 11, italic: true, color: MUTED });
+    s.addNotes("Findings across the code review, three privacy reviews and an independent critique. The v2 column is the first revision; the referee review of the paper found three of those fixes incomplete (grey): the fresh-encryption argument does not hold against a key-holding R, the ledger charged the flooding cost once per run instead of per reply, and the public lower bound ℓ behind the fixed λ cannot be committed in practice. The v3.1 column is the second revision, covered in Part 5.");
   }
 
   // ======================= 12. Contributions =======================
@@ -349,9 +354,9 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const s = pres.addSlide(); title(s, "Contributions");
     const items = [
       ["Corrected data flow", "R's Gram block A is computed locally, is never sent and never noised. The sensitivity loses its B_R⁴ term."],
-      ["Revised protocol", "Sanitized replies, replace-one DP, zCDP ledger, per-party calibration, hardened PSI, ridge fixed from public inputs."],
-      ["Theory", "Finite-noise bias as a conditional expectation, a zero-budget correction, and a closed-form replace-one sensitivity."],
-      ["Evaluation", "End-to-end runs, simulation studies of accuracy and of the correction, and a benchmark against AdaSSP."],
+      ["Protocol v3.1", "Split decryption key with the noise in O's share, replace-one DP, (ρ, δ) ledger, OPRF-based PSI, two-stage ridge, valid intervals."],
+      ["Proofs", "Output privacy (SIM-CDP) with a worst-case error bound, the exact replace-one sensitivity, and interval coverage to first order."],
+      ["Evaluation", "End-to-end runs, simulation studies of accuracy and of the bias correction, and a benchmark against AdaSSP."],
     ];
     items.forEach(([h, b], i) => {
       const x = 0.6 + (i % 2) * 6.15, y = 1.6 + Math.floor(i / 2) * 2.6;
@@ -360,16 +365,16 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       txt(s, h, { x: x + 1.2, y: y + 0.38, w: 4.5, h: 0.5, fontFace: HEAD, fontSize: 21, bold: true, color: INK });
       txt(s, b, { x: x + 1.2, y: y + 0.95, w: 4.5, h: 1.3, fontSize: 15 });
     });
-    s.addNotes("Four contributions: the corrected data flow, the revised protocol, the theory, and the evaluation.");
+    s.addNotes("Four contributions: the corrected data flow, the protocol (now v3.1), its proofs, and the evaluation. The finite-noise bias expansion is still in the paper, but the referee judged it modest and the correction is now optional, so it is no longer listed as a headline contribution.");
   }
 
   // ======================= 13. Divider: methodology =======================
-  divider(3, "Methodology", "The revised protocol, phase by phase")
-    .addNotes("Part 3: how the revised protocol works.");
+  divider(3, "Methodology", "The first revision (v2), phase by phase")
+    .addNotes("Part 3: how the first revision (v2) works. Every result in Part 4 uses its release mechanism. Part 5 covers what the second revision (v3.1) changes.");
 
   // ======================= 14. Protocol at a glance =======================
   {
-    const s = pres.addSlide(); title(s, "The protocol at a glance");
+    const s = pres.addSlide(); title(s, "Protocol v2 at a glance");
     const ph = [["0", "Setup and commitments", "Only public constants cross"], ["1", "Private linkage", "BFV labeled PSI; R learns the match set"],
       ["2", "Encrypted aggregation", "CKKS, depth 1; DP noise added by O"], ["3", "Solve at R", "Fixed ridge, bias correction; post-processing"]];
     ph.forEach(([n, h, b], i) => {
@@ -378,7 +383,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       txt(s, h, { x: 1.5, y: y + 0.02, w: 5.0, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: INK });
       txt(s, b, { x: 1.5, y: y + 0.5, w: 5.0, h: 0.5, fontSize: 15, color: MUTED });
     });
-    txt(s, "Orange in the figure marks what changed from the draft.", { x: 0.6, y: 6.8, w: 6, h: 0.35, fontSize: 12, italic: true, color: MUTED });
+    txt(s, "Orange in the figure marks what changed from the draft. Part 5 shows what v3.1 changes.", { x: 0.6, y: 6.8, w: 6.4, h: 0.35, fontSize: 12, italic: true, color: MUTED });
     img(s, P("protocol_v2", "protocol_v2.png"), 7.2, 0.3, 5.6, 6.95, 1817, 2394);
     s.addNotes("Four phases. The figure on the right is the full message flow with the risks each step fixes.");
   }
@@ -443,7 +448,8 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["(1, 1, 1)", "2.24", "3.16", "1.41"], ["(3.16, 3, 3)", "20.6", "29.4", "1.43"],
       ["(√5, √5, 5)", "30.4", "31.6", "1.04"], ["Simulation population", "58.2", "86.2", "1.48"]];
     s.addTable(rows, Object.assign(tableOpts([2.3, 1.35, 1.45, 1.1]), { y: 2.95, rowH: 0.46, fontSize: 13 }));
-    txt(s, "Δ_add ≤ Δ_rep ≤ 2Δ_add. Releasing yᵀy costs nothing under replace-one.", { x: 0.6, y: 5.55, w: 6.2, h: 0.6, fontSize: 13, italic: true, color: MUTED });
+    txt(s, "Δ_add ≤ Δ_rep ≤ 2Δ_add. Adding yᵀy costs nothing in these rows, but not always: it is free if B_y² ≤ 2(B_R² + B_O²). At (1, 1, 5), Δ = 26.1 with yᵀy and 14.1 without.",
+      { x: 0.6, y: 5.45, w: 6.2, h: 0.9, fontSize: 13, italic: true, color: MUTED });
     card(s, 7.2, 1.55, 5.5, 2.35);
     circleIcon(s, "calc", 7.45, 1.8, 0.7, SLATE);
     txt(s, "σ from the analytic Gaussian", { x: 8.35, y: 1.88, w: 4.2, h: 0.45, fontSize: 17, bold: true, color: INK });
@@ -451,15 +457,15 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       { x: 8.35, y: 2.38, w: 4.15, h: 1.4, fontSize: 14 });
     card(s, 7.2, 4.15, 5.5, 2.55, EMBER_L);
     circleIcon(s, "ledger", 7.45, 4.4, 0.7, EMBER);
-    txt(s, "zCDP ledger at O", { x: 8.35, y: 4.48, w: 4.2, h: 0.45, fontSize: 17, bold: true, color: INK });
-    txt(s, "ρ_run = Δ²/2σ² + ρ_err. O refuses a run once the cumulative spend would pass its cap. Re-runs, retraining and inference queries all count.",
-      { x: 8.35, y: 4.98, w: 4.15, h: 1.6, fontSize: 14 });
-    s.addNotes("The draft's sensitivity bound was for add/remove adjacency; our adjacency is replace-one, which needs up to twice the Δ. The ledger makes re-runs compose under an explicit cap.");
+    txt(s, "Privacy ledger at O", { x: 8.35, y: 4.48, w: 4.2, h: 0.45, fontSize: 17, bold: true, color: INK });
+    txt(s, "O refuses a run once the spend would pass its cap; re-runs and inference queries count. v2 charged ρ_err once per run, though one record moves the error of all 63 replies. v3.1 tracks (ρ, δ): flooding costs only δ.",
+      { x: 8.35, y: 4.98, w: 4.15, h: 1.65, fontSize: 13 });
+    s.addNotes("The draft's sensitivity bound was for add/remove adjacency; our adjacency is replace-one, which needs up to twice the Δ. The proofs show the closed form is exact for d_O ≥ 2. yᵀy is free whenever B_y² ≤ 2(B_R² + B_O²), which covers every row here, and never free when B_y² > 3(B_R² + B_O²); the referee's counterexample (1, 1, 5) gives Δ = 26.07 with yᵀy against 14.14 without. So yᵀy is released only where it is free, otherwise under its own budget. The ledger makes re-runs compose under an explicit cap; the v2 ledger under-counted the error channel, which v3.1 removes by flooding statistically and charging only δ.");
   }
 
   // ======================= 18. Circuit privacy =======================
   {
-    const s = pres.addSlide(); title(s, "Sanitizing O's replies (circuit privacy)", "R holds the key, so every reply must reveal nothing beyond its decrypted value");
+    const s = pres.addSlide(); title(s, "Sanitizing O's replies in v2 (circuit privacy)", "R holds the key, so every reply must reveal nothing beyond its decrypted value");
     const steps = [
       ["1", "Fresh encryption", "ct ⊞ Enc_pk(z) makes c₁ computationally uniform: it no longer depends on O's data."],
       ["2", "Modulus switch", "Drop to the last level, which scales down the data-dependent error."],
@@ -467,20 +473,22 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     ];
     steps.forEach(([n, h, b], i) => {
       const x = 0.6 + i * 4.15;
-      card(s, x, 1.95, 3.9, 3.0);
-      numCircle(s, n, x + 0.3, 2.2, 0.65, EMBER, 18);
-      txt(s, h, { x: x + 1.1, y: 2.28, w: 2.7, h: 0.5, fontFace: HEAD, fontSize: 19, bold: true, color: INK });
-      txt(s, b, { x: x + 0.3, y: 3.05, w: 3.35, h: 1.8, fontSize: 14.5 });
+      card(s, x, 1.85, 3.9, 2.5);
+      numCircle(s, n, x + 0.3, 2.07, 0.65, EMBER, 18);
+      txt(s, h, { x: x + 1.1, y: 2.15, w: 2.7, h: 0.5, fontFace: HEAD, fontSize: 19, bold: true, color: INK });
+      txt(s, b, { x: x + 0.3, y: 2.85, w: 3.35, h: 1.45, fontSize: 14.5 });
     });
-    card(s, 0.6, 5.25, 6.0, 1.45, "F7F9FC");
-    txt(s, "Why DP-calibrated flooding for CKKS", { x: 0.85, y: 5.38, w: 5.6, h: 0.4, fontSize: 15, bold: true, color: INK });
-    txt(s, "Classical 2⁴⁰ flooding would swamp CKKS precision. A DP-sized flood needs only a few bits above the error; its cost joins the ledger.",
-      { x: 0.85, y: 5.8, w: 5.6, h: 0.85, fontSize: 13.5, color: MUTED });
-    card(s, 6.85, 5.25, 5.85, 1.45, EMBER_L);
-    txt(s, "Open proof obligation", { x: 7.1, y: 5.38, w: 5.4, h: 0.4, fontSize: 15, bold: true, color: EMBER });
-    txt(s, "An explicit bound on S_err, how much one record can change the ciphertext error, for the exact encoding and key switching.",
-      { x: 7.1, y: 5.8, w: 5.4, h: 0.85, fontSize: 13.5, color: INK });
-    s.addNotes("Three sanitization steps. The CKKS flooding is sized as a DP mechanism in the style of Li, Micciancio, Schultz and Sorrell, so it costs a small ledger entry instead of 40 bits of precision.");
+    card(s, 0.6, 4.6, 5.3, 2.4, "F7F9FC");
+    txt(s, "What v2 relied on", { x: 0.85, y: 4.75, w: 4.9, h: 0.4, fontSize: 15, bold: true, color: INK });
+    txt(s, "A flood sized as a DP mechanism, only a few bits above the error, to save CKKS precision; and the fresh encryption to hide c₁ from the key holder.",
+      { x: 0.85, y: 5.2, w: 4.85, h: 1.25, fontSize: 13.5, color: MUTED });
+    card(s, 6.15, 4.6, 6.55, 2.4, EMBER_L);
+    txt(s, "What the referee and the proofs found", { x: 6.4, y: 4.75, w: 6.1, h: 0.4, fontSize: 15, bold: true, color: EMBER });
+    bullets(s, ["S_err is as large as the whole error, and its cost was charged once, not per reply",
+      "Decrypting, R sees a hint on the fresh randomness: not a plain RLWE reduction",
+      "v3.1 floods the full error inside O's decryption share. Proven, at a CKKS scale of 2^61.5 (2^53.7 with circuit changes)"],
+      { x: 6.4, y: 5.2, w: 6.1, h: 1.7, fontSize: 13, paraSpaceAfter: 4 });
+    s.addNotes("Three sanitization steps in v2. The CKKS flooding was sized as a DP mechanism in the style of Li, Micciancio, Schultz and Sorrell, so it would cost a small ledger entry instead of 40 bits of precision. The referee found three problems: the rotations, rescaling and modulus switch all depend on the data-dependent c1, so S_err is of the order of the whole error; R, who holds the key, learns a noisy hint on the fresh-encryption randomness, which needs a Hint-RLWE-type assumption; and the ledger charged the error channel once instead of once per reply. v3.1 instead splits the key and floods the whole error statistically (2^-40) inside O's decryption share. The proofs bound the worst-case error at about 2^25.3 for the circuit as specified, which needs a CKKS scale of about 2^61.5 (the v3.1 spec had assumed 2^52.5); restructuring the circuit brings this to 2^57.2, and having R encode at 2^60 brings it to 2^53.7.");
   }
 
   // ======================= 19. Solve & bias correction =======================
@@ -491,22 +499,22 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["Ridge, fixed before decryption", "λ = max{ 0, 2ρ*σ√p − nℓ },  Ψ = I"],
       ["Release gate", "ρ̂ = λ_min(G̃ + λI) / (2σ√p) ≥ 1"],
       ["Private ridge estimate", "β̃_λ = (G̃ + λI)⁻¹ c̃"],
-      ["Bias-corrected estimate", "β̂_bc = β̃_λ − σ² M(P̃_λ) β̃_λ"],
+      ["Bias correction (optional in v3.1; off by default)", "β̂_bc = β̃_λ − σ² M(P̃_λ) β̃_λ"],
     ];
     lines.forEach(([h, e], i) => {
       txt(s, h, { x: 0.9, y: 1.8 + i * 1.2, w: 5.5, h: 0.4, fontSize: 14, bold: true, color: SLATE });
       txt(s, e, { x: 0.9, y: 2.2 + i * 1.2, w: 5.5, h: 0.55, fontFace: HEAD, fontSize: 18, color: INK });
     });
-    card(s, 6.85, 1.55, 5.85, 3.1);
-    txt(s, "Theorem (conditional bias)", { x: 7.1, y: 1.75, w: 5.4, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
-    txt(s, "E[ β̃ | ℰ_η ] − β̂ = σ² M(P) β̂ + O(σ⁴) + O(exp(−p(ηρ−1)²/2))", { x: 7.1, y: 2.3, w: 5.45, h: 0.6, fontFace: HEAD, fontSize: 15.5, color: INK });
-    txt(s, "M(P) = (P² + tr(P)P − P diag(P)) Π_O + (P Π_O P + tr(Π_O P) P) Π_R", { x: 7.1, y: 3.0, w: 5.45, h: 0.6, fontFace: HEAD, fontSize: 13.5, color: MUTED });
-    txt(s, "The plain mean does not exist, hence the conditioning on ℰ_η.", { x: 7.1, y: 3.8, w: 5.45, h: 0.7, fontSize: 13, italic: true, color: MUTED });
-    card(s, 6.85, 4.9, 5.85, 1.8, EMBER_L);
-    txt(s, "Why λ must not depend on the noise", { x: 7.1, y: 5.02, w: 5.4, h: 0.4, fontSize: 15, bold: true, color: EMBER });
-    txt(s, "Chosen from G̃, λ moves with the noise. The correction then removed none of the bias (1.0–1.6× left); with fixed λ it removes 87–98%.",
-      { x: 7.1, y: 5.45, w: 5.45, h: 1.15, fontSize: 13.5, color: INK });
-    s.addNotes("R fixes the ridge from public inputs, decrypts, splices in its exact block, solves, and applies the second-order bias correction. The theorem is stated conditionally because the unconditional mean does not exist.");
+    card(s, 6.85, 1.55, 5.85, 2.8);
+    txt(s, "Theorem (conditional bias)", { x: 7.1, y: 1.72, w: 5.4, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
+    txt(s, "E[ β̃ | ℰ_η ] − β̂ = σ² M(P) β̂ + O(σ⁴) + O(exp(−p(ηρ−1)²/2))", { x: 7.1, y: 2.25, w: 5.45, h: 0.6, fontFace: HEAD, fontSize: 15.5, color: INK });
+    txt(s, "M(P) = (P² + tr(P)P − P diag(P)) Π_O + (P Π_O P + tr(Π_O P) P) Π_R", { x: 7.1, y: 2.92, w: 5.45, h: 0.6, fontFace: HEAD, fontSize: 13.5, color: MUTED });
+    txt(s, "The plain mean does not exist, hence the conditioning on ℰ_η.", { x: 7.1, y: 3.65, w: 5.45, h: 0.6, fontSize: 13, italic: true, color: MUTED });
+    card(s, 6.85, 4.55, 5.85, 2.15, EMBER_L);
+    txt(s, "Why λ must not depend on the noise", { x: 7.1, y: 4.67, w: 5.4, h: 0.4, fontSize: 15, bold: true, color: EMBER });
+    txt(s, "Chosen from G̃, λ moves with the noise, and the correction removed none of the bias (1.0–1.6× left); with fixed λ it removes 87–98%. But ℓ needs the joint Gram, so in practice ℓ = 0. v3.1 picks λ from a separate stage-1 release instead.",
+      { x: 7.1, y: 5.1, w: 5.45, h: 1.5, fontSize: 13, color: INK });
+    s.addNotes("R fixes the ridge from public inputs, decrypts, splices in its exact block, solves, and applies the second-order bias correction. The theorem is stated conditionally because the unconditional mean does not exist. The referee pointed out that ℓ must lower-bound the smallest eigenvalue of the joint Gram, which depends on cross-covariances neither party knows, so the feasible choice is ℓ = 0, under which the ridge never switches off. v3.1 spends a small budget share on a stage-1 release and chooses (λ, Ψ) from it and from A only; the proofs show this choice is independent of the stage-2 noise, so the conditional analysis still applies. The bias correction is optional in v3.1 and off by default.");
   }
 
   // ======================= 20. Evaluation design =======================
@@ -529,14 +537,14 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
   }
 
   // ======================= 21. Divider: results =======================
-  divider(4, "Results", "What we have so far, and what is still to run")
-    .addNotes("Part 4: results. Slides marked as placeholders are still to be run.");
+  divider(4, "Results", "Measured with the v2 release; what is still to run")
+    .addNotes("Part 4: results. All of them use the v2 release mechanism; v3.1 changes the ridge rule and the inference, and its runs are still to come. Slides marked as placeholders are still to be run.");
 
   // ======================= 22. Correctness, and the cost still to measure =======================
   {
     const s = pres.addSlide(); title(s, "The cryptographic layer is exact", "Draft protocol, run end-to-end over sockets with plaintext and real OpenFHE backends");
     const stats = [["0", "misaligned rows", "PSI recovered exactly the true match set in all 6 cohorts, plaintext and OpenFHE"],
-      ["≈10⁻¹⁰", "max |β − β_OLS|", "with the noise switched off: encryption adds no error"],
+      ["≈10⁻¹⁰", "max |β − plaintext answer|", "noise off, against the plaintext ridge target at the same λ (10⁻³): encryption adds no error"],
       ["≈13 s", "end-to-end on OpenFHE", "n = 400 matched out of n_O = 4,000 records (OpenFHE 1.5.1)"]];
     stats.forEach(([v, l, d], i) => {
       const x = 0.6 + i * 4.15;
@@ -545,13 +553,13 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       txt(s, l, { x: x + 0.3, y: 2.78, w: 3.4, h: 0.4, fontSize: 15, bold: true, color: SLATE });
       txt(s, d, { x: x + 0.3, y: 3.2, w: 3.35, h: 0.9, fontSize: 13, color: MUTED });
     });
-    txt(s, "Cost of the revised protocol in OpenFHE", { x: 0.6, y: 4.5, w: 8, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
+    txt(s, "Cost of protocol v3.1 in OpenFHE", { x: 0.6, y: 4.5, w: 8, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
     chip(s, "To be run", 11.0, 4.55, 1.7, SLATE);
     const tbd = { text: "tbd", options: { color: "9AA5B4", italic: true } };
-    const rows = [hdr(["Register size n_O", "d", "PSI time (s)", "Aggregation time (s)", "Traffic (MB)", "Sanitization overhead"]),
+    const rows = [hdr(["Register size n_O", "d", "PSI time (s)", "Aggregation time (s)", "Traffic (MB)", "Release overhead"]),
       ["4,000", "10", tbd, tbd, tbd, tbd], ["32,000", "10", tbd, tbd, tbd, tbd], ["65,536", "20", tbd, tbd, tbd, tbd], ["10⁶ (chunked)", "20", tbd, tbd, tbd, tbd]];
     s.addTable(rows, Object.assign(tableOpts([2.3, 0.8, 1.9, 2.4, 2.0, 2.7]), { y: 5.05, rowH: 0.34, fontSize: 12.5 }));
-    s.addNotes("Correctness of linkage and aggregation: exact alignment and 1e-10 agreement with plaintext OLS when noise is off. All error comes from the DP noise and the ridge it forces. The table is a placeholder: the revised protocol's sanitization (fresh encryption, modulus switch, flooding) is not yet implemented in OpenFHE.");
+    s.addNotes("Correctness of linkage and aggregation: exact alignment, and 1e-10 agreement with the plaintext answer when the noise is off. That answer is the clipped-data ridge target at the λ the run chose (10^-3, the old solver's floor), not plain OLS; the two differ by up to 1e-4 because of that floor. All error comes from the DP noise and the ridge it forces. These runs used the draft protocol. The table is a placeholder: v3.1's release (split key, noise in O's decryption share) is not yet implemented in OpenFHE, and the proofs show its CKKS scale must be about 2^61.5, or 2^53.7 with the improved circuit.");
   }
 
   // ======================= 23. Figure A =======================
@@ -583,7 +591,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["0.3", "≈240k*", "75k", "21k", "7.1k", "1.9k"], ["0.5", "≈380k*", "≈105k*", "34k", "9.4k", "3.2k"], ["0.9", ">100k", ">100k", "66k", "30k", "13k"]];
     s.addTable(rows2, Object.assign(tableOpts([1.3, 1.8, 1.8, 1.8, 1.8, 1.8]), { y: 4.85, rowH: 0.42, fontSize: 13.5 }));
     txt(s, "* extrapolated beyond n = 100k", { x: 0.6, y: 6.65, w: 6, h: 0.35, fontSize: 12, italic: true, color: MUTED });
-    s.addNotes("Numbers behind the figure. A stronger signal lowers the OLS floor, but the DP part is set by the committed bounds, so the ratio is largest at high R-squared.");
+    s.addNotes("Numbers behind the figure. A stronger signal lowers the OLS floor much more than it raises the DP error (which grows only through the norm of beta), so the ratio is largest at high R-squared.");
   }
 
   // ======================= 25. Scale-free comparison =======================
@@ -603,8 +611,8 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
 
   // ======================= 26. Bias correction =======================
   {
-    const s = pres.addSlide(); title(s, "Does the bias correction matter?");
-    img(s, P("reports", "bias_correction", "fig1_mse_ratio.png"), 0.4, 1.2, 12.5, 3.85, 2291, 705);
+    const s = pres.addSlide(); title(s, "Does the bias correction matter?", "Barely: it acts mostly as extra shrinkage, so v3.1 makes it optional and off by default");
+    img(s, P("reports", "bias_correction", "fig1_mse_ratio.png"), 0.4, 1.65, 12.5, 3.4, 2291, 705);
     const st = [["−7 to −12%", "MSE vs the protocol target when the ridge is on. The correction also shrinks noise; it never raised this MSE (90 settings)."],
       ["+0.3 to +4.3%", "MSE vs OLS under a moderate ridge: the correction restores shrinkage that noise had offset."],
       ["≥ 130", "averaged releases before the bias alone would matter; one release: at most 0.75% of MSE."]];
@@ -613,22 +621,24 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       txt(s, v, { x, y: 5.15, w: 3.9, h: 0.7, fontFace: HEAD, fontSize: 30, bold: true, color: i === 0 ? EMBER : INK });
       txt(s, b, { x, y: 5.85, w: 3.9, h: 1.35, fontSize: 13, color: MUTED });
     });
-    s.addNotes("Answer to the reviewer: not as a bias correction; the removed bias is tiny. It is still worth applying as a free variance reduction. Rule: apply to every release that passes the gate.");
+    s.addNotes("Answer to the reviewer: not as a bias correction; the removed bias is tiny. The variance reduction is mostly extra shrinkage of the noise, which helps against the ridge target but hurts slightly against OLS or the true beta. On real data it is worse than no correction on 19 of 29 datasets at eps = 1 (slide on AdaSSP across privacy levels). So v3.1 keeps it as optional post-processing, off by default.");
   }
 
   // ======================= 27. Error anatomy & inference =======================
   {
     const s = pres.addSlide(); title(s, "Where the error comes from when σ is large");
-    img(s, P("reports", "bias_correction", "fig2_decomposition.png"), 0.4, 1.25, 12.5, 3.3, 2785, 700);
-    card(s, 0.6, 4.75, 5.95, 2.0);
-    txt(s, "Error anatomy", { x: 0.85, y: 4.9, w: 5.5, h: 0.4, fontSize: 16, bold: true, color: INK });
-    bullets(s, ["Heavy ridge: 72–90% of the error is shrinkage, 11–31% noise variance", "Mechanism bias²: at most 0.75% anywhere"],
-      { x: 0.85, y: 5.35, w: 5.5, h: 1.3, fontSize: 14 });
-    card(s, 6.75, 4.75, 5.95, 2.0, EMBER_L);
-    txt(s, "Inference", { x: 7.0, y: 4.9, w: 5.5, h: 0.4, fontSize: 16, bold: true, color: EMBER });
-    bullets(s, ["λ = 0: 95% intervals cover 0.94–0.96; SEs within 1–3% of the truth", "Ridge on: coverage collapses. Clipping shifts the target at large n (every DP method pays this)"],
-      { x: 7.0, y: 5.35, w: 5.5, h: 1.3, fontSize: 14 });
-    s.addNotes("When sigma is large, the ridge's shrinkage dominates. Intervals are reliable only when the ridge is off, and at large n clipping to the committed bounds moves the target.");
+    img(s, P("reports", "bias_correction", "fig2_decomposition.png"), 0.4, 1.25, 12.5, 3.15, 2785, 700);
+    card(s, 0.6, 4.55, 5.95, 2.25);
+    txt(s, "Error anatomy", { x: 0.85, y: 4.68, w: 5.5, h: 0.4, fontSize: 16, bold: true, color: INK });
+    bullets(s, ["Heavy ridge: 72–90% of the error is shrinkage, 11–31% noise variance", "Mechanism bias²: at most 0.75% anywhere",
+      "At large n, clipping shifts the target (every DP method pays this)"],
+      { x: 0.85, y: 5.12, w: 5.5, h: 1.6, fontSize: 13.5, paraSpaceAfter: 4 });
+    card(s, 6.75, 4.55, 5.95, 2.25, EMBER_L);
+    txt(s, "Inference", { x: 7.0, y: 4.68, w: 5.5, h: 0.4, fontSize: 16, bold: true, color: EMBER });
+    bullets(s, ["v2, λ = 0: 95% intervals cover 0.94–0.96", "v2, ridge on: coverage collapses (42–81% at ℓ = 0)",
+      { text: "v3.1: Wald intervals for the ridge target cover 0.944–0.962 (target 0.955) with the ridge on; the β intervals over-cover", options: { bold: true } }],
+      { x: 7.0, y: 5.12, w: 5.5, h: 1.6, fontSize: 13.5, paraSpaceAfter: 4 });
+    s.addNotes("When sigma is large, the ridge's shrinkage dominates. Under v2, intervals were reliable only when the ridge was off; with the feasible ℓ = 0 the ridge never switches off and Wald coverage against the true beta is 42–81% even at n = 128k. At large n clipping to the committed bounds also moves the target. v3.1 targets the ridge coefficient θ_λ with a Wald interval whose variance comes from a parametric bootstrap, plus a bias-aware interval for β (Armstrong, Kolesár and Kwon). In the proofs' simulations (2000 replications per scenario) the Wald intervals cover 0.944–0.962 against a target of 0.955 with the ridge on; the β intervals over-cover and are uninformative without a public bound on the norm of beta in two of three ridge scenarios. Coverage is proven to first order.");
   }
 
   // ======================= 28. AdaSSP benchmark at eps = 1 =======================
@@ -647,9 +657,9 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
           options: vals[k] === best ? { bold: true, color: INK } : {} }))]);
     });
     s.addTable(rows, Object.assign(tableOpts([1.4, 1.0, 0.6, 1.4, 2.0, 1.95, 1.8, 1.95]), { y: 1.75, rowH: 0.4, fontSize: 13 }));
-    txt(s, "Published AdaSSP protects the whole record, a stronger guarantee than ours, and uses Wang's noise constants: at ε = 1 its per-entry noise on XᵀX (11.9) is below ours (13.4), which is still to be checked. Matched = AdaSSP's adaptive λ under our guarantee; idealized, since its λ_min step needs XᵀX in the clear.",
-      { x: 0.6, y: 5.95, w: 12.1, h: 0.95, fontSize: 12.5, italic: true, color: MUTED });
-    s.addNotes("From reports/adassp/results.csv. Our protocol beats the matched AdaSSP on every dataset here and is within a few percent of published AdaSSP at large n; published AdaSSP is ahead on the small datasets at eps = 1. Our AdaSSP re-implementation reproduces Wang's published MSE (median ratio 1.000 over 29 datasets and 10 values of eps).");
+    txt(s, "Published AdaSSP is more private than our release, not less: at nominal ε = 1 it is μ = 0.198 Gaussian DP (ε ≈ 0.82) under whole-record adjacency, against our μ = 0.237 (ε = 1.00) under the weaker O-side adjacency. Its noise is lower because of Wang's composition and the joint row bound (Δ² = 4.5, ours 10). Matched = AdaSSP's adaptive λ under our guarantee; idealized, since its λ_min step needs XᵀX in the clear.",
+      { x: 0.6, y: 5.85, w: 12.1, h: 1.1, fontSize: 12.5, italic: true, color: MUTED });
+    s.addNotes("From reports/adassp/results.csv. Our protocol beats the matched AdaSSP on every dataset here and is within a few percent of published AdaSSP at large n; published AdaSSP is ahead on the small datasets at eps = 1. Our AdaSSP re-implementation reproduces Wang's published MSE (median ratio 1.000 over 29 datasets and 10 values of eps). The earlier caveat that Wang's constants might overstate AdaSSP's advantage ran the wrong way: in Gaussian DP, which is exact for composed Gaussian mechanisms, published AdaSSP at nominal (1, 1e-6) is mu = 0.198, i.e. (0.82, 1e-6)-DP under whole-record replace-one, while our release is mu = 0.237, exactly (1.00, 1e-6), under O-side replace-one. Its per-entry noise (11.85 vs our 13.36) is lower because Gaussian composition is tighter than Wang's basic composition, and because our sensitivity uses separate block bounds (Delta^2 = 10) where the data satisfy a joint row bound (Delta^2 = 4.5).");
   }
 
   // ======================= 29. AdaSSP across eps =======================
@@ -695,10 +705,12 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["Bias-corrected vs uncorrected", ...E3.map((e) => verdicts("vfl_uncorrected", e))]];
     s.addTable(trows, Object.assign(tableOpts([3.0, 1.05, 1.05, 1.05]), { y: 5.4, rowH: 0.35, fontSize: 13 }));
     txt(s, "Paired over folds, 95% CI; the rest show no significant difference.", { x: 0.6, y: 6.92, w: 6.2, h: 0.3, fontSize: 11, italic: true, color: MUTED });
-    card(s, 7.2, 5.4, 5.5, 1.45, EMBER_L);
-    txt(s, "At small ε the fixed ridge wins: AdaSSP spends a third of its budget on λ_min. From ε ≈ 0.5 AdaSSP's adaptive ridge wins (median 4% lower MSE at ε = 1); the gap shrinks as n grows.",
-      { x: 7.45, y: 5.58, w: 5.05, h: 1.25, fontSize: 14, color: INK, valign: "middle" });
-    s.addNotes("Native charts from reports/adassp/results.csv; paired verdicts from reports/adassp/all/compare.csv (all 29 datasets of Wang's published run, R = 50 draws per fold; a verdict needs the 95% CI of the paired fold difference to exclude 0). The bias correction changes test MSE by -3.7% to +2.3% across all eps: it helps at small eps and slightly hurts at large eps.");
+    card(s, 7.2, 5.35, 5.5, 1.85, EMBER_L);
+    txt(s, [{ text: "From ε ≈ 0.5 published AdaSSP wins (median 4% lower MSE at ε = 1); the gap shrinks as n grows. Read the wins with care:", options: { breakLine: true } },
+      { text: "at ε = 0.1 both often lose to θ = 0 (ours on 13 of 29, AdaSSP on 15)", options: { bullet: true, breakLine: true } },
+      { text: "the matched baseline uses only ¾ of its μ budget, so 27 / 0 overstates the fixed ridge", options: { bullet: true } }],
+      { x: 7.4, y: 5.45, w: 5.15, h: 1.7, fontSize: 12.5, color: INK, valign: "middle", paraSpaceAfter: 2 });
+    s.addNotes("Native charts from reports/adassp/results.csv; paired verdicts from reports/adassp/all/compare.csv (all 29 datasets of Wang's published run, R = 50 draws per fold; a verdict needs the 95% CI of the paired fold difference to exclude 0). Two caveats from the referee, both re-checked on our results: at eps = 0.1 our release is worse than predicting zero on 13 of 29 datasets (AdaSSP on 15; at eps = 0.01, 21 and 23), so the small-eps wins compare estimators that are mostly no better than zero. And the matched AdaSSP spends eps/3 on lambda_min by basic composition: its total is mu = 0.178 of the 0.237 available, and its noise is 1.49x ours, whereas a Gaussian-DP-optimal split (10% of mu^2 on lambda_min) would cost only about 5% extra noise. The bias correction changes test MSE by -3.7% to +2.3% across all eps: it helps at small eps and slightly hurts at large eps. Paired fold t-tests are anti-conservative because training folds overlap, and there is no multiplicity correction.");
   }
 
   // ======================= 29. Intersection-size sweep on real data =======================
@@ -734,9 +746,9 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     const steps = [
       ["δ", "δ ≤ 1/(10N)", "N = people O protects. 10⁻⁵ → 10⁻⁸ raises σ by only 25–50%"],
       ["Budget", "one release: (ε, δ)\nk releases: ρ = (√(L+ε) − √L)² / k", "L = ln(1/δ); zCDP adds up across releases"],
-      ["Δ", "Δ² = (2O + R + Y)²/2 + 2RY", "R, O, Y = B_R², B_O², B_y² (usual case). Δ grows with bound²"],
+      ["Δ", "Δ² = (2O + R + Y)²/2 + 2RY", "R, O, Y = B_R², B_O², B_y² (usual case, exact). yᵀy is free if Y ≤ 2(R + O)"],
       ["σ", "σ = Δ · s(ε, δ)\nor Δ / √(2ρ) for k releases", "s: analytic-Gaussian multiplier (table below)"],
-      ["λ", "λ = max{0, 2ρ*σ√p − nℓ}", "ρ* = 2.5; ℓ from public data, else 0. Ridge off from n = 2ρ*σ√p / ℓ"],
+      ["λ", "λ = max{0, 2ρ*σ√p − nℓ}", "ρ* = 2.5; ℓ public, else 0; ridge off from n = 2ρ*σ√p / ℓ. v3.1: λ from stage 1"],
     ];
     const gap = 2.45;
     s.addShape(pres.shapes.LINE, { x: 0.95, y: 1.95, w: gap * 4, h: 0, line: { color: LINE, width: 2 } });
@@ -746,7 +758,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       txt(s, h, { x: x + 0.82, y: 1.72, w: 1.5, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
       card(s, x, 2.5, 2.3, 2.15);
       txt(s, f, { x: x + 0.15, y: 2.62, w: 2.0, h: 0.95, fontFace: HEAD, fontSize: 13, color: INK });
-      txt(s, b, { x: x + 0.15, y: 3.6, w: 2.0, h: 1.0, fontSize: 11.5, color: MUTED });
+      txt(s, b, { x: x + 0.15, y: 3.6, w: 2.0, h: 1.0, fontSize: 11, color: MUTED });
     });
     const t1 = calSec("1.");                                    // first table: s(eps, delta) by delta
     const rows = [hdr(["σ/Δ  δ \\ ε", ...t1[0].slice(1).map((h) => h.replace("ε = ", ""))])];
@@ -758,7 +770,7 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
     txt(s, "σ ≈ Δ (√(2 ln(1/δ)) − 1) / ε^0.92", { x: 8.15, y: 5.42, w: 4.4, h: 0.45, fontFace: HEAD, fontSize: 17, color: INK });
     txt(s, "Within −8% to +3% of exact for ε ∈ [0.1, 8], δ ∈ [10⁻⁸, 10⁻⁵]. For planning only: O computes the exact σ for each release.",
       { x: 8.15, y: 5.92, w: 4.4, h: 0.75, fontSize: 11.5, color: MUTED });
-    s.addNotes("The calibration chain, from experiments/calibration_heuristic.py (reports/calibration/heuristic.md). The privacy budget is the only real decision; the rest follows from public, committed constants. The zCDP route is needed when several releases share one budget; for a single release the analytic Gaussian gives a 13-36% smaller sigma at delta = 1e-6.");
+    s.addNotes("The calibration chain, from experiments/calibration_heuristic.py (reports/calibration/heuristic.md). The privacy budget is the only real decision; the rest follows from public, committed constants. The zCDP route is needed when several releases share one budget; for a single release the analytic Gaussian gives a 13-36% smaller sigma at delta = 1e-6. The zCDP-to-(eps, delta) conversion shown here is the simple one; v3.1 uses the tighter Canonne-Kamath-Steinke conversion. The Delta formula is the exact supremum in the usual regime (proven for d_O >= 2); yT y adds nothing when B_y^2 <= 2(B_R^2 + B_O^2). The lambda rule is v2's: since a public l is rarely available, v3.1 chooses lambda from a small stage-1 release instead, so the ridge-off sizes here are a v2 figure.");
   }
 
   // ======================= Calibration in practice (2/3): scaling laws =======================
@@ -800,38 +812,134 @@ async function iconPng(Icon, color = "#FFFFFF", size = 256) {
       ["Bounds 2× closer to the data (no extra clipping)", "× 1/4", "× 1/4", "× 1/16"],
       ["Double ε", "× 0.52–0.55", "× 0.52–0.55", "× 0.27–0.30"],
       ["δ from 10⁻⁶ to 10⁻⁸", "× 1.15–1.26", "× 1.15–1.26", "× 1.3–1.6"],
-      ["Same budget over k = 5 releases instead of 1", "× 2.6–2.9", "× 2.6–2.9", "× 6.5–8.7"]];
+      ["Same budget over k = 5 releases instead of 1", "× 2.6–2.9", "× 2.6–2.9", "× 6.5–8.7"],
+      ["Split a unit row bound, B_R² = B_O² = ½ (if little extra clipping)", "× 0.64", "× 0.64", "× 0.41"]];
     rows.slice(1).forEach((r) => { r[0] = { text: r[0], options: { bold: true } }; });
-    s.addTable(rows, Object.assign(tableOpts([5.5, 1.9, 2.35, 2.35]), { y: 1.7, rowH: 0.4, fontSize: 13 }));
-    txt(s, "Worked example: the simulation population at n = 10,000, δ = 10⁻⁶", { x: 0.6, y: 3.95, w: 12.1, h: 0.4, fontFace: HEAD, fontSize: 15, bold: true, color: INK });
-    txt(s, "B_R = 5.59, B_O = 6.24, B_y = 2.89, p = 11, ℓ = 0.494, ρ* = 2.5", { x: 0.6, y: 4.35, w: 12.1, h: 0.3, fontSize: 12, italic: true, color: MUTED });
+    s.addTable(rows, Object.assign(tableOpts([6.2, 1.6, 2.15, 2.15]), { y: 1.7, rowH: 0.4, fontSize: 13 }));
+    txt(s, "Worked example: the simulation population at n = 10,000, δ = 10⁻⁶", { x: 0.6, y: 4.45, w: 12.1, h: 0.4, fontFace: HEAD, fontSize: 15, bold: true, color: INK });
+    txt(s, "B_R = 5.59, B_O = 6.24, B_y = 2.89, p = 11, ℓ = 0.494, ρ* = 2.5", { x: 0.6, y: 4.83, w: 12.1, h: 0.3, fontSize: 12, italic: true, color: MUTED });
     const t4 = calSec("4.");
     const ex = [hdr(["ε", "Δ", "σ, one release", "zCDP cost ρ", "λ at n = 10k", "Ridge off from n", "σ, each of 5 releases"])];
     t4.slice(1).forEach((r) => ex.push([r[0], r[2], r[3], r[4], r[5], r[6], r[7]]));
-    s.addTable(ex, Object.assign(tableOpts([1.0, 1.3, 1.9, 1.7, 1.8, 2.1, 2.3]), { y: 4.75, rowH: 0.34, fontSize: 12.5 }));
-    s.addNotes("Multipliers from the s(eps, delta) table and the worked example in reports/calibration/heuristic.md. 'Bounds 2x closer' means the bounds were loose relative to the data, so tightening them adds no clipping; Delta is homogeneous of degree 2 in the bounds. Five releases: the sqrt(5) budget split times the looser zCDP conversion.");
+    s.addTable(ex, Object.assign(tableOpts([1.0, 1.3, 1.9, 1.7, 1.8, 2.1, 2.3]), { y: 5.17, rowH: 0.3, fontSize: 12.5 }));
+    s.addNotes("Multipliers from the s(eps, delta) table and the worked example in reports/calibration/heuristic.md. 'Bounds 2x closer' means the bounds were loose relative to the data, so tightening them adds no clipping; Delta is homogeneous of degree 2 in the bounds. Five releases: the sqrt(5) budget split times the looser zCDP conversion. Split bound: each party clips to half of a unit row bound, which needs no interaction; Delta^2 drops from 10 to 4.125 (B_y = 1), so sigma falls by 1.56x. The record multipliers assume the extra per-party clipping is negligible. The worked example prints Delta = 86.2; with the rounded bounds shown the exact value is 86.15.");
+  }
+
+  // ======================= Divider: second revision =======================
+  divider(5, "Second revision: protocol v3.1", "A referee review, a redesign for honest-but-curious parties, and proofs")
+    .addNotes("Part 5: a journal-style referee review of the paper, what we verified, the second revision (v3.1), and its proofs appendix (47 pages: cryptographic and DP guarantees, then sensitivity and statistical guarantees).");
+
+  // ======================= Referee review and response =======================
+  {
+    const s = pres.addSlide(); title(s, "Referee review: findings and answers", "Recommendation: reject and resubmit. Every major comment accepted; the numerical claims re-checked");
+    const v = (t, col) => ({ text: t, options: { bold: true, color: col } });
+    const rows = [
+      hdr(["Major comment", "Verdict", "In v3.1"]),
+      ["Privacy theorem unproven: S_err unbounded; a hint to the key holder; no computational DP notion; error cost charged once; finite precision undefined",
+        v("Accepted", INK), "Split key; full error flooded inside O's share; SIM-CDP; (ρ, δ) ledger; lattice quantization. Proven"],
+      ["The semi-honest R is also the party DP protects against", v("Accepted", INK), "Stated: honest-but-curious only. Malicious R needs ZK input proofs (extension)"],
+      ["Revised protocol neither implemented nor costed", v("Accepted", INK), { text: "Open: OpenFHE implementation is next", options: { color: EMBER, bold: true } }],
+      ["Privacy levels ignore the error channel", v("Accepted", INK), "End-to-end (ρ, δ) accounting, tight zCDP conversion"],
+      ["AdaSSP comparison mischaracterized", v("Verified", TEAL), "Published AdaSSP is more private (ε ≈ 0.82 vs 1.00); caveat replaced"],
+      ["No valid inference under ℓ = 0 (coverage 42–81%)", v("Verified", TEAL), "Two-stage ridge; Wald interval for θ_λ, bias-aware interval for β"],
+      ["Bias theory correct but of modest value", v("Partly", "B7791F"), "Correction optional, off by default"],
+      ["yᵀy is not always free", v("Verified", TEAL), "Released only where free; exact criterion proven"],
+    ];
+    s.addTable(rows, Object.assign(tableOpts([5.2, 1.2, 5.7]), { y: 1.75, rowH: 0.5, fontSize: 12.5 }));
+    s.addNotes("The referee (asked to review as for a top statistics journal) recommended reject and resubmit. We accepted every major comment and re-checked the numerical ones: the yT y counterexamples (Delta = 26.07 vs 14.14 at bounds (1, 1, 5)), the Gaussian-DP comparison with published AdaSSP (mu = 0.198 vs our 0.237), the 42–81% coverage under l = 0 from our own report, the matched baseline's unused budget, and the split-bound gain (Delta^2 = 4.125 vs 10). Comments 2 (malicious R) and 3 (implementation) are only partly answered: v3.1 is designed and proven for honest-but-curious parties, and it is not yet implemented.");
+  }
+
+  // ======================= v3.1 at a glance =======================
+  {
+    const s = pres.addSlide(); title(s, "Protocol v3.1 at a glance");
+    const ph = [["key", "Split decryption key", "s = s_R + s_O. Neither party can decrypt alone; R uploads under s_R and O converts"],
+      ["shield", "Noise in O's decryption share", "O sends (c₁′, h_O = c₀′ + c₁′s_O + η) and never c₀′. η floods the whole ciphertext error"],
+      ["balance", "Two-stage ridge", "(λ, Ψ) from a small stage-1 release and A only, so it is independent of the stage-2 noise"],
+      ["chart", "Valid intervals", "Parametric bootstrap; Wald interval for the ridge target θ_λ, bias-aware interval for β"],
+      ["link", "Capped, padded linkage", "OPRF-based labeled PSI; R's cohort padded to n_R^max, O's register to n̄_O"]];
+    ph.forEach(([ic, h, b], i) => {
+      const y = 1.45 + i * 1.12;
+      circleIcon(s, ic, 0.6, y, 0.62, i === 1 ? EMBER : INK);
+      txt(s, h, { x: 1.4, y: y - 0.02, w: 4.5, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: INK });
+      txt(s, b, { x: 1.4, y: y + 0.38, w: 4.5, h: 0.7, fontSize: 12.5, color: MUTED });
+    });
+    img(s, P("slides", "assets", "protocol_v31.png"), 6.75, 1.2, 6.2, 6.05, 1963, 1867);
+    s.addNotes("The five changes from v2. The release in phase 4 is the core: O re-randomizes the packed result with fresh (u, e0, e1), adds an exact discrete-Gaussian η to its own decryption share, and sends only (c1', h_O). R adds c1' s_R and decodes. Because c0' never leaves O, R cannot recover c1' s_O, and η is wide enough to hide the whole error statistically, so R's view depends on the data only through the DP-noised statistic. Everything is analysed for honest-but-curious parties.");
+  }
+
+  // ======================= What is proven =======================
+  {
+    const s = pres.addSlide(); title(s, "What the proofs establish", "Proofs appendix: Part A, cryptography and DP (25 pp.); Part B, sensitivity and statistics (20 pp.)");
+    const st = (t) => ({ text: t, options: { bold: true, color: t.startsWith("First") || t.startsWith("Partly") ? "B7791F" : TEAL } });
+    const A = [hdr(["Part A: cryptography and DP", "Status"]),
+      ["Encoding sensitivity √(2/N)", st("Proven")],
+      ["Smudging lemma, explicit constants", st("Proven")],
+      ["Worst-case error bound B_tot ≈ 2^25.3; OpenFHE measures 6–8 bits below it", st("Proven")],
+      ["zCDP of the ideal mechanism; ρ_run = 0.01496 at ε = 1, δ = 10⁻⁹", st("Proven")],
+      ["Output privacy (SIM-CDP) by hybrids, under RLWE and circular security", st("Proven")],
+      ["Input and cohort privacy; correctness without wraparound", st("Proven")]];
+    const B = [hdr(["Part B: sensitivity and statistics", "Status"]),
+      ["Replace-one sensitivity, exact for d_O ≥ 2", st("Proven")],
+      ["yᵀy free if B_y² ≤ 2(B_R² + B_O²), costly if > 3(B_R² + B_O²)", st("Proven")],
+      ["Stage-1 ridge choice independent of the stage-2 noise", st("Proven")],
+      ["Operator-norm radius r₁ (one-sided; ~1.55× conservative)", st("Proven")],
+      ["Coverage: Wald remainder exact; plug-in variance; simulated 0.944–0.962", st("First order")],
+      ["Bootstrap RSS correction; removes 87–100% of the bias", st("First order")]];
+    s.addTable(A, { x: 0.6, y: 1.75, colW: [4.6, 1.3], fontFace: BODY, fontSize: 12, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", margin: [3, 6, 3, 6], rowH: 0.52 });
+    s.addTable(B, { x: 6.8, y: 1.75, colW: [4.6, 1.3], fontFace: BODY, fontSize: 12, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", margin: [3, 6, 3, 6], rowH: 0.52 });
+    card(s, 0.6, 5.85, 12.1, 0.95, "F7F9FC");
+    txt(s, [{ text: "Still open:  ", options: { bold: true, color: EMBER } },
+      { text: "proofs for the improved circuits; composition across adaptive runs; a constant-time exact sampler; modulus-chain sizes; the exact free-set boundary for yᵀy; heteroskedasticity when clipping binds; 16 citation details to check." }],
+      { x: 0.85, y: 5.95, w: 11.6, h: 0.75, fontSize: 13, valign: "middle" });
+    s.addNotes("Status of every claim in the v3.1 specification. Part A: the encoding sensitivity, the smudging lemma with explicit constants, an explicit 8-term worst-case bound on the ciphertext error (checked against OpenFHE, which measured 2^14 to 2^15.7 where the bound gives about 2^21.9), the zCDP accounting with the Canonne–Kamath–Steinke conversion, output privacy as a full hybrid proof, input and cohort privacy by simulators, and correctness. Part B: the exact replace-one sensitivity (the triu and Frobenius suprema coincide), when yT y is free, the operator-norm radius used by the gate, the independence of the stage-1 ridge choice from stage 2, the bound on the norm of beta, coverage of both intervals (first order: the plug-in variance; asymptotic: normality of the sampling term), and the bootstrap correction of the residual sum of squares.");
+  }
+
+  // ======================= What the proofs changed =======================
+  {
+    const s = pres.addSlide(); title(s, "What the proofs changed", "The CKKS scale was undersized, and several statistical steps need tightening");
+    card(s, 0.6, 1.75, 5.6, 4.95, EMBER_L);
+    txt(s, "61.5 bits", { x: 0.9, y: 1.9, w: 5.0, h: 1.0, fontFace: HEAD, fontSize: 54, bold: true, color: EMBER });
+    txt(s, "CKKS scale needed to flood the worst-case error for the circuit as specified. The v3.1 spec assumed 52.5, which floods only the fresh-encryption error, at its mean.",
+      { x: 0.9, y: 2.95, w: 5.05, h: 1.1, fontSize: 13.5, color: INK });
+    const sc = [hdr(["Circuit", "B_tot", "log₂ Ω"]),
+      ["As specified", "2^25.3", "61.5"],
+      ["EvalSum before the first rescale, stochastic rounding, one final rescale", "2^21.1", "57.2"],
+      ["Same, with R encoding at scale 2^60", "2^17.6", "53.7"]];
+    s.addTable(sc, { x: 0.9, y: 4.2, colW: [3.2, 0.95, 0.85], fontFace: BODY, fontSize: 12, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", margin: [3, 5, 3, 5], rowH: 0.42, fill: { color: WHITE } });
+    txt(s, "Corrections to the specification", { x: 6.6, y: 1.75, w: 6.1, h: 0.45, fontFace: HEAD, fontSize: 18, bold: true, color: INK });
+    bullets(s, [
+      "Centre the mechanism at the noiseless circuit output; centring at the encoded input would need 67–71 bits",
+      "Calibrate from the data-independent worst-case bound, never from OpenFHE's noise estimate",
+      "The δ slack enters a single (ε, δ) statement with a factor (1 + e^ε)",
+      "Define β as the coefficient on the clipped data; clipping breaks the homoskedastic variance",
+      "Truncate the bootstrap (its moments do not exist otherwise); spend α_U once in U_yy",
+      "The private bound on ‖β‖ is usually infinite while the ridge is on: the β interval then needs a public bound",
+    ], { x: 6.6, y: 2.3, w: 6.1, h: 4.4, fontSize: 13.5, paraSpaceAfter: 7 });
+    s.addNotes("The main finding of the crypto proofs: flooding the whole ciphertext error in l2 at 2^-40 needs B_tot of about 2^25.3 for stage 2 of the example circuit, hence a CKKS scale of about 2^61.5. Two circuit changes help: evaluate EvalSum before the first rescale, use stochastic rounding and a single final rescale (2^57.2); and additionally have R encode at scale 2^60 (2^53.7). The deterministic, data-dependent parts of the error (such as the mask spill) are part of the query: the mechanism must be centred at the noiseless circuit output and use that function's sensitivity, which rises by a relative 2^-33; flooding them instead would need 67 to 71 bits. On the statistics side: state the estimand on the clipped data, truncate the bootstrap or use the closed-form alternative, fix the double use of alpha_U, make the radius statement one-sided, and say whether coverage is conditional on passing the gate.");
   }
 
   // ======================= 30. Conclusions =======================
   {
     const s = pres.addSlide(); s.background = { color: INK };
     s.addText("Takeaways and next steps", { x: 0.6, y: 0.45, w: 12, h: 0.8, fontFace: HEAD, fontSize: 34, bold: true, color: WHITE, margin: 0, isTextBox: true });
-    const take = ["The revised protocol closes the critical and high gaps under honest-but-curious parties",
+    const take = ["v3.1 closes the critical gaps for honest-but-curious parties, with proofs; its CKKS scale must rise to about 2^61.5 (2^53.7 with circuit changes)",
       "Within 2× of non-private OLS at n ≈ 3k–100k (simulation); within 10% at 1.4k–11k records for ε = 1–2 (real data)",
-      "Against AdaSSP: ahead at small ε, behind at large ε, where it needs about 1.5–2× the matched records",
-      "The bias correction is a small effect (under 4% of test MSE); ridge shrinkage dominates when σ is large"];
+      "Published AdaSSP is more private than our release and still wins from ε ≈ 0.5; we need about 1.5–2× its records",
+      "The bias correction is a small effect, now optional; ridge shrinkage dominates when σ is large"];
     take.forEach((t, i) => {
       numCircle(s, i + 1, 0.6, 1.6 + i * 1.25, 0.6, EMBER, 17);
-      s.addText(t, { x: 1.45, y: 1.6 + i * 1.25, w: 5.3, h: 1.0, fontFace: BODY, fontSize: 16, color: WHITE, margin: 0, valign: "top", isTextBox: true });
+      s.addText(t, { x: 1.45, y: 1.6 + i * 1.25, w: 5.4, h: 1.1, fontFace: BODY, fontSize: 15.5, color: WHITE, margin: 0, valign: "top", isTextBox: true });
     });
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 7.2, y: 1.5, w: 5.5, h: 5.2, fill: { color: "1F3050" }, line: { color: "1F3050" }, rectRadius: 0.08 });
     s.addText("Next", { x: 7.5, y: 1.7, w: 5, h: 0.5, fontFace: HEAD, fontSize: 22, bold: true, color: "E7A77C", margin: 0, isTextBox: true });
-    const nxt = ["Check Wang's noise constants; use the joint row bound to tighten our Δ",
-      "Implement the revised protocol in OpenFHE and measure its cost",
-      "Prove the S_err bound; complete finite-precision accounting", "Standard errors; membership-private variant for sensitive registers"];
-    s.addText(nxt.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < nxt.length - 1, paraSpaceAfter: 10 } })),
-      { x: 7.5, y: 2.35, w: 4.95, h: 4.2, fontFace: BODY, fontSize: 16, color: WHITE, margin: 0, valign: "top", isTextBox: true });
-    s.addNotes("Four takeaways and five next steps.");
+    const nxt = ["Implement v3.1 in OpenFHE with the improved circuit, and measure its cost",
+      "Rerun the evaluation under v3.1: two-stage ridge, intervals, split bounds",
+      "Fairer AdaSSP comparison: equal μ, a Gaussian-DP budget split, preprocessing that VFL can do",
+      "Close the open proof items; fold the corrections into a v3.2 specification",
+      "Membership-private variant for sensitive registers"];
+    s.addText(nxt.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < nxt.length - 1, paraSpaceAfter: 9 } })),
+      { x: 7.5, y: 2.35, w: 4.95, h: 4.2, fontFace: BODY, fontSize: 15, color: WHITE, margin: 0, valign: "top", isTextBox: true });
+    s.addNotes("Four takeaways and five next steps. The comparison with AdaSSP is now stated the right way round: published AdaSSP is mu = 0.198 Gaussian DP against our 0.237, so it is more private under a stronger adjacency and still ahead from eps of about 0.5. At very small eps both are often no better than predicting zero. Splitting one row bound between the parties cuts our sigma by 1.56x and should narrow the gap.");
   }
 
   const out = P("slides", "vfl_scenarioB_deck.pptx");
