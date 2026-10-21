@@ -238,5 +238,65 @@
   "file": "w_target.png",
   "w_pt": 83.163,
   "h_pt": 13.091
+ },
+ "d_sens": {
+  "file": "d_sens.png",
+  "w_pt": 134.377,
+  "h_pt": 19.82
+ },
+ "d_moves": {
+  "file": "d_moves.png",
+  "w_pt": 124.758,
+  "h_pt": 77.48
+ },
+ "d_closed": {
+  "file": "d_closed.png",
+  "w_pt": 222.928,
+  "h_pt": 30.366
+ },
+ "d_key": {
+  "file": "d_key.png",
+  "w_pt": 156.206,
+  "h_pt": 26.139
+ },
+ "d_renyi": {
+  "file": "d_renyi.png",
+  "w_pt": 304.931,
+  "h_pt": 26.139
+ },
+ "d_split": {
+  "file": "d_split.png",
+  "w_pt": 213.913,
+  "h_pt": 11.955
+ },
+ "d_eta": {
+  "file": "d_eta.png",
+  "w_pt": 74.494,
+  "h_pt": 14.69
+ },
+ "d_enc": {
+  "file": "d_enc.png",
+  "w_pt": 123.903,
+  "h_pt": 14.644
+ },
+ "d_rho_lat": {
+  "file": "d_rho_lat.png",
+  "w_pt": 88.006,
+  "h_pt": 14.419
+ },
+ "d_slot": {
+  "file": "d_slot.png",
+  "w_pt": 87.002,
+  "h_pt": 14.644
+ },
+ "d_subst": {
+  "file": "d_subst.png",
+  "w_pt": 139.387,
+  "h_pt": 27.036
+ },
+ "d_delta": {
+  "file": "d_delta.png",
+  "w_pt": 126.585,
+  "h_pt": 13.948
  }
 }

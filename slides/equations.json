@@ -190,5 +190,53 @@
  "w_target": {
   "color": "14213D",
   "tex": "\\theta_\\lambda = (G + \\lambda\\Psi)^{-1}\\,c"
+ },
+ "d_sens": {
+  "color": "14213D",
+  "tex": "\\Delta_s = \\sup_{D \\sim D'}\\ \\bigl\\lVert z_s(D) - z_s(D') \\bigr\\rVert_2"
+ },
+ "d_moves": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\operatorname{triu} B &:\\quad \\operatorname{triu}\\bigl(x x^\\top - x' x'^\\top\\bigr) \\\\ C &:\\quad \\dot x\\,(x - x')^\\top \\\\ c_R &:\\quad \\dot x\\,(y - y') \\\\ c_O &:\\quad x\\,y - x'\\,y' \\\\ y^\\top y &:\\quad y^2 - y'^2 \\end{aligned}"
+ },
+ "d_closed": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\Delta_2^2 = \\Delta^2 &= \\tfrac12\\,(2o + r + w)^2 + 2rw & &(|r - w| \\le 2o) \\\\ \\Delta_1^2 = \\Delta_G^2 &= \\tfrac12\\,(2o + r)^2 & &(r \\le 2o) \\end{aligned}"
+ },
+ "d_key": {
+  "color": "14213D",
+  "tex": "\\rho_s = \\frac{\\Delta_s^2}{2\\,\\sigma_s^2} \\qquad\\Longleftrightarrow\\qquad \\sigma_s = \\frac{\\Delta_s}{\\sqrt{2\\rho_s}}"
+ },
+ "d_renyi": {
+  "color": "14213D",
+  "tex": "D_a\\bigl(\\mathcal N(z_s(D), \\sigma_s^2 I)\\ \\big\\Vert\\ \\mathcal N(z_s(D'), \\sigma_s^2 I)\\bigr) = \\frac{a\\,\\lVert z_s(D) - z_s(D')\\rVert_2^2}{2\\sigma_s^2} \\le a\\,\\frac{\\Delta_s^2}{2\\sigma_s^2}"
+ },
+ "d_split": {
+  "color": "14213D",
+  "tex": "\\rho_1 = f_1\\,\\rho_{\\mathrm{run}}, \\qquad \\rho_2 = (1 - f_1)\\,\\rho_{\\mathrm{run}}, \\qquad f_1 = 0.1"
+ },
+ "d_eta": {
+  "color": "14213D",
+  "tex": "\\eta \\sim \\mathcal N_{\\mathbb Z}(0, \\sigma_{c,s}^2)^N"
+ },
+ "d_enc": {
+  "color": "14213D",
+  "tex": "\\Delta_{\\mathrm{enc},s} = \\sqrt{2/N}\\;\\Omega\\,\\Delta_s + \\sqrt N"
+ },
+ "d_rho_lat": {
+  "color": "14213D",
+  "tex": "\\rho_s = \\Delta_{\\mathrm{enc},s}^2 \\,/\\, (2\\sigma_{c,s}^2)"
+ },
+ "d_slot": {
+  "color": "14213D",
+  "tex": "\\sigma_s = \\sigma_{c,s}\\sqrt{N/2}\\;/\\;\\Omega"
+ },
+ "d_subst": {
+  "color": "14213D",
+  "tex": "\\sigma_s = \\frac{\\Delta_s + N/(\\sqrt2\\,\\Omega)}{\\sqrt{2\\rho_s}} \\;\\approx\\; \\frac{\\Delta_s}{\\sqrt{2\\rho_s}}"
+ },
+ "d_delta": {
+  "color": "14213D",
+  "tex": "\\delta_{\\mathrm{DP}} = \\delta_{\\mathrm{run}} - n_{\\mathrm{rel}}\\,\\bigl(\\delta_B + 2^{-\\kappa}\\bigr)"
  }
 }
