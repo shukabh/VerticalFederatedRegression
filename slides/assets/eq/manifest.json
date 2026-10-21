@@ -298,5 +298,35 @@
   "file": "d_delta.png",
   "w_pt": 126.585,
   "h_pt": 13.948
+ },
+ "he_keygen": {
+  "file": "he_keygen.png",
+  "w_pt": 197.598,
+  "h_pt": 44.932
+ },
+ "he_upload2": {
+  "file": "he_upload2.png",
+  "w_pt": 218.744,
+  "h_pt": 28.892
+ },
+ "ps_oprf": {
+  "file": "ps_oprf.png",
+  "w_pt": 106.448,
+  "h_pt": 14.436
+ },
+ "ps_poly": {
+  "file": "ps_poly.png",
+  "w_pt": 154.449,
+  "h_pt": 36.451
+ },
+ "ps_reply": {
+  "file": "ps_reply.png",
+  "w_pt": 127.492,
+  "h_pt": 13.948
+ },
+ "ps_decide": {
+  "file": "ps_decide.png",
+  "w_pt": 138.56,
+  "h_pt": 30.612
  }
 }

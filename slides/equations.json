@@ -238,5 +238,29 @@
  "d_delta": {
   "color": "14213D",
   "tex": "\\delta_{\\mathrm{DP}} = \\delta_{\\mathrm{run}} - n_{\\mathrm{rel}}\\,\\bigl(\\delta_B + 2^{-\\kappa}\\bigr)"
+ },
+ "he_keygen": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\mathsf R:\\ \\ p_{0,R} &= -a\\,s_R + e_R \\\\ \\mathsf O:\\ \\ p_{0,O} &= -a\\,s_O + e_O \\\\ pk &= \\bigl(p_{0,R} + p_{0,O},\\ a\\bigr) = \\bigl(-a\\,s + e,\\ a\\bigr) \\end{aligned}"
+ },
+ "he_upload2": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\mathsf R:&\\ \\ c_0 = -a\\,s_R + e + \\mathrm{Ecd}(v), \\qquad a = \\mathrm{PRG}(\\mathrm{seed}) \\\\ \\mathsf O:&\\ \\ c_0 \\leftarrow c_0 - a\\,s_O \\quad\\Rightarrow\\quad c_0 + a\\,s = \\mathrm{Ecd}(v) + e \\end{aligned}"
+ },
+ "ps_oprf": {
+  "color": "14213D",
+  "tex": "F_k(x) = H_2\\bigl(x,\\ H_1(x)^{k}\\bigr)"
+ },
+ "ps_poly": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} P_b(X) &= \\prod\\nolimits_{j \\in b} \\bigl(X - F_k(\\mathrm{id}_j)\\bigr) \\\\ L_b\\bigl(F_k(\\mathrm{id}_j)\\bigr) &= \\mathrm{Enc}_{F'_k(\\mathrm{id}_j)}\\bigl(\\tau(j)\\bigr) \\end{aligned}"
+ },
+ "ps_reply": {
+  "color": "14213D",
+  "tex": "\\mathrm{Enc}_R\\bigl(P_b(q)\\bigr),\\quad \\mathrm{Enc}_R\\bigl(L_b(q)\\bigr)"
+ },
+ "ps_decide": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} &P_b(q) = 0 \\;\\Rightarrow\\; \\text{match} \\\\ &\\pi(i) = \\mathrm{Dec}_{F'_k(\\mathrm{id}_i)}\\bigl(L_b(q)\\bigr) = \\tau(j) \\end{aligned}"
  }
 }
