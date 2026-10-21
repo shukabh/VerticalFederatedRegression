@@ -154,5 +154,41 @@
  "ols_I": {
   "color": "14213D",
   "tex": "\\hat\\beta = \\bigl(Z^\\top Z\\bigr)^{-1} Z^\\top y^{I}, \\qquad Z = \\bigl[\\, X_R^{I} \\;\\big|\\; X_O^{I} \\,\\bigr]"
+ },
+ "w_boot": {
+  "color": "14213D",
+  "tex": "\\begin{aligned} \\mathbf E^*_b &= \\mathbf E^{*\\top}_b,\\quad E^*_{b,ij} \\sim \\mathcal N(0,\\sigma_2^2) \\text{ on } B, C;\\ 0 \\text{ on } A \\\\ \\mathbf f^*_b &\\sim \\mathcal N(0,\\ \\sigma_2^2 I_p) \\\\ \\theta^*_b &= \\bigl(\\hat G_2 + \\mathbf E^*_b + \\lambda\\Psi\\bigr)^{-1}\\bigl(\\hat c_2 + \\mathbf f^*_b\\bigr) \\end{aligned}"
+ },
+ "w_vmech": {
+  "color": "14213D",
+  "tex": "V_{\\mathrm{mech}} = \\frac{1}{B-1}\\sum_{b=1}^{B}\\bigl(\\theta^*_b - \\bar\\theta^*\\bigr)\\bigl(\\theta^*_b - \\bar\\theta^*\\bigr)^{\\!\\top}"
+ },
+ "w_trunc": {
+  "color": "14213D",
+  "tex": "\\text{keep } b \\text{ only if } \\bigl\\lVert \\tilde P^{1/2}\\,\\mathbf E^*_b\\,\\tilde P^{1/2} \\bigr\\rVert_{\\mathrm{op}} \\le \\tfrac12"
+ },
+ "w_fo": {
+  "color": "14213D",
+  "tex": "\\tilde\\theta - \\theta_\\lambda \\;\\approx\\; \\tilde P\\,\\bigl(\\mathbf f - \\mathbf E\\,\\theta_\\lambda\\bigr), \\qquad \\tilde P = \\bigl(\\hat G_2 + \\lambda\\Psi\\bigr)^{-1}"
+ },
+ "w_v0": {
+  "color": "14213D",
+  "tex": "V_{\\mathrm{mech}} \\;\\approx\\; \\sigma_2^2\\;\\tilde P\\,\\bigl(I + K(\\tilde\\theta)\\bigr)\\,\\tilde P"
+ },
+ "w_K": {
+  "color": "14213D",
+  "tex": "K(\\theta)_{ii} = \\sum\\nolimits_j \\chi_{ij}\\,\\theta_j^2, \\qquad K(\\theta)_{ik} = \\chi_{ik}\\,\\theta_i\\theta_k \\ \\ (i \\ne k)"
+ },
+ "w_ci": {
+  "color": "14213D",
+  "tex": "\\tilde\\theta_j \\;\\pm\\; z_{1-\\alpha_{\\mathrm{CI}}/2}\\,\\sqrt{(V_{\\mathrm{mech}})_{jj}}"
+ },
+ "w_alpha": {
+  "color": "14213D",
+  "tex": "\\alpha_{\\mathrm{CI}} = \\alpha - \\alpha_L - \\alpha_U = 0.045 \\;\\;\\Rightarrow\\;\\; z = 2.005"
+ },
+ "w_target": {
+  "color": "14213D",
+  "tex": "\\theta_\\lambda = (G + \\lambda\\Psi)^{-1}\\,c"
  }
 }

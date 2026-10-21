@@ -193,5 +193,50 @@
   "file": "ols_I.png",
   "w_pt": 182.513,
   "h_pt": 15.979
+ },
+ "w_boot": {
+  "file": "w_boot.png",
+  "w_pt": 205.787,
+  "h_pt": 49.019
+ },
+ "w_vmech": {
+  "file": "w_vmech.png",
+  "w_pt": 169.174,
+  "h_pt": 33.187
+ },
+ "w_trunc": {
+  "file": "w_trunc.png",
+  "w_pt": 158.894,
+  "h_pt": 16.678
+ },
+ "w_fo": {
+  "file": "w_fo.png",
+  "w_pt": 205.549,
+  "h_pt": 15.979
+ },
+ "w_v0": {
+  "file": "w_v0.png",
+  "w_pt": 125.449,
+  "h_pt": 14.762
+ },
+ "w_K": {
+  "file": "w_K.png",
+  "w_pt": 224.897,
+  "h_pt": 19.787
+ },
+ "w_ci": {
+  "file": "w_ci.png",
+  "w_pt": 116.269,
+  "h_pt": 20.324
+ },
+ "w_alpha": {
+  "file": "w_alpha.png",
+  "w_pt": 190.449,
+  "h_pt": 9.907
+ },
+ "w_target": {
+  "file": "w_target.png",
+  "w_pt": 83.163,
+  "h_pt": 13.091
  }
 }
