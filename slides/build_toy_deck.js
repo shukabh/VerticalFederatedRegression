@@ -20,7 +20,7 @@ const NAMES = ["intercept", "education", "health", "age", "benefits"];
     search: fa.FaSearch, layers: fa.FaLayerGroup, check: fa.FaCheckCircle, warn: fa.FaExclamationTriangle,
     shield: fa.FaShieldAlt, users: fa.FaUsers, chart: fa.FaChartLine, ruler: fa.FaRulerCombined,
   });
-  const { title, circleIcon, numCircle, card, txt, bullets, chip, tableOpts, hdr } = h;
+  const { title, circleIcon, numCircle, card, txt, bullets, chip, tableOpts, hdr, latex } = h;
   const phase = (s, label, col = INK) => chip(s, label, 10.7, 0.45, 2.0, col);
   // a small matrix as a table: rows of numbers, optional row/column labels and per-cell fills
   const mat = (s, M, x, y, { cw = 0.75, rh = 0.32, fs = 12, d = 2, rowLab, colLab, fill, labW = 1.1 } = {}) => {
@@ -35,7 +35,7 @@ const NAMES = ["intercept", "education", "health", "age", "benefits"];
       border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", margin: [1, 3, 1, 3] });
   };
   const gFill = (i, j) => (i < 3 && j < 3 ? [BLUE_BLK] : i >= 3 && j >= 3 ? [O_BLK] : [EMBER, WHITE]);
-  const S1 = T.stage1, S2 = T.stage2, SC = T.scale, TOY = T.toy;
+  const S1 = T.stage1, S2 = T.stage2, SC = T.scale, TOY = T.toy, LK = T.link;
   const matched = (id) => T.I.includes(id);
 
   // ======================= Title =======================
@@ -147,21 +147,102 @@ const NAMES = ["intercept", "education", "health", "age", "benefits"];
     card(s, 0.6, 1.75, 4.6, 3.65, RBLUE_L);
     txt(s, "R's padded identifiers", { x: 0.85, y: 1.88, w: 4.2, h: 0.4, fontSize: 15, bold: true, color: RBLUE });
     const rids = [...T.R_rows.map((r) => r[0]), T.R_dummy];
-    s.addTable([hdr(["id", "F_k(id)", "result"]), ...rids.map((id) => [id === T.R_dummy ? `${id} (dummy)` : id, T.oprf[id],
+    s.addTable([hdr(["id", "F_k(id)", "result"]), ...rids.map((id) => [id === T.R_dummy ? `${id} (dummy)` : id, String(T.oprf[id]),
       { text: T.psi[id] ? `match → position ${T.psi[id]}` : "no match", options: T.psi[id] ? { bold: true, color: RBLUE } : { color: MUTED } }])],
       { x: 0.85, y: 2.35, colW: [1.25, 1.1, 1.85], rowH: 0.4, fontFace: BODY, fontSize: 13, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", fill: { color: WHITE } });
     card(s, 5.45, 1.75, 7.25, 3.65, EMBER_L);
     txt(s, "O's padded register, after its secret shuffle τ", { x: 5.7, y: 1.88, w: 6.8, h: 0.4, fontSize: 15, bold: true, color: EMBER });
     const oids = [...T.O_rows.map((r) => r[0]), T.O_dummy];
-    s.addTable([hdr(["id", "F_k(id)", "position τ", "note"]), ...oids.map((id) => [id === T.O_dummy ? `${id} (dummy)` : id, T.oprf[id], String(T.tau[id]),
+    s.addTable([hdr(["id", "F_k(id)", "position τ", "note"]), ...oids.map((id) => [id === T.O_dummy ? `${id} (dummy)` : id, String(T.oprf[id]), String(T.tau[id]),
       { text: id === T.O_dummy ? "x_O = 0, y = 0" : "", options: { color: MUTED } }])],
       { x: 5.7, y: 2.35, colW: [1.4, 1.1, 1.3, 2.9], rowH: 0.4, fontFace: BODY, fontSize: 13, color: TEXT, border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", fill: { color: WHITE } });
     card(s, 0.6, 5.65, 6.0, 1.1, RBLUE_L);
     txt(s, [{ text: "R learns: ", options: { bold: true, color: RBLUE } }, { text: `π(104) = ${T.psi["104"]}, π(221) = ${T.psi["221"]}; 317 is not in the register.` }], { x: 0.85, y: 5.72, w: 5.6, h: 0.95, fontSize: 14.5, valign: "middle" });
     card(s, 6.75, 5.65, 5.95, 1.1, EMBER_L);
     txt(s, [{ text: "O learns: ", options: { bold: true, color: EMBER } }, { text: `${T.n_R_max} queries and its own ${T.n_O_bar} rows; not which matched, nor that R has 3 people.` }], { x: 7.0, y: 5.72, w: 5.55, h: 0.95, fontSize: 14.5, valign: "middle" });
-    txt(s, "F_k(id): O's keyed hash (OPRF), truncated here for display.", { x: 0.6, y: 7.0, w: 8, h: 0.3, fontSize: 11, italic: true, color: MUTED });
+    txt(s, "F_k(id): O's keyed hash (OPRF), worked out with toy numbers on the next three slides.", { x: 0.6, y: 7.0, w: 8, h: 0.3, fontSize: 11, italic: true, color: MUTED });
     s.addNotes("Phase 1. R pads its three identifiers with a dummy to the public cap of four. Through the OPRF it obtains O's keyed hash of each identifier without revealing it. O pads its register with a dummy row to six rows and shuffles them with a secret permutation tau, fresh for this run. Labeled PSI then tells R which of its hashed identifiers appear in O's register and, for each, a label: the row's position after the shuffle. So R learns that 104 sits at position 6 and 221 at position 3, which defines the bijection pi, and that 317 is not in the register. O learns only the padded sizes.");
+  }
+
+  // ======================= Phase 1 by hand: the OPRF =======================
+  {
+    const s = pres.addSlide(); title(s, "Phase 1 by hand: the OPRF", `Toy group: squares mod p = ${LK.p}, of prime order q = ${LK.q}; O's key k = ${LK.k}; no security`); phase(s, "Phase 1 · R ↔ O", SLATE);
+    card(s, 0.6, 1.75, 12.1, 0.75, MIST);
+    [[RBLUE, "R blinds: α = h^r mod p, with h = H₁(id), r random"], [EMBER, "O raises to its key: β = α^k mod p"], [RBLUE, "R unblinds: h^k = β^{1/r} mod p, 1/r taken mod q"]]
+      .forEach(([col, t], i) => {
+        numCircle(s, i + 1, 0.8 + i * 4.0, 1.92, 0.4, col, 13);
+        txt(s, t, { x: 1.3 + i * 4.0, y: 1.8, w: 3.45, h: 0.65, fontSize: 13, valign: "middle" });
+      });
+    const sent = { fill: { color: RBLUE_L } }, back = { fill: { color: EMBER_L } }, out = { bold: true };
+    s.addTable([hdr(["id", "h = H₁(id)", "r", "α = h^r", "β = α^k", "1/r mod q", "h^k = β^{1/r}", "item F_k(id)", "label key K(id)"]),
+      ...LK.oprf.map((o) => [o.id === T.R_dummy ? `${o.id} (dummy)` : o.id, String(o.h), String(o.r), { text: String(o.alpha), options: sent },
+        { text: String(o.beta), options: back }, String(o.rinv), String(o.hk), { text: String(o.F), options: out }, { text: String(o.K), options: out }])],
+    Object.assign(tableOpts([1.35, 1.3, 0.8, 1.2, 1.2, 1.2, 1.5, 1.7, 1.85]), { y: 2.75, rowH: 0.4, fontSize: 13, align: "center" }));
+    const o104 = LK.oprf.find((o) => o.id === "104");
+    const cards = [
+      [EMBER_L, EMBER, "O never sees the ids", `It sees only α = ${LK.oprf.map((o) => o.alpha).join(", ")}. Because r is random, each could be any element of the group. O makes exactly n_R^max = ${T.n_R_max} evaluations.`],
+      [MIST, SLATE, "Check", `O knows k, so for its own rows it computes h^k directly: H₁(104)^${LK.k} mod ${LK.p} = ${o104.hk}, the value R unblinded. Same h^k, same item: 104 can match.`],
+      [RBLUE_L, RBLUE, "Two outputs from h^k", `The item F_k(id) = H₂("item", id, h^k) mod t, for matching, and the label key K(id) = H₂("label", id, h^k) mod t, for opening labels. t = ${LK.t}.`],
+    ];
+    cards.forEach(([fill, col, hd, b], i) => {
+      const x = 0.6 + i * 4.1;
+      card(s, x, 5.0, 3.9, 1.85, fill);
+      txt(s, hd, { x: x + 0.25, y: 5.1, w: 3.4, h: 0.35, fontSize: 14.5, bold: true, color: col });
+      txt(s, b, { x: x + 0.25, y: 5.5, w: 3.4, h: 1.3, fontSize: 12.5 });
+    });
+    s.addNotes(`The OPRF with toy numbers. The group is the squares modulo the safe prime ${LK.p}, which has prime order ${LK.q}; O's key for this run is k = ${LK.k}. For each of its four padded identifiers, R hashes the identifier into the group, h = H1(id), picks a random exponent r and sends alpha = h^r. O raises alpha to its key and returns beta. R raises beta to the inverse of r modulo the group order, which strips off r and leaves h^k. From h^k two hashes give the item F_k(id), used for matching, and the label key K(id), used to open labels; both are numbers modulo t = ${LK.t}. O only ever sees the alphas, which are uniformly random group elements. As a check, O, which knows k, computes h^k for its own row 104 directly and gets the same ${o104.hk} that R unblinded, so the items agree and 104 will match. Real runs use an elliptic-curve group of about 2^256 elements.`);
+  }
+
+  // ======================= Phase 1 by hand: O's polynomials =======================
+  {
+    const s = pres.addSlide(); title(s, "Phase 1 by hand: O's polynomials", `O hashes its rows with k, pads each position with the row's label key, and interpolates mod t = ${LK.t}`); phase(s, "Phase 1 · O", EMBER);
+    const hi = (id) => (T.I.includes(id) ? { fill: { color: HILITE } } : {});
+    s.addTable([hdr(["τ(j)", "id", "item y_j", "label key K", "label ℓ_j = τ + K"]),
+      ...LK.O.map((o) => [String(o.tau), o.id === T.O_dummy ? `${o.id} (dummy)` : o.id, String(o.F), String(o.K), { text: String(o.label), options: { bold: true } }]
+        .map((c) => (typeof c === "string" ? { text: c, options: hi(o.id) } : { text: c.text, options: Object.assign({}, c.options, hi(o.id)) })))],
+    Object.assign(tableOpts([0.9, 1.5, 1.4, 1.45, 1.95]), { y: 1.75, rowH: 0.4, fontSize: 13, align: "center" }));
+    txt(s, "Highlighted: the rows R's queries will match. O does not know this. y_j = F_k(id), all mod t.", { x: 0.6, y: 4.6, w: 7.2, h: 0.3, fontSize: 11.5, italic: true, color: MUTED });
+    card(s, 0.6, 5.0, 7.2, 1.85, "F7F9FC");
+    txt(s, "Reading a label", { x: 0.85, y: 5.1, w: 6.7, h: 0.35, fontSize: 14.5, bold: true, color: SLATE });
+    const o104 = LK.O.find((o) => o.id === "104");
+    txt(s, `ℓ_j is the position padded with the row's label key. Only a party that ran the OPRF on that id has K(id) and can strip the pad: for 104, ${o104.label} − ${o104.K} = ${o104.tau}. The real protocol encrypts the label under a key derived from F′_k(id); the additive pad is its toy stand-in.`,
+      { x: 0.85, y: 5.5, w: 6.75, h: 1.3, fontSize: 12.5 });
+
+    card(s, 8.0, 1.75, 4.7, 5.1, MIST);
+    txt(s, "Two polynomials mod t", { x: 8.25, y: 1.88, w: 4.2, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: INK });
+    latex(s, "ps_poly", 8.25, 2.35, { size: 11, maxW: 4.2 });
+    txt(s, "P is zero exactly at O's six items. L passes through every (y_j, ℓ_j). Coefficients, lowest degree first:", { x: 8.25, y: 3.0, w: 4.2, h: 0.65, fontSize: 12 });
+    s.addTable([hdr(["X^m", "P", "L"]), ...LK.P.map((c_, m) => [m === 0 ? "1" : m === 1 ? "X" : `X^${m}`, String(c_), m < LK.L.length ? String(LK.L[m]) : "—"])],
+      { x: 8.25, y: 3.7, colW: [0.9, 1.6, 1.6], rowH: 0.3, fontFace: BODY, fontSize: 12, color: TEXT, align: "center", border: { type: "solid", color: LINE, pt: 0.75 }, valign: "middle", fill: { color: WHITE } });
+    txt(s, "One bin b here. Real runs hash items into thousands of bins, each with its own small P and L.", { x: 8.25, y: 6.2, w: 4.2, h: 0.55, fontSize: 11, italic: true, color: MUTED });
+    s.addNotes(`O prepares its side. It knows k, so it computes h^k, the item and the label key for each of its six padded rows directly, in the order of its secret shuffle. Each row's label is its position plus its label key, modulo t: a one-time pad that only a holder of the label key can remove, and only someone who ran the OPRF on that identifier has it. O then builds two polynomials: P, the product of (X minus item) over its six items, which vanishes exactly at its items; and L, of degree five, which passes through each item paired with its padded label. In real runs items are spread over thousands of bins by hashing, and each bin gets its own low-degree polynomials; here everything is one bin. O does not know which of its rows R will match; the highlight is only for the reader.`);
+  }
+
+  // ======================= Phase 1 by hand: query, evaluate, decrypt =======================
+  {
+    const s = pres.addSlide(); title(s, "Phase 1 by hand: query and answer", "Shaded values travel inside BFV ciphertexts under R's own key: O computes on them without seeing them"); phase(s, "Phase 1 · R ↔ O", SLATE);
+    const sent = { fill: { color: RBLUE_L } }, inner = { fill: { color: MIST }, color: MUTED }, back = { fill: { color: EMBER_L } };
+    const K = Object.fromEntries(LK.oprf.map((o) => [o.id, o.K]));
+    s.addTable([hdr(["id", "q = F_k(id)", "q²", "q⁴", "P(q)", "ρ (mask)", "ρ·P(q)", "L(q)", "R's reading"]),
+      ...LK.queries.map((x) => [x.id === T.R_dummy ? `${x.id} (dummy)` : x.id,
+        { text: String(x.q), options: sent }, { text: String(x.q2), options: sent }, { text: String(x.q4), options: sent },
+        { text: String(x.Pq), options: inner }, String(x.rho), { text: String(x.rhoPq), options: Object.assign({ bold: true }, back) }, { text: String(x.Lq), options: back },
+        x.match ? { text: `match: τ = ${x.Lq} − ${K[x.id]} = ${x.pos}`, options: { bold: true, color: RBLUE, align: "left" } } : { text: "no match", options: { color: MUTED, align: "left" } }])],
+    Object.assign(tableOpts([1.5, 1.15, 0.95, 0.95, 0.95, 1.05, 1.05, 1.0, 3.5]), { y: 1.75, rowH: 0.42, fontSize: 13, align: "center" }));
+    txt(s, "Blue: sent by R.  Grey: inside O's computation, never decrypted.  Orange: returned to R.", { x: 0.6, y: 4.08, w: 12.1, h: 0.3, fontSize: 11.5, italic: true, color: MUTED });
+    const cards = [
+      [RBLUE_L, RBLUE, "1  R sends", "Each item, encrypted under R's own BFV key, as q, q², q⁴ (windowing). One item per query here; real runs cuckoo-hash the items into bins, at most one per bin."],
+      [EMBER_L, EMBER, "2  O evaluates", "q³ = q·q², q⁵ = q·q⁴, q⁶ = q²·q⁴ cost one multiplication. Then P(q) and L(q) from its coefficients, and P(q) times a fresh random ρ ≠ 0. All on ciphertexts."],
+      [RBLUE_L, RBLUE, "3  R decrypts", "ρ·P(q) = 0 means a match: 104 and 221. Then τ = L(q) − K(id) mod t. For 317 and the dummy, ρ·P(q) is a random nonzero number and L(q) is meaningless."],
+    ];
+    cards.forEach(([fill, col, hd, b], i) => {
+      const x = 0.6 + i * 4.1;
+      card(s, x, 4.55, 3.9, 2.0, fill);
+      txt(s, hd, { x: x + 0.25, y: 4.65, w: 3.4, h: 0.35, fontSize: 14.5, bold: true, color: col });
+      txt(s, b, { x: x + 0.25, y: 5.05, w: 3.4, h: 1.45, fontSize: 12.5 });
+    });
+    txt(s, "Why ρ: without it, P(q) at a non-match would leak information about O's items.", { x: 0.6, y: 6.7, w: 12.1, h: 0.3, fontSize: 12, italic: true, color: MUTED });
+    s.addNotes(`R's queries and O's answers. For each of its four items, R sends encryptions of q, q squared and q to the fourth, under its own BFV key; O cannot read them. From these O gets every power up to six with one more multiplication, evaluates its two polynomials with its plaintext coefficients, and multiplies the membership value by a fresh random rho, so that a non-match returns a uniformly random nonzero number rather than P(q), which would carry information about O's items. R decrypts. For 104 and 221 the membership value is zero, so they match, and subtracting the label key from L(q) gives positions ${LK.queries[0].pos} and ${LK.queries[1].pos}. For 317 and the dummy the value is nonzero: no match, and L(q) is meaningless. The grey column is shown only for the reader: P(q) itself never leaves O's encrypted computation.`);
   }
 
   // ======================= Phase 1: A =======================

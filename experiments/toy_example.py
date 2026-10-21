@@ -4,7 +4,8 @@ toy_example.py -- every number of the worked-example deck (slides/build_toy_deck
 R holds 3 cohort records with 2 features; O holds 5 register records with 2 features and y.
 The script follows the protocol phase by phase and records, in the clear, what each step computes:
   0 setup      bounds, sensitivities, the protocol's calibration (calibration_protocol.py)
-  1 link       padding, O's secret shuffle tau, the PSI outcome, R's exact block A
+  1 link       padding, O's secret shuffle tau, the OPRF and labeled PSI by hand (toy group, no security),
+               the PSI outcome, R's exact block A
   2 upload     R's vectors b and xdot in O's shuffled order
   3 aggregate  the encrypted sums B, C, c_R, c_O, y'y, and their slots in the packed ciphertexts
   4 release    the release algebra on one number (toy modulus, no security), then the two DP releases
@@ -15,7 +16,6 @@ Usage: python experiments/toy_example.py   (writes reports/toy_example/toy.json)
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 import os
 import sys
@@ -43,9 +43,90 @@ R_DUMMY, O_DUMMY = "9d1", "7e5"               # random identifiers that never ma
 TAU = {"150": 1, O_DUMMY: 2, "221": 3, "088": 4, "399": 5, "104": 6}   # O's secret shuffle: id -> position
 
 
-def oprf(i):
-    """Stand-in for F_k(id): a keyed hash, shown truncated (illustration only)."""
-    return hmac.new(b"run-key", i.encode(), hashlib.sha256).hexdigest()[:6]
+# Phase 1 by hand: a toy group and plaintext modulus, to follow the arithmetic (no security)
+P_GRP, Q_GRP = 1019, 509        # safe prime p = 2q + 1: the squares mod p form a group of prime order q
+T_PSI = 65537                   # PSI plaintext modulus (prime): items, labels and polynomials live mod t
+PSI_SEED = 2026                 # O's key k, R's blinding exponents r and O's masks rho
+
+
+def H(*parts):
+    return int.from_bytes(hashlib.sha256("|".join(map(str, parts)).encode()).digest(), "big")
+
+
+def H1(i):
+    """Hash into the group: a square mod p other than 1."""
+    x = H("H1", i) % (P_GRP - 3) + 2
+    return x * x % P_GRP
+
+
+def oprf_out(i, hk):
+    """2HashDH's outputs from h^k = H1(id)^k: the item F_k(id), for matching, and the label key K(id), mod t."""
+    return H("item", i, hk) % T_PSI, H("label", i, hk) % T_PSI
+
+
+def poly_mul(a, b):
+    out = [0] * (len(a) + len(b) - 1)
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            out[i + j] = (out[i + j] + x * y) % T_PSI
+    return out
+
+
+def poly_eval(cs, x):
+    v = 0
+    for c_ in reversed(cs):
+        v = (v * x + c_) % T_PSI
+    return v
+
+
+def interpolate(xs, ys):
+    """Coefficients (lowest degree first) of the polynomial through (xs, ys) mod t, by Lagrange."""
+    out = [0] * len(xs)
+    for j, (xj, yj) in enumerate(zip(xs, ys)):
+        num, den = [1], 1
+        for m, xm in enumerate(xs):
+            if m != j:
+                num, den = poly_mul(num, [(-xm) % T_PSI, 1]), den * (xj - xm) % T_PSI
+        w = yj * pow(den, -1, T_PSI) % T_PSI
+        out = [(o + w * c_) % T_PSI for o, c_ in zip(out, num)]
+    return out
+
+
+def link_by_hand(R_ids):
+    """Phase 1 with toy numbers: the OPRF on R's padded ids, O's items, labels and polynomials (one bin),
+    and the evaluation and decryption of R's queries. Values inside BFV ciphertexts are shown in the clear."""
+    rng = np.random.default_rng(PSI_SEED)
+    k = int(rng.integers(2, Q_GRP))
+    oprf_rows = []
+    for i in R_ids:
+        h, r_ = H1(i), int(rng.integers(2, Q_GRP))
+        alpha = pow(h, r_, P_GRP)
+        beta = pow(alpha, k, P_GRP)
+        rinv = pow(r_, -1, Q_GRP)
+        hk = pow(beta, rinv, P_GRP)
+        assert hk == pow(h, k, P_GRP)
+        F, K = oprf_out(i, hk)
+        oprf_rows.append(dict(id=i, h=h, r=r_, alpha=alpha, beta=beta, rinv=rinv, hk=hk, F=F, K=K))
+    O_rows = []
+    for i in sorted(TAU, key=TAU.get):                              # O's padded register in tau order
+        hk = pow(H1(i), k, P_GRP)
+        F, K = oprf_out(i, hk)
+        O_rows.append(dict(id=i, h=H1(i), hk=hk, F=F, K=K, tau=TAU[i], label=(TAU[i] + K) % T_PSI))
+    ys = [o["F"] for o in O_rows]
+    assert len({*ys, *(o["F"] for o in oprf_rows)}) == len({*TAU, *R_ids})       # no item collisions
+    Pc = [1]
+    for y_ in ys:
+        Pc = poly_mul(Pc, [(-y_) % T_PSI, 1])                       # membership: roots at O's items
+    Lc = interpolate(ys, [o["label"] for o in O_rows])              # label: item -> padded position
+    queries = []
+    for o in oprf_rows:
+        qv = o["F"]
+        Pq, rho_, Lq = poly_eval(Pc, qv), int(rng.integers(1, T_PSI)), poly_eval(Lc, qv)
+        hit = rho_ * Pq % T_PSI == 0
+        queries.append(dict(id=o["id"], q=qv, q2=qv * qv % T_PSI, q4=pow(qv, 4, T_PSI), Pq=Pq, rho=rho_,
+                            rhoPq=rho_ * Pq % T_PSI, Lq=Lq, match=hit, pos=(Lq - o["K"]) % T_PSI if hit else None))
+    assert {x["id"]: x["pos"] for x in queries if x["match"]} == {i: TAU[i] for i in R_ids if i in TAU}
+    return dict(p=P_GRP, q=Q_GRP, t=T_PSI, k=k, oprf=oprf_rows, O=O_rows, P=Pc, L=Lc, queries=queries)
 
 
 def r(x, k=3):
@@ -133,8 +214,8 @@ def main():
 
     # ---------------- 1 link
     R_ids = [i for i, *_ in R_ROWS] + [R_DUMMY]
-    O_ids = [i for i, *_ in O_ROWS] + [O_DUMMY]
     psi = {i: TAU.get(i) for i in R_ids if i in TAU}                 # R learns: matched id -> position
+    link = link_by_hand(R_ids)
     A = Z[:, :d_R].T @ Z[:, :d_R]
 
     # ---------------- 2 upload: vectors over the n_O_bar positions, in tau order
@@ -207,7 +288,8 @@ def main():
     out = dict(
         seed=seed, max_abs_z=zmax, names=names, eps=EPS, delta=DELTA, f1=F1, theta_star=THETA_STAR, alpha=ALPHA, alpha_ci=ALPHA_CI, z=zq,
         R_rows=R_ROWS, O_rows=O_ROWS, n_R_max=N_R_MAX, n_O_bar=N_O_BAR, R_dummy=R_DUMMY, O_dummy=O_DUMMY,
-        oprf={i: oprf(i) for i in sorted(set(R_ids + O_ids))}, tau=TAU, order=order, I=I, psi=psi,
+        oprf={**{o["id"]: o["F"] for o in link["oprf"]}, **{o["id"]: o["F"] for o in link["O"]}}, link=link,
+        tau=TAU, order=order, I=I, psi=psi,
         Z=r(Z), yI=r(yI), G=r(G), c=r(c), yy=round(yy, 3), rankG=int(np.linalg.matrix_rank(G)),
         bounds=dict(B_R=B_R, B_O=B_O, B_y=B_y), Delta=Delta, Delta_G=Delta_G, rho=rho, sigma1=sigma1, sigma2=sigma2,
         A=r(A), b=r(b), X=r(X), Ocol=r(Ocol), Bm=r(Bm), Cm=r(Cm), cR=r(cR), cO=r(cO),
