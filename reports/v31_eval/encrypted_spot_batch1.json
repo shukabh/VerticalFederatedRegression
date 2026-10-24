@@ -1,0 +1,12 @@
+{
+ "note": "First batch of the encrypted spot check (same data and settings as encrypted_spot.json: n = 10,000, eps = 2, delta = 1e-9, kappa = 40, data seed 11). Recorded from the run log and a post-hoc conditional comparison; this batch did not save the raw decrypted noise. encrypted_spot.json holds the second batch (6 runs, raw noise recorded).",
+ "runs": [
+  {"k": 0, "wall_s": 34, "lambda": 9296, "kind": "I", "refused": false, "max_abs_z_given_lambda": 1.59, "wald_covered": 11},
+  {"k": 1, "wall_s": 33, "lambda": 8077, "kind": "I", "refused": false, "max_abs_z_given_lambda": 3.85, "second_largest_abs_z_given_lambda": 2.43, "wald_covered": 9},
+  {"k": 2, "wall_s": 32, "lambda": 8272, "kind": "I", "refused": false, "max_abs_z_given_lambda": 2.33, "wald_covered": 10},
+  {"k": 3, "wall_s": 31, "lambda": 8132, "kind": "I", "refused": false, "max_abs_z_given_lambda": 1.71, "wald_covered": 11}
+ ],
+ "sim_lambda_95": [7659, 10187],
+ "coverage": "41/44",
+ "max_abs_z_unconditional": 4.21
+}
