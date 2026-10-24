@@ -113,7 +113,7 @@
 \maketitle
 
 \begin{abstract}
-We study two-party vertical federated least squares between a researcher $\Rp$, who holds a cohort with features $\bXR$, and an organization $\Op$ (for example a national statistical agency), which holds a register with features $\bXO$ and the response $\by$. Records are linked by labeled private set intersection with an oblivious pseudorandom function: $\Rp$ learns which of its cohort members are in $\Op$'s register and where, and $\Op$ learns only public sizes. The statistics that depend on $\Op$'s data are aggregated under two-party threshold CKKS. The secret key is split additively between the parties, so neither can decrypt alone, and $\Op$ never decrypts at all. Instead, $\Op$ adds the differential-privacy noise inside its share of each decryption, as an exact discrete Gaussian on the coefficient lattice that also floods the encryption error. $\Rp$ therefore receives only noisy statistics, and $\Op$ can enforce a privacy budget by withholding its share. $\Rp$'s own Gram block is computed locally and is never noised. Each run makes two releases. The first, of the Gram blocks only, chooses the ridge. The second, whose noise is independent of that choice, gives the estimate, a Wald interval for the ridge target from a parametric bootstrap of the mechanism, and a bias-aware interval for the regression coefficients. We give the exact replace-one sensitivity, zCDP accounting with a tight conversion, simulation-based output privacy against an honest-but-curious researcher, and the statistical guarantees of the two-stage procedure. In a simulation of the release and solve steps the Wald intervals cover $94.4$--$96.2\%$ (target $95.5\%$) with and without the ridge. The accuracy results so far use an earlier single-release mechanism. On real data, prediction comes within $10\%$ of non-private test error at $1.4$k--$11$k matched records for $\varepsilon \in \{1, 2\}$, and coefficient-level accuracy needs roughly ten times more data. \tocheck{The accuracy numbers in this abstract come from the earlier single-release mechanism. Replace them after the reruns under v3.1 (two releases, ridge from stage 1, delta = 1e-9, bias correction off).}
+We study two-party vertical federated least squares between a researcher $\Rp$, who holds a cohort with features $\bXR$, and an organization $\Op$ (for example a national statistical agency), which holds a register with features $\bXO$ and the response $\by$. Records are linked by labeled private set intersection with an oblivious pseudorandom function: $\Rp$ learns which of its cohort members are in $\Op$'s register and where, and $\Op$ learns only public sizes. The statistics that depend on $\Op$'s data are aggregated under two-party threshold CKKS. The secret key is split additively between the parties, so neither can decrypt alone, and $\Op$ never decrypts at all. Instead, $\Op$ adds the differential-privacy noise inside its share of each decryption, as an exact discrete Gaussian on the coefficient lattice that also floods the encryption error. $\Rp$ therefore receives only noisy statistics, and $\Op$ can enforce a privacy budget by withholding its share. $\Rp$'s own Gram block is computed locally and is never noised. Each run makes two releases. The first, of the Gram blocks only, chooses the ridge. The second, whose noise is independent of that choice, gives the estimate, a Wald interval for the ridge target from a parametric bootstrap of the mechanism, and a bias-aware interval for the regression coefficients. We give the exact replace-one sensitivity, zCDP accounting with a tight conversion, simulation-based output privacy against an honest-but-curious researcher, and the statistical guarantees of the two-stage procedure. In a simulation of the release and solve steps the Wald intervals cover $94.4$--$96.2\%$ (target $95.5\%$) with and without the ridge. The accuracy results so far use an earlier single-release mechanism. On real data, prediction comes within $10\%$ of non-private test error at $1.4$k--$11$k matched records for $\varepsilon \in \{1, 2\}$, and coefficient-level accuracy needs roughly ten times more data. End-to-end runs of a full OpenFHE implementation on the protein dataset ($19{,}206$ matched records) reproduce a plaintext simulation of the mechanism and, after each party normalizes its own block of every row, come within $2$--$6\%$ of non-private test error at $\varepsilon \in \{1, 4\}$. \tocheck{The accuracy numbers in this abstract come from the earlier single-release mechanism. Replace them after the reruns under v3.1 (two releases, ridge from stage 1, delta = 1e-9, bias correction off).}
 \end{abstract}
 
 \tableofcontents
@@ -139,7 +139,8 @@ This document proposes a cryptographic protocol for \emph{vertical federated lea
   \item \textbf{Protocol.} A two-party protocol that combines OPRF-based labeled PSI, a seeded upload under $\Rp$'s key share converted by $\Op$, plaintext--ciphertext aggregation, and a release in which $\Op$'s decryption share carries the DP noise (Section~\ref{sec:protocol}, Algorithms~\ref{alg:setup}--\ref{alg:sub}).
   \item \textbf{Privacy.} The exact replace-one sensitivity of the released statistics; a lattice discrete-Gaussian release that is exactly $\rho_s$-zCDP and statistically floods every encryption error term; simulation-based output privacy; input and cohort privacy (Sections~\ref{sec:privacy} and~\ref{sec:input}).
   \item \textbf{Statistics.} A two-stage ridge whose choice is independent of the noise in the estimation release; two named estimands; a Wald interval from a parametric bootstrap of the mechanism; a bias-aware interval for the regression coefficients; and the leading-order mechanism bias with an optional correction (Sections~\ref{sec:stats} and~\ref{sec:bias}).
-  \item \textbf{Evaluation.} Exactness of the cryptographic layer, the calibration of the two-release protocol, interval coverage, coefficient accuracy against the intersection size, and a benchmark against AdaSSP on 29 UCI datasets (Section~\ref{sec:eval}).
+  \item \textbf{Preprocessing.} Per-party transforms with public constants that make typical records fill the clipping bounds, which no joint computation is needed for (Section~\ref{sec:protocol:preproc}).
+  \item \textbf{Evaluation.} Exactness of the cryptographic layer, the calibration of the two-release protocol, interval coverage, end-to-end runs of a full implementation on real and synthetic data, coefficient accuracy against the intersection size, and a benchmark against AdaSSP on 29 UCI datasets (Section~\ref{sec:eval}).
 \end{enumerate}
 
 % ==============================================================
@@ -302,9 +303,9 @@ Figure~\ref{fig:protocol} shows the message flow and Algorithms~\ref{alg:setup}-
   \label{fig:protocol}
 \end{figure}
 
-\paragraph{Phase 0: setup (Algorithm~\ref{alg:setup}).} The parties agree on the scope, the caps, the budget and the statistical constants, and choose the clipping bounds from public reference data or domain knowledge. The sensitivities follow from the bounds alone (Section~\ref{sec:privacy:sens}). $\Op$ calibrates the CKKS scale and the noise (Algorithm~\ref{alg:sub}, \textsc{Calibrate}) and refuses the run if its ledger would exceed the cap. The parties run threshold key generation, and $\Op$ draws a fresh OPRF key, a fresh shuffle $\tau$, and prepares its PSI polynomials.
+\paragraph{Phase 0: setup (Algorithm~\ref{alg:setup}).} The parties agree on the scope, the caps, the budget and the statistical constants. Each party preprocesses its own columns with public constants (Section~\ref{sec:protocol:preproc}), and the clipping bounds are chosen on the preprocessed public reference data or from domain knowledge. The sensitivities follow from the bounds alone (Section~\ref{sec:privacy:sens}). $\Op$ calibrates the CKKS scale and the noise (Algorithm~\ref{alg:sub}, \textsc{Calibrate}) and refuses the run if its ledger would exceed the cap. The parties run threshold key generation, and $\Op$ draws a fresh OPRF key, a fresh shuffle $\tau$, and prepares its PSI polynomials.
 
-\tocheck{ChooseBounds: the procedure (quantile grid on public reference data, minimizing first-order MSE plus squared clipping bias) has not been specified or evaluated in detail.}
+\tocheck{ChooseBounds: the evaluation uses the 99.5\% quantile of each block's norm on the preprocessed reference data. The optimized choice (quantile grid minimizing first-order MSE plus squared clipping bias) has not been specified or evaluated.}
 
 \paragraph{Phase 1: link (Algorithm~\ref{alg:link}).} $\Rp$ pads its identifiers to $n_R^{\max}$, obtains their OPRF values, and runs labeled PSI. It learns $I$ and the positions $\pi(i) = \tau(j)$, and computes its own block
 \[
@@ -357,8 +358,40 @@ never transmitted & $s_R$, $s_O$; $\bA$; raw $\bXR$, $\bXO$, $\by$; $\tau$; $k$;
   \item \textbf{Linkage.} An OPRF with a fresh key per run replaces a keyed hash with a key known to $\Rp$, and OPRF queries are padded and counted against a quota.
   \item \textbf{Input checks.} The homomorphic input checks of v3 are removed: they addressed only a malicious researcher, and one could be bypassed. Robustness to a deviating researcher is an extension (Section~\ref{sec:ext}).
   \item \textbf{Bias correction.} The zero-budget correction of Section~\ref{sec:bias} is now optional and off by default.
+  \item \textbf{Preprocessing.} Each party transforms its own columns in Setup, with public constants (Section~\ref{sec:protocol:preproc}).
 \end{enumerate}
 \end{remark}
+
+\subsection{Per-party preprocessing}
+\label{sec:protocol:preproc}
+
+The noise is sized to the clipping bounds, so every record whose norm is well below its bound wastes part of the budget. After standardization, real features are often heavy-tailed. On the protein dataset of Section~\ref{sec:eval:e2e}, the $99.5\%$ quantile of the squared norm of $\Rp$'s block (with the intercept) is $9.5$ times its median, and that of $\Op$'s block $19$ times. Bounds at these quantiles leave typical records using a small part of the budget. Setup therefore includes a preprocessing step, \textsc{Preprocess} in Algorithm~\ref{alg:sub}, in which each party transforms its own columns:
+\begin{enumerate}[noitemsep, label=(\roman*)]
+  \item standardize each column with public constants, from public reference data or domain knowledge;
+  \item optionally, a per-column tail transform with public constants: winsorizing at $|z| \le c$, a rank-Gaussian transform from public reference quantiles, or a log transform of a skewed variable;
+  \item optionally, \emph{block normalization}: each party scales its own block of every row to unit norm ($\Rp$ excludes the intercept, so $\|\bxd\|^2 = 2$; $\Op$ gets $\|\bx_O\| = 1$). A clipped log of the block norm may be appended as an extra feature to keep the magnitude.
+\end{enumerate}
+$\Op$ standardizes $y$, and may winsorize it, in the same way. The bounds are then chosen on the transformed reference data. For block normalization they are exact: $B_R^2 = 2$, $B_O = 1$.
+
+\begin{proposition}[Preprocessing preserves the guarantees]
+\label{prop:preproc}
+Let each party's transform be a fixed function of its own record and of public constants. Then the protocol run on the transformed data, with bounds that hold on the transformed domain, has the guarantees of Table~\ref{tab:guarantees} with respect to replace-one adjacency on the raw data.
+\end{proposition}
+
+\begin{proof}
+$\Op$'s transform maps one raw record to one transformed record, so changing one raw record $(\bx_O, y)$ changes exactly one transformed record, which still satisfies the bounds; $\Rp$'s records are fixed under $\sim$. The sensitivity of Section~\ref{sec:privacy:sens} therefore bounds the change, and the rest of the analysis is unchanged. The constants are data-independent, as \textsc{Calibrate}'s outputs must be. $\Rp$ may standardize with its own constants, since its data are not protected against itself, but it commits to $B_R$.
+\end{proof}
+
+The estimand is the regression on the transformed features. Winsorizing and log transforms keep the coefficients interpretable. Block normalization changes their meaning: each block contributes through its direction only, unless the log-norm feature is appended. It is therefore the choice for prediction rather than for interpreting coefficients.
+
+\paragraph{Why not joint row normalization.} Wang's preprocessing for AdaSSP normalizes each whole row $(\bx_R, \bx_O)$, which needs both parties' columns. We considered two ways to do this here.
+\begin{itemize}[noitemsep]
+  \item \emph{Exact joint clipping} computes the scale factor $\min\{1, B/\|\bx\|\}$ under encryption from $\Rp$'s encrypted row norms and $\Op$'s plaintext ones. This needs a high-degree polynomial approximation and ciphertext--ciphertext products. Worse, scaling $\Rp$'s part by a factor that depends on $\Op$'s data makes $\bA$ depend on $\Op$'s data, so $\bA$ could no longer be exact.
+  \item \emph{Clipping only $\Op$'s part to the remaining budget} $B^2 - \|\bxd\|^2$ keeps $\bA$ exact and the circuit linear. $\Rp$ assigns each matched record to one of $K$ norm classes and uploads its selection vector and features split by class, still encrypted, and $\Op$ pre-clips its columns once per class in plaintext, at about $K$ times the upload and aggregation cost. On protein it does not pay. A joint budget alone raises $\Delta$ from $87.3$ to $102$, because the sensitivity is dominated by $\Op$'s own norm, which enters twice, and records with a small $\Rp$-norm may then use more of it. Keeping $\Op$'s separate cap as well lowers $\Delta$ only to $82$, about $12\%$ fewer records.
+\end{itemize}
+The gap is caused by heavy tails under loose bounds, not by the lack of a joint bound, and per-party transforms close most of it. In end-to-end runs on protein, block normalization brings private test error within $2$--$6\%$ of non-private, against $12$--$21\%$ with standardization alone (Table~\ref{tab:e2e_protein}).
+
+\tocheck{Preprocessing defaults: which transform to recommend for prediction and for interpretation; the appended log-norm feature and winsorizing y are not yet evaluated.}
 
 \clearpage  % place the algorithm pages before Section 7
 
@@ -834,6 +867,37 @@ Table~\ref{tab:coverage} simulates the release and solve steps of Algorithm~\ref
 
 \tocheck{The coverage table uses noise levels set directly (sigma-1 = 2.5 sigma-2). Repeat it with the calibrated sigma-1 and sigma-2 of a real budget, and on real data.}
 
+\subsection{End-to-end runs of the implementation}
+\label{sec:eval:e2e}
+
+These runs use the full implementation: OPRF and labeled PSI, threshold CKKS upload and aggregation, two releases with exact discrete-Gaussian noise inside $\Op$'s share, and the solver, with $\delta = 10^{-9}$ and about $40$--$45$\,s per run on one core per party.
+
+\paragraph{Real data.} The protein dataset ($45{,}730$ rows, 9 features) is split into a public reference set of $10\%$ (standardization and transform constants, $99.5\%$ bounds), a test set of $20\%$, and $\Op$'s register ($32{,}011$ rows, padded to $32{,}768$). $\Rp$ holds 4 features and $\Op$ the other 5 and $y$. $\Rp$'s cohort is $19{,}206$ register members plus $1{,}000$ people $\Op$ does not hold. Table~\ref{tab:e2e_protein} gives five encrypted runs per setting. Every median lies inside the $95\%$ range of a plaintext simulation of the same mechanism, so the encryption does not change what the mechanism produces. Pooled over all 30 runs, the Wald interval covers $\btheta_\lambda$ for $286$ of $300$ coefficients (target $0.955$).
+
+\begin{table}[ht]
+  \centering\small
+  \caption{Protein, $19{,}206$ matched records: test MSE of the private estimate (median of 5 encrypted runs), the $95\%$ range of a plaintext simulation of the same mechanism (2{,}000 draws), non-private least squares under the same preprocessing, their ratio, and the median ridge. Predicting zero gives $1.010$.}
+  \label{tab:e2e_protein}
+  \begin{tabular}{@{}lrcccccr@{}}
+    \toprule
+    Preprocessing & $\Delta$ & $\varepsilon$ & Encrypted & Simulated range & Non-private & Ratio & $\lambda$ \\
+    \midrule
+    standardize & 87.3 & 1 & 0.883 & 0.871--0.896 & 0.728 & 1.21 & 29{,}678 \\
+    standardize & 87.3 & 4 & 0.815 & 0.807--0.821 & 0.728 & 1.12 & 7{,}321 \\
+    winsorize $|z| \le 2$ & 40.5 & 1 & 0.850 & 0.838--0.855 & 0.726 & 1.17 & 12{,}552 \\
+    winsorize $|z| \le 2$ & 40.5 & 4 & 0.788 & 0.784--0.795 & 0.726 & 1.09 & 3{,}088 \\
+    block unit norm & 8.4 & 1 & 0.793 & 0.786--0.795 & 0.745 & 1.06 & 1{,}385 \\
+    block unit norm & 8.4 & 4 & 0.759 & 0.757--0.760 & 0.745 & 1.02 & 338 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Block normalization costs a little in the non-private fit ($0.745$ against $0.728$) and gains much more in the private one: at $\varepsilon = 4$ its private error, $0.759$, is within $4\%$ of the best non-private model. The ridge is on in every setting, so the coefficients remain shrunk ($63$--$82\%$ of the way from least squares to zero with block normalization); prediction recovers faster than the coefficients do.
+
+\paragraph{Synthetic data with the ridge off.} With the simulation population of Section~\ref{sec:eval:sim}, $20{,}000$ matched records in a $24{,}000$-row register and fixed data, 20 encrypted runs per setting gave $\lambda = 0$ every time. The estimate was within $4.0\%$ ($\varepsilon = 4$, $\kappa = 40$) and $2.5\%$ ($\varepsilon = 8$, $\kappa = 48$) of least squares (median relative distance), and the Wald interval covered $\btheta_\lambda$ for $0.950$ ($209/220$) and $0.927$ ($204/220$) of the coefficients, with standardized errors of mean $+0.04$ and $+0.03$ and s.d.\ $1.02$ and $1.05$.
+
+\tocheck{Coverage at epsilon = 8 (0.927) and for some protein settings (46 of 50) is slightly below 0.955. Repeat with about 100 runs per setting before drawing conclusions.}
+
 \subsection{Coefficient accuracy against intersection size (earlier mechanism)}
 \label{sec:eval:sim}
 
@@ -903,7 +967,7 @@ AdaSSP~\cite{wang2018revisiting} perturbs the same sufficient statistics and sol
 \end{itemize}
 Every method sees the same folds, and methods are compared by paired tests over folds (95\% CI of the mean difference, $t$ with 9 degrees of freedom).
 
-\tocheck{Real-data preprocessing: Wang's pipeline normalizes whole rows across both parties' features, which no party can do in the vertical setting, and scales y by the data maximum. Redo the comparison with per-party preprocessing and bounds from public information.}
+\tocheck{Real-data preprocessing: Wang's pipeline normalizes whole rows across both parties' features, which no party can do in the vertical setting, and scales y by the data maximum. Redo the comparison under v3.1 with per-party preprocessing (block normalization) and bounds from public reference data, against AdaSSP with Wang's joint normalization.}
 
 \begin{table}[t]
   \centering
@@ -993,7 +1057,7 @@ Doubling $\varepsilon$ roughly halves the records needed for prediction. Over th
 
 \paragraph{Prediction is not interpretation.} Test MSE includes the irreducible noise, so it is forgiving. The coefficients themselves, which are what a researcher asking ``do my variables predict this outcome?'' needs, take about ten times more data, and intervals for $\bbeta$ are informative only once the ridge is off or a public bound on $\|\bbeta\|$ is available.
 
-\paragraph{The gap to AdaSSP is the noise level, not the ridge rule.} Replacing the fixed ridge by an oracle one changed test MSE by at most $1.2\%$ at $\varepsilon = 1$; removing the ridge was far worse (27 times non-private on housing at $\varepsilon = 1$). What separates the methods is $\sigma$. Our sensitivity bounds $\bxd$, $\bx_{O}$ and $y$ separately, while Wang's preprocessing bounds the whole row. A replace-one sensitivity under a joint row bound would reduce $\sigma$, but a joint bound is not enforceable when no party sees the whole row.
+\paragraph{The gap to AdaSSP is the noise level, not the ridge rule.} Replacing the fixed ridge by an oracle one changed test MSE by at most $1.2\%$ at $\varepsilon = 1$; removing the ridge was far worse (27 times non-private on housing at $\varepsilon = 1$). What separates the methods is $\sigma$ relative to the data. Wang's preprocessing normalizes the whole row, so every record fills its bound. No party can do that in the vertical setting, but the per-party counterpart, block normalization (Section~\ref{sec:protocol:preproc}), recovers most of the gain: on protein it lowers $\Delta$ from $87.3$ to $8.4$ and brings private test error within $2$--$6\%$ of non-private (Table~\ref{tab:e2e_protein}).
 
 \paragraph{How well the data fill their bounds matters as much as $n$.} The noise is sized for the committed bounds, so headroom the data do not use is lost signal. After scaling by $\max|y|$, the typical $|y|$ is only $0.19$ of its bound on elevators and $0.24$ on wine, the two worst performers relative to their size. Choosing bounds that typical records come close to, and units or transforms that make this possible (for example log income), is part of using the protocol well.
 

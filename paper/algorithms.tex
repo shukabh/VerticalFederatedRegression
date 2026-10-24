@@ -15,7 +15,8 @@
 \begin{algorithmic}[1]
 \State \Bdo agree on the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the stage-1 share $f_1$ (and $f_y$), the validity target $\vartheta^\star$, the error level $\alpha$, the public bound $B_\beta^{\mathrm{pub}}$ and the ratio $\kappa_\Psi$
 \State \Odo $D_\Phi\gets\{j:\Phi(j)\}$; pad with dummy rows (fresh random identifiers, $\bx_O=\mathbf 0$, $y=0$) to $\bar n_O$; draw a fresh secret permutation $\tau$ of $[\bar n_O]$
-\State \Bdo $(B_R,B_O,B_y)\gets\textsc{ChooseBounds}$ from public reference data or domain knowledge \Comment{$B_R$ covers $\Rp$'s intercept}
+\State \Rdo and \Odo, each on its own columns only: $\textsc{Preprocess}$ with constants from public reference data or domain knowledge
+\State \Bdo $(B_R,B_O,B_y)\gets\textsc{ChooseBounds}$ on the preprocessed reference data, or from domain knowledge \Comment{$B_R$ covers $\Rp$'s intercept}
 \State $(\Delta,\Delta_{\neg yy})\gets\textsc{DeltaRep}(B_R,B_O,B_y)$;\quad $\Delta_G\gets\textsc{DeltaRep}(B_R,B_O,0)$;\quad $\Delta_y\gets B_y^2$
 \State $\textit{mode}\gets\textsf{joint}$ if $\Delta-\Delta_{\neg yy}\le10^{-9}\Delta$, otherwise $\textsf{separate}$ \Comment{release $\by^\top\by$ jointly only when it is free}
 \State \Odo $(\Omega,q_0,\{\sigma_{c,s},\rho_s,\delta_s\}_s)\gets\textsc{Calibrate}(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}},f_1,f_y,\{\Delta_s\},N,\kappa)$
@@ -158,7 +159,13 @@
   \State \Return $\mathit{ct}\boxplus\mathsf{BFV.Enc}_{\pk_B}(\mathbf 0)\boxplus(\mathbf e,0)$
 \EndFunction
 \Statex
-\Function{ChooseBounds}{$D_{\mathrm{ref}}$} grid over quantile levels of $\|\bxd\|$, $\|\bx_O\|$ and $|y|$ in public reference data; minimize
+\Function{Preprocess}{own columns, $D_{\mathrm{ref}}$} \Comment{each party separately; all constants public}
+  \State standardize each column with constants from $D_{\mathrm{ref}}$ or domain knowledge ($\Op$ also standardizes $y$)
+  \State optional tail transform per column: winsorize at $|z|\le c$, rank-Gaussian from the public quantiles, or log
+  \State optional block normalization: scale the party's block of every row to unit norm ($\Rp$ without the intercept)
+\EndFunction
+\Statex
+\Function{ChooseBounds}{$D_{\mathrm{ref}}$} grid over quantile levels of $\|\bxd\|$, $\|\bx_O\|$ and $|y|$ in the preprocessed reference data; minimize
 \Statex \hspace{\algorithmicindent}the first-order coefficient MSE plus the squared clipping bias
 \EndFunction
 \end{algorithmic}

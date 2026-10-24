@@ -55,6 +55,7 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 | 5 Solve and infer (Alg. 6) | `vfr/solve.py` | corrected Algorithm 6 (port of alg6.py with the paper's corrections) |
 | parties | `vfr/party_r.py`, `vfr/party_o.py`, `vfr/protocol.py`, `vfr/wire.py` | two processes, one socket; JSON header + binary fields, no pickle; per-message transcript (type, direction, bytes per field, SHA-256) |
 | inputs | `vfr/data.py` | toy example; synthetic cohorts from `experiments/sim_core.Population` (d_R = 4, d_O = 6) |
+| preprocessing (Setup, `Preprocess`) | `bench/utility_runs.py` (`transform`) | each party transforms its own columns before the protocol with constants from a public reference split: standardize, optional winsorizing / rank-Gaussian, optional block unit norm; bounds = 99.5% quantiles on the transformed reference data. It is local computation, so it runs before `protocol.run` |
 
 Parameters (`vfr/common.py`): CKKS N = 2^14, chain q = [p0 60, p1 60, p2 59, p3 59] bits with q0 = p0 p1,
 q1 = p2, q2 = p3, special primes P = 2 x 60 bits, dnum = 2, log QP = 358 (128-bit secure for N = 2^14, OpenFHE's
