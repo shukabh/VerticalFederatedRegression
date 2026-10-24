@@ -642,6 +642,120 @@ The validity ratio controls convergence of the Neumann series, but the relative 
 
 \tocheck{Consider centring the intervals at the bootstrap bias-corrected estimate 2 theta-tilde minus the bootstrap mean, as the proof review suggests.}
 
+\subsection{When can the ridge be dropped?}
+\label{sec:stats:noff}
+
+The stage-1 rule is explicit, so the intersection size from which it stops adding a ridge can be read off the protocol parameters and one property of the data.
+
+\paragraph{The threshold.} Let $\Sigma = \E[\bx\bx^\top]$ be the per-record second-moment matrix of the preprocessed, clipped design, intercept included, and $\ell = \lambda_{\min}(\Sigma)$ its weakest direction. With $n$ matched records $\bG \approx n\Sigma$ and $\lambda_{\min}(\bG) \approx n\ell$, up to a relative fluctuation of order $n^{-1/2}$. Ignoring the stage-1 noise in $\lambda_{\min}(\hat\bG_1)$, the full ridge is $\lambda_I(n) \approx \max\{0,\ g^\star + r_1 - n\ell\}$, which falls linearly in $n$ and vanishes at
+\begin{equation}
+  n_{\mathrm{off}} = \frac{g^\star + r_1}{\ell}
+  = \frac{\sqrt p}{\ell\sqrt{2\rho_{\mathrm{run}}}}\left[\frac{2\vartheta^\star\Delta}{\sqrt{1 - f_1}} + \Bigl(2 + 2\sqrt{\ln(1/\alpha_L)/p}\Bigr)\frac{\Delta_G}{\sqrt{f_1}}\right],
+  \label{eq:noff}
+\end{equation}
+by~\eqref{eq:sigmas}. At the defaults ($\vartheta^\star = 2.5$, $f_1 = 0.1$, $\alpha_L = 0.0025$) and $p = 11$ this is
+\[
+  n_{\mathrm{off}} \approx \frac{17.5\,\Delta + 36.5\,\Delta_G}{\ell\sqrt{2\rho_{\mathrm{run}}}},
+\]
+with $\sqrt{2\rho_{\mathrm{run}}} = 0.089$, $0.173$, $0.335$, $0.642$ and $1.21$ for $\varepsilon = 0.5$, $1$, $2$, $4$ and $8$ at $\delta = 10^{-9}$. Since $\sqrt{\rho_{\mathrm{run}}}$ grows almost linearly in $\varepsilon$ at fixed $\delta$, $n_{\mathrm{off}}$ scales like the sensitivity divided by $\ell\varepsilon$. The two terms have different origins. $g^\star/\ell$ is the threshold if $\ell$ were known in advance; $r_1/\ell$ is the price of learning it from stage~1. With $\Delta_G \approx 0.9\Delta$, as for the simulation population, $r_1 \approx 1.9g^\star$, so learning $\ell$ multiplies the threshold by about $2.9$. The private bound $\hat L$ on $\lambda_{\min}(\bG)$, which makes the interval for $\bbeta$ finite without a public bound on $\|\bbeta\|$, becomes positive earlier, from $n \approx r_1/\ell$ (about $0.65\,n_{\mathrm{off}}$ there).
+
+\paragraph{Below the threshold.} With $\Psi = \bI$, the component of $\btheta_\lambda$ along an eigenvector of $\bG$ with eigenvalue $n\ell_k$ keeps the fraction $n\ell_k/(n\ell_k + \lambda)$ of the least-squares coefficient. In the weakest direction $n\ell + \lambda \approx g^\star + r_1 = n_{\mathrm{off}}\ell$, so the fraction kept is $n/n_{\mathrm{off}}$: the shrinkage there falls linearly in $n$ and is gone at $n_{\mathrm{off}}$. Directions with $\ell_k \gg \ell$ are barely shrunk. A weak direction carries little of the variation in $\bx$, so shrinking it costs little in prediction error but a lot in the coefficients that load on it; this is why prediction recovers before the coefficients do (Section~\ref{sec:eval:e2e}).
+
+\paragraph{The transition.} The noise lowers $\lambda_{\min}(\hat\bG_1)$ on average, the more so when several eigenvalues of $\Sigma$ are close to $\ell$, so the rule chooses a slightly larger $\lambda$ than the formula and switches off slightly after $n_{\mathrm{off}}$. Table~\ref{tab:noff_sim} simulates the stage-1 rule on the simulation population of Section~\ref{sec:eval:sim} ($\ell = 0.598$, $\Delta = 86.2$, $\Delta_G = 77.2$, $p = 11$): the ridge is never off at $0.8\,n_{\mathrm{off}}$, off in $1$--$3\%$ of releases at $n_{\mathrm{off}}$ and in $96$--$98\%$ at $1.2\,n_{\mathrm{off}}$. We take $1.2\,n_{\mathrm{off}}$ as the size from which the ridge is off with high probability. Table~\ref{tab:calib_example} uses the committed bound $\ell = 0.494$ instead of the population value, so its thresholds are $21\%$ higher. Under the earlier mechanism, which used that committed bound instead of a stage-1 release, the ridge switched off at exactly $g^\star/\ell$ for that mechanism's $\sigma$ and $\vartheta^\star = 2$ (Section~\ref{sec:eval:sim}).
+
+\begin{table}[ht]
+  \centering\small
+  \caption{Ridge threshold for the simulation population, $\delta = 10^{-9}$, defaults. $n_{\mathrm{off}}$ from~\eqref{eq:noff}; $g^\star/\ell$ is the threshold with $\ell$ known in advance. Last three columns: fraction of 400 simulated stage-1 releases with $\lambda = 0$ at $n = 0.8$, $1.0$ and $1.2$ times $n_{\mathrm{off}}$.}
+  \label{tab:noff_sim}
+  \begin{tabular}{@{}rrrrrrrccc@{}}
+    \toprule
+    $\varepsilon$ & $\sigma_1$ & $\sigma_2$ & $g^\star$ & $r_1$ & $n_{\mathrm{off}}$ & $g^\star/\ell$ & $0.8$ & $1.0$ & $1.2$ \\
+    \midrule
+    0.5 & 2746 & 1022 & 16942 & 31654 & 81{,}280 & 28{,}337 & 0.00 & 0.03 & 0.97 \\
+    1 & 1411 & 525 & 8705 & 16265 & 41{,}764 & 14{,}560 & 0.00 & 0.03 & 0.96 \\
+    2 & 729 & 271 & 4496 & 8400 & 21{,}570 & 7{,}520 & 0.00 & 0.01 & 0.98 \\
+    4 & 380 & 141 & 2345 & 4382 & 11{,}251 & 3{,}922 & 0.00 & 0.03 & 0.97 \\
+    8 & 202 & 75 & 1244 & 2325 & 5{,}970 & 2{,}081 & 0.00 & 0.03 & 0.98 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Check on real data.} On protein (Section~\ref{sec:eval:e2e}, $19{,}206$ matched records, $p = 10$), $\ell$ computed from the matched design predicts the ridge the encrypted runs chose (Table~\ref{tab:noff_protein}). The runs chose $1$--$19\%$ more than predicted, always more, as the downward bias of $\lambda_{\min}(\hat\bG_1)$ implies; the gap is largest where $\sigma_1$ is largest.
+
+\begin{table}[ht]
+  \centering\small
+  \caption{Protein, $19{,}206$ matched records, $\delta = 10^{-9}$: $\ell$ of the matched design, $n_{\mathrm{off}}$ from~\eqref{eq:noff}, the ridge $g^\star + r_1 - n\ell$ it predicts, and the median ridge of the five encrypted runs of Table~\ref{tab:e2e_protein}.}
+  \label{tab:noff_protein}
+  \begin{tabular}{@{}lrrrcrrr@{}}
+    \toprule
+    Preprocessing & $\Delta$ & $\Delta_G$ & $\ell$ & $\varepsilon$ & $n_{\mathrm{off}}$ & predicted $\lambda$ & encrypted $\lambda$ \\
+    \midrule
+    standardize & 87.3 & 80.9 & 0.00191 & 1 & 13.1\,M & 24{,}953 & 29{,}678 \\
+    standardize & 87.3 & 80.9 & 0.00191 & 4 & 3.53\,M & 6{,}695 & 7{,}321 \\
+    winsorize $|z| \le 2$ & 40.5 & 34.2 & 0.00125 & 1 & 8.74\,M & 10{,}902 & 12{,}552 \\
+    winsorize $|z| \le 2$ & 40.5 & 34.2 & 0.00125 & 4 & 2.35\,M & 2{,}919 & 3{,}088 \\
+    block unit norm & 8.4 & 2.83 & 0.00201 & 1 & 691\,k & 1{,}353 & 1{,}385 \\
+    block unit norm & 8.4 & 2.83 & 0.00201 & 4 & 186\,k & 336 & 338 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{What sets $\ell$.} $\ell$ is a property of the joint design after preprocessing, so near-collinearity decides $n_{\mathrm{off}}$, and it may lie within either party's block or across them. On protein, $\ell$ is about $0.002$ under every preprocessing, which keeps the ridge on to between $186$k and $13$M records. Its source differs.
+\begin{itemize}[noitemsep]
+  \item Standardized: the weakest direction is $0.77\,x_{R,1} - 0.62\,x_{O,5}$; the two features have correlation $0.997$, so the two parties hold almost the same variable. $\Rp$'s own block is much better conditioned, $\lambda_{\min}(\bA/n) = 0.010$. Neither party can see this collinearity in its own data.
+  \item Block-normalized: the weakest direction lies inside $\Rp$'s block, $-0.66\,x_{R,1} + 0.69\,x_{R,2} - 0.27\,x_{R,3}$, and $\ell \approx \lambda_{\min}(\bA/n) = 0.0021$: normalizing a block of strongly correlated features leaves it close to degenerate.
+\end{itemize}
+Table~\ref{tab:noff_drop} repeats the full preprocessing with one feature removed. Removing $x_{R,1}$ removes both weak directions: with block normalization $\ell$ rises to $0.013$ and $n_{\mathrm{off}}$ falls from $691$k to $102$k at $\varepsilon = 1$ and from $186$k to $27$k at $\varepsilon = 4$. Removing $x_{O,5}$ instead helps only the standardized design.
+
+\begin{table}[ht]
+  \centering\small
+  \caption{Protein: $\ell$ and $n_{\mathrm{off}}$ ($\delta = 10^{-9}$) with one feature removed before preprocessing; bounds recomputed from the reference split.}
+  \label{tab:noff_drop}
+  \begin{tabular}{@{}llrrrr@{}}
+    \toprule
+    Features & Preprocessing & $\Delta$ & $\ell$ & $n_{\mathrm{off}}$, $\varepsilon = 1$ & $n_{\mathrm{off}}$, $\varepsilon = 4$ \\
+    \midrule
+    all 9 & standardize & 87.3 & 0.00191 & 13.1\,M & 3.53\,M \\
+    all 9 & block unit norm & 8.4 & 0.00201 & 691\,k & 186\,k \\
+    without $x_{R,1}$ & standardize & 79.6 & 0.0130 & 1.69\,M & 455\,k \\
+    without $x_{R,1}$ & block unit norm & 8.4 & 0.0131 & 102\,k & 27\,k \\
+    without $x_{O,5}$ & standardize & 74.4 & 0.0100 & 2.03\,M & 547\,k \\
+    without $x_{O,5}$ & block unit norm & 8.4 & 0.0021 & 647\,k & 174\,k \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Two diagnostics cost no budget. First, $\bA$ is a principal submatrix of $\bG$, so $\lambda_{\min}(\bG) \le \lambda_{\min}(\bA)$ by Cauchy interlacing, and after linkage $\Rp$ obtains from its exact $\bA$ the lower bound $n_{\mathrm{off}} \ge n(g^\star + r_1)/\lambda_{\min}(\bA)$ before any release; $\Op$ can bound $\ell$ the same way from its own block on the register. Second, a collinearity across the parties is invisible to both but visible on a public reference set that carries both schemas, where one exists, and screening features on it is a schema-level decision that can be made in Setup.
+
+\paragraph{Levers.} Table~\ref{tab:noff_levers} lists what lowers $n_{\mathrm{off}}$, at $\varepsilon = 1$ on the simulation population, where the default gives $41.8$k.
+
+\begin{table}[ht]
+  \centering\small
+  \caption{Levers on the ridge threshold, simulation population, $\varepsilon = 1$, $\delta = 10^{-9}$ (default $n_{\mathrm{off}} = 41.8$k).}
+  \label{tab:noff_levers}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.36\textwidth}l>{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Lever & $n_{\mathrm{off}}$ & Cost \\
+    \midrule
+    Smaller $\Delta$, larger $\ell$: per-party transforms (Section~\ref{sec:protocol:preproc}); feature screening on public reference data & $\propto \Delta/\ell$ & none in privacy; on protein a factor $6.8$ from one feature \\
+    Exact $(1 - \alpha_L)$ quantile for $r_1$ ($7.43\sigma_1$ instead of $11.53\sigma_1$) & 32.1k ($-23\%$) & none \\
+    $f_1 = 0.35$ instead of $0.1$ & 31.7k ($-24\%$) & $\sigma_2$ up $18\%$ once the ridge is off \\
+    Both of the above & 26.5k ($-37\%$) & $\sigma_2$ up $18\%$ \\
+    $\vartheta^\star = 2$ instead of $2.5$ & 38.8k ($-7\%$) & thinner validity margin (Remark~\ref{rem:firstorder}) \\
+    A public lower bound on $\ell$ instead of stage~1 & at best 14.6k ($-65\%$) & validity rests on the reference data being representative; the gate still guards each release \\
+    Larger $\varepsilon$ & $\propto 1/\sqrt{\rho_{\mathrm{run}}} \approx 1/\varepsilon$ & budget \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Below $n_{\mathrm{off}}$ the ridge is not a tuning choice: it is what certifies the validity ratio $\vartheta^\star$ on which the expansion and the intervals rest (Remark~\ref{rem:validity}). The levers lower the threshold; none of them makes the ridge unnecessary below it. A study can be planned by evaluating~\eqref{eq:noff} at the intended $\varepsilon$, with $\ell$ estimated on public reference data or bounded through $\lambda_{\min}(\bA)$.
+
+\tocheck{The threshold treats lambda-min of the noisy stage-1 Gram as n times ell and does not model its downward bias under noise; either derive a correction (it depends on how many eigenvalues of Sigma lie near ell) or keep the empirical factor 1.2.}
+
+\tocheck{Decide whether the exact-quantile r-1 and f-1 near 0.35 become the defaults (they lower the threshold by 37 percent together); coverage would need to be re-checked.}
+
+\tocheck{Decide whether feature screening on public reference data becomes a Setup step, and what reference data it requires.}
+
 \subsection{Status of the statistical guarantees}
 
 The companion proofs (Part~B) establish: the operator-norm radius $r_1$ for the one-sided event (exact); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. A remedy for heteroskedasticity when clipping binds is open.
@@ -892,7 +1006,7 @@ These runs use the full implementation: OPRF and labeled PSI, threshold CKKS upl
   \end{tabular}
 \end{table}
 
-Block normalization costs a little in the non-private fit ($0.745$ against $0.728$) and gains much more in the private one: at $\varepsilon = 4$ its private error, $0.759$, is within $4\%$ of the best non-private model. The ridge is on in every setting, so the coefficients remain shrunk ($63$--$82\%$ of the way from least squares to zero with block normalization); prediction recovers faster than the coefficients do.
+Block normalization costs a little in the non-private fit ($0.745$ against $0.728$) and gains much more in the private one: at $\varepsilon = 4$ its private error, $0.759$, is within $4\%$ of the best non-private model. The ridge is on in every setting, so the coefficients remain shrunk ($63$--$82\%$ of the way from least squares to zero with block normalization); prediction recovers faster than the coefficients do. Section~\ref{sec:stats:noff} predicts these ridges to within $1$--$19\%$ and traces them to a near-collinearity that keeps the ridge on until $186$k--$13$M matched records.
 
 \paragraph{Synthetic data with the ridge off.} With the simulation population of Section~\ref{sec:eval:sim}, $20{,}000$ matched records in a $24{,}000$-row register and fixed data, 20 encrypted runs per setting gave $\lambda = 0$ every time. The estimate was within $4.0\%$ ($\varepsilon = 4$, $\kappa = 40$) and $2.5\%$ ($\varepsilon = 8$, $\kappa = 48$) of least squares (median relative distance), and the Wald interval covered $\btheta_\lambda$ for $0.950$ ($209/220$) and $0.927$ ($204/220$) of the coefficients, with standardized errors of mean $+0.04$ and $+0.03$ and s.d.\ $1.02$ and $1.05$.
 
@@ -1060,6 +1174,8 @@ Doubling $\varepsilon$ roughly halves the records needed for prediction. Over th
 \paragraph{The gap to AdaSSP is the noise level, not the ridge rule.} Replacing the fixed ridge by an oracle one changed test MSE by at most $1.2\%$ at $\varepsilon = 1$; removing the ridge was far worse (27 times non-private on housing at $\varepsilon = 1$). What separates the methods is $\sigma$ relative to the data. Wang's preprocessing normalizes the whole row, so every record fills its bound. No party can do that in the vertical setting, but the per-party counterpart, block normalization (Section~\ref{sec:protocol:preproc}), recovers most of the gain: on protein it lowers $\Delta$ from $87.3$ to $8.4$ and brings private test error within $2$--$6\%$ of non-private (Table~\ref{tab:e2e_protein}).
 
 \paragraph{How well the data fill their bounds matters as much as $n$.} The noise is sized for the committed bounds, so headroom the data do not use is lost signal. After scaling by $\max|y|$, the typical $|y|$ is only $0.19$ of its bound on elevators and $0.24$ on wine, the two worst performers relative to their size. Choosing bounds that typical records come close to, and units or transforms that make this possible (for example log income), is part of using the protocol well.
+
+\paragraph{Conditioning decides when the coefficients become usable.} The ridge is off from about $(g^\star + r_1)/\ell$ matched records (Section~\ref{sec:stats:noff}). On protein a near-collinearity involving a single feature keeps it on until $691$k records with block normalization and $13$M without, at $\varepsilon = 1$; removing that feature, a decision that public reference data can inform, lowers the threshold to $102$k.
 
 \paragraph{Budget.} Every release, including a refused one, is charged to $\Op$'s ledger. Model search and exploratory re-runs spend the budget quickly; the protocol suits a pre-specified model per research question.
 
