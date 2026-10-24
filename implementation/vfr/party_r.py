@@ -36,8 +36,9 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     if mtype != 'public_params':
         raise RuntimeError(mtype)
     a2 = pub['agreement']
-    for f in ('n_R_max', 'n_bar_O', 'd_R', 'd_O', 'B_R', 'B_O', 'B_y', 'eps_run', 'delta_run', 'f1', 'kappa',
-              'variant'):
+    for f in ('n_R_max', 'n_bar_O', 'd_R', 'd_O', 'B_R', 'B_O', 'B_y', 'eps_run', 'delta_run', 'f1', 'f_y', 'kappa',
+              'zeta', 'kappa_min', 'delta_B', 't_eta', 'lambda_sec', 'ledger_eps', 'ledger_delta', 'ledger_zeta',
+              'ledger_mode', 'variant'):
         if a2[f] != getattr(ag, f):
             raise RuntimeError(f'agreement mismatch on {f}')
     ck = C.make_ckks(cp)

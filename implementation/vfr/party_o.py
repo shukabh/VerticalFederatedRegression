@@ -71,13 +71,17 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     qs = list(ck.qs)
     q0, q1, q2 = qs[0] * qs[1], qs[2], qs[3]
     gadget = C.gadget_constants(ck)
-    cal = dp.calibrate(ag, ck.N, q1, q2, q0, gadget)
+    try:
+        cal = dp.calibrate(ag, ck.N, q1, q2, q0, gadget)
+    except dp.CalibrationRefused as exc:                # parameters not admissible: refuse the run
+        ch.send('refuse', meta=dict(reason=f'Calibrate: {exc}'))
+        return dict(refused=f'Calibrate: {exc}', transcript=tr.records)
     joint = cal['joint']
+    eps_L, delta_L, zeta_L, mode_L = dp.ledger_cap(ag)  # public cap of the base register
     ledger = dp.Ledger(opts.get('ledger_path') or os.path.join(opts.get('workdir', '.'), 'ledger_O.json'),
-                       eps_cap=opts.get('eps_cap', 100.0), delta_cap=opts.get('delta_cap', 1e-6),
+                       eps_cap=eps_L, delta_cap=delta_L, zeta=zeta_L, mode=mode_L,
                        quota=opts.get('quota', 10 ** 6))
-    slack = ag.delta_run - cal['delta_DP']                 # = (1 + e^eps) gamma
-    ok, why = ledger.check_run(cal['rho_run'], slack, ag.researcher, ag.project)
+    ok, why = ledger.check_run(cal['rho_run'], cal['gamma'], ag.researcher, ag.project)
     if not ok:
         ch.send('refuse', meta=dict(reason=why))
         return dict(refused=why, transcript=tr.records)
@@ -208,7 +212,7 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         else:
             c1p, h = ck.rerand_partial_decrypt(Ms[s], pk, sO, eta_res)
         del eta_res
-        ledger.charge(s, rel['rho'], slack / cal['n_rel'])
+        ledger.charge(s, rel['rho'], cal['gamma'] / cal['n_rel'])   # raw slack gamma_s of this release
         released.add(s)
         T['release'][str(s)] = dict(sample=t1 - t0, rerand_pdec=time.time() - t1)
         ch.send('release', meta=dict(stage=str(s)), blobs={'c1p': c1p, 'h': h})
