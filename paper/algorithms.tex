@@ -1,163 +1,127 @@
 % ==============================================================
-% Pseudocode for the revised Scenario-B protocol.
-% Requires: algorithm, algpseudocode, and the macros of main.tex.
+% Pseudocode for protocol v3.1 (honest-but-curious model).
+% Requires: algorithm, algpseudocode, mathtools, and the macros of main.tex.
+% Items that are not yet settled carry \tocheck{...}.
 % ==============================================================
 
-\algnewcommand{\AtParty}[1]{\Statex \hspace*{-\algorithmicindent}\textit{At $\Party{#1}$:}}
-\algnewcommand{\SendTo}[2]{\State \textbf{send} #1 \textbf{to} $\Party{#2}$}
 \algrenewcommand\algorithmicrequire{\textbf{Input:}}
 \algrenewcommand\algorithmicensure{\textbf{Output:}}
 
 % --------------------------------------------------------------
 \begin{algorithm}[p]
-\caption{\textsc{Setup}: commitments and calibration (Phase~0)}
+\caption{\textsc{Setup} (Phase~0)}
 \label{alg:setup}
 \small
 \begin{algorithmic}[1]
-\Require $\Party{R}$: $\bXR$, $\mathit{ID}_{R}$. \;
-  $\Party{O}$: $\bXO$, $\by$, $\mathit{ID}_{O}$, public standardization constants
-  $(\boldsymbol{\mu}_{O}, \mathbf{s}_{O}, \mu_{y}, s_{y})$, privacy ledger $\mathcal{L}$,
-  cap $\rho_{\mathrm{cap}}$. \;
-  Public: $(\varepsilon_{\mathrm{msg}}, \delta)$, $\rho_{\mathrm{err}}$, HE parameters,
-  PSI parameters $(N_{\mathrm{bins}}, h, d_{\mathrm{cap}}, W)$, flooding parameter $\kappa$.
-\Ensure Public parameter set $\mathcal{P}$; $\Party{R}$ holds $(\sk_{B}, \sk_{C})$.
-\AtParty{R}
-\State Standardize $\bXR$ with $\Party{R}$'s own constants, which never leave $\Party{R}$;
-  append the intercept column if one is used
-\State $\mathbf{x}_{R,k} \gets \mathbf{x}_{R,k}\cdot\min\{1,\, B_{R}/\|\mathbf{x}_{R,k}\|_{2}\}$
-  for all $k \in [n_{R}]$ \Comment{enforce the committed bound}
-\State $(\pk_{B}, \sk_{B}, \mathit{evk}_{B}) \gets \mathsf{BFV.KeyGen}(N_{B}, t, q_{B})$;\;
-  $(\pk_{C}, \sk_{C}, \mathit{evk}_{C}) \gets \mathsf{CKKS.KeyGen}(N_{C}, \Delta_{C}, q_{C})$
-  \Comment{128-bit; $q$ includes flooding headroom}
-\SendTo{$(\pk_{B}, \mathit{evk}_{B}, \pk_{C}, \mathit{evk}_{C}, B_{R}, d_{R}, n_{R})$}{O}
-\AtParty{O}
-\State Standardize $(\bXO, \by)$ with the public constants; clip
-  $\|\mathbf{x}_{O,i}\|_{2} \le B_{O}$ and $|y_{i}| \le B_{y}$ for all $i \in [n_{O}]$
-\State $\Delta \gets \textsc{DeltaRep}(B_{R}, B_{O}, B_{y})$ \Comment{replace-one sensitivity, Alg.~\ref{alg:sub}}
-\State $\sigma \gets \textsc{AnalyticGauss}(\Delta, \varepsilon_{\mathrm{msg}}, \delta)$;\quad
-  $\rho_{\mathrm{run}} \gets \Delta^{2}/(2\sigma^{2}) + \rho_{\mathrm{err}}$
-\If{$\mathcal{L}[\Party{R}, \text{dataset}] + \rho_{\mathrm{run}} > \rho_{\mathrm{cap}}$}
-  \State \textbf{abort} \Comment{budget exhausted}
-\EndIf
-\State $K \xleftarrow{\$} \{0,1\}^{256}$;\;
-  $(D, \alpha) \gets$ public degree and partition count computed from $(n_{O}, h, N_{\mathrm{bins}}, d_{\mathrm{cap}})$
-\SendTo{$\mathcal{P} = (\sigma, B_{O}, B_{y}, d_{O}, n_{O}, D, \alpha, K,
-  \boldsymbol{\mu}_{O}, \mathbf{s}_{O}, \mu_{y}, s_{y})$}{R}
+\State \Bdo agree on the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the stage-1 share $f_1$ (and $f_y$), the validity target $\vartheta^\star$, the error level $\alpha$, the public bound $B_\beta^{\mathrm{pub}}$ and the ratio $\kappa_\Psi$
+\State \Odo $D_\Phi\gets\{j:\Phi(j)\}$; pad with dummy rows (fresh random identifiers, $\bx_O=\mathbf 0$, $y=0$) to $\bar n_O$; draw a fresh secret permutation $\tau$ of $[\bar n_O]$
+\State \Bdo $(B_R,B_O,B_y)\gets\textsc{ChooseBounds}$ from public reference data or domain knowledge \Comment{$B_R$ covers $\Rp$'s intercept}
+\State $(\Delta,\Delta_{\neg yy})\gets\textsc{DeltaRep}(B_R,B_O,B_y)$;\quad $\Delta_G\gets\textsc{DeltaRep}(B_R,B_O,0)$;\quad $\Delta_y\gets B_y^2$
+\State $\textit{mode}\gets\textsf{joint}$ if $\Delta-\Delta_{\neg yy}\le10^{-9}\Delta$, otherwise $\textsf{separate}$ \Comment{release $\by^\top\by$ jointly only when it is free}
+\State \Odo $(\Omega,q_0,\{\sigma_{c,s},\rho_s,\delta_s\}_s)\gets\textsc{Calibrate}(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}},f_1,f_y,\{\Delta_s\},N,\kappa)$
+\State \Odo \textbf{if} $\mathrm{Ledger}[\text{base register}]+(\rho_{\mathrm{run}},\delta_{\mathrm{run}})$ exceeds the cap \textbf{then} refuse
+\State \Bdo threshold key generation with a common random $a$: $s=s_R+s_O$, $\pk=(p_0,a)$ with $p_0=-as+e$, and rotation keys for $\{2^i\}$
+\Statex \hspace{\algorithmicindent}(no relinearization or conjugation key)
+\State \Odo fresh OPRF key $k$; PSI preprocessing on the items $\{F_k(\mathrm{id}_j)\}$ with labels $\tau(j)$ encrypted under keys derived from $F'_k(\mathrm{id}_j)$; bin sizes and partition counts public; log the run against the OPRF quota of (researcher, project)
 \end{algorithmic}
 \end{algorithm}
 
 % --------------------------------------------------------------
 \begin{algorithm}[p]
-\caption{\textsc{Link}: labeled PSI with record alignment (Phase~1)}
+\caption{\textsc{Link}: labeled PSI with an OPRF (Phase~1)}
 \label{alg:link}
 \small
 \begin{algorithmic}[1]
-\Require $\Party{R}$: $\mathit{ID}_{R}$, $\bXR$, $\sk_{B}$. \;
-  $\Party{O}$: $\mathit{ID}_{O}$, rows $(\mathbf{x}_{O,i}, y_{i})_{i \in [n_{O}]}$. \;
-  Public: $K$, $t$, $N_{\mathrm{bins}}$, hash functions $\beta_{1}, \dots, \beta_{h}$, $D$, $\alpha$, $W$.
-\Ensure $\Party{R}$: $I$, $\pi$, $\bb$, $\dXR$, $\bA$. \; $\Party{O}$: nothing.
-\AtParty{O} \Comment{offline preprocessing}
-\State $\tau \xleftarrow{\$} \mathrm{Sym}(n_{O})$; re-index the rows of $(\mathit{ID}_{O}, \bXO, \by)$ by $\tau$
-  \Comment{uniform labels}
-\State $v_{j} \gets H_{K}(\mathit{ID}_{O,j}) \bmod (t-1)$ for $j \in [n_{O}]$
-  \Comment{never equals the dummy root $t-1$}
-\State Insert $(v_{j}, j)$ into bins $\beta_{1}(v_{j}), \dots, \beta_{h}(v_{j})$ \Comment{simple hashing}
-\If{a bin holds more than $\alpha D$ items, or two items in one bin share a value $v$}
-  \State \textbf{abort} \Comment{probability $\le \delta_{\mathrm{psi}}$}
-\EndIf
-\For{each bin $\beta \in [N_{\mathrm{bins}}]$ and partition $a \in [\alpha]$}
-  \State $S_{\beta,a} \gets$ the $a$-th block of at most $D$ items in bin $\beta$
-  \State $P_{\beta,a}(X) \gets \prod_{(v,j) \in S_{\beta,a}} (X - v) \cdot (X - (t-1))^{D - |S_{\beta,a}|}$
-    \Comment{padded to the public degree $D$}
-  \State $L_{\beta,a} \gets$ the interpolant of degree $< D$ with $L_{\beta,a}(v) = j$ for all $(v,j) \in S_{\beta,a}$
-\EndFor
-\AtParty{R}
-\State $u_{k} \gets H_{K}(\mathit{ID}_{R,k}) \bmod (t-1)$; cuckoo-insert every $u_{k}$ into $N_{\mathrm{bins}}$ bins
-  using $\beta_{1}, \dots, \beta_{h}$; let $T[\beta] = k$ for occupied bins \Comment{batches if $n_{R}$ exceeds capacity}
-\State $w_{\beta} \gets u_{T[\beta]}$ for occupied bins, $w_{\beta} \gets 0$ otherwise
-\SendTo{$\mathsf{BFV.Enc}_{\pk_{B}}\bigl(\mathbf{w}^{\odot 2^{i}}\bigr)$ for $i = 0, \dots, W-1$}{O}
-\AtParty{O}
-\State $\mathit{ct}_{d} \gets \mathsf{Enc}(\mathbf{w}^{\odot d})$ for $d = 1, \dots, D$, as products of window ciphertexts
-\For{$a = 1, \dots, \alpha$}
-  \State $\mathit{ct}_{P} \gets \mathbf{p}_{a,0} \boxplus \bigboxplus_{d=1}^{D} \mathbf{p}_{a,d} \odot \mathit{ct}_{d}$;\quad
-    $\mathit{ct}_{L} \gets \boldsymbol{\ell}_{a,0} \boxplus \bigboxplus_{d=1}^{D-1} \boldsymbol{\ell}_{a,d} \odot \mathit{ct}_{d}$
-    \Comment{also valid for $D=1$}
-  \State $\mathbf{r}_{1}, \mathbf{r}_{2} \xleftarrow{\$} (\mathbb{Z}_{t}^{\ast})^{N_{\mathrm{bins}}}$ from a CSPRNG
-  \State $\mathit{ct}_{s} \gets \textsc{SanitizeBFV}(\mathbf{r}_{1} \odot \mathit{ct}_{P})$;\quad
-    $\mathit{ct}_{q} \gets \textsc{SanitizeBFV}(\mathbf{r}_{2} \odot \mathit{ct}_{P} \boxplus \mathit{ct}_{L})$
-  \SendTo{$(\mathit{ct}_{s}, \mathit{ct}_{q})$}{R}
-\EndFor
-\AtParty{R}
-\For{each occupied bin $\beta$ with $k = T[\beta]$, and each $a \in [\alpha]$}
-  \State $s \gets \mathsf{Dec}_{\sk_{B}}(\mathit{ct}_{s}^{(a)})_{\beta}$;\; $q \gets \mathsf{Dec}_{\sk_{B}}(\mathit{ct}_{q}^{(a)})_{\beta}$
-  \If{$s = 0$ \textbf{and} $0 \le q < n_{O}$} \State $\pi(k) \gets q$ \EndIf
-\EndFor
-\State $I \gets \mathrm{dom}(\pi)$;\; $\bb \gets \mathbf{0}_{n_{O}}$;\; $\dXR \gets \mathbf{0}_{n_{O} \times d_{R}}$
-\State \textbf{for} $k \in I$: $b_{\pi(k)} \gets 1$ and $\dXR[\pi(k), :] \gets \mathbf{x}_{R,k}^{\top}$
-\State $\bA \gets \dXR^{\top}\dXR$ \Comment{exact; never transmitted}
+\State \Rdo pad the cohort identifiers with random dummies to exactly $n_R^{\max}$
+\State \Rdo run the OPRF with $\Op$ on each padded identifier $\to F_k(\mathrm{id}),F'_k(\mathrm{id})$ \Comment{$\Op$ evaluates exactly $n_R^{\max}$ calls}
+\State \Rdo cuckoo-hash the items $F_k(\mathrm{id})$ into the bins; send BFV encryptions of their windowed powers under $\Rp$'s own BFV key
+\State \Odo evaluate the membership and label polynomials of every bin and partition; mask; $\textsc{SanitizeBFV}$; reply
+\Statex \hspace{\algorithmicindent}\tocheck{The v3.1 specification only modulus-switches the PSI replies. The proof review says disclosure G4 needs circuit privacy of these replies (noise flooding or re-randomization). Confirm that SanitizeBFV is part of the protocol.}
+\State \Rdo decrypt $\to$ the match set $I$ and positions $\pi(i)=\tau(j)$ for $i\in I$ (labels opened with keys from $F'_k(\mathrm{id}_i)$)
+\State \Rdo $\bA\gets\sum_{i\in I}\bxd_i\bxd_i^\top$, exact and local \Comment{never transmitted, never noised}
 \end{algorithmic}
 \end{algorithm}
 
 % --------------------------------------------------------------
 \begin{algorithm}[p]
-\caption{\textsc{Aggregate}: encrypted sufficient statistics with DP noise (Phase~2)}
+\caption{\textsc{Upload} (Phase~2)}
+\label{alg:upload}
+\small
+\begin{algorithmic}[1]
+\For{$t=1,\dots,\bar n_O$}
+  \State \Rdo $b_t\gets\mathbb{1}[t\in\pi(I)]$;\quad $\bxd_t\gets\bigl(1,\ \mathrm{clip}(\bx_{R,i};\sqrt{B_R^2-1})\bigr)$ if $t=\pi(i)$, otherwise $\mathbf 0$
+\EndFor
+\State $m\gets\lceil\bar n_O/N_s\rceil$ \Comment{chunks of at most $N_s=N/2$ slots}
+\For{each vector $\mathbf v\in\{\bb,\bxd_{\cdot0},\dots,\bxd_{\cdot d_R}\}$ and each chunk $h\le m$}
+  \State \Rdo draw a seed $\varsigma$; $a\gets\mathrm{PRG}(\varsigma)$; $c_0\gets-a\,s_R+e+\Ecd(\mathbf v[h])$, with $e$ from the RLWE error distribution; send $(c_0,\varsigma)$
+  \State \Odo $a\gets\mathrm{PRG}(\varsigma)$;\ $c_0\gets c_0-a\,s_O$ \Comment{$(c_0,a)$ now encrypts $\mathbf v[h]$ under $s=s_R+s_O$}
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+% --------------------------------------------------------------
+\begin{algorithm}[p]
+\caption{\textsc{Aggregate} and pack ($\Op$, Phase~3)}
 \label{alg:aggregate}
 \small
 \begin{algorithmic}[1]
-\Require $\Party{R}$: $\bb$, $\dXR$, $\pk_{C}$. \;
-  $\Party{O}$: $\bXO$, $\by$ in $\tau$-order, $\sigma$, $\rho_{\mathrm{run}}$, ledger $\mathcal{L}$. \;
-  Public: slot count $S$.
-\Ensure $\Party{R}$ receives sanitized encryptions of
-  $\tilde{\bB}$, $\tilde{\bC}$, $\tilde{\mathbf{c}}_{R}$, $\tilde{\mathbf{c}}_{O}$, $\widetilde{\by^{\top}\by}$.
-\AtParty{R}
-\State Partition $[n_{O}]$ into chunks $\mathcal{C}_{1}, \dots, \mathcal{C}_{m}$ of at most $S$ positions
-\SendTo{$\mathsf{CKKS.Enc}(\bb_{\mathcal{C}_{c}})$ and $\mathsf{CKKS.Enc}(\dXR[\mathcal{C}_{c}, j])$
-  for all $c \in [m]$, $j \in [d_{R}]$}{O}
-\AtParty{O}
-\State $\mathcal{E} \gets \{(\bb, \mathbf{x}_{O,\cdot j} \odot \mathbf{x}_{O,\cdot k}) : j \le k\}
-  \cup \{(\dXR[:,j], \mathbf{x}_{O,\cdot k})\}
-  \cup \{(\dXR[:,j], \by)\}
-  \cup \{(\bb, \mathbf{x}_{O,\cdot k} \odot \by)\}
-  \cup \{(\bb, \by \odot \by)\}$
-\Statex \hspace*{\algorithmicindent}\Comment{(encrypted, plaintext) pairs giving $B_{jk}$, $C_{jk}$, $c_{R,j}$, $c_{O,k}$, $\by^{\top}\by$}
-\For{each $(\mathbf{u}, \mathbf{w}) \in \mathcal{E}$}
-  \State $\mathit{ct} \gets \bigboxplus_{c=1}^{m} \mathsf{EvalSum}\bigl(\mathsf{Enc}(\mathbf{u}_{\mathcal{C}_{c}}) \odot \mathbf{w}_{\mathcal{C}_{c}}\bigr)$
-    \Comment{depth 1; the total occupies every slot}
-  \State $z \gets \mathcal{N}_{\mathbb{Z}/\gamma}(0, \sigma^{2})$ from a CSPRNG
-    \Comment{discrete Gaussian at resolution $1/\gamma$; one draw per released entry}
-  \State $\mathit{ct} \gets \textsc{SanitizeCKKS}\bigl(\mathit{ct} \boxplus \mathsf{CKKS.Enc}_{\pk_{C}}(z \cdot \mathbf{1})\bigr)$
-    \Comment{same $z$ in every slot; fresh $c_{1}$}
+\Require entry map $e\mapsto(U_e,V_e)$, with $\Rp$'s ciphertext vector $U_e$ and $\Op$'s plaintext vector $V_e$ in $\tau$-order:
+\Statex \quad $\bB_{jk}$: $(\Enc{\bb},\ \bx_{O,j}\odot\bx_{O,k})$;\quad $\bC_{jk}$: $(\Enc{\bxd_j},\ \bx_{O,k})$;\quad $\bc_{R,j}$: $(\Enc{\bxd_j},\ \by)$;
+\Statex \quad $\bc_{O,k}$: $(\Enc{\bb},\ \bx_{O,k}\odot\by)$;\quad $\by^\top\by$: $(\Enc{\bb},\ \by\odot\by)$
+\For{each $e\in\mathcal E$}
+  \State $T_e\gets\textsc{EvalSum}\bigl(\textsc{Rescale}\bigl(\sum_{h\le m}U_e[h]\odot\Ecd(V_e[h])\bigr)\bigr)$ \Comment{sum the chunks first; one \textsc{EvalSum} per entry}
+  \State $P_e\gets\textsc{Rescale}\bigl(T_e\odot\Ecd(\mathbf u_{\mathrm{slot}(e)})\bigr)$ \Comment{$\mathbf u_k$: one-hot slot $k$; entry $e$ sits alone in its slot}
 \EndFor
-\State $\mathcal{L}[\Party{R}, \text{dataset}] \gets \mathcal{L}[\Party{R}, \text{dataset}] + \rho_{\mathrm{run}}$
-  \Comment{recorded before release}
-\SendTo{all sanitized ciphertexts}{R}
+\State $M_1\gets\sum_{e\in\mathcal E_G}P_e$;\quad $M_2\gets\sum_{e\in\mathcal E_2}P_e$;\quad $M_y\gets P_{\by^\top\by}$ if $\textit{mode}=\textsf{separate}$ \Comment{depth 2; $M_1$ depends only on $\triu\bB$ and $\bC$}
+\Statex \hspace{\algorithmicindent}\tocheck{Circuit variant. As written this circuit needs a CKKS scale of about 2 to the 61.5. The proof review's restructured circuit (EvalSum before the first rescale, one rescale per release, stochastic rounding, R encoding at about 2 to the 60) needs about 2 to the 53.7, but its proof is still open. Choose one.}
 \end{algorithmic}
 \end{algorithm}
 
 % --------------------------------------------------------------
 \begin{algorithm}[p]
-\caption{\textsc{Solve}: assembly, fixed ridge and bias correction at $\Party{R}$ (Phase~3)}
+\caption{\textsc{Release}$(M,\sigma_c,\rho,\delta)$: one DP release (Phase~4)}
+\label{alg:release}
+\small
+\begin{algorithmic}[1]
+\State \Odo sample fresh $u$ from the key distribution and $e_0,e_1$ from the error distribution
+\State \Odo $c_0'\gets c_0+p_0u+e_0$;\quad $c_1'\gets c_1+au+e_1$ \Comment{re-randomize $M=(c_0,c_1)$ under the joint $\pk$}
+\State \Odo $\eta\gets(\textsc{SampleDG}(\sigma_c))^{N}$, fresh \Comment{exact discrete Gaussian on $\Z^N$}
+\State \Odo $h_O\gets c_0'+c_1's_O+\eta\bmod q_0$
+\State \Odo $\mathrm{Ledger}\mathrel{+}=(\rho,\delta)$; send $(c_1',h_O)$; erase $c_0',u,e_0,e_1,\eta$ \Comment{$c_0'$ is never sent}
+\State \Rdo $v\gets h_O+c_1's_R\bmod q_0$;\quad \Return $\Dcd(v)$ restricted to the slots of this release \Comment{decode with the exact final scale}
+\end{algorithmic}
+\end{algorithm}
+
+% --------------------------------------------------------------
+\begin{algorithm}[p]
+\caption{\textsc{Solve} and \textsc{Infer} ($\Rp$, Phase~5)}
 \label{alg:solve}
 \small
 \begin{algorithmic}[1]
-\Require $\Party{R}$: $\bA$, $\sk_{C}$, the ciphertexts of Alg.~\ref{alg:aggregate}. \;
-  Public: $\sigma$, $p = d_{R} + d_{O}$, $n = |I|$, validity target $\rho^{\star}$, committed eigenvalue floor $\ell \ge 0$.
-\Ensure $\hat{\bbeta}_{\mathrm{bc}}$, the validity statistic $\hat{\rho}$, the ridge shrinkage $\mathbf{s}_{\lambda}$, and $\widetilde{\mathrm{RSS}}$.
-\State $\lambda \gets \max\{0,\; 2\rho^{\star}\sigma\sqrt{p} - n\ell\}$;\quad $\Psi \gets \mathbf{I}_{p}$
-  \Comment{fixed before decryption, never from $\tilde{\bG}$}
-\State Decrypt slot 0 of every ciphertext; set $\tilde{B}_{kj} \gets \tilde{B}_{jk}$ for $j < k$
-\State $\tilde{\bG} \gets \begin{bmatrix} \bA & \tilde{\bC} \\ \tilde{\bC}^{\top} & \tilde{\bB} \end{bmatrix}$;\quad
-  $\tilde{\mathbf{c}} \gets \begin{bmatrix} \tilde{\mathbf{c}}_{R} \\ \tilde{\mathbf{c}}_{O} \end{bmatrix}$
-\State $\hat{\rho} \gets \lambda_{\min}(\tilde{\bG} + \lambda\Psi) / (2\sigma\sqrt{p})$
-\If{$\hat{\rho} < 1$}
-  \State report that the validity check failed and withhold $\hat{\bbeta}$ \Comment{post-processing; no privacy cost}
-\EndIf
-\State $\tilde{\bP} \gets (\tilde{\bG} + \lambda\Psi)^{-1}$;\quad $\tilde{\bbeta} \gets \tilde{\bP}\tilde{\mathbf{c}}$
-\State $\hat{\bbeta}_{\mathrm{bc}} \gets \tilde{\bbeta} - \sigma^{2}\,\textsc{BiasOp}(\tilde{\bP}, d_{R})\,\tilde{\bbeta}$ \Comment{Theorem~\ref{thm:ridge}}
-\State $\mathbf{s}_{\lambda} \gets -\lambda\tilde{\bP}\Psi\tilde{\bbeta}$;\quad
-  $\widetilde{\mathrm{RSS}} \gets \max\bigl\{0,\; \widetilde{\by^{\top}\by} - 2\tilde{\mathbf{c}}^{\top}\tilde{\bbeta} + \tilde{\bbeta}^{\top}\tilde{\bG}\tilde{\bbeta}\bigr\}$
-\State \Return $\hat{\bbeta}_{\mathrm{bc}}, \hat{\rho}, \mathbf{s}_{\lambda}, \widetilde{\mathrm{RSS}}$,
-  back-transformed with $\Party{R}$'s constants and $\Party{O}$'s public constants
+\Require $\bA$, $n$, $p$, slot-domain s.d.\ $\sigma_1,\sigma_2$ (and $\sigma_y$), $\vartheta^\star$, $\alpha=\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U$ (default $\alpha_L=\alpha_U=\alpha/20$), $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$ (default 2), bootstrap size $B$
+\State $(\hat\bB_1,\hat\bC_1)\gets\textsc{Release}(M_1,\sigma_{c,1},\rho_1,\delta_1)$;\quad $\hat\bG_1\gets\begin{psmallmatrix}\bA&\hat\bC_1\\ \hat\bC_1^\top&\hat\bB_1\end{psmallmatrix}$
+\State $r_1\gets\sigma_1\bigl(2\sqrt p+2\sqrt{\ln(1/\alpha_L)}\bigr)$ \Comment{$\Pr[\lambda_{\max}(\hat\bG_1-\bG)>r_1]\le\alpha_L$ (one-sided)}
+\State $\hat L\gets\max\{0,\ \lambda_{\min}(\hat\bG_1)-r_1\}$;\quad $g^\star\gets2\vartheta^\star\sigma_2\sqrt p$
+\State $\lambda_I\gets\max\{0,\ g^\star+r_1-\lambda_{\min}(\hat\bG_1)\}$;\quad $\lambda_O\gets\min\{\lambda\ge0:\lambda_{\min}(\hat\bG_1+\lambda\PiO)\ge g^\star+r_1\}$ ($\infty$ if none)
+\Statex \hspace{\algorithmicindent}\tocheck{Replace the bisection for lambda-O by the closed form of the proofs (Lemma S3(c)).}
+\State $(\lambda,\Psi)\gets(\lambda_O,\PiO)$ if $\lambda_O\le\kappa_\Psi\lambda_I$, otherwise $(\lambda_I,\bI)$ \Comment{uses stage 1 and $\bA$ only}
+\State $(\hat\bB_2,\hat\bC_2,\hat\bc_R,\hat\bc_O,\widehat{yy})\gets\textsc{Release}(M_2,\sigma_{c,2},\rho_2,\delta_2)$; if separate, $\widehat{yy}\gets\textsc{Release}(M_y,\sigma_{c,y},\rho_y,\delta_y)$
+\State assemble $\hat\bG_2$, $\hat\bc_2$;\quad $\hat\vartheta\gets\lambda_{\min}(\hat\bG_2+\lambda\Psi)/(2\sigma_2\sqrt p)$;\quad \textbf{if} $\hat\vartheta<1$ \textbf{then return} \textsf{refused} \Comment{budget is spent}
+\State $\tilde\bP\gets(\hat\bG_2+\lambda\Psi)^{-1}$;\quad $\tilde\btheta\gets\tilde\bP\hat\bc_2$ \Comment{the bias correction of Section~\ref{sec:bias} is optional, off by default}
+\State $\widetilde{\mathrm{RSS}}\gets\widehat{yy}-\hat\bc_2^\top\tilde\btheta-\lambda\,\tilde\btheta^\top\Psi\tilde\btheta$;\quad $\sigma_{yy}\gets\sigma_2$ (joint) or $\sigma_y$ (separate)
+\For{$b=1,\dots,B$} \Comment{parametric bootstrap of the mechanism: post-processing}
+  \State draw $\mathbf E^*$ (symmetric, s.d.\ $\sigma_2$ on the $\Op$-dependent entries, zero on $\bA$), $\mathbf f^*\sim\mathcal N(0,\sigma_2^2\bI)$, $g^*\sim\mathcal N(0,\sigma_{yy}^2)$
+  \State \textbf{keep} the draw only if $\|\tilde\bP^{1/2}\mathbf E^*\tilde\bP^{1/2}\|_{\mathrm{op}}\le\frac12$ \Comment{truncation: otherwise the moments do not exist}
+  \State $\btheta^*_b\gets(\hat\bG_2+\mathbf E^*+\lambda\Psi)^{-1}(\hat\bc_2+\mathbf f^*)$;\quad $\mathrm{RSS}^*_b\gets$ the RSS formula at $(\hat\bG_2+\mathbf E^*,\hat\bc_2+\mathbf f^*,\widehat{yy}+g^*)$
+\EndFor
+\State $\bV_{\mathrm{mech}}\gets\widehat{\mathrm{Cov}}_b(\btheta^*_b)$;\quad $\mathrm{Corr}\gets\overline{\mathrm{RSS}^*}-\widetilde{\mathrm{RSS}}$;\quad $\tilde s^2\gets\max\{\widetilde{\mathrm{RSS}}-\mathrm{Corr},0\}/(n-p)$
+\State \textbf{CI for the protocol estimand} $\btheta_\lambda=(\bG+\lambda\Psi)^{-1}\bc$:\quad $\tilde\theta_j\pm z_{1-\alpha_{\mathrm{CI}}/2}\sqrt{(\bV_{\mathrm{mech}})_{jj}}$
+\State $\bV\gets\bV_{\mathrm{mech}}+\tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{adds sampling variance under the homoskedastic working model}
+\State $U_{yy}\gets\min\bigl\{\widehat{yy}+z_{1-\alpha_U/2}\,\sigma_{yy}+B_y^2\sqrt{n\ln(2/\alpha_U)/2},\ nB_y^2\bigr\}$;\quad $\hat B_\beta\gets\min\{B_\beta^{\mathrm{pub}},\sqrt{U_{yy}/\hat L}\}$ \Comment{$\infty$ if $\hat L=0$}
+\Statex \hspace{\algorithmicindent}\tocheck{U-yy as corrected by the proof review (the specification spent alpha-U twice and left sigma-yy undefined). Confirm.}
+\State $\bar b_j\gets\lambda\,\|\Psi\tilde\bP\mathbf e_j\|_2\,\hat B_\beta$ \Comment{worst-case ridge bias of coordinate $j$ (first order)}
+\State \textbf{CI for} $\beta_j$ (bias-aware): $\tilde\theta_j\pm\mathrm{cv}_{\alpha_{\mathrm{CI}}}\bigl(\bar b_j/\sqrt{V_{jj}}\bigr)\sqrt{V_{jj}}$, where $\mathrm{cv}_\alpha(t)$ is the $(1-\alpha)$ quantile of $|Z+t|$, $Z\sim\mathcal N(0,1)$
+\State \Return $\tilde\btheta$, both intervals, $(\lambda,\Psi)$, the shrinkage $-\lambda\tilde\bP\Psi\tilde\btheta$, $\hat\vartheta$, $\sigma_2\tr(\tilde\bP)$, and the $(\varepsilon,\delta)$ spent
 \end{algorithmic}
 \end{algorithm}
 
@@ -167,40 +131,34 @@
 \label{alg:sub}
 \small
 \begin{algorithmic}[1]
+\Function{DeltaRep}{$B_R,B_O,B_y$} \Comment{replace-one of $(\bx_O,y)$, $\bxd$ fixed; $r,o,w=B_R^2,B_O^2,B_y^2$; Proposition~\ref{prop:sens}}
+  \State \textbf{if} $|r-w|\le2o$: $\Delta^2=(2o+r+w)^2/2+2rw$;\quad \textbf{else if} $r-w\ge2o$: $\Delta^2=4r(o+w)$
+  \State \textbf{else}: exact candidate enumeration (three cubics), rounded up as a safeguard. Return $\Delta$, and $\Delta_{\neg yy}$ from the same maximization without the $(y^2-y'^2)^2$ term
+  \State \Comment{exact suprema for $d_O\ge2$, valid but conservative for $d_O=1$; $\Delta_G=(2o+r)/\sqrt2$ if $r\le2o$, otherwise $2\sqrt{ro}$}
+\EndFunction
+\Statex
+\Function{Calibrate}{$\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}},f_1,f_y,\{\Delta_s\},N,\kappa$}
+  \State $n_{\mathrm{rel}}\gets$ number of releases (2 or 3);\quad $\gamma\gets n_{\mathrm{rel}}\bigl(\delta_B+2^{-\kappa}(1+2^{-80})+2^{-97}\bigr)$;\quad $\delta_{\mathrm{DP}}\gets\delta_{\mathrm{run}}-(1+e^{\varepsilon_{\mathrm{run}}})\gamma$
+  \State $\rho_{\mathrm{run}}\gets\max\{\rho:\ \inf_{a>1}\frac{e^{(a-1)(a\rho-\varepsilon_{\mathrm{run}})}}{a-1}\bigl(1-\tfrac1a\bigr)^{a}\le\delta_{\mathrm{DP}}\}$ \Comment{tight zCDP conversion}
+  \State $\rho_1\gets f_1\rho_{\mathrm{run}}$;\quad $\rho_y\gets f_y\rho_{\mathrm{run}}$ (0 in joint mode);\quad $\rho_2\gets\rho_{\mathrm{run}}-\rho_1-\rho_y$
+  \For{$\Omega$ in increasing admissible scales}
+    \State for each release $s$: $\Delta_{\mathrm{enc},s}\gets\sqrt{2/N}\,\Omega\,\Delta_s+\Delta_{x,s}+\sqrt N$;\quad $\sigma_{c,s}\gets\Delta_{\mathrm{enc},s}/\sqrt{2\rho_s}$
+    \State \textbf{if} $\sigma_{c,s}\ge2^{\kappa}B_{\mathrm{tot},s}(\Omega)/\sqrt{2\pi}$ for every $s$ \textbf{then break} \Comment{worst-case, data-independent $B_{\mathrm{tot},s}$}
+  \EndFor
+  \State $\sigma_s\gets\sigma_{c,s}\sqrt{N/2}/\Omega$;\quad choose $q_0>2\bigl(\Omega\,S_{\max}+2^{\kappa}B_{\mathrm{tot}}+10\,\sigma_{c,\max}\bigr)$ with $S_{\max}=\bar n_O\max(r,o,w,\sqrt{ro},\dots)$ \Comment{no wraparound}
+\EndFunction
+\Statex
+\Function{SampleDG}{$\sigma$} exact discrete Gaussian on $\Z$ by rejection from a discrete Laplace, with big-integer
+\Statex \hspace{\algorithmicindent}arithmetic, a rational $\sigma^2$ and a CSPRNG; never by rounding a floating-point normal
+\EndFunction
+\Statex
 \Function{SanitizeBFV}{$\mathit{ct}$} \Comment{statistical flooding; BFV decryption stays exact}
-  \State $\mathit{ct} \gets \mathsf{ModSwitch}_{0}(\mathit{ct})$
-  \State $\mathbf{e} \gets \mathcal{D}_{\mathbb{Z}^{N_{B}},\, 2^{\kappa} B_{\mathrm{err}}}$
-    \Comment{$B_{\mathrm{err}}$: bound on the error of $\mathit{ct}$ at level 0}
-  \State \Return $\mathit{ct} \boxplus \mathsf{BFV.Enc}_{\pk_{B}}(\mathbf{0}) \boxplus (\mathbf{e}, 0)$
+  \State $\mathit{ct}\gets\mathsf{ModSwitch}_0(\mathit{ct})$;\quad $\mathbf e\gets\mathcal D_{\Z^{N_B},\,2^{\kappa}B_{\mathrm{err}}}$ \Comment{$B_{\mathrm{err}}$: bound on the error of $\mathit{ct}$ at level 0}
+  \State \Return $\mathit{ct}\boxplus\mathsf{BFV.Enc}_{\pk_B}(\mathbf 0)\boxplus(\mathbf e,0)$
 \EndFunction
 \Statex
-\Function{SanitizeCKKS}{$\mathit{ct}$} \Comment{DP-calibrated flooding of the error channel}
-  \State $\mathit{ct} \gets \mathsf{ModSwitch}_{0}(\mathit{ct})$
-  \State $\varsigma \gets S_{\mathrm{err}} / \sqrt{2\rho_{\mathrm{err}}}$;\quad
-    $\mathbf{e} \gets \mathcal{D}_{\mathbb{Z}^{N_{C}},\, \varsigma}$
-    \Comment{Lemma~\ref{lem:flood}}
-  \State \Return $\mathit{ct} \boxplus (\mathbf{e}, 0)$
-\EndFunction
-\Statex
-\Function{DeltaRep}{$B_{R}, B_{O}, B_{y}$} \Comment{Proposition~\ref{prop:sens}}
-  \State $R \gets B_{R}^{2}$,\; $O \gets B_{O}^{2}$,\; $Y \gets B_{y}^{2}$
-  \If{$|R - Y| \le 2O$} \State \Return $\bigl(\tfrac12(2O + R + Y)^{2} + 2RY\bigr)^{1/2}$
-  \ElsIf{$R - Y \ge 2O$} \State \Return $\bigl(4R(O + Y)\bigr)^{1/2}$
-  \Else \State \Return $\bigl(\max_{t \in [-B_{y}, B_{y}]} F(c^{\ast}(t), t)\bigr)^{1/2}$ \Comment{$F$, $c^{\ast}$ as in \eqref{eq:sens_F}}
-  \EndIf
-\EndFunction
-\Statex
-\Function{AnalyticGauss}{$\Delta, \varepsilon, \delta$} \Comment{Balle--Wang}
-  \State \Return the smallest $\sigma$ with
-    $\Phi\bigl(\tfrac{\Delta}{2\sigma} - \tfrac{\varepsilon\sigma}{\Delta}\bigr)
-     - e^{\varepsilon}\,\Phi\bigl(-\tfrac{\Delta}{2\sigma} - \tfrac{\varepsilon\sigma}{\Delta}\bigr) \le \delta$
-    \Comment{bisection}
-\EndFunction
-\Statex
-\Function{BiasOp}{$\mathbf{P}, d_{R}$} \Comment{bracket of Theorem~\ref{thm:bias}}
-  \State $\Pi_{R} \gets \mathrm{diag}(\mathbf{1}_{d_{R}}, \mathbf{0}_{d_{O}})$;\; $\Pi_{O} \gets \mathbf{I}_{p} - \Pi_{R}$
-  \State \Return $\bigl(\mathbf{P}^{2} + \mathrm{tr}(\mathbf{P})\mathbf{P} - \mathbf{P}\,\mathrm{diag}(\mathbf{P})\bigr)\Pi_{O}
-    + \bigl(\mathbf{P}\Pi_{O}\mathbf{P} + \mathrm{tr}(\Pi_{O}\mathbf{P})\mathbf{P}\bigr)\Pi_{R}$
+\Function{ChooseBounds}{$D_{\mathrm{ref}}$} grid over quantile levels of $\|\bxd\|$, $\|\bx_O\|$ and $|y|$ in public reference data; minimize
+\Statex \hspace{\algorithmicindent}the first-order coefficient MSE plus the squared clipping bias
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
