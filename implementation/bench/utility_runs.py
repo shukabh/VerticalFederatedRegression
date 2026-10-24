@@ -1,7 +1,8 @@
 """End-to-end utility runs of the full encrypted protocol (both parties, real OpenFHE, exact DP noise).
 
   real       a UCI dataset with per-party preprocessing: a public reference split gives the standardization
-             constants and the 99.5% clipping bounds, a test split measures prediction error, the rest is O's
+             constants, the constants of an optional per-party transform (winsorizing, rank-Gaussian, or
+             normalizing each party's block of a row to unit norm) and the 99.5% clipping bounds, a test split measures prediction error, the rest is O's
              register; R's cohort is a random part of the register plus people O does not hold.  Each encrypted
              run is compared with plaintext least squares on the same matched, clipped data, with the plaintext
              ridge target for the run's (lambda, Psi), and with a plaintext simulation of the same mechanism.
@@ -10,7 +11,7 @@
              interval covers theta_lambda at its nominal rate (pooled over runs and coefficients).
   report     writes bench/results/utility.md from the JSON results.
 
-    python bench/utility_runs.py real --dataset protein --eps 1 4 --reps 3
+    python bench/utility_runs.py real --dataset protein --eps 1 4 --reps 3 [--preproc zscore|winsor2|winsor3|rankgauss|blocknorm]
     python bench/utility_runs.py synthetic --eps 4 8 --reps 20 --n 20000
     python bench/utility_runs.py report
 """
@@ -49,7 +50,34 @@ def _ids(rng, k, taken):
     return out
 
 
-def prepare_real(name, seed=0, frac_ref=0.1, frac_test=0.2, cohort_frac=0.6, n_R_extra=1000, q=0.995):
+PREPROC = ('zscore', 'winsor2', 'winsor3', 'rankgauss', 'blocknorm')
+
+
+def transform(F, Fz, ref, dR, preproc):
+    """Per-party feature transforms; every constant comes from the public reference split, and each block of
+    columns is transformed by its own party (none of them needs the other party's columns)."""
+    if preproc == 'zscore':
+        return Fz
+    if preproc in ('winsor2', 'winsor3'):
+        c = float(preproc[-1])
+        return np.clip(Fz, -c, c)
+    if preproc == 'rankgauss':
+        from scipy.stats import norm
+        out = np.empty_like(F)
+        for j in range(F.shape[1]):
+            srt = np.sort(F[ref, j])
+            u = (np.searchsorted(srt, F[:, j], side='right') + 0.5) / (len(srt) + 1)
+            out[:, j] = norm.ppf(np.clip(u, 0.5 / len(srt), 1 - 0.5 / len(srt)))
+        return out
+    if preproc == 'blocknorm':
+        def unit(X):
+            nr = np.linalg.norm(X, axis=1, keepdims=True)
+            return X / np.where(nr > 0, nr, 1.0)
+        return np.column_stack([unit(Fz[:, :dR]), unit(Fz[:, dR:])])
+    raise ValueError(preproc)
+
+
+def prepare_real(name, seed=0, frac_ref=0.1, frac_test=0.2, cohort_frac=0.6, n_R_extra=1000, q=0.995, preproc='zscore'):
     import datasets as wang
     F, y = wang.RAW[name]()
     ok = np.isfinite(F).all(1) & np.isfinite(y)
@@ -65,6 +93,7 @@ def prepare_real(name, seed=0, frac_ref=0.1, frac_test=0.2, cohort_frac=0.6, n_R
     Fz, yz = (F - mu) / sd, (y - my) / sy
     d = F.shape[1]
     dR = d // 2
+    Fz = transform(F, Fz, ref, dR, preproc)
     # bounds from the public reference split only
     B_R = float(np.sqrt(1 + np.quantile(np.sum(Fz[ref, :dR] ** 2, 1), q)))
     B_O = float(np.quantile(np.linalg.norm(Fz[ref, dR:], axis=1), q))
@@ -88,7 +117,7 @@ def prepare_real(name, seed=0, frac_ref=0.1, frac_test=0.2, cohort_frac=0.6, n_R
                           clip_rows(Fz[test, dR:], B_O)])
     meta = dict(dataset=name, n_rows=int(n), d=int(d), d_R=int(dR), d_O=int(d - dR), n_ref=int(n_ref),
                 n_test=int(n_test), n_register=int(len(pool)), n_cohort=int(len(ids_R)), n_matched=int(n_coh),
-                n_bar_O=int(math.ceil(len(pool) / SLOTS) * SLOTS), bounds=bounds, quantile=q, seed=seed)
+                n_bar_O=int(math.ceil(len(pool) / SLOTS) * SLOTS), bounds=bounds, quantile=q, seed=seed, preproc=preproc)
     return data_R, data_O, bounds, meta, dict(Z=Zt, y=yz[test])
 
 
@@ -182,7 +211,7 @@ def analyse(runs, ps, dA, ag, test=None):
 
 
 def cmd_real(a):
-    data_R, data_O, b, meta, test = prepare_real(a.dataset, seed=a.seed)
+    data_R, data_O, b, meta, test = prepare_real(a.dataset, seed=a.seed, preproc=a.preproc)
     ps = data.plaintext_stats(data_R, data_O, b['B_R'], b['B_O'], b['B_y'])
     out = dict(meta=meta, results={})
     for eps in a.eps:
@@ -196,7 +225,8 @@ def cmd_real(a):
         out['results'][str(eps)] = res
         print(f"eps={eps}: {a.reps} runs in {time.time() - t0:.0f}s; lam={[round(r['lam']) for r in runs]}; "
               f"refused={[r['refused'] for r in runs]}", flush=True)
-    path = os.path.join(RES, f'utility_real_{a.dataset}.json')
+    suffix = '' if a.preproc == 'zscore' else f'_{a.preproc}'
+    path = os.path.join(RES, f'utility_real_{a.dataset}{suffix}.json')
     json.dump(out, open(path, 'w'), indent=1)
     print('wrote', path)
 
@@ -232,11 +262,32 @@ def cmd_report(a):
     L = ['# End-to-end utility runs of the full encrypted protocol', '',
          'Generated by `bench/utility_runs.py`. Every run is a complete two-process run: OPRF and labeled PSI, threshold',
          'CKKS upload and aggregation, two releases with exact discrete-Gaussian noise, and the solver. delta = 1e-9.', '']
-    pr = os.path.join(RES, 'utility_real_protein.json')
-    if os.path.exists(pr):
+    import glob
+    LABEL = {'zscore': 'z-score', 'winsor2': 'winsorize |z| <= 2', 'winsor3': 'winsorize |z| <= 3',
+             'rankgauss': 'rank-Gaussian', 'blocknorm': 'block unit norm'}
+    files = sorted(glob.glob(os.path.join(RES, 'utility_real_*.json')),
+                   key=lambda f: PREPROC.index(json.load(open(f))['meta'].get('preproc', 'zscore')))
+    if files:
+        L += ['## Real data: summary across per-party preprocessing', '',
+              'Median over the encrypted runs; the simulated range is the 95% range of a plaintext simulation of the same mechanism.', '',
+              '| dataset | preprocessing | Delta | eps | test MSE, encrypted (median) | simulated 95% range | non-private OLS | ratio | median lambda | Wald covers theta_lambda |',
+              '|---|---|---|---|---|---|---|---|---|---|']
+        for f in files:
+            D = json.load(open(f))
+            m = D['meta']
+            for e, R in D['results'].items():
+                rs = [r for r in R['runs'] if 'mse' in r]
+                med = float(np.median([r['mse'] for r in rs]))
+                cov = sum(sum(r['covered']) for r in rs), sum(len(r['covered']) for r in rs)
+                mq = R['sim'].get('mse_q', [None, None, None])
+                L.append(f"| {m['dataset']} | {LABEL[m.get('preproc', 'zscore')]} | {dp.delta_rep(m['bounds']['B_R'], m['bounds']['B_O'], m['bounds']['B_y'])[0]:.1f} | {e} | "
+                         f"{med:.4f} | {_fmt(mq[0], 4)}–{_fmt(mq[2], 4)} | {R['mse_ols']:.4f} | {med / R['mse_ols']:.2f} | "
+                         f"{np.median([r['lam'] for r in R['runs']]):.0f} | {cov[0]}/{cov[1]} |")
+        L += ['']
+    for pr in files:
         D = json.load(open(pr))
         m = D['meta']
-        L += [f"## Real data: {m['dataset']} ({m['n_rows']:,} rows, {m['d']} features; R holds {m['d_R']}, O holds {m['d_O']} and y)", '',
+        L += [f"## Real data: {m['dataset']}, {LABEL[m.get('preproc', 'zscore')]} ({m['n_rows']:,} rows, {m['d']} features; R holds {m['d_R']}, O holds {m['d_O']} and y)", '',
               f"Per-party preprocessing from a public reference split of {m['n_ref']:,} rows (standardization constants and 99.5% bounds "
               f"B_R = {m['bounds']['B_R']:.2f} incl. intercept, B_O = {m['bounds']['B_O']:.2f}, B_y = {m['bounds']['B_y']:.2f}); "
               f"test split {m['n_test']:,} rows; O's register {m['n_register']:,} rows padded to {m['n_bar_O']:,}; "
@@ -293,6 +344,7 @@ def main():
     r.add_argument('--kappa', type=int, default=40)
     r.add_argument('--workers', type=int, default=2)
     r.add_argument('--seed', type=int, default=0)
+    r.add_argument('--preproc', default='zscore', choices=PREPROC)
     s = sub.add_parser('synthetic')
     s.add_argument('--eps', type=float, nargs='+', default=[4.0, 8.0])
     s.add_argument('--reps', type=int, default=20)
