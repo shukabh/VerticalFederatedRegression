@@ -38,9 +38,13 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     a2 = pub['agreement']
     for f in ('n_R_max', 'n_bar_O', 'd_R', 'd_O', 'B_R', 'B_O', 'B_y', 'eps_run', 'delta_run', 'f1', 'f_y', 'kappa',
               'zeta', 'kappa_min', 'delta_B', 't_eta', 'lambda_sec', 'ledger_eps', 'ledger_delta', 'ledger_zeta',
-              'ledger_mode', 'variant'):
+              'ledger_mode', 'variant', 'theta_star', 'kappa_Psi', 'alpha', 'alpha_L', 'alpha_U', 'r1_mode',
+              'intervals'):
         if a2[f] != getattr(ag, f):
             raise RuntimeError(f'agreement mismatch on {f}')
+    a_L, a_U, _ = dp.alpha_split(ag)                    # validates the statistical setting
+    if ag.r1_mode == 'exact':                           # public: (d_A, d_O, alpha_L) only; cached on disk
+        solve.r1_quantile_exact(ag.d_R + 1, ag.d_O, a_L)
     ck = C.make_ckks(cp)
     if [int(q) for q in ck.qs] != pub['qs'] or [int(p) for p in ck.ps] != pub['ps']:
         raise RuntimeError('CKKS moduli differ')
@@ -171,8 +175,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     rel1, z1 = release(1)
     B1, C1 = unpack(rel1)
     G1 = solve.assemble(A, B1, C1)
-    a_L = a_U = ag.alpha / 20
-    s1 = solve.stage1_rule(G1, dA, sig['1'], sig['2'], a_L, ag.theta_star, ag.kappa_Psi)
+    s1 = solve.stage1_rule(G1, dA, sig['1'], sig['2'], a_L, ag.theta_star, ag.kappa_Psi, r1_mode=ag.r1_mode)
     rel2, z2 = release(2)
     B2, C2 = unpack(rel2)
     cR = np.array([rel2[f'cR_{j}'] for j in range(dA)])
@@ -193,7 +196,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     if n > G2.shape[0]:
         res = solve.stage2_infer(G2, c2, yy2, n, dA, s1, sig['2'], sig_yy, ag.B_y, ag.alpha, a_L, a_U,
                                  ag.B_beta_pub, np.random.default_rng(opts.get('solve_seed')), Bboot=opts.get('Bboot', 2000),
-                                 truncate=True, antithetic=opts.get('antithetic', True))
+                                 truncate=True, antithetic=opts.get('antithetic', True), intervals=ag.intervals)
     T['solve'] = time.time() - t0
     out = dict(I=[ids[i] for i in I], pi=pi, n=n, A=A, rel1=rel1, rel2=rel2, yy=yy2, G1=G1, G2=G2, c2=c2,
                stage1={k: v for k, v in s1.items()}, result=res, sigma=sig, Omega_f=float(Omf),

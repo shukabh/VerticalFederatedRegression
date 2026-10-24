@@ -125,7 +125,8 @@ def zcdp_to_eps(rho, delta):
 @dataclass
 class Agreement:
     """What both parties agree on in Setup (Algorithm 1, line 1) plus the public sizes.  The defaults are the
-    paper's evaluation settings, not part of the protocol."""
+    previous evaluation setting ('prev' in SETTINGS), not part of the protocol; the paper's two evaluation settings,
+    inference (I) and prediction (P), are applied with Agreement(..., **setting('I')) or setting('P')."""
     n_R_max: int
     n_bar_O: int
     d_R: int
@@ -139,6 +140,10 @@ class Agreement:
     f_y: float = 0.1               # share of a separate y'y release (the protocol has no default; our choice)
     theta_star: float = 2.5
     alpha: float = 0.05
+    alpha_L: float | None = None   # stage-1 error level; None: alpha / 20
+    alpha_U: float | None = None   # error level of U_yy; None: alpha / 20
+    r1_mode: str = 'union'         # stage-1 radius: 'union' (union bound) or 'exact' (Monte Carlo quantile, solve.py)
+    intervals: bool = True         # False: estimate only, no interval guarantee (alpha_CI need not be positive)
     B_beta_pub: float = float('inf')
     kappa_Psi: float = 2.0
     kappa: int | str = 'auto'      # flooding parameter: an integer, or 'auto' (derived by Calibrate)
@@ -161,6 +166,39 @@ class Agreement:
 
 
 LOG2_OMEGA_U_A = 68.0   # R's encoding scale for circuit A
+
+# Named evaluation settings of the statistical parameters (paper, Section "Parameters").  None of them is part
+# of the protocol.  'prev' is the earlier evaluation setting (the Agreement defaults).  'I' (inference) keeps the
+# interval guarantee with the exact stage-1 radius and a larger stage-1 share; 'P' (prediction) is tuned for test
+# error only and gives up the interval guarantee.  I and P were chosen on the synthetic population only, by the
+# rule pre-registered in reports/v31_settings/settings_choice.md.
+SETTINGS = {
+    'prev': dict(f1=0.1, theta_star=2.5, kappa_Psi=2.0, alpha=0.05, alpha_L=None, alpha_U=None, r1_mode='union',
+                 intervals=True),
+}
+
+
+def setting(name: str) -> dict:
+    """The Agreement fields of a named evaluation setting (a copy)."""
+    if name not in SETTINGS:
+        raise ValueError(f'unknown setting {name!r}; known: {sorted(SETTINGS)}')
+    return dict(SETTINGS[name])
+
+
+def alpha_split(ag: 'Agreement'):
+    """(alpha_L, alpha_U, alpha_CI) of an agreement.  alpha_L and alpha_U default to alpha / 20.  With intervals
+    on, alpha = alpha_CI + alpha_L + alpha_U needs alpha_CI > 0; with intervals off alpha_L only sizes the stage-1
+    radius and may be any value in (0, 1)."""
+    aL = ag.alpha / 20 if ag.alpha_L is None else float(ag.alpha_L)
+    aU = ag.alpha / 20 if ag.alpha_U is None else float(ag.alpha_U)
+    if not (0 < aL < 1 and 0 < aU < 1):
+        raise ValueError('alpha_L and alpha_U must lie in (0, 1)')
+    if ag.r1_mode not in ('union', 'exact'):
+        raise ValueError(f"r1_mode must be 'union' or 'exact', not {ag.r1_mode!r}")
+    aCI = ag.alpha - aL - aU
+    if ag.intervals and not aCI > 0:
+        raise ValueError('with intervals on, alpha_L + alpha_U must be below alpha')
+    return aL, aU, aCI
 
 
 def resolve_log2_Omega_U(log2_Omega_U, variant):

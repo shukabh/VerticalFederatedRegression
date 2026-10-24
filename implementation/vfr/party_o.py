@@ -72,6 +72,11 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     q0, q1, q2 = qs[0] * qs[1], qs[2], qs[3]
     gadget = C.gadget_constants(ck)
     try:
+        dp.alpha_split(ag)                              # the statistical setting must be well formed
+    except ValueError as exc:
+        ch.send('refuse', meta=dict(reason=f'Setting: {exc}'))
+        return dict(refused=f'Setting: {exc}', transcript=tr.records)
+    try:
         cal = dp.calibrate(ag, ck.N, q1, q2, q0, gadget)
     except dp.CalibrationRefused as exc:                # parameters not admissible: refuse the run
         ch.send('refuse', meta=dict(reason=f'Calibrate: {exc}'))

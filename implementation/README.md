@@ -30,9 +30,10 @@ NTTs, hybrid key switching and BFV evaluation.
 scripts/build_openfhe.sh /opt/openfhe-1.5.1          # once (about 5 min on 4 cores)
 python3 -m pip install numpy scipy cryptography pybind11 pytest
 native/build.sh /opt/openfhe-1.5.1                   # builds vfr/vfr_native*.so
-python3 -m pytest -q tests/                          # 41 tests, about 3 min
+python3 -m pytest -q tests/                          # 47 tests, about 3.5 min
 python3 run_protocol.py toy
 python3 run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300   # [--eps 8] [--kappa auto|48] [--ledger_eps none]
+#                                                     [--setting prev|I|P] [--r1_mode union|exact] [--f1 F] ...
 python3 bench/validate.py                            # numbers in bench/results/validation.json
 python3 bench/bench_micro.py --threads 1             # microbenchmarks (full parameters)
 python3 bench/bench_e2e.py --sizes 1024 4096 16384 32768 65536 --threads 1 [--workers 4]
@@ -52,10 +53,17 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 | 3 Aggregate (Alg. 4) | `vfr/aggregate.py` | circuit A as written (`T_e = EvalSum(Rescale(sum_h U_e[h] * Ecd(V_e[h])))`, `P_e = Rescale(T_e * Ecd(u_slot))`, M1 = sum over (triu B, C), M2 = all stage-2 entries, My if separate); circuit C as an option; optional entry-parallel threads |
 | 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; ledger charge; sends only (c1', h_O) |
 | | `native: combine / decode_i128` | R: `v = h_O + c1' s_R mod q0`, CRT to int128, decode with the exact rational final scale |
-| 5 Solve and infer (Alg. 6) | `vfr/solve.py` | corrected Algorithm 6 (port of alg6.py with the paper's corrections) |
+| 5 Solve and infer (Alg. 6) | `vfr/solve.py` | corrected Algorithm 6 (port of alg6.py with the paper's corrections); stage-1 radius r_1 by the union bound (`r1_mode='union'`) or the exact Monte Carlo quantile (`'exact'`, `r1_quantile_exact`, cached in `vfr/r1_quantiles.json`); `intervals=False` for estimate-only settings |
 | parties | `vfr/party_r.py`, `vfr/party_o.py`, `vfr/protocol.py`, `vfr/wire.py` | two processes, one socket; JSON header + binary fields, no pickle; per-message transcript (type, direction, bytes per field, SHA-256) |
 | inputs | `vfr/data.py` | toy example; synthetic cohorts from `experiments/sim_core.Population` (d_R = 4, d_O = 6) |
 | preprocessing (Setup, `Preprocess`) | `bench/utility_runs.py` (`transform`) | each party transforms its own columns before the protocol with constants from a public reference split: standardize, optional winsorizing / rank-Gaussian, optional block unit norm; bounds = 99.5% quantiles on the transformed reference data. It is local computation, so it runs before `protocol.run` |
+
+Statistical settings (`vfr/dp.py`, `SETTINGS`; DEVIATIONS A18-A19). The Agreement defaults are the previous
+evaluation setting `'prev'` (union-bound r_1, f_1 = 0.1, theta* = 2.5, kappa_Psi = 2, alpha_L = alpha_U = alpha/20).
+The paper's two settings of the same protocol are `'I'` (inference: exact r_1, a larger f_1, the interval guarantee)
+and `'P'` (prediction: tuned for test error, no intervals); both keep the gate theta_hat >= 1. Pass them as
+`dp.Agreement(..., **dp.setting('I'))` or `run_protocol.py --setting I`. Both parties check every statistical field
+of the agreement; O refuses an ill-formed setting (intervals on with alpha_L + alpha_U >= alpha).
 
 Parameters (`vfr/common.py`, the paper's evaluation settings): CKKS N = 2^14, chain q = [p0 60, p1 59, p2 59, p3 59]
 bits with q0 = p0 p1 (2^119), q1 = p2, q2 = p3, special primes P = 2 x 60 bits, dnum = 2, log QP = 357 (128-bit
@@ -72,7 +80,7 @@ and the operations are the same, so the timings carry over. BFV N_B = 2^14,
 t = 4293918721, 7 x 60-bit limbs, reply switched to 2 limbs, SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50,
 delta_psi = 2^-40.
 
-## Tests (`tests/`, 41 passing)
+## Tests (`tests/`, 47 passing)
 
 - `test_primitives.py`: RFC 9497 vectors; exact sampler (chi-square at sigma^2 = 3, moments and low bits at
   sigma = 2^55); DeltaRep against the closed forms, the paper's (1, 1, 5) example and a random search; rho_run =
@@ -93,5 +101,10 @@ delta_psi = 2^-40.
   chain above the security bound, a too small q0 and a too large delta_B; the ledger share kappa_L; the ledger
   filter is exhausted by rho, not by slack, and converts the slack at the cap's eps; a single-run ledger is filled
   exactly.
+- `test_stage1_radius.py`: the exact r_1 gives the one-sided failure rate alpha_L on 400k fresh noise draws
+  (alpha_L = 0.0025 and 0.25; rate within 3 s.d. above and at least 0.8 alpha_L); the order-statistic upper bound
+  covers the true quantile at its confidence level; the union bound is still the default and matches the formula;
+  the agreement's alpha split, intervals flag and named settings; a two-process run threads `r1_mode='exact'`,
+  alpha_L = 0.25 and `intervals=False` through both parties, and O refuses an ill-formed setting.
 - `test_noise.py`: 40 + 20 releases of one packed ciphertext: pooled s.d. of (decoded - true) within 6% of
   sigma_s from Calibrate, per-entry s.d. within [0.4, 1.9] sigma_s.

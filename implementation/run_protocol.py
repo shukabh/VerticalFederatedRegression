@@ -4,6 +4,11 @@
     python run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300 [--variant A|C] [--log2_Omega_U auto|q2|68]
                                      [--eps 1.0] [--delta 1e-9] [--kappa auto|40] [--zeta 0.1]
                                      [--ledger_eps 10] [--ledger_delta 1e-6] [--transcript out.json]
+                                     [--setting prev|I|P] [--f1 F] [--theta_star T] [--kappa_Psi K]
+                                     [--alpha_L A] [--r1_mode union|exact] [--no_intervals]
+
+--setting picks a named evaluation setting of the statistical parameters (vfr/dp.py SETTINGS: 'prev' the earlier
+one, 'I' inference, 'P' prediction); the explicit options override single fields of it.
 
 kappa 'auto' lets Calibrate derive the flooding parameter from (eps, delta, zeta, kappa_min) and the ledger cap.
 The default ledger file holds a multi-run cap (ledger_eps, ledger_delta); --ledger_eps none gives a single-run
@@ -48,6 +53,14 @@ def main():
     ap.add_argument('--ledger', default=os.path.join(HERE, 'ledger_O.json'))
     ap.add_argument('--transcript', default=None)
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--setting', default='prev', choices=sorted(dp.SETTINGS),
+                    help='named evaluation setting of the statistical parameters (vfr/dp.py SETTINGS)')
+    ap.add_argument('--f1', type=float, default=None, help='stage-1 share of rho_run (overrides the setting)')
+    ap.add_argument('--theta_star', type=float, default=None)
+    ap.add_argument('--kappa_Psi', type=float, default=None)
+    ap.add_argument('--alpha_L', type=float, default=None)
+    ap.add_argument('--r1_mode', default=None, choices=['union', 'exact'])
+    ap.add_argument('--no_intervals', action='store_true', help='estimate only (no interval guarantee)')
     a = ap.parse_args()
     a.log2_Omega_U = {'auto': 'auto', 'q2': None}.get(a.log2_Omega_U) if a.log2_Omega_U in ('auto', 'q2') \
         else float(a.log2_Omega_U)
@@ -55,6 +68,13 @@ def main():
                 zeta=a.zeta, kappa_min=a.kappa_min,
                 ledger_eps=None if a.ledger_eps.lower() == 'none' else float(a.ledger_eps),
                 ledger_delta=None if a.ledger_eps.lower() == 'none' else a.ledger_delta)
+    stat = dp.setting(a.setting)
+    for k in ('f1', 'theta_star', 'kappa_Psi', 'alpha_L', 'r1_mode'):
+        if getattr(a, k) is not None:
+            stat[k] = getattr(a, k)
+    if a.no_intervals:
+        stat['intervals'] = False
+    priv.update(stat)
     if a.dataset == 'toy':
         dR_, dO_, b = data.toy()
         ag = dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, **priv, **b)
@@ -74,7 +94,8 @@ def main():
     print(f"mode {'joint' if cal['joint'] else 'separate'}; rho_run {cal['rho_run']:.5f}; Omega_f 2^{cal['log2_Omega_f']:.2f}; "
           + '; '.join(f"sigma_{s} = {v['sigma_slot']:.1f}" for s, v in cal['releases'].items()))
     s1 = R['stage1']
-    print(f"stage 1: lambda = {s1['lam']:.4g}, Psi = {s1['kind']}")
+    print(f"setting {a.setting}: " + ', '.join(f'{k} = {v}' for k, v in stat.items()))
+    print(f"stage 1: r_1 = {s1['r1']:.4g} ({s1['r1_mode']}), lambda = {s1['lam']:.4g}, Psi = {s1['kind']}")
     res = R['result']
     if res is None:
         print('n <= p: no estimate')
@@ -83,8 +104,11 @@ def main():
     else:
         np.set_printoptions(precision=4, suppress=True)
         print('theta~       ', res['theta'])
-        print('Wald half    ', res['half_theta'])
-        print('beta half    ', res['half_beta'])
+        if res.get('intervals', True):
+            print('Wald half    ', res['half_theta'])
+            print('beta half    ', res['half_beta'])
+        else:
+            print('(no intervals in this setting)')
         print(f"gate theta_hat = {res['theta_hat_gate']:.3f}; sigma_2 tr(P~) = {res['sigma2_trP']:.3f}")
     print('messages (R view):')
     for k, v in R['summary'].items():
