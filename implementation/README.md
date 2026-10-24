@@ -58,8 +58,12 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 
 Parameters (`vfr/common.py`): CKKS N = 2^14, chain q = [p0 60, p1 60, p2 59, p3 59] bits with q0 = p0 p1,
 q1 = p2, q2 = p3, special primes P = 2 x 60 bits, dnum = 2, log QP = 358 (128-bit secure for N = 2^14, OpenFHE's
-check); R encodes at Omega_U = q2, masks at Omega_u = q1, O's data at Omega_V = Omega_f (from Calibrate), so the
-final scale is exactly Omega_f (2^62.78 for the synthetic cohort; 2^63.19 at 1M rows). BFV N_B = 2^14,
+check). Circuit A (as written) with R encoding at Omega_U = 2^68 (the default, `log2_Omega_U='auto'`; decided
+2026-10-24), masks at Omega_u = q1 and O's data at Omega_V from Calibrate; the final scale
+Omega_f = Omega_U Omega_V Omega_u / (q1 q2) is tracked exactly: 2^61.8 / 2^62.75 / 2^63.7 / 2^64.6 for
+eps = 0.5 / 1 / 2 / 4 at every n_bar_O from 4k to 1M (delta = 1e-9, kappa = 40). `--log2_Omega_U q2` selects the
+earlier choice Omega_U = q2. The benchmarks in `bench/results/` were measured with Omega_U = q2; the modulus chain
+and the operations are the same, so the timings carry over. BFV N_B = 2^14,
 t = 4293918721, 7 x 60-bit limbs, reply switched to 2 limbs. kappa = 40, delta_B = 2^-50, delta_psi = 2^-40.
 
 ## Tests (`tests/`, 29 passing)

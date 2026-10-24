@@ -1,7 +1,7 @@
 """Run protocol v3.1 with R and O as two processes over a socket, with the DP noise on (production path).
 
     python run_protocol.py toy
-    python run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300 [--variant A|C] [--log2_Omega_U 68]
+    python run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300 [--variant A|C] [--log2_Omega_U auto|q2|68]
                                      [--eps 1.0] [--delta 1e-9] [--transcript out.json]
 
 There is deliberately no switch for the noise-free debug path (tests only).
@@ -30,7 +30,8 @@ def main():
     ap.add_argument('--n_R_max', type=int, default=None)
     ap.add_argument('--n', type=int, default=300)
     ap.add_argument('--variant', default='A', choices=['A', 'C'])
-    ap.add_argument('--log2_Omega_U', type=float, default=None)
+    ap.add_argument('--log2_Omega_U', default='auto',
+                    help="R's encoding scale: auto (2^68 for circuit A, q2 for C), q2, or log2 of the scale")
     ap.add_argument('--eps', type=float, default=1.0)
     ap.add_argument('--delta', type=float, default=1e-9)
     ap.add_argument('--B_beta_pub', type=float, default=float('inf'))
@@ -38,6 +39,8 @@ def main():
     ap.add_argument('--transcript', default=None)
     ap.add_argument('--seed', type=int, default=0)
     a = ap.parse_args()
+    a.log2_Omega_U = {'auto': 'auto', 'q2': None}.get(a.log2_Omega_U) if a.log2_Omega_U in ('auto', 'q2') \
+        else float(a.log2_Omega_U)
     if a.dataset == 'toy':
         dR_, dO_, b = data.toy()
         ag = dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, eps_run=a.eps, delta_run=a.delta, **b)

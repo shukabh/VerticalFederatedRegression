@@ -135,14 +135,26 @@ class Agreement:
     kappa: int = 40
     delta_B: float = 2.0 ** -50
     variant: str = 'A'             # 'A' circuit as written; 'C' restructured (proof sketched only)
-    log2_Omega_U: float | None = None   # R's encoding scale; None: Omega_U = q2 (the prime of the first rescale)
+    # R's encoding scale: 'auto' = 2^68 for circuit A (decided: keeps B_tot and Omega_f independent of n_bar_O),
+    # q2 for circuit C; None = q2 (the prime of the first rescale); a number = 2^log2_Omega_U
+    log2_Omega_U: float | str | None = 'auto'
     researcher: str = 'R'
     project: str = 'demo'
 
 
+LOG2_OMEGA_U_A = 68.0   # R's encoding scale for circuit A
+
+
+def resolve_log2_Omega_U(log2_Omega_U, variant):
+    """'auto' -> 2^68 for circuit A and q2 (None) for circuit C; anything else is returned unchanged."""
+    if log2_Omega_U == 'auto':
+        return LOG2_OMEGA_U_A if variant == 'A' else None
+    return log2_Omega_U
+
+
 def scales_from_primes(q1: int, q2: int, log2_Omega_U=None):
-    """Masks at Omega_u = q1 (exact prime); R encodes at Omega_U = q2 by default, or at an exactly representable
-    2^log2_Omega_U.  O's data scale Omega_V is chosen by Calibrate; Omega_f = Omega_U Omega_V Omega_u / (q1 q2)."""
+    """Masks at Omega_u = q1 (exact prime); R encodes at an exactly representable 2^log2_Omega_U, or at
+    Omega_U = q2 if None.  O's data scale Omega_V is chosen by Calibrate; Omega_f = Omega_U Omega_V Omega_u / (q1 q2)."""
     OmU = Fraction(q2) if log2_Omega_U is None else Fraction(admissible_scale(log2_Omega_U))
     return OmU, Fraction(q1)
 
@@ -177,7 +189,7 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
         rho[2] = rho_run - rho[1] - rho['y']
         sens = {1: DG, 2: Delta_noyy, 'y': Dy}
     stages = list(sens.keys())
-    OmU, Omu = scales_from_primes(q1, q2, ag.log2_Omega_U)
+    OmU, Omu = scales_from_primes(q1, q2, resolve_log2_Omega_U(ag.log2_Omega_U, ag.variant))
 
     def cparams(Omega_V):
         return bt.CircuitParams(N=N, n_bar=ag.n_bar_O, d_R=ag.d_R, d_O=ag.d_O, B_R=ag.B_R, B_O=ag.B_O, B_y=ag.B_y,

@@ -5,7 +5,8 @@ Circuit 'A' (as written in the spec):
     M_s = sum_{e in E_s} P_e
 Circuit 'C' (proof review's restructured circuit):
     T_e = Rescale_stoch(EvalSum(sum_h U_e[h] * Ecd(V_e[h])));   M_s = Rescale_stoch(sum_{e in E_s} T_e * Ecd(u_slot(e)))
-Scales: R encodes at Omega_U = q2, masks at Omega_u = q1, O's data at Omega_V, so Omega_f = Omega_V exactly.
+Scales: R encodes at Omega_U (2^68 by default for circuit A, q2 for circuit C), masks at Omega_u = q1, O's data at
+Omega_V, so Omega_f = Omega_U Omega_V Omega_u / (q1 q2), tracked exactly.
 """
 from __future__ import annotations
 

@@ -53,9 +53,10 @@
 \EndFor
 \State $m\gets\lceil\bar n_O/N_s\rceil$ \Comment{chunks of at most $N_s=N/2$ slots}
 \For{each vector $\mathbf v\in\{\bb,\bxd_{\cdot0},\dots,\bxd_{\cdot d_R}\}$ and each chunk $h\le m$}
-  \State \Rdo draw a seed $\varsigma$; $a\gets\mathrm{PRG}(\varsigma)$; $c_0\gets-a\,s_R+e+\Ecd(\mathbf v[h])$, with $e$ from the RLWE error distribution; send $(c_0,\varsigma)$
+  \State \Rdo draw a seed $\varsigma$; $a\gets\mathrm{PRG}(\varsigma)$; $c_0\gets-a\,s_R+e+\Ecd_{\Omega_U}(\mathbf v[h])$, with $e$ from the RLWE error distribution; send $(c_0,\varsigma)$
   \State \Odo $a\gets\mathrm{PRG}(\varsigma)$;\ $c_0\gets c_0-a\,s_O$ \Comment{$(c_0,a)$ now encrypts $\mathbf v[h]$ under $s=s_R+s_O$}
 \EndFor
+\Statex $\Rp$ encodes at $\Omega_U=2^{68}$ (Section~\ref{sec:privacy:calib})
 \end{algorithmic}
 \end{algorithm}
 
@@ -69,11 +70,11 @@
 \Statex \quad $\bB_{jk}$: $(\Enc{\bb},\ \bx_{O,j}\odot\bx_{O,k})$;\quad $\bC_{jk}$: $(\Enc{\bxd_j},\ \bx_{O,k})$;\quad $\bc_{R,j}$: $(\Enc{\bxd_j},\ \by)$;
 \Statex \quad $\bc_{O,k}$: $(\Enc{\bb},\ \bx_{O,k}\odot\by)$;\quad $\by^\top\by$: $(\Enc{\bb},\ \by\odot\by)$
 \For{each $e\in\mathcal E$}
-  \State $T_e\gets\textsc{EvalSum}\bigl(\textsc{Rescale}\bigl(\sum_{h\le m}U_e[h]\odot\Ecd(V_e[h])\bigr)\bigr)$ \Comment{sum the chunks first; one \textsc{EvalSum} per entry}
-  \State $P_e\gets\textsc{Rescale}\bigl(T_e\odot\Ecd(\mathbf u_{\mathrm{slot}(e)})\bigr)$ \Comment{$\mathbf u_k$: one-hot slot $k$; entry $e$ sits alone in its slot}
+  \State $T_e\gets\textsc{EvalSum}\bigl(\textsc{Rescale}\bigl(\sum_{h\le m}U_e[h]\odot\Ecd_{\Omega_V}(V_e[h])\bigr)\bigr)$ \Comment{sum the chunks first; one \textsc{EvalSum} per entry}
+  \State $P_e\gets\textsc{Rescale}\bigl(T_e\odot\Ecd_{\Omega_u}(\mathbf u_{\mathrm{slot}(e)})\bigr)$ \Comment{$\mathbf u_k$: one-hot slot $k$; entry $e$ sits alone in its slot}
 \EndFor
 \State $M_1\gets\sum_{e\in\mathcal E_G}P_e$;\quad $M_2\gets\sum_{e\in\mathcal E_2}P_e$;\quad $M_y\gets P_{\by^\top\by}$ if $\textit{mode}=\textsf{separate}$ \Comment{depth 2; $M_1$ depends only on $\triu\bB$ and $\bC$}
-\Statex \hspace{\algorithmicindent}\tocheck{Circuit variant. As written this circuit needs a CKKS scale of about 2 to the 61.5. The proof review's restructured circuit (EvalSum before the first rescale, one rescale per release, stochastic rounding, R encoding at about 2 to the 60) needs about 2 to the 53.7, but its proof is still open. Choose one.}
+\Statex Scales: $\Rp$'s vectors at $\Omega_U=2^{68}$, the masks at $\Omega_u=q_1$, $\Op$'s data at $\Omega_V$; the final scale $\Omega_f=\Omega_U\Omega_V\Omega_u/(q_1q_2)$ is tracked exactly, and $\Rp$ decodes with it
 \end{algorithmic}
 \end{algorithm}
 

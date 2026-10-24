@@ -63,7 +63,7 @@ def test_evalsum_with_joint_keys_is_the_trace(ck):
     assert np.abs(dec.real - z.sum()).max() < 1e-6 and np.abs(dec.imag).max() < 1e-6
 
 
-def _small_problem(n_bar=4096, n=300, seed=3, variant='A', log2_Omega_U=None):
+def _small_problem(n_bar=4096, n=300, seed=3, variant='A', log2_Omega_U='auto'):
     dR_, dO_, truth, b = data.synthetic(n_bar, int(0.8 * n_bar), 500, n, seed=seed)
     ag = dp.Agreement(n_R_max=600, n_bar_O=n_bar, d_R=4, d_O=6, variant=variant, log2_Omega_U=log2_Omega_U, **b)
     rng = np.random.default_rng(seed)
@@ -74,7 +74,7 @@ def _small_problem(n_bar=4096, n=300, seed=3, variant='A', log2_Omega_U=None):
     return ag, vecs, XO, yt, ps
 
 
-@pytest.mark.parametrize('variant,lu', [('A', None), ('A', 68.0), ('C', None)])
+@pytest.mark.parametrize('variant,lu', [('A', 'auto'), ('A', None), ('C', 'auto')])
 def test_circuit_noise_off_matches_plaintext(variant, lu):
     ag, vecs, XO, yt, ps = _small_problem(variant=variant, log2_Omega_U=lu)
     pl = Pipeline(ag, C.CKKSParams(), vecs, XO, yt)
