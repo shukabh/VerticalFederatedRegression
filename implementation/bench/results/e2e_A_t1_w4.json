@@ -1,0 +1,587 @@
+[
+ {
+  "n_bar_O": 1024,
+  "n_R_max": 2000,
+  "n": 102,
+  "threads": 1,
+  "workers": 4,
+  "variant": "A",
+  "wall": 11.842007160186768,
+  "psi_exact": true,
+  "O": {
+   "setup_calibrate": 0.1822829246520996,
+   "keygen_O": 1.5476226806640625,
+   "psi_oprf_self": 0.09644269943237305,
+   "psi_preprocess": 0.0620417594909668,
+   "psi_oprf_requests": 0.31368494033813477,
+   "psi_eval": 1.236950159072876,
+   "psi_sanitize": 0.8434340953826904,
+   "upload_convert": 0.042058467864990234,
+   "aggregate": 3.9868972301483154,
+   "aggregate_detail": {
+    "encode": 0.6429197788238525,
+    "mul_add": 0.07750391960144043,
+    "evalsum": 12.003553628921509,
+    "rescale_mask": 0.6571190357208252,
+    "entries_wall": 3.4072067737579346,
+    "pack": 0.019633054733276367,
+    "n_entries": 63,
+    "m": 1,
+    "workers": 4
+   },
+   "release": {
+    "1": {
+     "sample": 0.30327749252319336,
+     "rerand_pdec": 0.00894618034362793
+    },
+    "2": {
+     "sample": 0.3197612762451172,
+     "rerand_pdec": 0.008760690689086914
+    }
+   }
+  },
+  "R": {
+   "setup_verify": 0.5920681953430176,
+   "keygen_R": 1.4071872234344482,
+   "psi_oprf": 0.7083587646484375,
+   "psi_query": 0.2515082359313965,
+   "psi_decode": 0.08409738540649414,
+   "link_total_R": 1.0439643859863281,
+   "upload_encrypt": 0.11469483375549316,
+   "release_R": {
+    "1": 0.048392534255981445,
+    "2": 0.04788041114807129
+   },
+   "solve": 0.03409910202026367
+  },
+  "messages": {
+   "recv:public_params": {
+    "count": 1,
+    "bytes": 2346
+   },
+   "sent:keygen_R": {
+    "count": 1,
+    "bytes": 20971729
+   },
+   "recv:keygen_O": {
+    "count": 1,
+    "bytes": 524409
+   },
+   "sent:oprf_request": {
+    "count": 1,
+    "bytes": 64087
+   },
+   "recv:oprf_response": {
+    "count": 1,
+    "bytes": 64090
+   },
+   "sent:psi_keys": {
+    "count": 1,
+    "bytes": 14687005
+   },
+   "sent:psi_query": {
+    "count": 1,
+    "bytes": 9182644
+   },
+   "recv:psi_response": {
+    "count": 1,
+    "bytes": 1051634
+   },
+   "sent:upload": {
+    "count": 1,
+    "bytes": 3146631
+   },
+   "sent:release_request": {
+    "count": 2,
+    "bytes": 138
+   },
+   "recv:release": {
+    "count": 2,
+    "bytes": 1048978
+   },
+   "sent:done": {
+    "count": 1,
+    "bytes": 46
+   }
+  },
+  "log2_Omega_f": 62.750000328020356,
+  "sigma": {
+   "1": 1411.0692130101895,
+   "2": 525.0559284422314
+  },
+  "psi": {
+   "D": 11,
+   "alpha": 1,
+   "max_load": 4,
+   "n_dup": 0
+  }
+ },
+ {
+  "n_bar_O": 4096,
+  "n_R_max": 2000,
+  "n": 409,
+  "threads": 1,
+  "workers": 4,
+  "variant": "A",
+  "wall": 13.252237319946289,
+  "psi_exact": true,
+  "O": {
+   "setup_calibrate": 0.15201401710510254,
+   "keygen_O": 1.669400930404663,
+   "psi_oprf_self": 0.37941455841064453,
+   "psi_preprocess": 0.13437485694885254,
+   "psi_oprf_requests": 0.14690876007080078,
+   "psi_eval": 1.8128178119659424,
+   "psi_sanitize": 0.8730530738830566,
+   "upload_convert": 0.04531502723693848,
+   "aggregate": 4.048829555511475,
+   "aggregate_detail": {
+    "encode": 0.6502885818481445,
+    "mul_add": 0.07459330558776855,
+    "evalsum": 12.034359693527222,
+    "rescale_mask": 0.6477980613708496,
+    "entries_wall": 3.4278054237365723,
+    "pack": 0.02084636688232422,
+    "n_entries": 63,
+    "m": 1,
+    "workers": 4
+   },
+   "release": {
+    "1": {
+     "sample": 0.29964756965637207,
+     "rerand_pdec": 0.008752822875976562
+    },
+    "2": {
+     "sample": 0.39580345153808594,
+     "rerand_pdec": 0.01389932632446289
+    }
+   }
+  },
+  "R": {
+   "setup_verify": 1.0539367198944092,
+   "keygen_R": 1.5365571975708008,
+   "psi_oprf": 0.8919906616210938,
+   "psi_query": 0.23806047439575195,
+   "psi_decode": 0.08425617218017578,
+   "link_total_R": 1.2143073081970215,
+   "upload_encrypt": 0.1130976676940918,
+   "release_R": {
+    "1": 0.07554388046264648,
+    "2": 0.0508275032043457
+   },
+   "solve": 0.03491950035095215
+  },
+  "messages": {
+   "recv:public_params": {
+    "count": 1,
+    "bytes": 2345
+   },
+   "sent:keygen_R": {
+    "count": 1,
+    "bytes": 20971729
+   },
+   "recv:keygen_O": {
+    "count": 1,
+    "bytes": 524409
+   },
+   "sent:oprf_request": {
+    "count": 1,
+    "bytes": 64087
+   },
+   "recv:oprf_response": {
+    "count": 1,
+    "bytes": 64090
+   },
+   "sent:psi_keys": {
+    "count": 1,
+    "bytes": 14687005
+   },
+   "sent:psi_query": {
+    "count": 1,
+    "bytes": 9182644
+   },
+   "recv:psi_response": {
+    "count": 1,
+    "bytes": 1051634
+   },
+   "sent:upload": {
+    "count": 1,
+    "bytes": 3146631
+   },
+   "sent:release_request": {
+    "count": 2,
+    "bytes": 138
+   },
+   "recv:release": {
+    "count": 2,
+    "bytes": 1048978
+   },
+   "sent:done": {
+    "count": 1,
+    "bytes": 46
+   }
+  },
+  "log2_Omega_f": 62.78125004071011,
+  "sigma": {
+   "1": 1411.0692130101882,
+   "2": 525.0559284422308
+  },
+  "psi": {
+   "D": 16,
+   "alpha": 1,
+   "max_load": 6,
+   "n_dup": 0
+  }
+ },
+ {
+  "n_bar_O": 16384,
+  "n_R_max": 2000,
+  "n": 1638,
+  "threads": 1,
+  "workers": 4,
+  "variant": "A",
+  "wall": 16.35835576057434,
+  "psi_exact": true,
+  "O": {
+   "setup_calibrate": 0.17511582374572754,
+   "keygen_O": 1.4087607860565186,
+   "psi_oprf_self": 1.5663225650787354,
+   "psi_preprocess": 0.4968242645263672,
+   "psi_oprf_requests": 0.1474628448486328,
+   "psi_eval": 3.1430654525756836,
+   "psi_sanitize": 0.9072246551513672,
+   "upload_convert": 0.07747006416320801,
+   "aggregate": 4.346722364425659,
+   "aggregate_detail": {
+    "encode": 1.3355703353881836,
+    "mul_add": 0.16945743560791016,
+    "evalsum": 12.464581727981567,
+    "rescale_mask": 0.6657567024230957,
+    "entries_wall": 3.76467227935791,
+    "pack": 0.021103858947753906,
+    "n_entries": 63,
+    "m": 2,
+    "workers": 4
+   },
+   "release": {
+    "1": {
+     "sample": 0.28884005546569824,
+     "rerand_pdec": 0.008758306503295898
+    },
+    "2": {
+     "sample": 0.32056713104248047,
+     "rerand_pdec": 0.010987997055053711
+    }
+   }
+  },
+  "R": {
+   "setup_verify": 0.9654803276062012,
+   "keygen_R": 1.2753524780273438,
+   "psi_oprf": 2.4428837299346924,
+   "psi_query": 0.35464048385620117,
+   "psi_decode": 0.0852968692779541,
+   "link_total_R": 2.8828210830688477,
+   "upload_encrypt": 0.2299494743347168,
+   "release_R": {
+    "1": 0.048944711685180664,
+    "2": 0.04893684387207031
+   },
+   "solve": 0.03451108932495117
+  },
+  "messages": {
+   "recv:public_params": {
+    "count": 1,
+    "bytes": 2346
+   },
+   "sent:keygen_R": {
+    "count": 1,
+    "bytes": 20971729
+   },
+   "recv:keygen_O": {
+    "count": 1,
+    "bytes": 524409
+   },
+   "sent:oprf_request": {
+    "count": 1,
+    "bytes": 64087
+   },
+   "recv:oprf_response": {
+    "count": 1,
+    "bytes": 64090
+   },
+   "sent:psi_keys": {
+    "count": 1,
+    "bytes": 14687005
+   },
+   "sent:psi_query": {
+    "count": 1,
+    "bytes": 11019161
+   },
+   "recv:psi_response": {
+    "count": 1,
+    "bytes": 1051634
+   },
+   "sent:upload": {
+    "count": 1,
+    "bytes": 6293199
+   },
+   "sent:release_request": {
+    "count": 2,
+    "bytes": 138
+   },
+   "recv:release": {
+    "count": 2,
+    "bytes": 1048978
+   },
+   "sent:done": {
+    "count": 1,
+    "bytes": 46
+   }
+  },
+  "log2_Omega_f": 62.78125004071011,
+  "sigma": {
+   "1": 1411.0692130101882,
+   "2": 525.0559284422308
+  },
+  "psi": {
+   "D": 26,
+   "alpha": 1,
+   "max_load": 11,
+   "n_dup": 0
+  }
+ },
+ {
+  "n_bar_O": 32768,
+  "n_R_max": 2000,
+  "n": 1900,
+  "threads": 1,
+  "workers": 4,
+  "variant": "A",
+  "wall": 20.734764099121094,
+  "psi_exact": true,
+  "O": {
+   "setup_calibrate": 0.19820356369018555,
+   "keygen_O": 1.6960170269012451,
+   "psi_oprf_self": 3.1448681354522705,
+   "psi_preprocess": 0.9963772296905518,
+   "psi_oprf_requests": 0.1969451904296875,
+   "psi_eval": 4.249520540237427,
+   "psi_sanitize": 0.8228394985198975,
+   "upload_convert": 0.18140172958374023,
+   "aggregate": 4.757858991622925,
+   "aggregate_detail": {
+    "encode": 2.616454601287842,
+    "mul_add": 0.3525371551513672,
+    "evalsum": 12.335970878601074,
+    "rescale_mask": 0.6569972038269043,
+    "entries_wall": 4.152969598770142,
+    "pack": 0.026256561279296875,
+    "n_entries": 63,
+    "m": 4,
+    "workers": 4
+   },
+   "release": {
+    "1": {
+     "sample": 0.3279597759246826,
+     "rerand_pdec": 0.00917673110961914
+    },
+    "2": {
+     "sample": 0.3233833312988281,
+     "rerand_pdec": 0.008887529373168945
+    }
+   }
+  },
+  "R": {
+   "setup_verify": 1.046165943145752,
+   "keygen_R": 1.5551142692565918,
+   "psi_oprf": 4.563920259475708,
+   "psi_query": 0.32767391204833984,
+   "psi_decode": 0.09378409385681152,
+   "link_total_R": 4.985378265380859,
+   "upload_encrypt": 0.4716193675994873,
+   "release_R": {
+    "1": 0.05164051055908203,
+    "2": 0.0501554012298584
+   },
+   "solve": 0.0365452766418457
+  },
+  "messages": {
+   "recv:public_params": {
+    "count": 1,
+    "bytes": 2346
+   },
+   "sent:keygen_R": {
+    "count": 1,
+    "bytes": 20971729
+   },
+   "recv:keygen_O": {
+    "count": 1,
+    "bytes": 524409
+   },
+   "sent:oprf_request": {
+    "count": 1,
+    "bytes": 64087
+   },
+   "recv:oprf_response": {
+    "count": 1,
+    "bytes": 64090
+   },
+   "sent:psi_keys": {
+    "count": 1,
+    "bytes": 14687005
+   },
+   "sent:psi_query": {
+    "count": 1,
+    "bytes": 12855678
+   },
+   "recv:psi_response": {
+    "count": 1,
+    "bytes": 1051634
+   },
+   "sent:upload": {
+    "count": 1,
+    "bytes": 12586335
+   },
+   "sent:release_request": {
+    "count": 2,
+    "bytes": 138
+   },
+   "recv:release": {
+    "count": 2,
+    "bytes": 1048978
+   },
+   "sent:done": {
+    "count": 1,
+    "bytes": 46
+   }
+  },
+  "log2_Omega_f": 62.812500105512775,
+  "sigma": {
+   "1": 1411.069213010186,
+   "2": 525.0559284422303
+  },
+  "psi": {
+   "D": 36,
+   "alpha": 1,
+   "max_load": 18,
+   "n_dup": 0
+  }
+ },
+ {
+  "n_bar_O": 65536,
+  "n_R_max": 2000,
+  "n": 1900,
+  "threads": 1,
+  "workers": 4,
+  "variant": "A",
+  "wall": 29.412848472595215,
+  "psi_exact": true,
+  "O": {
+   "setup_calibrate": 0.2564675807952881,
+   "keygen_O": 1.494401216506958,
+   "psi_oprf_self": 6.761079549789429,
+   "psi_preprocess": 2.1468958854675293,
+   "psi_oprf_requests": 0.19058871269226074,
+   "psi_eval": 6.54239559173584,
+   "psi_sanitize": 0.8101382255554199,
+   "upload_convert": 0.37508487701416016,
+   "aggregate": 5.411036729812622,
+   "aggregate_detail": {
+    "encode": 5.283439636230469,
+    "mul_add": 0.7229154109954834,
+    "evalsum": 12.296293497085571,
+    "rescale_mask": 0.6618707180023193,
+    "entries_wall": 4.807684421539307,
+    "pack": 0.021554946899414062,
+    "n_entries": 63,
+    "m": 8,
+    "workers": 4
+   },
+   "release": {
+    "1": {
+     "sample": 0.35114383697509766,
+     "rerand_pdec": 0.009232521057128906
+    },
+    "2": {
+     "sample": 0.3699378967285156,
+     "rerand_pdec": 0.009536027908325195
+    }
+   }
+  },
+  "R": {
+   "setup_verify": 1.085801124572754,
+   "keygen_R": 1.3476688861846924,
+   "psi_oprf": 9.374550104141235,
+   "psi_query": 0.4896268844604492,
+   "psi_decode": 0.09384822845458984,
+   "link_total_R": 9.958025217056274,
+   "upload_encrypt": 0.9133033752441406,
+   "release_R": {
+    "1": 0.0494234561920166,
+    "2": 0.06607270240783691
+   },
+   "solve": 0.03510689735412598
+  },
+  "messages": {
+   "recv:public_params": {
+    "count": 1,
+    "bytes": 2349
+   },
+   "sent:keygen_R": {
+    "count": 1,
+    "bytes": 20971729
+   },
+   "recv:keygen_O": {
+    "count": 1,
+    "bytes": 524409
+   },
+   "sent:oprf_request": {
+    "count": 1,
+    "bytes": 64087
+   },
+   "recv:oprf_response": {
+    "count": 1,
+    "bytes": 64090
+   },
+   "sent:psi_keys": {
+    "count": 1,
+    "bytes": 14687005
+   },
+   "sent:psi_query": {
+    "count": 1,
+    "bytes": 12855678
+   },
+   "recv:psi_response": {
+    "count": 1,
+    "bytes": 1051634
+   },
+   "sent:upload": {
+    "count": 1,
+    "bytes": 25172607
+   },
+   "sent:release_request": {
+    "count": 2,
+    "bytes": 138
+   },
+   "recv:release": {
+    "count": 2,
+    "bytes": 1048978
+   },
+   "sent:done": {
+    "count": 1,
+    "bytes": 46
+   }
+  },
+  "log2_Omega_f": 62.843750105003686,
+  "sigma": {
+   "1": 1411.0692130101847,
+   "2": 525.0559284422297
+  },
+  "psi": {
+   "D": 51,
+   "alpha": 1,
+   "max_load": 30,
+   "n_dup": 0
+  }
+ }
+]

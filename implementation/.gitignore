@@ -1,0 +1,4 @@
+# build products and local state of the implementation
+vfr/*.so
+ledger_O.json
+bench/results/work/
