@@ -2,8 +2,9 @@
 
 Two-party vertical federated ridge regression with threshold CKKS and lattice DP releases (honest-but-curious),
 implemented end to end: R and O run as separate OS processes that exchange explicit, structured messages over a
-socket, and both log a transcript of every message. Validated at small scale; benchmarked at 1k-64k register rows
-and extrapolated to 100k-1M by a fitted cost model. **Nothing was run at n_bar_O >= 100k.**
+socket, and both log a transcript of every message. Validated at small scale; benchmarked at 1k-64k register rows,
+and run end to end at 100k, 300k and 1M register rows (n_R^max = 20,000 and 100,000; 78 runs; `reports/large/`): about
+3 minutes per run at 1M on 4 cores, O's peak memory 2.3 GB, 475 MB of traffic.
 
 Deviations, choices and open points: [DEVIATIONS.md](DEVIATIONS.md). Results: `bench/results/` (validation.json,
 benchmarks.md, cost_model.md, scale_options.json).

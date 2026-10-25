@@ -135,7 +135,7 @@ def fig_accuracy():
             on = [r['ridge_on'] > 0.5 for r in rows]
             for ax, y in ((axes[0, j], pr), (axes[1, j], rm)):
                 ax.plot(ns, y, '-', color=col, label=f'$\\varepsilon = {eps:g}$')
-                ax.scatter(ns, y, c=[col], s=18, facecolors=['white' if o else col for o in on], edgecolors=[col])
+                ax.scatter(ns, y, s=18, facecolors=['white' if o else col for o in on], edgecolors=[col])
         axes[0, j].set_title(title, fontsize=10)
         axes[0, j].set_xscale('log'); axes[0, j].set_yscale('log')
         axes[1, j].set_xscale('log')
