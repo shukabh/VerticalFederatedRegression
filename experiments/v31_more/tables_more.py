@@ -119,6 +119,9 @@ def main():
             t = d['noise_pooled'][k]
             L.append(f"- pooled new runs {k}: {t['entries']} entries, mean {t['mean']:+.4f} (SE {t['se_entry']:.4f}, z {t['z']:+.2f}, "
                      f"p {t['p_entry']:.3f}; run-level p {t['run_p']:.3f}), sd {t['sd']:.4f}, KS p {t['ks_p']:.3f} (KS stat {t['ks_stat']:.4f})")
+        tv = sum(t['values'] for r in d['results'].values() for t in r['noise_all_slots'].values())
+        tm = sum(t['values'] * t['mean'] for r in d['results'].values() for t in r['noise_all_slots'].values()) / tv
+        L.append(f"- all slots of every release, pooled over configurations: {tv:,} values, mean {tm:+.5f} (SE {1 / math.sqrt(tv):.5f})")
         if 'I2_with_replication' in d:
             c = d['I2_with_replication']['coverage']
             L.append(f"- I2 and I2r pooled: {d['I2_with_replication']['runs']} runs, Wald coverage {c['covered']}/{c['total']} = {c['coverage']:.4f} "

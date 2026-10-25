@@ -119,6 +119,7 @@ All earlier encrypted runs pooled: 699/740 = 0.9446; expected from the plaintext
 
 - pooled new runs stage1: 10200 entries, mean +0.0007 (SE 0.0099, z +0.07, p 0.943; run-level p 0.943), sd 0.9945, KS p 0.497 (KS stat 0.0082)
 - pooled new runs stage2: 12400 entries, mean +0.0024 (SE 0.0090, z +0.26, p 0.793; run-level p 0.789), sd 1.0064, KS p 0.418 (KS stat 0.0079)
+- all slots of every release, pooled over configurations: 6,530,800 values, mean -0.00027 (SE 0.00039)
 - pooled earlier_spot_checks stage1: 765 entries, mean -0.0584 (SE 0.0362, z -1.61, p 0.106; run-level p 0.180), sd 1.0090, KS p 0.532
 - pooled earlier_spot_checks stage2: 930 entries, mean -0.0124 (SE 0.0328, z -0.38, p 0.705; run-level p 0.753), sd 0.9784, KS p 0.767
 - pooled earlier_spot_checks per_check I2_old stage1: 255 entries, mean -0.1723 (z -2.75, p 0.006), sd 0.9650, KS p 0.111
@@ -155,6 +156,7 @@ All earlier encrypted runs pooled: 699/740 = 0.9446; expected from the plaintext
 
 - pooled new runs stage1: 22950 entries, mean +0.0055 (SE 0.0066, z +0.83, p 0.408; run-level p 0.399), sd 0.9948, KS p 0.133 (KS stat 0.0077)
 - pooled new runs stage2: 27900 entries, mean +0.0043 (SE 0.0060, z +0.72, p 0.472; run-level p 0.487), sd 1.0059, KS p 0.478 (KS stat 0.0050)
+- all slots of every release, pooled over configurations: 14,694,300 values, mean -0.00041 (SE 0.00026)
 - I2 and I2r pooled: 250 runs, Wald coverage 2623/2750 = 0.9538 (clustered 0.9459--0.9618, Wilson 0.9453--0.9610)
 - pooled earlier_spot_checks stage1: 765 entries, mean -0.0584 (SE 0.0362, z -1.61, p 0.106; run-level p 0.180), sd 1.0090, KS p 0.532
 - pooled earlier_spot_checks stage2: 930 entries, mean -0.0124 (SE 0.0328, z -0.38, p 0.705; run-level p 0.753), sd 0.9784, KS p 0.767

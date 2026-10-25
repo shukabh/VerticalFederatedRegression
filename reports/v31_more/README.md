@@ -61,7 +61,7 @@ previous setting, data rebuilt with the same code and seeds, the noise s.d. the 
 | protein block norm | 4 (40) | 0.9553 (0.9537-0.9568) | 46/50 = 0.92 (0.81-0.97) | 0.22 |
 
 * **Coverage meets 0.955 at eps = 8 (0.9554) and in every protein setting (0.9548-0.9577)**; every per-coefficient value
-  is 0.952-0.963, no coefficient is significantly below target, and the standardized errors have s.d. 0.991-1.002.
+  is 0.951-0.963, no coefficient is significantly below target, and the standardized errors have s.d. 0.991-1.002.
 * The earlier encrypted counts are what batches of 20 (or 5) runs give: the probability that a plaintext batch of the
   same size covers no more is 0.05-1.00. Pooled, the earlier encrypted runs covered 699/740 = 0.945 against 707.4
   expected (sd 6.1): z = -1.39, one-sided p = 0.08.
@@ -104,7 +104,8 @@ three were extended to 100 (after a look at the first 22-26 runs only). Because 
   * the slots outside the packed entries carry the same noise on a plaintext 0: about 16,000 values per release,
     **1.6-2.4 million per configuration and release**; their mean is within 0.0011 of zero (SE 0.0006-0.0008) and their
     s.d. 0.9992-1.0008 in every configuration, and the s.d. of the per-release s.d. matches its sampling value (0.005-0.006),
-    so the noise scale is right release by release.
+    so the noise scale is right release by release. Over all 14.7 million slot values of the 550 runs the mean is
+    -0.0004 (SE 0.0003).
   * The earlier spot checks' means (-0.17 on I's release 1, 255 entries; -0.10 under P, 565 entries) are **not
     reproduced**: the same configurations now give +0.026 (I2, 5,100 entries), -0.0006 (I2r, 7,650) and +0.006 / -0.003
     (P1). With the earlier runs included the pooled means are +0.003 (release 1, 23,715 entries) and +0.004 (release 2,
