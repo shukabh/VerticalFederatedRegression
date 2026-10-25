@@ -141,10 +141,12 @@ This document proposes a cryptographic protocol for \emph{vertical federated lea
   \item \textbf{Protocol.} A two-party protocol that combines OPRF-based labeled PSI, a seeded upload under $\Rp$'s key share converted by $\Op$, plaintext--ciphertext aggregation, and a release in which $\Op$'s decryption share carries the DP noise (Section~\ref{sec:protocol}, Algorithms~\ref{alg:setup}--\ref{alg:sub}).
   \item \textbf{Privacy.} The exact replace-one sensitivity of the released statistics; a release whose single noise term, an exact lattice discrete Gaussian in $\Op$'s decryption share, is exactly $\rho_s$-zCDP and also floods every encryption error term against a worst-case bound; simulation-based output privacy; composition of runs, fixed or adaptively chosen, under a per-register ledger with a privacy filter; input and cohort privacy (Sections~\ref{sec:privacy} and~\ref{sec:input}).
   \item \textbf{Parameters.} The protocol and every theorem are stated for a parameter vector with explicit admissibility constraints; \textsc{Calibrate} derives the flooding parameter from the budget and the ledger cap, and the scale and the noise from both (Section~\ref{sec:params}).
-  \item \textbf{Statistics.} A two-stage ridge whose choice is independent of the noise in the estimation release; two named estimands; a Wald interval from a parametric bootstrap of the mechanism, after Ferrando et al.~\cite{ferrando2022parametric}; a bias-aware interval for the regression coefficients, after Armstrong et al.~\cite{armstrong2020bias}; and the leading-order mechanism bias with an optional correction (Sections~\ref{sec:stats} and~\ref{sec:bias}).
+  \item \textbf{Statistics.} A two-stage ridge whose choice is independent of the noise in the estimation release; two named estimands; a Wald interval from a parametric bootstrap of the mechanism, after Ferrando et al.~\cite{ferrando2022parametric}; a bias-aware interval for the regression coefficients, after Armstrong et al.~\cite{armstrong2020bias}; and the leading-order mechanism bias with an optional correction (Section~\ref{sec:stats} and Appendix~\ref{sec:bias}).
   \item \textbf{Preprocessing.} Per-party transforms with public constants that make typical records fill the clipping bounds, which no joint computation is needed for (Section~\ref{sec:protocol:preproc}).
   \item \textbf{Evaluation.} Exactness of the cryptographic layer, the calibration of the two-release protocol, interval coverage, end-to-end runs of a full implementation on real and synthetic data, coefficient accuracy against the intersection size, benchmarks against AdaSSP, vertical full-record SSP and TukeyEM on 29 UCI datasets, and a comparison with the parametric-bootstrap intervals of Ferrando et al., under two named settings of the protocol chosen on synthetic data by pre-registered rules: one for inference and one for prediction (Section~\ref{sec:eval}).
 \end{enumerate}
+
+\paragraph{Specification and proofs.} The specification of v3.1~\cite{vfrspec} and the companion proofs~\cite{vfrproofs} are in the repository, under \texttt{docs/}. References of the form ``proofs, Part~A'' are to the proofs document: Part~A~\cite{vfrproofsA}, Part~B~\cite{vfrproofsB} and the composition appendix~\cite{vfrproofsC}. Appendix~\ref{app:status} summarizes their status.
 
 % ==============================================================
 \section{Related work}
@@ -230,7 +232,7 @@ $\mathcal E$, $\mathcal E_G$, $\mathcal E_2$ & released entries: all; $(\triu\bB
 \end{tabularx}
 \end{table}
 
-\paragraph{Parameters.} The protocol, its algorithms and its theorems are stated for a parameter vector $\mathcal P$: security parameters (ring dimension, modulus chain, $\delta_B$, the floor $\kappa_{\min}$ on the flooding parameter, the security level $\lambda_{\mathrm{sec}}$), privacy parameters (the budget, the splits $f_1$ and $f_y$, the slack share $\zeta$, the ledger cap), statistical parameters, the data bounds and preprocessing, the PSI parameters, and the encoding scales $\Omega_U$ and $\Omega_u$. Section~\ref{sec:params} lists every parameter with its role, the constraint it must satisfy and the value used in our evaluation, which we call the \emph{evaluation setting}; the evaluation settings are not part of the protocol. \textsc{Calibrate} derives the flooding parameter $\kappa$, the noise, the scales and the size of $q_0$ from $\mathcal P$, or refuses the run (Section~\ref{sec:privacy:calib}). Numbers in Sections~\ref{sec:protocol}--\ref{sec:bias} are evaluation settings or worked examples and are labelled as such.
+\paragraph{Parameters.} The protocol, its algorithms and its theorems are stated for a parameter vector $\mathcal P$: security parameters (ring dimension, modulus chain, $\delta_B$, the floor $\kappa_{\min}$ on the flooding parameter, the security level $\lambda_{\mathrm{sec}}$), privacy parameters (the budget, the splits $f_1$ and $f_y$, the slack share $\zeta$, the ledger cap), statistical parameters, the data bounds and preprocessing, the PSI parameters, and the encoding scales $\Omega_U$ and $\Omega_u$. Section~\ref{sec:params} lists every parameter with its role, the constraint it must satisfy and the value used in our evaluation, which we call the \emph{evaluation setting}; the evaluation settings are not part of the protocol. \textsc{Calibrate} derives the flooding parameter $\kappa$, the noise, the scales and the size of $q_0$ from $\mathcal P$, or refuses the run (Section~\ref{sec:privacy:calib}). Numbers in Sections~\ref{sec:protocol}--\ref{sec:stats} and Appendix~\ref{sec:bias} are evaluation settings or worked examples and are labelled as such.
 
 The target is a ridge fit on the matched, column-joined data $\bX^I = [\dXR^{I} \mid \bXOI]$ with
 \begin{equation}
@@ -355,7 +357,7 @@ Figure~\ref{fig:protocol} shows the message flow and Algorithms~\ref{alg:setup}-
 
 \paragraph{Phase 0: setup (Algorithm~\ref{alg:setup}).} The parties agree on the parameter vector $\mathcal P$ (Section~\ref{sec:params}): the scope, the caps, the budget, the ledger cap of the base register, the statistical constants, the PSI parameters and the encoding scales. Each party preprocesses its own columns with public constants (Section~\ref{sec:protocol:preproc}), and the clipping bounds are chosen on the preprocessed public reference data or from domain knowledge. The sensitivities follow from the bounds alone (Section~\ref{sec:privacy:sens}). $\Op$ runs \textsc{Calibrate} (Algorithm~\ref{alg:sub}), which derives the flooding parameter, the CKKS scale and the noise from $\mathcal P$ and refuses the run if $\mathcal P$ is not admissible; $\Op$ also refuses if the run's full cost would exceed its ledger's cap, and otherwise charges that cost at once (Section~\ref{sec:privacy:ledger}). $\Rp$ repeats \textsc{Calibrate}, whose outputs depend on public values only, and checks $\Op$'s. The parties run threshold key generation, and $\Op$ draws a fresh OPRF key, a fresh shuffle $\tau$, and prepares its PSI polynomials.
 
-\tocheck{ChooseBounds: the evaluation uses the 99.5\% quantile of each block's norm on the preprocessed reference data. The optimized choice (quantile grid minimizing first-order MSE plus squared clipping bias) has not been specified or evaluated.}
+\textsc{ChooseBounds} (Algorithm~\ref{alg:sub}) takes the $99.5\%$ quantile of each block's norm, $\|\bxd\|$, $\|\bx_O\|$ and $|y|$, on the preprocessed public reference data; this is the evaluation setting. Choosing the quantile levels to minimize the first-order coefficient MSE plus the squared clipping bias is future work.
 
 \paragraph{Phase 1: link (Algorithm~\ref{alg:link}).} $\Rp$ pads its identifiers to $n_R^{\max}$, obtains their OPRF values, and runs labeled PSI. It learns $I$ and the positions $\pi(i) = \tau(j)$, and computes its own block
 \[
@@ -407,7 +409,7 @@ never transmitted & $s_R$, $s_O$; $\bA$; raw $\bXR$, $\bXO$, $\by$; $\tau$; $k$;
   \item \textbf{Accounting.} zCDP with the tight conversion replaces the analytic Gaussian calibration of a single release.
   \item \textbf{Linkage.} An OPRF with a fresh key per run replaces a keyed hash with a key known to $\Rp$, and OPRF queries are padded and counted against a quota.
   \item \textbf{Input checks.} The homomorphic input checks of v3 are removed: they addressed only a malicious researcher, and one could be bypassed. Robustness to a deviating researcher is an extension (Section~\ref{sec:ext}).
-  \item \textbf{Bias correction.} The zero-budget correction of Section~\ref{sec:bias} is now an option, off in our evaluation.
+  \item \textbf{Bias correction.} The zero-budget correction of Appendix~\ref{sec:bias} is now an option, off in our evaluation.
   \item \textbf{Preprocessing.} Each party transforms its own columns in Setup, with public constants (Section~\ref{sec:protocol:preproc}).
   \item \textbf{Parameters.} The protocol is stated for a parameter vector with explicit admissibility constraints (Section~\ref{sec:params}). The flooding parameter is derived from the budget and the ledger cap, the PSI replies are sanitized with their own flooding parameter, and the ledger has a specified composition rule, which charges a run's full cost at admission.
 \end{enumerate}
@@ -442,7 +444,9 @@ The estimand is the regression on the transformed features. Winsorizing and log 
 \end{itemize}
 The gap is caused by heavy tails under loose bounds, not by the lack of a joint bound, and per-party transforms close most of it. In end-to-end runs on protein, block normalization brings private test error within $2$--$6\%$ of non-private, against $12$--$21\%$ with standardization alone (Table~\ref{tab:e2e_protein}).
 
-\tocheck{Preprocessing defaults: which transform to recommend for prediction and for interpretation; the appended log-norm feature and winsorizing y are not yet evaluated.}
+Block normalization is the evaluation's recommended per-party preprocessing (Sections~\ref{sec:eval:e2e} and~\ref{sec:eval:adassp}). Its coefficients describe the regression on the block directions, as noted above. The appended log-norm feature and winsorizing $y$ were not evaluated.
+
+\paragraph{Optional feature screening.} Setup may include a screening module, which runs before \textsc{Preprocess} (Algorithm~\ref{alg:setup}). On public reference data that carries both parties' schemas, the parties look for features that are nearly collinear, within a block or across the two blocks, and drop one of each such pair. A collinearity across the blocks is invisible to each party in its own data, and it keeps $\lambda_{\min}$ of the joint design small, which delays the switch-off of the ridge (Section~\ref{sec:stats:noff}). The module uses only public reference data, so it costs no budget; it needs reference data that carries both schemas, and it helps only as far as that data represents the matched records. On protein, $\Rp$'s feature $x_{R,1}$ is nearly collinear with $\Op$'s feature $x_{O,5}$ (correlation $0.997$ after standardization). Dropping $x_{R,1}$ lowers $n_{\mathrm{off}}$ from $691$k to $102$k at $\varepsilon = 1$, with block normalization at the previous setting and $\delta = 10^{-9}$ (Table~\ref{tab:noff_drop}).
 
 \clearpage  % place the algorithm pages before Section 7
 
@@ -746,17 +750,20 @@ Let $e \in \Z^N$ with $\|e\|_2 \le B_{\mathrm{tot}}$ and $\sigma_c \ge 2^{\kappa
 \label{sec:input}
 % ==============================================================
 
-\paragraph{G1.} $\Op$ sees $\Rp$'s seeded uploads $c_0 = -a s_R + e + \Ecd(\mathbf v)$, which are pseudorandom under RLWE in $s_R$ (with circular security covering $\Rp$'s rotation-key shares, and the PRG modelled as a random oracle); the PSI messages, which are BFV ciphertexts under $\Rp$'s own key and blinded OPRF elements; and $\Rp$'s key-generation shares, which are RLWE samples. $\Op$ never receives a decryption share from $\Rp$, so its view can be simulated from $(n_R^{\max}, \bar n_O)$, up to a slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$: the failure probability of cuckoo hashing (at most $2^{-49.1}$ with $n_R^{\max} = 2{,}000$ items, $h = 3$ hash functions and $2^{14}$ bins, and at most $2^{-40}$ up to a load of $0.64$, provided $\Rp$'s insertion finds an assignment whenever one exists; proofs, Part~A, Lemma~7.5), and the probability of a false match, most of which $\Rp$ detects and answers with an abort (Appendix~\ref{app:psi}). $\Op$ observes the abort, and its probability can depend on the cohort, so it belongs in the slack.
+\paragraph{G1.} $\Op$ sees $\Rp$'s seeded uploads $c_0 = -a s_R + e + \Ecd(\mathbf v)$, which are pseudorandom under RLWE in $s_R$ (with circular security covering $\Rp$'s rotation-key shares, and the PRG modelled as a random oracle); the PSI messages, which are BFV ciphertexts under $\Rp$'s own key and blinded OPRF elements; and $\Rp$'s key-generation shares, which are RLWE samples. $\Op$ never receives a decryption share from $\Rp$, so its view can be simulated from $(n_R^{\max}, \bar n_O)$, up to a slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$: the failure probability of cuckoo hashing (at most $2^{-49.1}$ with $n_R^{\max} = 2{,}000$ items, $h = 3$ hash functions and $2^{14}$ bins, and at most $2^{-40}$ up to a load of $0.64$, for an insertion that finds an assignment whenever one exists, as the implementation's random walk with an augmenting-path fallback does; proofs, Part~A, Lemma~7.5), and the probability of a false match, most of which $\Rp$ detects and answers with an abort (Appendix~\ref{app:psi}). $\Op$ observes the abort, and its probability can depend on the cohort, so it belongs in the slack.
 
 G1 and G2 concern $\Op$'s view of the protocol. $\Op$ receives no output, and its view includes $\eta$, so the guarantees do not extend to anything $\Rp$ later discloses (Remark~\ref{rem:whoknows}).
 \begin{itemize}[noitemsep]
   \item \emph{Disclosed results are noiseless to $\Op$.} A statistic or model that $\Rp$ computes from the releases and publishes is, to $\Op$, a function of $f_s(D) + e_{\mathrm{tot},s}$. The DP noise protects $\Op$'s records from $\Rp$ and from third parties; it never protects $\Rp$'s data from $\Op$. This matters beyond what Remark~\ref{rem:revealed} already discloses: $\bA$ is exact in a published model, and $\bC$ and $\bcR$ become exact to $\Op$.
   \item \emph{$v_s$ must stay with $\Rp$.} $\Op$ knows $h_{O,s}$ and $c'_{1,s}$, so $v_s$ would give it $c'_{1,s}s_R$. Since $c'_{1,s}$ is invertible with overwhelming probability, that gives $s_R$, and with it $\Rp$'s uploads: G1 and G2 would both fail. Disclosing $v_s$ is equivalent to sending $\Rp$'s decryption share, which would need flooding by $\Rp$ (the client-side noise of the protocols analysed by Hwang et al.~\cite{hwang2025insecurity}). $v_s$ is therefore never transmitted (Table~\ref{tab:ledger}).
-  \item \emph{Decoded values at double precision are not a key leak.} Rounding $\Dcd(v_s)$ to double precision leaves an error of about $2^{19}$ per slot, or about $2^{12}$ per coefficient of $v_s$, because $|\tau(\eta)_k| \approx \sqrt N\sigma_c$. Even all slots at that precision would therefore give $\Op$ only a rounding-type RLWE sample of $s_R$ with that error at modulus $q_0 \approx 2^{119}$, far inside the secure region for $N = 2^{14}$. Only $v_s$ itself, or a decoding of equal precision, is dangerous. Rounding published entries to a precision commensurate with $\sigma_s$ is still good practice, and it is free.
+  \item \emph{Decoded values at double precision are not a key leak.} Rounding $\Dcd(v_s)$ to double precision leaves an error of about $2^{19}$ per slot, or about $2^{12}$ per coefficient of $v_s$, because $|\tau(\eta)_k| \approx \sqrt N\sigma_c$. Even all slots at that precision would therefore give $\Op$ only a rounding-type RLWE sample of $s_R$ with that error at modulus $q_0 \approx 2^{119}$, far inside the secure region for $N = 2^{14}$. Only $v_s$ itself, or a decoding of equal precision, is dangerous. $\Rp$ still rounds every published value (Remark~\ref{rem:publish}); rounding is free.
 \end{itemize}
 A guarantee for $\Op$ in the standard sense, jointly with $\Rp$'s output, would need noise that $\Op$ does not know either. Hwang et al.\ do this by sampling the noise jointly; here $\Rp$ must not know it either, because of DP. That is a protocol change we do not make.
 
-\tocheck{(T6) Guidance for publishing: should Algorithm~\ref{alg:release} round $\Dcd(v)$ to a fixed precision relative to $\sigma_s$ before $\Rp$ publishes anything? Rounding is post-processing and costs no budget. The implementation's \texttt{run\_R} returns the full decoded slot vectors locally; they must not be published as such.}
+\begin{remark}[Publishing guidance]
+\label{rem:publish}
+Before $\Rp$ publishes any decoded value of release $s$, it rounds $\Dcd(v_s)$ to a fixed precision relative to $\sigma_s$, for example to a multiple of $10^{\lfloor\log_{10}\sigma_s\rfloor - 2}$, two decimal digits below the leading digit of $\sigma_s$ (Algorithm~\ref{alg:release}). Rounding is post-processing and costs no budget. $\Rp$ never publishes $v_s$. The implementation's \texttt{run\_R} returns the full decoded slot vectors for local use only; \texttt{round\_published} in \texttt{implementation/vfr/party\_r.py} does the rounding.
+\end{remark}
 
 \paragraph{G2.} $\Op$ evaluates exactly $n_R^{\max}$ OPRF calls on blinded inputs and answers padded PSI queries, so it learns nothing about the cohort or $n_R$, up to the same slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$ for $\Rp$'s observable aborts.
 
@@ -833,9 +840,9 @@ because $\hat\bG_1 + \lambda\PiO - \gamma\bI \succeq \mathbf 0$ iff its Schur co
 $(\lambda, \Psi)$ is a function of the stage-1 release and of $\bA$ only, and is therefore independent of the stage-2 noise.
 \end{proposition}
 
-This is what makes the bias theory of Section~\ref{sec:bias} and the intervals below valid conditionally on $(\lambda, \Psi)$. Choosing $\lambda$ from the same release that is used for estimation would make $\lambda$ a function of the noise; Section~\ref{sec:bias:lambda} shows what goes wrong.
+This is what makes the bias theory of Appendix~\ref{sec:bias} and the intervals below valid conditionally on $(\lambda, \Psi)$. Choosing $\lambda$ from the same release that is used for estimation would make $\lambda$ a function of the noise; Appendix~\ref{sec:bias:lambda} shows what goes wrong.
 
-\tocheck{Setting I re-chose only f-1 (0.25, Section 12). It keeps theta-star = 2.5 and kappa-Psi = 2, which were chosen by simulation of earlier variants; neither has been re-tuned under the two-stage rule with the exact radius. Setting P kept kappa-Psi = 2 as well.}
+Setting I keeps $\vartheta^\star = 2.5$ and $\kappa_\Psi = 2$ from simulations of earlier variants of the rule, and setting P keeps $\kappa_\Psi = 2$ as well. Neither value was re-tuned under the two-stage rule with the exact radius; this is a limitation of both settings (Section~\ref{sec:params}).
 
 \subsection{Stage 2: estimate and gate}
 \label{sec:stats:stage2}
@@ -844,13 +851,11 @@ Stage~2 releases every entry with s.d.\ $\sigma_2$. $\Rp$ assembles $\hat\bG_2$ 
 \[
   \tilde\btheta = \tilde\bP\hat\bc_2, \qquad \tilde\bP = (\hat\bG_2 + \lambda\Psi)^{-1}.
 \]
-The gate is post-processing; a refused release still spends the budget. For $\vartheta^\star > 2$ the probability of refusal is at most $\alpha_L + \exp(-p(\vartheta^\star - 2)^2)$ (proofs, Part~B, Lemma~S3). For $\vartheta^\star \le 2$, as in the prediction setting P of Section~\ref{sec:params} ($\vartheta^\star = 1.5$), there is no such bound. With $\Psi = \bI$ the ridge sets $\lambda_{\min}(\hat\bG_1 + \lambda\bI) = g^\star + r_1$, so the gate passes iff
+The gate is post-processing; a refused release still spends the budget. Coverage is unconditional: every coverage statement in this paper bounds the probability, over all releases, that $\Rp$ reports an interval that misses its target. A refused release reports no estimate and no interval, so it makes no claim and cannot miss, and it still spends the budget. For $\vartheta^\star > 2$ the probability of refusal is at most $\alpha_L + \exp(-p(\vartheta^\star - 2)^2)$ (proofs, Part~B, Lemma~S3). For $\vartheta^\star \le 2$, as in the prediction setting P of Section~\ref{sec:params} ($\vartheta^\star = 1.5$), there is no such bound. With $\Psi = \bI$ the ridge sets $\lambda_{\min}(\hat\bG_1 + \lambda\bI) = g^\star + r_1$, so the gate passes iff
 \[
   r_1 + \bigl[\lambda_{\min}(\hat\bG_2) - \lambda_{\min}(\hat\bG_1)\bigr] \ge (1 - \vartheta^\star)\, 2\sigma_2\sqrt p .
 \]
 The bracket is the difference of the downward shifts that the two noise levels cause in $\lambda_{\min}$; on average it is negative when $\sigma_2 > \sigma_1$. With $\vartheta^\star < 1$ the right side is positive, so the gate passes only when $r_1$ is large against $\sigma_2\sqrt p$, which depends on $\Delta_G/\Delta$ and $f_1$ through~\eqref{eq:sigmas}. Block normalization makes $\Delta_G$ small against $\Delta$, and a first choice of the prediction setting with $\vartheta^\star = 0.5$ was refused on most block-normalized releases (Sections~\ref{sec:eval:adassp} and~\ref{sec:eval:sweep}). With $\vartheta^\star > 1$ the right side is negative: at $\vartheta^\star = 1.5$ the gate refuses only if the stage-2 noise lowers $\lambda_{\min}$ by more than $r_1 + \sigma_2\sqrt p$ beyond what the stage-1 noise did. Setting P was chosen under an explicit bound on the refusal rate. It refuses at most $1\%$ of releases in every simulated cell, including $\sigma_1 = 0.46\,\sigma_2$, and at most $7.2\%$ on any of 29 real datasets (Sections~\ref{sec:eval:sim} and~\ref{sec:eval:adassp}).
-
-\tocheck{Say whether the coverage statements below are conditional on passing the gate.}
 
 \subsection{Intervals}
 \label{sec:stats:ci}
@@ -862,7 +867,7 @@ The bracket is the difference of the downward shifts that the two noise levels c
 \]
 with $\chi_{ij} = 0$ iff $i$ and $j$ both lie in $\Rp$'s block. $\Rp$ may use this closed form instead of the bootstrap.
 
-\paragraph{Wald interval for $\btheta_\lambda$.} The error level is split as $\alpha = \alpha_{\mathrm{CI}} + \alpha_L + \alpha_U$, a parameter. Setting I uses $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, so $\alpha_{\mathrm{CI}} = 0.045$ and $z_{1 - \alpha_{\mathrm{CI}}/2} = 2.005$. Setting P computes no intervals; its $\alpha_L = 0.5$ only sizes $r_1$. The interval is
+\paragraph{Wald interval for $\btheta_\lambda$.} The error level is split as $\alpha = \alpha_{\mathrm{CI}} + \alpha_L + \alpha_U$, a parameter. Setting I uses $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, so $\alpha_{\mathrm{CI}} = 0.045$ and $z_{1 - \alpha_{\mathrm{CI}}/2} = 2.005$. Setting P computes no intervals; its $\alpha_L = 0.75$ only sizes $r_1$. Both intervals are computed only for releases that pass the gate, and their coverage is unconditional in the sense of Section~\ref{sec:stats:stage2}: a refused release makes no claim. The interval is
 \[
   \tilde\theta_j \pm z_{1-\alpha_{\mathrm{CI}}/2}\sqrt{(\bV_{\mathrm{mech}})_{jj}} .
 \]
@@ -884,7 +889,7 @@ where $\mathrm{cv}_\alpha(t)$ is the $(1 - \alpha)$ quantile of $|Z + t|$ for $Z
 The validity ratio controls convergence of the Neumann series, but the relative size of the neglected mechanism bias in the Wald interval is of order $\sigma_2\tr(\bP_\lambda) \le \sqrt p/(2\vartheta_0)$, which at $\vartheta^\star = 2.5$ and $p = 11$ (setting I) can be $0.66$. Coverage claims are therefore asymptotic as $\vartheta_0 \to \infty$ at fixed $p$. Algorithm~\ref{alg:solve} reports $\sigma_2\tr(\tilde\bP)$ as a diagnostic.
 \end{remark}
 
-\tocheck{Consider centring the intervals at the bootstrap bias-corrected estimate 2 theta-tilde minus the bootstrap mean, as the proof review suggests.}
+The intervals are centred at $\tilde\btheta$, not at the bootstrap bias-corrected estimate $2\tilde\btheta - \overline{\btheta^\ast}$, because the squared mechanism bias is at most $0.19\%$ of the mean squared error under setting I (cell average; Section~\ref{sec:eval:bias}).
 
 \subsection{When can the ridge be dropped?}
 \label{sec:stats:noff}
@@ -976,7 +981,7 @@ Table~\ref{tab:noff_drop} repeats the full preprocessing with one feature remove
   \end{tabular}
 \end{table}
 
-Two diagnostics cost no budget. First, $\bA$ is a principal submatrix of $\bG$, so $\lambda_{\min}(\bG) \le \lambda_{\min}(\bA)$ by Cauchy interlacing, and after linkage $\Rp$ obtains from its exact $\bA$ the lower bound $n_{\mathrm{off}} \ge n(g^\star + r_1)/\lambda_{\min}(\bA)$ before any release; $\Op$ can bound $\ell$ the same way from its own block on the register. Second, a collinearity across the parties is invisible to both but visible on a public reference set that carries both schemas, where one exists, and screening features on it is a schema-level decision that can be made in Setup.
+Two diagnostics cost no budget. First, $\bA$ is a principal submatrix of $\bG$, so $\lambda_{\min}(\bG) \le \lambda_{\min}(\bA)$ by Cauchy interlacing, and after linkage $\Rp$ obtains from its exact $\bA$ the lower bound $n_{\mathrm{off}} \ge n(g^\star + r_1)/\lambda_{\min}(\bA)$ before any release; $\Op$ can bound $\ell$ the same way from its own block on the register. Second, a collinearity across the parties is invisible to both but visible on a public reference set that carries both schemas, where one exists; screening features on it is the optional Setup module of Section~\ref{sec:protocol:preproc}.
 
 \paragraph{Levers.} Table~\ref{tab:noff_levers} lists what lowers $n_{\mathrm{off}}$ at $\varepsilon = 1$ on the simulation population, where the previous setting gives $41.7$k. Setting I combines the exact radius with $f_1 = 0.25$, the value the pre-registered rule of Section~\ref{sec:params} chose. $n_{\mathrm{off}}$ alone would favour $f_1 \approx 0.35$, but it is flat over $0.25$--$0.45$, and the larger $\sigma_2$ of a larger $f_1$ costs accuracy once the ridge is off.
 
@@ -1014,140 +1019,14 @@ A comparison bound gives the size of the bias for any spectrum: $\E\lambda_{\min
 
 \tocheck{The switch-off factors 1.2 (setting I and the previous setting) and 1.4 (setting P) remain empirical. A bound needs a tail bound for lambda-min of the noisy stage-1 Gram that uses the spectrum and is much sharper than the comparison bound; at n-off the three smallest eigenvalues of the simulation population's Gram lie within about 2.4 sigma-1 of each other, too close for second-order perturbation.}
 
-\tocheck{Decide whether feature screening on public reference data becomes a Setup step, and what reference data it requires.}
+\subsection{Mechanism bias}
+\label{sec:stats:bias}
+
+The noise in $\hat\bG_2$ biases $\tilde\btheta$ at order $\sigma_2^2$. Appendix~\ref{sec:bias} gives the leading term, $\sigma_2^2 M(\bP_\lambda)\btheta_\lambda$ conditionally on a high-probability event, with explicit constants (Theorems~\ref{thm:bias} and~\ref{thm:ridge}), and a zero-budget correction that subtracts its plug-in estimate. The correction is an option of the protocol and is off in our evaluation: the squared mechanism bias is at most $0.19\%$ of the mean squared error under setting I (cell average; Section~\ref{sec:eval:bias}).
 
 \subsection{Status of the statistical guarantees}
 
-The companion proofs (Part~B) establish: the union-bound radius $r_1$ for the one-sided event (exact); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. The exact-quantile radius of settings I and P has an exact level for Gaussian slot noise with fresh Monte Carlo draws, and the coupling of Section~\ref{sec:stats:stage1} transfers it to the lattice noise at a cost of about $10^{-37}$ in probability and a relative $10^{-8}$ in the radius; the total-variation constant of the coupling and the decoding offset have proved bounds (Part~B, Lemma~S0 and Proposition~S7; Part~A, Proposition~4.5). The bracket on the switch-off of Section~\ref{sec:stats:noff} is proved for Gaussian slot noise and transfers to the protocol by the same coupling; its upper end is attained by Gram matrices proportional to the identity, and the size of the downward bias of $\lambda_{\min}(\hat\bG_1)$ is bounded only loosely (Part~B, Section~S8). The mechanism bias of Section~\ref{sec:bias} is proved with explicit constants (Part~B, Theorem~S9). When clipping binds, the bias-aware interval stays valid with a public bound on the conditional variance of the clipped response in place of $\tilde s^2$ (Part~B, Proposition~S10b); a guarantee with $\tilde s^2$ itself is open.
-
-% ==============================================================
-\section{Mechanism bias and the optional correction}
-\label{sec:bias}
-% ==============================================================
-
-Throughout this section $\sigma$ denotes the stage-2 slot s.d.\ $\sigma_2$, and $(\lambda, \Psi)$ is fixed independently of the stage-2 noise (Proposition~\ref{prop:indep}).
-
-\subsection{Noise model}
-
-Write the stage-2 statistics as $\hat\bG_2 = \bG + \bE$ and $\hat\bc_2 = \bc + \bff$, with
-\begin{equation}
-  \bE = \begin{bmatrix} \mathbf{0} & \bE_{C} \\ \bE_{C}^{\top} & \bE_{B} \end{bmatrix}, \qquad
-  \bff = \begin{bmatrix} \bff_{R} \\ \bff_{O} \end{bmatrix}.
-  \label{eq:noise_structure}
-\end{equation}
-The top-left block of $\bE$ is identically zero, since $\bA$ is exact. Each independent entry on and above the diagonal of the $\Op$-dependent blocks is drawn with variance $\sigma^{2}$ and mirrored, so every entry, the diagonal included, has variance $\sigma^{2}$. With $\chi_{ij} = 0$ iff $i, j$ both lie in $\Rp$'s block and $\chi_{ij} = 1$ otherwise,
-\begin{equation}
-  \E[E_{ij}E_{kl}] = \sigma^{2}\chi_{ij}\bigl(\delta_{ik}\delta_{jl} + \delta_{il}\delta_{jk} - \delta_{ij}\delta_{ik}\delta_{il}\bigr).
-  \label{eq:noise_cov}
-\end{equation}
-The last term removes the diagonal double-count of the GOE convention. $\bE$ and $\bff$ occupy disjoint entries of the release, are independent, and are symmetric about zero. (The lattice noise induces slot-domain noise with these first and second moments; the CKKS error is flooded and of lower order.)
-
-Condition on the realized sample, so $\hat{\bbeta} = \bG^{-1}\bc$ is fixed, and set $\bP = \bG^{-1}$,
-\begin{equation}
-  \vartheta_0 = \frac{\lambda_{\min}(\bG)}{2\sigma\sqrt{p}}, \qquad
-  \mathcal{E}_{\eta} = \bigl\{\|\bG^{-1/2}\bE\bG^{-1/2}\|_{\mathrm{op}} \le \eta\bigr\} \quad (0 < \eta < 1).
-  \label{eq:event}
-\end{equation}
-$\mathcal{E}_{\eta}$ is invariant under $\bE \mapsto -\bE$. Define
-\begin{equation}
-  M(\bP) = \bigl(\bP^{2} + \tr(\bP)\bP - \bP\diag(\bP)\bigr)\PiO + \bigl(\bP\PiO\bP + \tr(\PiO\bP)\bP\bigr)\PiR,
-  \label{eq:M}
-\end{equation}
-where $\diag(\bP)$ is the diagonal matrix formed from the diagonal of $\bP$.
-
-\begin{remark}[The unconditional mean does not exist]
-With Gaussian $\bE$, $(\bG + \bE)^{-1}(\bc + \bff)$ has no finite mean: already for $p = 1$, $\E[1/(a + e)]$ diverges. Statements about its bias must therefore be conditional, or about a truncated estimator. We condition on $\mathcal{E}_{\eta}$, whose complement has exponentially small probability.
-\end{remark}
-
-\subsection{Result}
-
-\begin{theorem}[Leading-order conditional bias]
-\label{thm:bias}
-Fix $\eta \in (0,1)$ with $\eta\vartheta_0 > 1$. Then, for $\tilde\bbeta = (\bG + \bE)^{-1}(\bc + \bff)$,
-\[
-  \E\bigl[\tilde{\bbeta} \mid \mathcal{E}_{\eta}\bigr] - \hat{\bbeta}
-  = \sigma^{2} M(\bP)\,\hat{\bbeta} + O(\sigma^{4}) + O\bigl(e^{-p(\eta\vartheta_0 - 1)^{2}/2}\bigr),
-\]
-where the constants are explicit: in the norm $\|\mathbf v\|_{\bG} = (\mathbf v^\top\bG\mathbf v)^{1/2}$ the remainder is at most $\Pr(\mathcal E_\eta)^{-1}\bigl[\kappa_p^4\vartheta_0^{-4}(1 - \eta)^{-1}(\|\hat\bbeta\|_{\bG} + \sigma\sqrt{\tr\bP}) + 2\sqrt2\,\kappa_p^2\vartheta_0^{-2}e^{-p(\eta\vartheta_0 - 1)^2/2}\|\hat\bbeta\|_{\bG}\bigr]$, with $\kappa_p = (2\sqrt p + 2.512 + 2\sqrt2)/(2\sqrt p)$, which is $1.81$ at $p = 11$ (proofs, Part~B, Theorem~S9). The moment-vector noise $\bff$ contributes nothing at this order; it is variance-only. The term $-\bP\diag(\bP)\PiO$ is the single-draw correction to the GOE contraction.
-\end{theorem}
-
-The proof is given in Appendix~\ref{app:proof}. Setting $\PiO \to \bI$ and $\PiR \to \mathbf{0}$ recovers the homogeneous-Gram bias, the correct check when every block is noised.
-
-\begin{remark}[When the expansion is valid]
-\label{rem:validity}
-$\bP\bE$ is similar to $\bG^{-1/2}\bE\bG^{-1/2}$, so the Neumann series for $(\bI + \bP\bE)^{-1}$ converges iff $-\bG \prec \bE \prec \bG$; on $\mathcal{E}_{\eta}$ it converges geometrically with ratio $\eta$. For the largest eigenvalue, $\E\lambda_{\max}(\bE) \le 2\sigma\sqrt{p}$, and $\lambda_{\max}(\bE)$ has sub-Gaussian tails above its mean; $\lambda_{\max}(-\bE)$ has the same law. Bounding the two one-sided tails of $\|\bE\|_{\mathrm{op}} = \max\{\lambda_{\max}(\bE), \lambda_{\max}(-\bE)\}$ separately gives $\Pr(\mathcal{E}_{\eta}^{c}) \le 2\exp(-p(\eta\vartheta_0 - 1)^{2})$ for $\eta\vartheta_0 > 1$. Whether $\E\|\bE\|_{\mathrm{op}} \le 2\sigma\sqrt p$ also holds is not proved. Since $\lambda_{\min}(\bG)$ grows linearly in $n$ while $\sigma$ does not depend on $n$, the condition holds with high probability once $n$ is large enough; below that, a ridge is required.
-\end{remark}
-
-\subsection{Schur-complement reading}
-
-Let $\bS = \bB - \bC^{\top}\bA^{-1}\bC$ be the Schur complement of $\bA$ in $\bG$. Block inversion gives $\PiO\bP\PiO = \bS^{-1}$, hence
-\begin{equation}
-  \tr(\PiO\bP) = \tr(\bS^{-1}), \qquad
-  \tr(\bP) = \tr(\bA^{-1}) + \tr\bigl(\bA^{-1}\bC\bS^{-1}\bC^{\top}\bA^{-1}\bigr) + \tr(\bS^{-1}).
-  \label{eq:traces}
-\end{equation}
-The two trace weights governing the leading bias are $\tr(\bG^{-1})$ for the $\Op$-coefficients and $\tr(\bS^{-1})$ for the $\Rp$-coefficients. When $\Op$'s features carry little signal beyond $\Rp$'s, $\bS$ is near-singular and the private estimator is worst-biased in $\Rp$'s own coefficients.
-
-\subsection{Ridge}
-
-Let $\bG_{\lambda} = \bG + \lambda\Psi$, $\bP_{\lambda} = \bG_{\lambda}^{-1}$, and let $\vartheta_{\lambda}$ and $\mathcal{E}_{\eta,\lambda}$ be as in~\eqref{eq:event} with $\bG$ replaced by $\bG_{\lambda}$.
-
-\begin{theorem}[Ridge mechanism bias]
-\label{thm:ridge}
-Suppose $(\lambda, \Psi)$ is independent of $(\bE, \bff)$ and $\eta\vartheta_{\lambda} > 1$. Then
-\[
-  \E\bigl[\tilde{\btheta} \mid \mathcal{E}_{\eta,\lambda}\bigr] - \btheta_{\lambda}
-  = \sigma^{2} M(\bP_{\lambda})\,\btheta_{\lambda} + O(\sigma^{4}) + O\bigl(e^{-p(\eta\vartheta_{\lambda} - 1)^{2}/2}\bigr),
-\]
-with the moment-vector noise $\bff$ again variance-only.
-\end{theorem}
-
-The proof is that of Theorem~\ref{thm:bias} under $\bG \mapsto \bG_{\lambda}$, which leaves $\bE$, its covariance~\eqref{eq:noise_cov} and $\bff$ untouched.
-
-\begin{proposition}[Total bias against least squares: shrinkage split]
-\label{prop:shrink}
-If the estimand is $\hat{\bbeta} = \bG^{-1}\bc$, the total bias of the private ridge splits as
-\[
-  \E[\tilde{\btheta} \mid \mathcal{E}_{\eta,\lambda}] - \hat{\bbeta}
-  = \underbrace{\btheta_{\lambda} - \hat{\bbeta}}_{\text{deterministic}}
-  + \underbrace{\E[\tilde{\btheta} \mid \mathcal{E}_{\eta,\lambda}] - \btheta_{\lambda}}_{\text{mechanism}},
-  \qquad
-  \btheta_{\lambda} - \hat{\bbeta} = -\lambda\bP_{\lambda}\Psi\hat{\bbeta}.
-\]
-The deterministic term grows in $\lambda$. The leading mechanism term decays in $\lambda$: for $\Psi = \bI$, $\|\sigma^2 M(\bP_\lambda)\btheta_\lambda\| \le (3 + p + d_O)\,\sigma^2\|\bc\|/(\lambda_{\min}(\bG) + \lambda)^3$, which is $O(\sigma^2/\lambda^3)$; for $\Psi = \PiO$ with $\bA$ invertible it is $O(\sigma^2/\lambda)$.
-\end{proposition}
-
-For $\Psi = \bI$, $\lambda_{\min}(\bG_{\lambda}) = \lambda_{\min}(\bG) + \lambda$ grows without bound. For $\Psi = \PiO$, $\lambda_{\min}(\bG + \lambda\PiO) \to \lambda_{\min}(\bA)$ as $\lambda \to \infty$, so the $\Op$-block ridge cannot validate the expansion when $\lambda_{\min}(\bA)$ is too small, which is why the stage-1 rule falls back to $\Psi = \bI$.
-
-\subsection{Why the ridge must not depend on the estimation noise}
-\label{sec:bias:lambda}
-
-Earlier drafts chose $(\lambda, \Psi)$ from the same noisy Gram matrix used for estimation. That choice is post-processing and costs no privacy, but it makes $\lambda$ a function of $\bE$ at first order, so Theorem~\ref{thm:ridge} no longer applies. In simulation, with $\lambda$ fixed independently the correction below removed $87$--$98\%$ of the mechanism bias, whereas under the adaptive rule it removed essentially none: the residual after correction was $1.0$--$1.6$ times the uncorrected bias. The two-stage rule of Section~\ref{sec:stats:stage1} keeps the adaptivity and restores independence.
-
-\subsection{Optional zero-budget correction}
-\label{sec:bias:correction}
-
-Since $\sigma$, $d_{R}$, $d_{O}$ and $\PiO$ are public and $\hat\bG_2$ is already private, the bias is estimable by post-processing:
-\begin{equation}
-  \tilde{\btheta}_{\mathrm{bc}} = \tilde{\btheta} - \sigma^{2}M(\tilde{\bP})\,\tilde{\btheta}.
-  \label{eq:bc}
-\end{equation}
-Substituting $\hat\bG_2$ for $\bG$ inside a term already of order $\sigma^{2}$ injects only $O(\sigma^{3})$ fluctuation and $O(\sigma^{4})$ bias. One must not additionally invert the deterministic shrinkage, which would re-amplify precisely the directions the ridge protects. In practice the bias removed is small (Section~\ref{sec:eval:bias}). The squared mechanism bias of one run is at most $0.05\%$ of the mean squared error around $\btheta_\lambda$ at the previous setting and $0.19\%$ under setting I (cell averages). The correction lowers that error by about $0.5\%$ at the previous setting and by $1.4$--$1.7\%$ under setting I while the ridge is on, mostly by reducing variance. The correction is therefore an option of the protocol, off in our evaluation.
-
-\tocheck{Decide whether this section stays in the main text, given that the correction is off in the evaluation, or moves to an appendix.}
-
-% ==============================================================
-\section{Prediction after training}
-\label{sec:inference}
-% ==============================================================
-
-\tocheck{This section is carried over from the earlier draft and adapted to threshold keys. Split inference is not part of the v3.1 specification: the sensitivity, noise and ledger charge of a prediction release are still to be defined.}
-
-After a run, $\Rp$ holds $\tilde\btheta = (\tilde\btheta_{R}; \tilde\btheta_{O})$. For a new individual $i$, $\hat{y}_{i} = \bxd_{i}^{\top}\tilde\btheta_{R} + \bx_{O,i}^{\top}\tilde\btheta_{O}$; $\Rp$ can evaluate the first term but has no access to $\bx_{O,i}$.
-
-\paragraph{Approach 1: split inference.} $\Rp$ encrypts $\tilde\btheta_{O}$ under the joint key; after linkage on the test identifiers, $\Op$ computes $\Enc{p_{O,i}} = \sum_k X_{O,ik}\Enc{\tilde\theta_{O,k}}$ and releases it with Algorithm~\ref{alg:release}. Threshold decryption fits this use well. Every prediction needs $\Op$'s share, so $\Op$ adds noise to each batch and charges it to the ledger. Re-randomization prevents the attack in which $\Rp$ solves the linear system in $c_1$ for $\bx_{O,i}$ exactly. Two leaks remain and must be priced: each decrypted $p_{O,i}$ is a known-direction projection of $\bx_{O,i}$; and across $k$ repeated queries or $T \ge d_O$ model versions, averaging or solving the projections reconstructs $\bx_{O,i}$ unless every query and retraining is charged.
-
-\paragraph{Approach 2: distillation to an $\Rp$-only model.} The student coefficient that regresses the joint model's fitted values on $\Rp$'s features is $\hat{\bbeta}_{R}^{\mathrm{st}} = \bA^{-1}\bcR = \bbeta_{R} + \bA^{-1}\bC\bbeta_{O}$. $\Rp$ computes $\bA^{-1}\hat{\bc}_{R}$ from its exact $\bA$ and the released $\hat\bc_R$, which is post-processing and needs no interaction at test time. Its loss against the joint fitted values is $\bbeta_{O}^{\top}\bS\bbeta_{O}$, the quadratic form of $\bbeta_O$ in the Schur complement: when it is small, distillation suffices; when large, $\Op$'s features carry signal that $\Rp$'s cannot proxy.
+The companion proofs (Part~B) establish: the union-bound radius $r_1$ for the one-sided event (exact); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. The exact-quantile radius of settings I and P has an exact level for Gaussian slot noise with fresh Monte Carlo draws, and the coupling of Section~\ref{sec:stats:stage1} transfers it to the lattice noise at a cost of about $10^{-37}$ in probability and a relative $10^{-8}$ in the radius; the total-variation constant of the coupling and the decoding offset have proved bounds (Part~B, Lemma~S0 and Proposition~S7; Part~A, Proposition~4.5). The bracket on the switch-off of Section~\ref{sec:stats:noff} is proved for Gaussian slot noise and transfers to the protocol by the same coupling; its upper end is attained by Gram matrices proportional to the identity, and the size of the downward bias of $\lambda_{\min}(\hat\bG_1)$ is bounded only loosely (Part~B, Section~S8). The mechanism bias of Appendix~\ref{sec:bias} is proved with explicit constants (Part~B, Theorem~S9). When clipping binds, the bias-aware interval stays valid with a public bound on the conditional variance of the clipped response in place of $\tilde s^2$ (Part~B, Proposition~S10b); a guarantee with $\tilde s^2$ itself is open.
 
 % ==============================================================
 \section{Parameters}
@@ -1197,7 +1076,11 @@ used in & Sections~\ref{sec:eval:crypto}--\ref{sec:eval:e2e} & Sections~\ref{sec
 
 \tocheck{Setting P lies on the edge of the extended grid in alpha-L (0.75, so the radius is the 25 percent quantile), and its refusal constraint binds (theta-star = 1.25 would be up to 0.3 percent better on the selection populations). The selection covered sigma-1/sigma-2 down to 0.46 at f-1 = 0.25; eight of Wang's 29 datasets lie below it (solar at 0.25, where P's gate refused up to 7.2 percent of releases at eps = 1). Decide whether the prediction setting should depend on the noise ratio, which is public before any release.}
 
-\tocheck{Setting I's criterion averages over n, so it trades accuracy after the switch-off for accuracy before it: once the ridge is off, f-1 = 0.25 leaves 9.5 percent more noise s.d. in stage 2, and twice-the-floor accuracy on the coefficients comes 9-13 percent later than at the previous setting at R-squared = 0.5 (Section 13.5). Decide whether the inference setting should weight the ridge-off regime more, or let f-1 depend on the planned n against n-off.}
+\paragraph{Limitations of the settings.} Two limitations apply.
+\begin{itemize}[noitemsep]
+  \item The selection re-chose only $f_1$ for setting I, and $(\vartheta^\star, \alpha_L, f_1)$ for setting P. Setting I keeps $\vartheta^\star = 2.5$ and $\kappa_\Psi = 2$, and setting P keeps $\kappa_\Psi = 2$; these values come from simulations of earlier variants of the rule and were not re-tuned under the two-stage rule with the exact radius.
+  \item Setting I's criterion averages over $n$, so it trades accuracy after the switch-off for accuracy before it. Once the ridge is off, $f_1 = 0.25$ leaves $9.5\%$ more noise s.d.\ in stage~2 than the previous setting, and the coefficient error reaches twice the sampling floor $9$--$13\%$ later at $R^2 = 0.5$ (Section~\ref{sec:eval:sim}). A criterion that weights the ridge-off regime more, or an $f_1$ that depends on the planned $n$ against $n_{\mathrm{off}}$, was not evaluated.
+\end{itemize}
 
 {\footnotesize
 \renewcommand{\arraystretch}{1.15}
@@ -1371,7 +1254,7 @@ Table~\ref{tab:calib_example} works the calibration through for the simulation p
 \subsection{Interval coverage under v3.1}
 \label{sec:eval:coverage}
 
-Table~\ref{tab:coverage} simulates the release and solve steps of Algorithm~\ref{alg:solve} (2{,}000 replications per scenario, $p = 11$), in scenarios chosen to exercise each branch of the ridge rule. The Wald interval hits its target with or without the ridge. The bias-aware interval for $\bbeta$ is conservative, because it uses the worst-case bias and a cautious variance, and it is unbounded when the ridge is on and no public bound on $\|\bbeta\|$ is given. For contrast, a naive Wald interval around a ridge estimate, read as an interval for $\bbeta$, covered only $42$--$81\%$ in the earlier simulations when no eigenvalue bound was available.
+Coverage here is unconditional (Section~\ref{sec:stats:stage2}): it is counted over all releases, and a refused release makes no claim, while it still spends the budget. In the simulations of setting I (Section~\ref{sec:eval:sim}) and in the real-data check of Table~\ref{tab:coverage_real}, the gate refused no release, so conditional and unconditional coverage coincide there. Table~\ref{tab:coverage} simulates the release and solve steps of Algorithm~\ref{alg:solve} (2{,}000 replications per scenario, $p = 11$), in scenarios chosen to exercise each branch of the ridge rule. The Wald interval hits its target with or without the ridge. The bias-aware interval for $\bbeta$ is conservative, because it uses the worst-case bias and a cautious variance, and it is unbounded when the ridge is on and no public bound on $\|\bbeta\|$ is given. For contrast, a naive Wald interval around a ridge estimate, read as an interval for $\bbeta$, covered only $42$--$81\%$ in the earlier simulations when no eigenvalue bound was available.
 
 \begin{table}[ht]
   \centering\small
@@ -1554,7 +1437,10 @@ FWS's draws resample $\by$ given the design, so its interval is too wide for the
 
 \paragraph{Why the estimands matter.} The Wald interval is narrow because $\btheta_\lambda$ is a fixed function of the matched records: it answers what the protocol would have output without the privacy noise. FWS and the bias-aware interval answer a different question, what the coefficient of the working model is, and must add the sampling variance; with the ridge off they are the same interval. They differ in how they handle a poorly conditioned design. The bias-aware interval keeps the ridge and pays for its bias with a bound on $\|\bbeta\|$, which is infinite while $\hat L = 0$. FWS drops the ridge and lets the bootstrap measure the instability of $\hat\bG_2^{-1}$, which costs variance but no bound. Once $\vartheta_0 \gtrsim 1$ that variance is moderate, and FWS is the better interval for $\bbeta$; below it, neither gives a useful interval for $\bbeta$, and only $\btheta_\lambda$ has one.
 
-\tocheck{Consider reporting, while the ridge is on, an FWS-type percentile interval for beta from the unregularized stage-2 solve, offered only when lambda-min of G-hat-2 is at least 2 sigma-2 sqrt(p) (the gate with lambda = 0). On the synthetic population it covers where the bias-aware interval is unbounded (from about theta-0 = 1, roughly 0.25 n-off). Its validity rests on the bootstrap; it is not proved for our noise structure, and its gate would use the same release.}
+\begin{remark}[Proposal, not proved: an FWS-type interval for $\bbeta$ while the ridge is on]
+\label{rem:fwsprop}
+While the ridge is on, $\Rp$ could also report an FWS-type percentile interval for $\bbeta$ from the unregularized stage-2 solve $\hat\bG_2^{-1}\hat\bc_2$, offered only when $\lambda_{\min}(\hat\bG_2) \ge 2\sigma_2\sqrt p$, the gate with $\lambda = 0$. On the synthetic population it covers where the bias-aware interval is unbounded, from about $\vartheta_0 = 1$, roughly $0.25\,n_{\mathrm{off}}$ (setting I). Its validity rests on the parametric bootstrap and is \emph{not proved} for the noise structure of v3.1, and its gate would use the same release as the interval. It is not part of the protocol.
+\end{remark}
 
 FWS release $s^2$ through their own mechanism; here it is the plug-in from the released $\by^\top\by$. Its residual sum of squares is biased downward by $\sigma_2^2\tr\bP + \hat\bbeta^\top\E[\bE\bP\bE]\hat\bbeta$ to second order, with $\bP = \bG^{-1}$ and an explicit remainder (proofs, Part~B, Proposition~S10a). Correcting it by that term changes FWS's coverage of the ten slopes by at most $0.0005$ in each of the $41$ ridge-on cells of Table~\ref{tab:fws_cov}, and its median half-width by at most $3\%$: where the ridge is on, the mechanism noise dominates FWS's width, and the plug-in is floored at $0.1$ in up to half of the releases.
 
@@ -2211,8 +2097,15 @@ The measured runs use the chain of Section~\ref{sec:params}, with $\Omega_U = q_
 Replacing labeled PSI with circuit-PSI (for example VOLE-PSI with payloads~\cite{rindal2021vole}) gives both parties shares of $\bb$ and $\dXR$ in $\tau$-order, so $\Rp$ no longer learns $I$. The aggregation would move to BFV or use wide statistical masking, because shares modulo $2^\ell$ do not reduce inside CKKS. $\bA$ must then be computed under encryption and noised, and the adjacency extends to changing a record's match status, which raises the sensitivity.
 \end{remark}
 
+\paragraph{Prediction after training (future work).}
+\label{sec:inference}
+After a run $\Rp$ holds $\tilde\btheta = (\tilde\btheta_R; \tilde\btheta_O)$. Predicting $y_i$ for a new individual needs $\bx_{O,i}^\top\tilde\btheta_O$, and only $\Op$ holds $\bx_{O,i}$. Split inference, in which $\Op$ evaluates $\bx_{O,i}^\top\tilde\btheta_O$ under encryption and releases it as in Algorithm~\ref{alg:release}, is not part of v3.1. Three things are unspecified: the sensitivity of a prediction release, its noise, and its charge to the ledger. Each decrypted prediction is a projection of $\bx_{O,i}$ in a direction $\Rp$ knows, so repeated queries or model versions reconstruct $\bx_{O,i}$ unless every one is charged.
+
+What v3.1 supports is distillation to an $\Rp$-only model. The student coefficient that regresses the joint model's fitted values on $\Rp$'s features is $\hat\bbeta_R^{\mathrm{st}} = \bA^{-1}\bcR = \bbeta_R + \bA^{-1}\bC\bbeta_O$. $\Rp$ computes $\bA^{-1}\hat\bc_R$ from its exact $\bA$ and the released $\hat\bc_R$; this is post-processing, costs no budget and needs no interaction at test time. Its loss against the joint fitted values is $\bbeta_O^\top\bS\bbeta_O$, with $\bS = \bB - \bC^\top\bA^{-1}\bC$ the Schur complement of $\bA$ in $\bG$: when it is small, distillation suffices; when it is large, $\Op$'s features carry signal that $\Rp$'s cannot proxy.
+
 \paragraph{Further limitations.}
 \begin{itemize}[noitemsep]
+  \item The two evaluation settings were not fully re-tuned: setting I keeps $\vartheta^\star = 2.5$ and $\kappa_\Psi = 2$, and setting P keeps $\kappa_\Psi = 2$, from earlier variants of the rule, and setting I's selection criterion averages over $n$ (Section~\ref{sec:params}).
   \item Exact-identifier linkage only.
   \item Linear models only; generalized linear models via approximate sufficient statistics are future work.
   \item The variance is model-based. A sandwich variance would need a third release of $\sum_i r_i^2\bx_i\bx_i^\top$, a ciphertext--ciphertext computation with its own sensitivity.
@@ -2232,12 +2125,127 @@ Protocol v3.1 links records with an OPRF and labeled PSI, aggregates under two-p
   \item Smudging for the discrete Gaussian, for every $\sigma_c \ge 2^{42}$ in statistical distance and with no floor in hockey-stick divergence (proven), and a concrete constant-time exact sampler, or a release padded to a public time bound (open).
   \item Simulation security of threshold key generation against a semi-honest $\Rp$: proven, by a reduction to plain RLWE, since $\Op$ sends only its public-key share (hybrid H4 of Theorem~\ref{thm:output}).
   \item The two-stage rule, the RSS correction and the coverage of both intervals, checked by simulation (Sections~\ref{sec:eval:coverage} and~\ref{sec:eval:sim}, the latter at setting I) and, for the Wald interval, also on fixed cohorts of five real datasets with calibrated noise (Section~\ref{sec:eval:coverage}); on real data the intervals for $\bbeta$ are checked only against a full-data reference (Section~\ref{sec:eval:fws}).
-  \item PSI parameters with explicit failure probabilities (correctness only, not charged to $\delta$) and an item length that meets them at $\bar n_O = 10^6$. The cuckoo-hashing failure probability is now bounded, given an insertion that finds an assignment whenever one exists, and the worst-case bound $B_\psi$ on the evaluation noise of the PSI replies, which \textsc{SanitizeBFV} floods, is proved for the textbook BFV model; checking OpenFHE's BFVrns against that model remains.
+  \item PSI parameters with explicit failure probabilities (correctness only, not charged to $\delta$) and an item length that meets them at $\bar n_O = 10^6$. The cuckoo-hashing failure probability is now bounded for an insertion that finds an assignment whenever one exists, which the implementation's augmenting-path fallback provides, and the worst-case bound $B_\psi$ on the evaluation noise of the PSI replies, which \textsc{SanitizeBFV} floods, is proved for the textbook BFV model; checking OpenFHE's BFVrns against that model remains.
 \end{enumerate}
 
-\paragraph{Other open items.} Whether the rule for runs fixed in advance stays valid when requests are chosen adaptively (Proposition~\ref{prop:compose}); a proof of the subgaussianity of OpenFHE's error sampler, which is checked only numerically, and of the match between OpenFHE's key switching and the model in which the error bound is proved, which rests on reading its source; guidance on the precision at which $\Rp$ publishes results; the free-set boundary for $\by^\top\by$ and a closed form for $d_O = 1$; explicit constants for the bootstrap RSS correction; a guarantee for the data-driven variance of the bias-aware interval when clipping binds (a public variance bound gives a valid interval); a bound on the downward bias of $\lambda_{\min}(\hat\bG_1)$ sharp enough to turn the switch-off factors $1.2$ and $1.4$ into bounds; and sixteen citation details flagged for verification in the proofs. The no-wraparound condition at the earlier levels, which earlier drafts listed here, is proved, and \textsc{Calibrate}, which sizes the modulus chain, is proved sound.
+\paragraph{Other open items.} Whether the rule for runs fixed in advance stays valid when requests are chosen adaptively (Proposition~\ref{prop:compose}); a proof of the subgaussianity of OpenFHE's error sampler, which is checked only numerically, and of the match between OpenFHE's key switching and the model in which the error bound is proved, which rests on reading its source; the free-set boundary for $\by^\top\by$ and a closed form for $d_O = 1$; explicit constants for the bootstrap RSS correction; a guarantee for the data-driven variance of the bias-aware interval when clipping binds (a public variance bound gives a valid interval); a bound on the downward bias of $\lambda_{\min}(\hat\bG_1)$ sharp enough to turn the switch-off factors $1.2$ and $1.4$ into bounds; and sixteen citation details flagged for verification in the proofs. The no-wraparound condition at the earlier levels, which earlier drafts listed here, is proved, and \textsc{Calibrate}, which sizes the modulus chain, is proved sound.
 
 \appendix
+
+% ==============================================================
+\section{Mechanism bias and the optional correction}
+\label{sec:bias}
+% ==============================================================
+
+Throughout this section $\sigma$ denotes the stage-2 slot s.d.\ $\sigma_2$, and $(\lambda, \Psi)$ is fixed independently of the stage-2 noise (Proposition~\ref{prop:indep}).
+
+\subsection{Noise model}
+
+Write the stage-2 statistics as $\hat\bG_2 = \bG + \bE$ and $\hat\bc_2 = \bc + \bff$, with
+\begin{equation}
+  \bE = \begin{bmatrix} \mathbf{0} & \bE_{C} \\ \bE_{C}^{\top} & \bE_{B} \end{bmatrix}, \qquad
+  \bff = \begin{bmatrix} \bff_{R} \\ \bff_{O} \end{bmatrix}.
+  \label{eq:noise_structure}
+\end{equation}
+The top-left block of $\bE$ is identically zero, since $\bA$ is exact. Each independent entry on and above the diagonal of the $\Op$-dependent blocks is drawn with variance $\sigma^{2}$ and mirrored, so every entry, the diagonal included, has variance $\sigma^{2}$. With $\chi_{ij} = 0$ iff $i, j$ both lie in $\Rp$'s block and $\chi_{ij} = 1$ otherwise,
+\begin{equation}
+  \E[E_{ij}E_{kl}] = \sigma^{2}\chi_{ij}\bigl(\delta_{ik}\delta_{jl} + \delta_{il}\delta_{jk} - \delta_{ij}\delta_{ik}\delta_{il}\bigr).
+  \label{eq:noise_cov}
+\end{equation}
+The last term removes the diagonal double-count of the GOE convention. $\bE$ and $\bff$ occupy disjoint entries of the release, are independent, and are symmetric about zero. (The lattice noise induces slot-domain noise with these first and second moments; the CKKS error is flooded and of lower order.)
+
+Condition on the realized sample, so $\hat{\bbeta} = \bG^{-1}\bc$ is fixed, and set $\bP = \bG^{-1}$,
+\begin{equation}
+  \vartheta_0 = \frac{\lambda_{\min}(\bG)}{2\sigma\sqrt{p}}, \qquad
+  \mathcal{E}_{\eta} = \bigl\{\|\bG^{-1/2}\bE\bG^{-1/2}\|_{\mathrm{op}} \le \eta\bigr\} \quad (0 < \eta < 1).
+  \label{eq:event}
+\end{equation}
+$\mathcal{E}_{\eta}$ is invariant under $\bE \mapsto -\bE$. Define
+\begin{equation}
+  M(\bP) = \bigl(\bP^{2} + \tr(\bP)\bP - \bP\diag(\bP)\bigr)\PiO + \bigl(\bP\PiO\bP + \tr(\PiO\bP)\bP\bigr)\PiR,
+  \label{eq:M}
+\end{equation}
+where $\diag(\bP)$ is the diagonal matrix formed from the diagonal of $\bP$.
+
+\begin{remark}[The unconditional mean does not exist]
+With Gaussian $\bE$, $(\bG + \bE)^{-1}(\bc + \bff)$ has no finite mean: already for $p = 1$, $\E[1/(a + e)]$ diverges. Statements about its bias must therefore be conditional, or about a truncated estimator. We condition on $\mathcal{E}_{\eta}$, whose complement has exponentially small probability.
+\end{remark}
+
+\subsection{Result}
+
+\begin{theorem}[Leading-order conditional bias]
+\label{thm:bias}
+Fix $\eta \in (0,1)$ with $\eta\vartheta_0 > 1$. Then, for $\tilde\bbeta = (\bG + \bE)^{-1}(\bc + \bff)$,
+\[
+  \E\bigl[\tilde{\bbeta} \mid \mathcal{E}_{\eta}\bigr] - \hat{\bbeta}
+  = \sigma^{2} M(\bP)\,\hat{\bbeta} + O(\sigma^{4}) + O\bigl(e^{-p(\eta\vartheta_0 - 1)^{2}/2}\bigr),
+\]
+where the constants are explicit: in the norm $\|\mathbf v\|_{\bG} = (\mathbf v^\top\bG\mathbf v)^{1/2}$ the remainder is at most $\Pr(\mathcal E_\eta)^{-1}\bigl[\kappa_p^4\vartheta_0^{-4}(1 - \eta)^{-1}(\|\hat\bbeta\|_{\bG} + \sigma\sqrt{\tr\bP}) + 2\sqrt2\,\kappa_p^2\vartheta_0^{-2}e^{-p(\eta\vartheta_0 - 1)^2/2}\|\hat\bbeta\|_{\bG}\bigr]$, with $\kappa_p = (2\sqrt p + 2.512 + 2\sqrt2)/(2\sqrt p)$, which is $1.81$ at $p = 11$ (proofs, Part~B, Theorem~S9). The moment-vector noise $\bff$ contributes nothing at this order; it is variance-only. The term $-\bP\diag(\bP)\PiO$ is the single-draw correction to the GOE contraction.
+\end{theorem}
+
+The proof is given in Appendix~\ref{app:proof}. Setting $\PiO \to \bI$ and $\PiR \to \mathbf{0}$ recovers the homogeneous-Gram bias, the correct check when every block is noised.
+
+\begin{remark}[When the expansion is valid]
+\label{rem:validity}
+$\bP\bE$ is similar to $\bG^{-1/2}\bE\bG^{-1/2}$, so the Neumann series for $(\bI + \bP\bE)^{-1}$ converges iff $-\bG \prec \bE \prec \bG$; on $\mathcal{E}_{\eta}$ it converges geometrically with ratio $\eta$. For the largest eigenvalue, $\E\lambda_{\max}(\bE) \le 2\sigma\sqrt{p}$, and $\lambda_{\max}(\bE)$ has sub-Gaussian tails above its mean; $\lambda_{\max}(-\bE)$ has the same law. Bounding the two one-sided tails of $\|\bE\|_{\mathrm{op}} = \max\{\lambda_{\max}(\bE), \lambda_{\max}(-\bE)\}$ separately gives $\Pr(\mathcal{E}_{\eta}^{c}) \le 2\exp(-p(\eta\vartheta_0 - 1)^{2})$ for $\eta\vartheta_0 > 1$. Whether $\E\|\bE\|_{\mathrm{op}} \le 2\sigma\sqrt p$ also holds is not proved. Since $\lambda_{\min}(\bG)$ grows linearly in $n$ while $\sigma$ does not depend on $n$, the condition holds with high probability once $n$ is large enough; below that, a ridge is required.
+\end{remark}
+
+\subsection{Schur-complement reading}
+
+Let $\bS = \bB - \bC^{\top}\bA^{-1}\bC$ be the Schur complement of $\bA$ in $\bG$. Block inversion gives $\PiO\bP\PiO = \bS^{-1}$, hence
+\begin{equation}
+  \tr(\PiO\bP) = \tr(\bS^{-1}), \qquad
+  \tr(\bP) = \tr(\bA^{-1}) + \tr\bigl(\bA^{-1}\bC\bS^{-1}\bC^{\top}\bA^{-1}\bigr) + \tr(\bS^{-1}).
+  \label{eq:traces}
+\end{equation}
+The two trace weights governing the leading bias are $\tr(\bG^{-1})$ for the $\Op$-coefficients and $\tr(\bS^{-1})$ for the $\Rp$-coefficients. When $\Op$'s features carry little signal beyond $\Rp$'s, $\bS$ is near-singular and the private estimator is worst-biased in $\Rp$'s own coefficients.
+
+\subsection{Ridge}
+
+Let $\bG_{\lambda} = \bG + \lambda\Psi$, $\bP_{\lambda} = \bG_{\lambda}^{-1}$, and let $\vartheta_{\lambda}$ and $\mathcal{E}_{\eta,\lambda}$ be as in~\eqref{eq:event} with $\bG$ replaced by $\bG_{\lambda}$.
+
+\begin{theorem}[Ridge mechanism bias]
+\label{thm:ridge}
+Suppose $(\lambda, \Psi)$ is independent of $(\bE, \bff)$ and $\eta\vartheta_{\lambda} > 1$. Then
+\[
+  \E\bigl[\tilde{\btheta} \mid \mathcal{E}_{\eta,\lambda}\bigr] - \btheta_{\lambda}
+  = \sigma^{2} M(\bP_{\lambda})\,\btheta_{\lambda} + O(\sigma^{4}) + O\bigl(e^{-p(\eta\vartheta_{\lambda} - 1)^{2}/2}\bigr),
+\]
+with the moment-vector noise $\bff$ again variance-only.
+\end{theorem}
+
+The proof is that of Theorem~\ref{thm:bias} under $\bG \mapsto \bG_{\lambda}$, which leaves $\bE$, its covariance~\eqref{eq:noise_cov} and $\bff$ untouched.
+
+\begin{proposition}[Total bias against least squares: shrinkage split]
+\label{prop:shrink}
+If the estimand is $\hat{\bbeta} = \bG^{-1}\bc$, the total bias of the private ridge splits as
+\[
+  \E[\tilde{\btheta} \mid \mathcal{E}_{\eta,\lambda}] - \hat{\bbeta}
+  = \underbrace{\btheta_{\lambda} - \hat{\bbeta}}_{\text{deterministic}}
+  + \underbrace{\E[\tilde{\btheta} \mid \mathcal{E}_{\eta,\lambda}] - \btheta_{\lambda}}_{\text{mechanism}},
+  \qquad
+  \btheta_{\lambda} - \hat{\bbeta} = -\lambda\bP_{\lambda}\Psi\hat{\bbeta}.
+\]
+The deterministic term grows in $\lambda$. The leading mechanism term decays in $\lambda$: for $\Psi = \bI$, $\|\sigma^2 M(\bP_\lambda)\btheta_\lambda\| \le (3 + p + d_O)\,\sigma^2\|\bc\|/(\lambda_{\min}(\bG) + \lambda)^3$, which is $O(\sigma^2/\lambda^3)$; for $\Psi = \PiO$ with $\bA$ invertible it is $O(\sigma^2/\lambda)$.
+\end{proposition}
+
+For $\Psi = \bI$, $\lambda_{\min}(\bG_{\lambda}) = \lambda_{\min}(\bG) + \lambda$ grows without bound. For $\Psi = \PiO$, $\lambda_{\min}(\bG + \lambda\PiO) \to \lambda_{\min}(\bA)$ as $\lambda \to \infty$, so the $\Op$-block ridge cannot validate the expansion when $\lambda_{\min}(\bA)$ is too small, which is why the stage-1 rule falls back to $\Psi = \bI$.
+
+\subsection{Why the ridge must not depend on the estimation noise}
+\label{sec:bias:lambda}
+
+Earlier drafts chose $(\lambda, \Psi)$ from the same noisy Gram matrix used for estimation. That choice is post-processing and costs no privacy, but it makes $\lambda$ a function of $\bE$ at first order, so Theorem~\ref{thm:ridge} no longer applies. In simulation, with $\lambda$ fixed independently the correction below removed $87$--$98\%$ of the mechanism bias, whereas under the adaptive rule it removed essentially none: the residual after correction was $1.0$--$1.6$ times the uncorrected bias. The two-stage rule of Section~\ref{sec:stats:stage1} keeps the adaptivity and restores independence.
+
+\subsection{Optional zero-budget correction}
+\label{sec:bias:correction}
+
+Since $\sigma$, $d_{R}$, $d_{O}$ and $\PiO$ are public and $\hat\bG_2$ is already private, the bias is estimable by post-processing:
+\begin{equation}
+  \tilde{\btheta}_{\mathrm{bc}} = \tilde{\btheta} - \sigma^{2}M(\tilde{\bP})\,\tilde{\btheta}.
+  \label{eq:bc}
+\end{equation}
+Substituting $\hat\bG_2$ for $\bG$ inside a term already of order $\sigma^{2}$ injects only $O(\sigma^{3})$ fluctuation and $O(\sigma^{4})$ bias. One must not additionally invert the deterministic shrinkage, which would re-amplify precisely the directions the ridge protects. In practice the bias removed is small (Section~\ref{sec:eval:bias}). The squared mechanism bias of one run is at most $0.05\%$ of the mean squared error around $\btheta_\lambda$ at the previous setting and $0.19\%$ under setting I (cell averages). The correction lowers that error by about $0.5\%$ at the previous setting and by $1.4$--$1.7\%$ under setting I while the ridge is on, mostly by reducing variance. The correction is therefore an option of the protocol, off in our evaluation.
+
 
 % ==============================================================
 \section{Proof of Theorem~\ref{thm:bias}}
@@ -2333,7 +2341,7 @@ $\Op$ sees $n_R^{\max}$ uniformly random group elements in the OPRF and BFV ciph
 \label{app:status}
 % ==============================================================
 
-The companion proofs document (Part~A: cryptography and DP; Part~B: sensitivity and statistics; and a composition appendix on composition across runs and the hockey-stick ledger) labels every step as exact, first order, asymptotic, numerical or open. Several results were first written in the companion book on the protocol and added to the proofs after a second reading that checked every step and constant (Part~A, Sections~4, 7 and~9; Part~B, Sections~S7--S10). Table~\ref{tab:status} summarizes it.
+The companion proofs document~\cite{vfrproofs} (Part~A: cryptography and DP~\cite{vfrproofsA}; Part~B: sensitivity and statistics~\cite{vfrproofsB}; and a composition appendix on composition across runs and the hockey-stick ledger~\cite{vfrproofsC}) labels every step as exact, first order, asymptotic, numerical or open. Several results were first written in the companion book on the protocol and added to the proofs after a second reading that checked every step and constant (Part~A, Sections~4, 7 and~9; Part~B, Sections~S7--S10). Table~\ref{tab:status} summarizes it.
 
 {\small
 \setlength{\LTcapwidth}{\textwidth}
@@ -2374,8 +2382,6 @@ Coverage & partly first order & Wald remainder exact; plug-in variance first ord
 Bootstrap RSS correction & first order & constants not explicit; the plug-in RSS of the FWS comparison has an explicit second-order bias \\
 \bottomrule
 \end{xltabular}}
-
-\tocheck{The proofs document and the v3.1 specification are not yet in the repository; add them (for example under docs/) so that this paper can cite them.}
 
 % ==============================================================
 % References
@@ -2787,6 +2793,26 @@ Q.~Yang, Y.~Liu, T.~Chen, and Y.~Tong,
 J.~Zhang, Z.~Zhang, X.~Xiao, Y.~Yang, and M.~Winslett,
 ``Functional mechanism: Regression analysis under differential privacy,''
 \textit{Proc.\ VLDB Endow.}, vol.~5, no.~11, 2012.
+
+\bibitem{vfrspec}
+Protocol v3.1: specification (honest-but-curious model).
+Repository file \texttt{docs/protocol\_v31.pdf} (source \texttt{docs/protocol\_v31.tex}), 2026.
+
+\bibitem{vfrproofs}
+Protocol v3.1: proofs appendix. Part~A: cryptographic and DP guarantees; Part~B: sensitivity and statistical guarantees; Part~C: composition across runs and the hockey-stick ledger.
+Repository file \texttt{docs/proofs/protocol\_v31\_proofs.pdf}, 2026.
+
+\bibitem{vfrproofsA}
+Protocol v3.1, proofs Part~A: cryptographic and DP guarantees.
+Repository file \texttt{docs/proofs/crypto\_proofs.pdf}, 2026.
+
+\bibitem{vfrproofsB}
+Protocol v3.1, proofs Part~B: sensitivity and statistical guarantees.
+Repository file \texttt{docs/proofs/stats\_proofs.pdf}, 2026.
+
+\bibitem{vfrproofsC}
+Protocol v3.1, proofs, composition appendix: composition across runs and the hockey-stick ledger.
+Repository file \texttt{docs/proofs/composition/composition\_proof.pdf}, 2026.
 
 \end{thebibliography}
 

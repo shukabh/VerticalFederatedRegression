@@ -15,6 +15,7 @@
 \begin{algorithmic}[1]
 \State \Bdo agree on the parameter vector $\mathcal P$ (Table~\ref{tab:params}): the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the ledger parameters $(\varepsilon_L,\delta_L,\zeta_L,\xi_L,\delta')$, $f_1$ (and $f_y$), $\zeta$, $\kappa_{\min}$ (or a fixed $\kappa$), $\delta_B$, $t_\eta$, $\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, $\eta_B$, $B$, the PSI parameters, $N$, the chain, $\Omega_U$ and $\Omega_u$
 \State \Odo $D_\Phi\gets\{j:\Phi(j)\}$; pad with dummy rows (fresh random identifiers, $\bx_O=\mathbf 0$, $y=0$) to $\bar n_O$; draw a fresh secret permutation $\tau$ of $[\bar n_O]$
+\State \Bdo optional: screen the features on public reference data that carries both schemas and drop nearly collinear ones \Comment{no budget}
 \State \Rdo and \Odo, each on its own columns only: $\textsc{Preprocess}$ with constants from public reference data or domain knowledge
 \State \Bdo $(B_R,B_O,B_y)\gets\textsc{ChooseBounds}$ on the preprocessed reference data, or from domain knowledge \Comment{$B_R$ covers $\Rp$'s intercept}
 \State $(\Delta,\Delta_{\neg yy})\gets\textsc{DeltaRep}(B_R,B_O,B_y)$;\quad $\Delta_G\gets\textsc{DeltaRep}(B_R,B_O,0)$;\quad $\Delta_y\gets B_y^2$
@@ -90,6 +91,7 @@
 \State \Odo $h_O\gets c_0'+c_1's_O+\eta\bmod q_0$
 \State \Odo send $(c_1',h_O)$; erase $c_0',u,e_0,e_1,\eta$ \Comment{$c_0'$ is never sent; the ledger was charged at admission}
 \State \Rdo $v\gets h_O+c_1's_R\bmod q_0$;\quad \Return $\Dcd(v)$ restricted to the slots of this release \Comment{exact final scale; $v$ never leaves $\Rp$}
+\State \Rdo before publishing any decoded value, round it to a fixed precision relative to $\sigma_s$; never publish $v$ \Comment{Remark~\ref{rem:publish}; no budget}
 \end{algorithmic}
 \end{algorithm}
 
@@ -108,7 +110,7 @@
 \State $(\lambda,\Psi)\gets(\lambda_O,\PiO)$ if $\lambda_O\le\kappa_\Psi\lambda_I$, otherwise $(\lambda_I,\bI)$ \Comment{uses stage 1 and $\bA$ only}
 \State $(\hat\bB_2,\hat\bC_2,\hat\bc_R,\hat\bc_O,\widehat{yy})\gets\textsc{Release}(M_2,\sigma_{c,2})$; if separate, $\widehat{yy}\gets\textsc{Release}(M_y,\sigma_{c,y})$
 \State assemble $\hat\bG_2$, $\hat\bc_2$;\quad $\hat\vartheta\gets\lambda_{\min}(\hat\bG_2+\lambda\Psi)/(2\sigma_2\sqrt p)$;\quad \textbf{if} $\hat\vartheta<1$ \textbf{then return} \textsf{refused} \Comment{budget is spent}
-\State $\tilde\bP\gets(\hat\bG_2+\lambda\Psi)^{-1}$;\quad $\tilde\btheta\gets\tilde\bP\hat\bc_2$ \Comment{the bias correction of Section~\ref{sec:bias} is an option}
+\State $\tilde\bP\gets(\hat\bG_2+\lambda\Psi)^{-1}$;\quad $\tilde\btheta\gets\tilde\bP\hat\bc_2$ \Comment{the bias correction of Appendix~\ref{sec:bias} is an option}
 \State $\widetilde{\mathrm{RSS}}\gets\widehat{yy}-\hat\bc_2^\top\tilde\btheta-\lambda\,\tilde\btheta^\top\Psi\tilde\btheta$;\quad $\sigma_{yy}\gets\sigma_2$ (joint) or $\sigma_y$ (separate)
 \For{$b=1,\dots,B$} \Comment{parametric bootstrap of the mechanism: post-processing}
   \State draw $\mathbf E^*$ (symmetric, s.d.\ $\sigma_2$ on the $\Op$-dependent entries, zero on $\bA$), $\mathbf f^*\sim\mathcal N(0,\sigma_2^2\bI)$, $g^*\sim\mathcal N(0,\sigma_{yy}^2)$
@@ -170,8 +172,8 @@
   \State optional block normalization: scale the party's block of every row to unit norm ($\Rp$ without the intercept)
 \EndFunction
 \Statex
-\Function{ChooseBounds}{$D_{\mathrm{ref}}$} grid over quantile levels of $\|\bxd\|$, $\|\bx_O\|$ and $|y|$ in the preprocessed reference data; minimize
-\Statex \hspace{\algorithmicindent}the first-order coefficient MSE plus the squared clipping bias
+\Function{ChooseBounds}{$D_{\mathrm{ref}}$} the $99.5\%$ quantiles of $\|\bxd\|$, $\|\bx_O\|$ and $|y|$ in the preprocessed reference data
+\Statex \hspace{\algorithmicindent}(the evaluation setting; quantile levels that minimize the first-order MSE plus the squared clipping bias are future work)
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
