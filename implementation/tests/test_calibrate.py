@@ -1,6 +1,8 @@
 """Calibrate (paper, Algorithm 7 and Sections 7.3-7.4): the derived flooding parameter (kappa='auto'), the
-security bound on the modulus chain, refusals, and the ledger's composition rules."""
+security bound on the modulus chain, refusals, the floor on sigma_c, and the ledger's composition rules (hockey-stick
+and statistical-distance accounting)."""
 import math
+from fractions import Fraction
 
 import pytest
 
@@ -66,44 +68,90 @@ def test_refusals_security_bound_and_q0(ctx):
         _cal(ctx, eps_run=8.0, delta_run=1e-13)            # n_rel (1 + e^8) delta_B alone exceeds zeta delta_run
 
 
-def test_kappa_with_ledger_cap(ctx):
-    c = _cal(ctx, eps_run=1.0, ledger_eps=10.0, ledger_delta=1e-6)
+@pytest.mark.parametrize('eps,kappa_L,kappa', [(0.5, 22, 40), (1, 21, 40), (2, 19, 40), (4, 17, 41), (8, 15, 46)])
+def test_kappa_with_hockey_stick_ledger(ctx, eps, kappa_L, kappa):
+    """Hockey-stick ledger (default xi_L = 1e-3, delta' = 2^-100) at the cap (10, 1e-6), zeta_L = 0.1: kappa_L is the
+    smallest kappa with n_rel eps'(kappa, delta') <= (rho~_run / rho_L) E'_L (composition proof, Proposition 5.5), and
+    kappa is then the single-run kappa."""
+    c = _cal(ctx, eps_run=eps, ledger_eps=10.0, ledger_delta=1e-6)
     ki = c['kappa_info']
-    assert ki['kappa_run'] == 37 and ki['kappa_L'] == 46 and c['kappa'] == 46
+    assert ki['ledger_rule'] == 'hs' and ki['kappa_L'] == kappa_L and c['kappa'] == kappa
+    assert c['kappa'] == _cal(ctx, eps_run=eps)['kappa']                      # the ledger no longer raises kappa
+    share = dp.rho_tight(eps, 0.9e-9) / ki['rho_L']
+    assert ki['E_L'] <= 1e-3 * 10.0 / 2
+    assert 2 * dp.eps_smudge(kappa_L, 2.0 ** -100) <= share * ki['E_L'] < 2 * dp.eps_smudge(kappa_L - 1, 2.0 ** -100)
+    assert 2 * (2.0 ** -50 + 2.0 ** -100) <= share * ki['Gamma_L']           # the delta_B admissibility constraint
+    cost = c['ledger_cost']
+    assert cost['rho'] == c['rho_run'] and cost['eps_prime'] >= 2 * dp.eps_smudge(c['kappa'], 2.0 ** -100)
+    assert cost['gamma'] >= 2 * (2.0 ** -50 + 2.0 ** -100)
+
+
+def test_kappa_with_statistical_distance_ledger(ctx):
+    """ledger_xi=None keeps the earlier rule: kappa_L is the smallest kappa with gamma <= (rho~_run / rho_L) Gamma_L."""
+    c = _cal(ctx, eps_run=1.0, ledger_eps=10.0, ledger_delta=1e-6, ledger_xi=None)
+    ki = c['kappa_info']
+    assert ki['ledger_rule'] == 'sd' and ki['kappa_run'] == 37 and ki['kappa_L'] == 46 and c['kappa'] == 46
     assert c['gamma'] <= c['rho_run'] / ki['rho_L'] * ki['Gamma_L']
+    assert c['ledger_cost'] == dict(rho=c['rho_run'], eps_prime=0.0, gamma=c['gamma'])
 
 
-def test_ledger_filter_exhausted_by_rho_not_slack(ctx, tmp_path):
-    c = _cal(ctx, eps_run=1.0, ledger_eps=10.0, ledger_delta=1e-6)
-    L = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=10.0, delta_cap=1e-6, zeta=0.1, mode='filter')
+@pytest.mark.parametrize('xi', [1e-3, None])
+def test_ledger_filter_exhausted_by_rho_not_slack(ctx, tmp_path, xi):
+    c = _cal(ctx, eps_run=1.0, ledger_eps=10.0, ledger_delta=1e-6, ledger_xi=xi)
+    led = c['ledger']
+    L = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=10.0, delta_cap=1e-6, zeta=0.1, mode='filter', xi=xi,
+                  delta_prime=led['delta_prime'])
     runs = 0
-    while L.check_run(c['rho_run'], c['gamma'], 'R', 'p')[0]:
-        for s, r in c['releases'].items():
-            L.charge(s, r['rho'], c['gamma'] / c['n_rel'])
+    while L.admit_run(c['ledger_cost'], 'R', 'p')[0]:
         runs += 1
-    assert runs == math.floor(L.d['rho_cap'] / c['rho_run'] * (1 + 1e-12))
-    assert L.d['gamma_spent'] + c['gamma'] <= L.d['gamma_cap']      # refused for rho, not for slack
+    cost, sp = c['ledger_cost'], L.spent()
+    assert runs == math.floor(Fraction(L.d['rho_cap']) / Fraction(cost['rho']))      # exact, no tolerance
+    assert sp['gamma'] + Fraction(cost['gamma']) <= Fraction(L.d['gamma_cap'])       # refused for rho, not for slack
+    if xi is not None:
+        assert sp['eps'] + Fraction(cost['eps_prime']) <= Fraction(L.d['E_cap'])     # nor for smudging
     # reopening with a different cap is refused
     with pytest.raises(RuntimeError, match='cap differs'):
-        dp.Ledger(str(tmp_path / 'l.json'), eps_cap=5.0, delta_cap=1e-6, zeta=0.1, mode='filter')
+        dp.Ledger(str(tmp_path / 'l.json'), eps_cap=5.0, delta_cap=1e-6, zeta=0.1, mode='filter', xi=xi)
 
 
 def test_ledger_slack_converted_at_the_cap_eps(ctx, tmp_path):
-    """With a fixed kappa = 40 the slack, converted with 1 + e^eps_cap, binds after two runs."""
-    c = _cal(ctx, eps_run=1.0, kappa=40)
-    L = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=10.0, delta_cap=1e-6, zeta=0.1, mode='filter')
+    """With a fixed kappa = 40, the statistical-distance ledger converts the slack with 1 + e^eps_cap and refuses after
+    two runs; the hockey-stick ledger is still exhausted by rho (102 runs)."""
+    c = _cal(ctx, eps_run=1.0, kappa=40, ledger_eps=10.0, ledger_delta=1e-6, ledger_xi=None)
+    L = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=10.0, delta_cap=1e-6, zeta=0.1, mode='filter', xi=None)
     runs = 0
-    while L.check_run(c['rho_run'], c['gamma'], 'R', 'p')[0]:
-        L.charge(1, c['rho_run'], c['gamma'])
+    while L.admit_run(c['ledger_cost'], 'R', 'p')[0]:
         runs += 1
-    assert runs == 2 and L.d['rho_spent'] + c['rho_run'] <= L.d['rho_cap']
+    assert runs == 2 and L.spent()['rho'] + Fraction(c['rho_run']) <= Fraction(L.d['rho_cap'])
+    c2 = _cal(ctx, eps_run=1.0, kappa=40, ledger_eps=10.0, ledger_delta=1e-6)
+    L2 = dp.Ledger(str(tmp_path / 'l2.json'), eps_cap=10.0, delta_cap=1e-6, zeta=0.1, mode='filter', xi=1e-3)
+    runs = 0
+    while L2.admit_run(c2['ledger_cost'], 'R', 'p')[0]:
+        runs += 1
+    assert runs == math.floor(Fraction(L2.d['rho_cap']) / Fraction(c2["rho_run"])) == 102
 
 
 def test_single_run_ledger_is_filled_exactly(ctx, tmp_path):
     c = _cal(ctx, eps_run=4.0)
-    eps_L, delta_L, zeta_L, mode = dp.ledger_cap(_ag(eps_run=4.0))
-    assert (eps_L, delta_L, mode) == (4.0, 1e-9, 'fixed')
-    L = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=eps_L, delta_cap=delta_L, zeta=zeta_L, mode=mode)
-    assert L.check_run(c['rho_run'], c['gamma'], 'R', 'p')[0]
-    L.charge(1, c['rho_run'], c['gamma'])
-    assert not L.check_run(1e-6, 0.0, 'R', 'p')[0]
+    led = dp.ledger_cap(_ag(eps_run=4.0))
+    assert (led['eps'], led['delta'], led['mode'], led['xi']) == (4.0, 1e-9, 'fixed', None)
+    assert c['ledger'] == led
+    L = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=led['eps'], delta_cap=led['delta'], zeta=led['zeta'],
+                  mode=led['mode'], xi=led['xi'])
+    assert L.admit_run(c['ledger_cost'], 'R', 'p')[0]
+    assert not L.admit_run(dict(rho=1e-6, gamma=0.0), 'R', 'p')[0]
+
+
+def test_sigma_c_floor_is_2_to_the_42(ctx, monkeypatch):
+    """The floor on sigma_c is 2^42 (the factor 1 + 2^-80 of the smudging lemma needs sigma_c >= 2.1 * 2^40).  With a
+    tiny error bound the floor binds, and Calibrate raises the scale until every sigma_c reaches it."""
+    assert dp.SIGMA_C_FLOOR == 2.0 ** 42
+    c = _cal(ctx, eps_run=1.0)
+    for r in c['releases'].values():
+        assert r['flood_needed'] >= 2.0 ** 42 and r['sigma_c'] >= r['flood_needed']
+    monkeypatch.setattr(dp.bt, 'B_tot', lambda *a, **k: 1.0)                 # 2^40 * 1 / sqrt(2 pi) < 2^42
+    c = _cal(ctx, eps_run=8.0, delta_run=1e-6)                                # kappa = 40; small sigma_s
+    assert c['kappa'] == 40 and c['log2_Omega_f'] > 40.5                      # the search started below
+    assert all(r['flood_needed'] == 2.0 ** 42 for r in c['releases'].values())
+    assert min(r['sigma_c'] for r in c['releases'].values()) >= 2.0 ** 42
+    assert min(r['sigma_c'] for r in c['releases'].values()) < 2.0 ** (42 + 1 / 16)   # smallest scale on the grid

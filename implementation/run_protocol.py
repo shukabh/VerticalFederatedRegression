@@ -3,7 +3,8 @@
     python run_protocol.py toy
     python run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300 [--variant A|C] [--log2_Omega_U auto|q2|68]
                                      [--eps 1.0] [--delta 1e-9] [--kappa auto|40] [--zeta 0.1]
-                                     [--ledger_eps 10] [--ledger_delta 1e-6] [--transcript out.json]
+                                     [--ledger_eps 10] [--ledger_delta 1e-6] [--ledger_xi 1e-3|none]
+                                     [--transcript out.json]
                                      [--setting prev|I|P] [--f1 F] [--theta_star T] [--kappa_Psi K]
                                      [--alpha_L A] [--r1_mode union|exact] [--no_intervals]
 
@@ -11,8 +12,10 @@
 default; 'P' prediction, without intervals; 'prev' the earlier one); the explicit options override single fields.
 
 kappa 'auto' lets Calibrate derive the flooding parameter from (eps, delta, zeta, kappa_min) and the ledger cap.
-The default ledger file holds a multi-run cap (ledger_eps, ledger_delta); --ledger_eps none gives a single-run
-ledger whose cap is this run's budget.
+The default ledger file holds a multi-run cap (ledger_eps, ledger_delta) with the hockey-stick accounting
+(--ledger_xi, the share of ledger_eps reserved for smudging; 'none' selects the statistical-distance accounting);
+--ledger_eps none gives a single-run ledger whose cap is this run's budget.  The ledger charges a run's full cost
+when it admits the run.
 
 There is deliberately no switch for the noise-free debug path (tests only).
 """
@@ -49,6 +52,9 @@ def main():
     ap.add_argument('--kappa_min', type=int, default=40, help='kappa=auto: statistical security floor')
     ap.add_argument('--ledger_eps', default='10', help="ledger cap eps of the base register, or 'none'")
     ap.add_argument('--ledger_delta', type=float, default=1e-6)
+    ap.add_argument('--ledger_xi', default='1e-3',
+                    help="share of ledger_eps reserved for smudging (hockey-stick ledger), or 'none' (statistical "
+                         "distance)")
     ap.add_argument('--B_beta_pub', type=float, default=float('inf'))
     ap.add_argument('--ledger', default=os.path.join(HERE, 'ledger_O.json'))
     ap.add_argument('--transcript', default=None)
@@ -67,7 +73,8 @@ def main():
     priv = dict(eps_run=a.eps, delta_run=a.delta, kappa=a.kappa if a.kappa == 'auto' else int(a.kappa),
                 zeta=a.zeta, kappa_min=a.kappa_min,
                 ledger_eps=None if a.ledger_eps.lower() == 'none' else float(a.ledger_eps),
-                ledger_delta=None if a.ledger_eps.lower() == 'none' else a.ledger_delta)
+                ledger_delta=None if a.ledger_eps.lower() == 'none' else a.ledger_delta,
+                ledger_xi=None if a.ledger_xi.lower() == 'none' else float(a.ledger_xi))
     stat = dp.setting(a.setting)
     for k in ('f1', 'theta_star', 'kappa_Psi', 'alpha_L', 'r1_mode'):
         if getattr(a, k) is not None:

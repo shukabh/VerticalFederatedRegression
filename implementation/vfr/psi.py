@@ -20,6 +20,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import binom
 
+SIGMA_FLOOR = 2.0 ** 42          # floor on the flooding s.d. (as dp.SIGMA_C_FLOOR)
 T_DEFAULT = 4293918721          # prime, = 1 mod 2^20 (BFV batching for N_B <= 2^19), < 2^32
 DUMMY_Y = 0
 
@@ -64,7 +65,10 @@ class PSIParams:
         return 2 * (math.sqrt(N) / 2 + N ** 1.5 / 2) + 1.0
 
     def flood_sigma2(self) -> int:
-        return math.ceil((2.0 ** self.kappa * self.B_err()) ** 2)
+        """sigma_psi^2 with sigma_psi = max(2^kappa_psi B_err, 2^42): above the requirement
+        max(2^kappa_psi B_psi / sqrt(2 pi), 2^42) of SanitizeBFV (the floor makes the smudging lemma's factor
+        1 + 2^-80 hold; at the defaults sigma_psi = 2^61 and the floor does not bind)."""
+        return math.ceil(max(2.0 ** self.kappa * self.B_err(), SIGMA_FLOOR) ** 2)
 
 
 def _h(*parts: bytes) -> bytes:

@@ -30,7 +30,7 @@ NTTs, hybrid key switching and BFV evaluation.
 scripts/build_openfhe.sh /opt/openfhe-1.5.1          # once (about 5 min on 4 cores)
 python3 -m pip install numpy scipy cryptography pybind11 pytest
 native/build.sh /opt/openfhe-1.5.1                   # builds vfr/vfr_native*.so
-python3 -m pytest -q tests/                          # 47 tests, about 3.5 min
+python3 -m pytest -q tests/                          # 78 tests, about 4 min (8 min on a loaded machine)
 python3 run_protocol.py toy
 python3 run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300   # [--eps 8] [--kappa auto|48] [--ledger_eps none]
 #                                                     [--setting prev|I|P] [--r1_mode union|exact] [--f1 F] ...
@@ -44,14 +44,14 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 
 | phase (spec algorithm) | where | what |
 |---|---|---|
-| 0 Setup (Alg. 1, 7) | `vfr/dp.py` | `delta_rep` (exact enumeration over the three cubics, all regimes; Delta and Delta_noyy), `delta_G`, joint/separate mode, `rho_tight` (Canonne-Kamath-Steinke), `choose_kappa` (derived flooding parameter: max(kappa_min, kappa_run, kappa_L)), `calibrate` (paper's Algorithm 7: gamma with (1+e^eps), Delta_x of the centred mechanism, integer sigma_c^2, smallest admissible scale with sigma_c >= max(2^kappa B_tot / sqrt(2 pi), 2^20), q0 check, log QP against the 128-bit bound for N; raises `CalibrationRefused`), `Ledger` (cap per base register; zCDP costs and raw slacks add, slack converted at the cap's eps; 'filter' rule for adaptive runs, 'fixed' rule for runs fixed in advance; per-release charge; OPRF quota) |
+| 0 Setup (Alg. 1, 7) | `vfr/dp.py` | `delta_rep` (exact enumeration over the three cubics, all regimes; Delta and Delta_noyy), `delta_G`, joint/separate mode, `rho_tight` (Canonne-Kamath-Steinke, rounded down), `eps_smudge` (eps'(kappa, delta') of the hockey-stick smudging lemma, rounded up), `choose_kappa` (derived flooding parameter: max(kappa_min, kappa_run, kappa_L), with the hockey-stick kappa_L rule by default), `calibrate` (paper's Algorithm 7: gamma with (1+e^eps), Delta_x of the centred mechanism, integer sigma_c^2, smallest admissible scale with sigma_c >= max(2^kappa B_tot / sqrt(2 pi), 2^42), q0 check, log QP against the 128-bit bound for N; the run's ledger cost; raises `CalibrationRefused`), `Ledger` (cap per base register; hockey-stick accounting with three sums rho, eps', Gamma and the share xi_L = 1e-3 of eps_L for smudging, or the earlier statistical-distance accounting with `xi=None`; 'filter' rule for adaptive runs, 'fixed' rule for runs fixed in advance; the full cost of a run is charged once, at admission, under a file lock, and never refunded; exact fractions, capacities rounded down, no tolerance; OPRF quota) |
 | | `vfr/btot.py` | worst-case, data-independent B_tot (port of the proofs' btot.py, generalized to separate scales and OpenFHE's gadget; reproduces the proofs' table) and Delta_x |
 | | `native: CKKSCore.pk_share / make_pk / rotkey_share / make_rotkeys` | threshold keygen with a CRS (SHAKE-256): `p0 = -a s + e` with `s = s_R + s_O`; joint rotation keys for the 13 shifts 2^i in OpenFHE's hybrid layout; no relinearization or conjugation key |
 | 1 Link (Alg. 2) | `vfr/oprf.py` | 2HashDH OPRF, RFC 9497 mode 0, ristretto255-SHA512 over libsodium; passes the RFC test vectors; fresh key k per run; exactly n_R^max blinded queries |
 | | `vfr/psi.py`, `native: BFVCore, psi_build_polys` | labeled PSI: cuckoo hashing at R (h = 3, N_bins = 16384), O's membership/label polynomials per bin and partition (labels tau(j) + H(F'_k(id)) mod t), windowed powers under R's own BFV key, fresh masks r1, r2, SanitizeBFV (switch to 2 limbs + Enc_pk(0) + exact discrete-Gaussian flooding with 2^40 B_err); R recovers I and pi, computes A exactly |
 | 2 Upload (Alg. 3) | `native: encrypt_seeded / convert` | R: `c0 = -a s_R + e + Ecd(v)`, `a = PRG(seed)`, sends (c0, seed) (seeded form, half size); O: `c0 <- c0 - a s_O` |
 | 3 Aggregate (Alg. 4) | `vfr/aggregate.py` | circuit A as written (`T_e = EvalSum(Rescale(sum_h U_e[h] * Ecd(V_e[h])))`, `P_e = Rescale(T_e * Ecd(u_slot))`, M1 = sum over (triu B, C), M2 = all stage-2 entries, My if separate); circuit C as an option; optional entry-parallel threads |
-| 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; ledger charge; sends only (c1', h_O) |
+| 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; sends only (c1', h_O) (the ledger was charged at admission) |
 | | `native: combine / decode_i128` | R: `v = h_O + c1' s_R mod q0`, CRT to int128, decode with the exact rational final scale |
 | 5 Solve and infer (Alg. 6) | `vfr/solve.py` | corrected Algorithm 6 (port of alg6.py with the paper's corrections); stage-1 radius r_1 by the union bound (`r1_mode='union'`) or the exact Monte Carlo quantile (`'exact'`, `r1_quantile_exact`, cached in `vfr/r1_quantiles.json`); `intervals=False` for estimate-only settings |
 | parties | `vfr/party_r.py`, `vfr/party_o.py`, `vfr/protocol.py`, `vfr/wire.py` | two processes, one socket; JSON header + binary fields, no pickle; per-message transcript (type, direction, bytes per field, SHA-256) |
@@ -76,14 +76,16 @@ Omega_f = Omega_U Omega_V Omega_u / (q1 q2) is tracked exactly. With the derived
 kappa = max(40, kappa_run, kappa_L), zeta = 0.1; single-run ledger) kappa = 40 / 40 / 40 / 41 / 46 and Omega_f =
 2^61.8 / 2^62.75 / 2^63.7 / 2^65.6 / 2^71.6-2^71.9 for eps = 0.5 / 1 / 2 / 4 / 8 at n_bar_O from 4k to 1M
 (delta = 1e-9); at a fixed kappa = 40, eps = 4 needs 2^64.6 and eps = 8 is refused (slack > delta). An agreement may
-name a ledger cap (`ledger_eps`, `ledger_delta`); `run_protocol.py` uses (10, 1e-6) for its persistent demo ledger,
-which raises kappa to 46 at eps = 1. `--log2_Omega_U q2` selects the
+name a ledger cap (`ledger_eps`, `ledger_delta`, `ledger_zeta`, `ledger_xi`); `run_protocol.py` uses (10, 1e-6) for its
+persistent demo ledger. With the hockey-stick ledger (xi_L = 1e-3, the default) the ledger's kappa_L is 22 / 21 / 19 /
+17 / 15 and does not raise kappa; the earlier statistical-distance ledger (`ledger_xi=None`, `--ledger_xi none`) raises
+it to 48 / 46 / 44 / 42 / 46. `--log2_Omega_U q2` selects the
 earlier choice Omega_U = q2. The benchmarks in `bench/results/` were measured with Omega_U = q2; the modulus chain
 and the operations are the same, so the timings carry over. BFV N_B = 2^14,
 t = 4293918721, 7 x 60-bit limbs, reply switched to 2 limbs, SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50,
 delta_psi = 2^-40.
 
-## Tests (`tests/`, 47 passing)
+## Tests (`tests/`, 78 passing)
 
 - `test_primitives.py`: RFC 9497 vectors; exact sampler (chi-square at sigma^2 = 3, moments and low bits at
   sigma = 2^55); DeltaRep against the closed forms, the paper's (1, 1, 5) example and a random search; rho_run =
@@ -98,12 +100,22 @@ delta_psi = 2^-40.
   frame; a release carries exactly two ring elements mod q0; OPRF count = n_R^max; the bytes of c0' never appear in
   anything R receives; the bytes of R's would-be share c1' s_R never appear in anything O receives); noise on: the
   stage-2 estimate, both intervals, V_mech, RSS correction equal alg6.py fed the same decoded statistics; the debug
-  flag is refused without the test-only environment variable.
+  flag is refused without the test-only environment variable; O's ledger holds the run's full cost, charged once at
+  admission.
 - `test_calibrate.py`: the derived kappa (40, 40, 40, 41, 46 for eps = 0.5 ... 8 at delta = 1e-9) is the smallest
   admissible and floods; eps = 8 is feasible at 1M rows; a fixed kappa = 40 at eps = 8 is refused; refusals for a
-  chain above the security bound, a too small q0 and a too large delta_B; the ledger share kappa_L; the ledger
-  filter is exhausted by rho, not by slack, and converts the slack at the cap's eps; a single-run ledger is filled
-  exactly.
+  chain above the security bound, a too small q0 and a too large delta_B; the hockey-stick kappa_L (22, 21, 19, 17, 15
+  at the cap (10, 1e-6), xi_L = 1e-3), with kappa then equal to the single-run kappa, and the statistical-distance
+  kappa_L (46 at eps = 1) with `ledger_xi=None`; under either accounting the ledger filter is exhausted by rho, not by
+  slack; at a fixed kappa = 40 the statistical-distance ledger converts the slack at the cap's eps and refuses after two
+  runs, the hockey-stick ledger after 102; a single-run ledger is filled exactly; the floor sigma_c >= 2^42, and
+  Calibrate raises the scale to it when it binds.
+- `test_ledger.py`: eps'(kappa, delta') equals the tight values of the composition proof and is below the closed form;
+  rho_tight rounds down and is tight to 1e-9; the capacities are rounded down and the delta budget adds up (Corollary
+  5.4); the filter and the fixed rule test without tolerance (a run that fills a capacity exactly is admitted, the
+  smallest excess refused); the hockey-stick fixed rule; the smudging budget can bind for a run below its kappa_L; a
+  run's full cost is charged at admission, is visible to every handle on the file and is never refunded; older ledger
+  files are refused; two stale handles, and four processes racing on one file, admit exactly what the cap allows.
 - `test_stage1_radius.py`: the exact r_1 gives the one-sided failure rate alpha_L on 400k fresh noise draws
   (alpha_L = 0.0025 and 0.25; rate within 3 s.d. above and at least 0.8 alpha_L); the order-statistic upper bound
   covers the true quantile at its confidence level; the union bound is still the default and matches the formula;

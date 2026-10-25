@@ -1,9 +1,9 @@
 """Party O (organization): holds the register (ids, X_O, y).  Never decrypts anything.
 
-Phases (spec Algorithms 1-5): Setup (scope padding, fresh shuffle tau, Calibrate, ledger check, threshold
-keygen), Link (fresh OPRF key, PSI preprocessing and evaluation with SanitizeBFV), Upload conversion,
-Aggregate and pack, Release (re-randomize, exact discrete Gaussian eta, h_O = c0' + c1' s_O + eta,
-ledger charge, send (c1', h_O) only).
+Phases (spec Algorithms 1-5): Setup (scope padding, fresh shuffle tau, Calibrate, ledger admission, which charges
+the run's full planned cost atomically, threshold keygen), Link (fresh OPRF key, PSI preprocessing and evaluation
+with SanitizeBFV), Upload conversion, Aggregate and pack, Release (re-randomize, exact discrete Gaussian eta,
+h_O = c0' + c1' s_O + eta, send (c1', h_O) only).
 """
 from __future__ import annotations
 
@@ -82,11 +82,14 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         ch.send('refuse', meta=dict(reason=f'Calibrate: {exc}'))
         return dict(refused=f'Calibrate: {exc}', transcript=tr.records)
     joint = cal['joint']
-    eps_L, delta_L, zeta_L, mode_L = dp.ledger_cap(ag)  # public cap of the base register
+    led = cal['ledger']                                 # public cap of the base register
     ledger = dp.Ledger(opts.get('ledger_path') or os.path.join(opts.get('workdir', '.'), 'ledger_O.json'),
-                       eps_cap=eps_L, delta_cap=delta_L, zeta=zeta_L, mode=mode_L,
-                       quota=opts.get('quota', 10 ** 6))
-    ok, why = ledger.check_run(cal['rho_run'], cal['gamma'], ag.researcher, ag.project)
+                       eps_cap=led['eps'], delta_cap=led['delta'], zeta=led['zeta'], mode=led['mode'],
+                       xi=led['xi'], delta_prime=led['delta_prime'], quota=opts.get('quota', 10 ** 6))
+    # admission charges the run's full planned cost (every release) atomically; nothing is refunded on an abort
+    ok, why = ledger.admit_run(cal['ledger_cost'], ag.researcher, ag.project,
+                               meta=dict(kappa=cal['kappa'], n_rel=cal['n_rel'], eps_run=ag.eps_run,
+                                         delta_run=ag.delta_run))
     if not ok:
         ch.send('refuse', meta=dict(reason=why))
         return dict(refused=why, transcript=tr.records)
@@ -216,8 +219,7 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
             debug.setdefault('c0p_fingerprints', {})[str(s)] = c0p.tobytes()[:256]
         else:
             c1p, h = ck.rerand_partial_decrypt(Ms[s], pk, sO, eta_res)
-        del eta_res
-        ledger.charge(s, rel['rho'], cal['gamma'] / cal['n_rel'])   # raw slack gamma_s of this release
+        del eta_res                                     # (the release was charged at admission)
         released.add(s)
         T['release'][str(s)] = dict(sample=t1 - t0, rerand_pdec=time.time() - t1)
         ch.send('release', meta=dict(stage=str(s)), blobs={'c1p': c1p, 'h': h})

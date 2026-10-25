@@ -3,11 +3,13 @@
   * worked toy example: linkage and, with eta = 0 (guarded debug flag), the plaintext statistics of toy.json;
   * synthetic cohort (n_bar_O = 4096, n = 300, d_R = 4, d_O = 6): exact match set and alignment, noise-off
     decryption equals plaintext G and c, and the transcript checks (what crosses, and what never does);
-  * noise on: the stage-2 estimate and intervals equal alg6.py fed the same decoded noisy statistics;
+  * noise on: the stage-2 estimate and intervals equal alg6.py fed the same decoded noisy statistics, and O's
+    ledger charged the run's full cost once, at admission;
   * the debug flag cannot be used without the test-only environment variable.
 """
 import json
 import os
+from fractions import Fraction
 
 import numpy as np
 import pytest
@@ -112,6 +114,12 @@ def test_noise_on_matches_alg6(tmp_path):
                         dict(ledger_path=str(tmp_path / 'l.json')))
     res = R['result']
     assert res is not None and not res['refused']
+    # O's ledger charged the run's full planned cost once, at admission, and nothing per release
+    led = dp.Ledger(str(tmp_path / 'l.json'), eps_cap=1.0, delta_cap=1e-9, zeta=0.1, mode='fixed', xi=None)
+    cost = O['calibration']['ledger_cost']
+    assert len(led.d['runs']) == 1 and 'releases' not in led.d
+    assert led.spent() == dict(rho=Fraction(cost['rho']), eps=Fraction(0), gamma=Fraction(cost['gamma']))
+    assert cost['rho'] == O['calibration']['rho_run'] and cost['gamma'] == O['calibration']['gamma']
     p, dA = 11, 5
     sig = R['sigma']
     aL = aU = ag.alpha / 20
