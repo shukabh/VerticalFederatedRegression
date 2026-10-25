@@ -115,7 +115,7 @@
 \maketitle
 
 \begin{abstract}
-We study two-party vertical federated least squares between a researcher $\Rp$, who holds a cohort with features $\bXR$, and an organization $\Op$ (for example a national statistical agency), which holds a register with features $\bXO$ and the response $\by$. Records are linked by labeled private set intersection with an oblivious pseudorandom function: $\Rp$ learns which of its cohort members are in $\Op$'s register and where, and $\Op$ learns only public sizes. The statistics that depend on $\Op$'s data are aggregated under two-party threshold CKKS. The secret key is split additively between the parties, so neither can decrypt alone, and $\Op$ never decrypts at all. Instead, $\Op$ adds the differential-privacy noise inside its share of each decryption, as an exact discrete Gaussian on the coefficient lattice that also floods the encryption error. $\Rp$ therefore receives only noisy statistics, and $\Op$ can enforce a privacy budget by withholding its share. $\Rp$'s own Gram block is computed locally and is never noised. Each run makes two releases. The first, of the Gram blocks only, chooses the ridge. The second, whose noise is independent of that choice, gives the estimate, a Wald interval for the ridge target from a parametric bootstrap of the mechanism, and a bias-aware interval for the regression coefficients. We give the exact replace-one sensitivity, zCDP accounting with a tight conversion, simulation-based output privacy against an honest-but-curious researcher, and the statistical guarantees of the two-stage procedure. In a simulation of the release and solve steps the Wald intervals cover $94.4$--$96.2\%$ (target $95.5\%$) with and without the ridge. On a synthetic population at $\delta = 10^{-9}$, the stage-1 ridge switches off between $1.0$ and $1.2$ times the intersection size that the protocol parameters predict ($6.0$k to $81$k matched records for $\varepsilon = 8$ to $0.5$). The coefficient error then reaches twice that of non-private least squares at $7.3$k, $23$k and $79$k matched records for $\varepsilon = 8$, $4$ and $2$, and prediction comes within $10\%$ of non-private test error $1.7$--$5.2$ times sooner. On real data with each party normalizing its own block of every row, prediction comes within $10\%$ of non-private test error at $10$k and $5.2$k matched records on protein for $\varepsilon = 1$ and $2$, but not within the $12$k--$14$k records available on bike and pol for $\varepsilon \le 4$. On jointly normalized data, AdaSSP on the joined table has lower test error than v3.1 on $20$ of $29$ datasets at $\varepsilon = 1$, $\delta = 10^{-6}$ ($19$ of $29$ when each party normalizes its own block), because the v3.1 ridge, sized for valid intervals, is $3$--$6$ times that of AdaSSP under the same guarantee. End-to-end runs of a full OpenFHE implementation on the protein dataset ($19{,}206$ matched records) reproduce a plaintext simulation of the mechanism and, after each party normalizes its own block of every row, come within $2$--$6\%$ of non-private test error at $\varepsilon \in \{1, 4\}$.
+We study two-party vertical federated least squares between a researcher $\Rp$, who holds a cohort with features $\bXR$, and an organization $\Op$ (for example a national statistical agency), which holds a register with features $\bXO$ and the response $\by$. Records are linked by labeled private set intersection with an oblivious pseudorandom function: $\Rp$ learns which of its cohort members are in $\Op$'s register and where, and $\Op$ learns only public sizes. The statistics that depend on $\Op$'s data are aggregated under two-party threshold CKKS. The secret key is split additively between the parties, so neither can decrypt alone, and $\Op$ never decrypts at all. Instead, $\Op$ adds the differential-privacy noise inside its share of each decryption, as an exact discrete Gaussian on the coefficient lattice that also floods the encryption error. $\Rp$ therefore receives only noisy statistics, and $\Op$ can enforce a privacy budget by withholding its share. $\Rp$'s own Gram block is computed locally and is never noised. Each run makes two releases. The first, of the Gram blocks only, chooses the ridge. The second, whose noise is independent of that choice, gives the estimate, a Wald interval for the ridge target from a parametric bootstrap of the mechanism, and a bias-aware interval for the regression coefficients. We give the exact replace-one sensitivity, zCDP accounting with a tight conversion, simulation-based output privacy against an honest-but-curious researcher, and the statistical guarantees of the two-stage procedure. We evaluate two settings of the protocol, chosen on synthetic data alone by a pre-registered rule: setting I (inference) keeps the intervals and sizes the stage-1 radius by an exact Monte Carlo quantile; setting P (prediction) gives up the intervals for a smaller ridge. On a synthetic population at $\delta = 10^{-9}$, the Wald intervals under setting I cover $94.5$--$96.6\%$ in every cell (target $95.5\%$), with and without the ridge. Setting I switches the stage-1 ridge off $35\%$ sooner than the previous setting ($3.9$k to $53$k matched records for $\varepsilon = 8$ to $0.5$), and prediction comes within $10\%$ of non-private test error at $2.9$k to $38$k matched records under I and $2.0$k to $23$k under P. Once the ridge is off, I's coefficient error is slightly higher: it reaches twice that of non-private least squares at $8.0$k, $27$k and $88$k matched records for $\varepsilon = 8$, $4$ and $2$. On real data with each party normalizing its own block of every row, setting I comes within $10\%$ of non-private test error on protein at $8.2$k and $4.1$k matched records for $\varepsilon = 1$ and $2$, but setting P fails there: its gate refuses $82$--$100\%$ of releases on bike, elevators and protein, because block normalization makes the stage-1 noise small against the stage-2 noise. Against AdaSSP on the joined table at $\varepsilon = 1$, $\delta = 10^{-6}$, v3.1 with block normalization under setting I has higher test error on $20$ of $29$ datasets (median gap $+25\%$, against $+28\%$ at the previous setting), because its ridge is still about $2.8$ times that of AdaSSP under the same guarantee. Setting P with joint normalization, which no party can apply in the vertical setting, matches AdaSSP under the same guarantee to within about $1\%$. End-to-end runs of a full OpenFHE implementation reproduce a plaintext simulation of the mechanism under all three settings. On the protein dataset ($19{,}206$ matched records, previous setting), after each party normalizes its own block of every row, they come within $2$--$6\%$ of non-private test error at $\varepsilon \in \{1, 4\}$.
 \end{abstract}
 
 \tableofcontents
@@ -143,7 +143,7 @@ This document proposes a cryptographic protocol for \emph{vertical federated lea
   \item \textbf{Parameters.} The protocol and every theorem are stated for a parameter vector with explicit admissibility constraints; \textsc{Calibrate} derives the flooding parameter from the budget and the ledger cap, and the scale and the noise from both (Section~\ref{sec:params}).
   \item \textbf{Statistics.} A two-stage ridge whose choice is independent of the noise in the estimation release; two named estimands; a Wald interval from a parametric bootstrap of the mechanism; a bias-aware interval for the regression coefficients; and the leading-order mechanism bias with an optional correction (Sections~\ref{sec:stats} and~\ref{sec:bias}).
   \item \textbf{Preprocessing.} Per-party transforms with public constants that make typical records fill the clipping bounds, which no joint computation is needed for (Section~\ref{sec:protocol:preproc}).
-  \item \textbf{Evaluation.} Exactness of the cryptographic layer, the calibration of the two-release protocol, interval coverage, end-to-end runs of a full implementation on real and synthetic data, coefficient accuracy against the intersection size, and a benchmark against AdaSSP on 29 UCI datasets (Section~\ref{sec:eval}).
+  \item \textbf{Evaluation.} Exactness of the cryptographic layer, the calibration of the two-release protocol, interval coverage, end-to-end runs of a full implementation on real and synthetic data, coefficient accuracy against the intersection size, and a benchmark against AdaSSP on 29 UCI datasets, under two named settings of the protocol chosen on synthetic data by a pre-registered rule: one for inference and one for prediction (Section~\ref{sec:eval}).
 \end{enumerate}
 
 % ==============================================================
@@ -575,11 +575,11 @@ where $\kappa_{\mathrm{run}}$ is the smallest integer with $(1 + e^{\varepsilon_
   \item $\kappa_L$ makes the ledger run out of zCDP budget before it runs out of slack, whatever the order and the sizes of the runs.
   \item $\kappa_{\min}$ is a statistical security floor. $\gamma$ also bounds what $\Rp$ can learn beyond $\mathcal M(D)$, including about $\Op$'s key share, so it should not grow with a generous $\delta_{\mathrm{run}}$.
 \end{itemize}
-$\zeta$ trades budget for bits. Shrinking $\delta_{\mathrm{DP}}$ from $\delta_{\mathrm{run}}$ to $(1 - \zeta)\delta_{\mathrm{run}}$ lowers $\rho_{\mathrm{run}}$ by a relative $\zeta/\sqrt{L(L + \varepsilon_{\mathrm{run}})}$ to first order (simple conversion, $L = \ln(1/\delta_{\mathrm{run}})$), so $\sigma_2$ rises by half that, while each unit of $\kappa$ adds one bit to $\Omega_f$ and to $q_0$. At $\delta_{\mathrm{run}} = 10^{-9}$ and $\varepsilon_{\mathrm{run}} \in \{1, 4, 8\}$ the tight conversion loses $0.46$--$0.59\%$ of $\rho_{\mathrm{run}}$ at $\zeta = 0.1$ and $0.04$--$0.06\%$ at $\zeta = 0.01$, and $\zeta = 0.01$ raises $\kappa$ by $3$ bits at $\varepsilon_{\mathrm{run}} = 4$ and $5$ at $\varepsilon_{\mathrm{run}} = 8$ (by at most $1$ where the floor $\kappa_{\min} = 40$ binds). Table~\ref{tab:kappa} gives $\kappa$ and the resulting scale at the evaluation settings.
+$\zeta$ trades budget for bits. Shrinking $\delta_{\mathrm{DP}}$ from $\delta_{\mathrm{run}}$ to $(1 - \zeta)\delta_{\mathrm{run}}$ lowers $\rho_{\mathrm{run}}$ by a relative $\zeta/\sqrt{L(L + \varepsilon_{\mathrm{run}})}$ to first order (simple conversion, $L = \ln(1/\delta_{\mathrm{run}})$), so $\sigma_2$ rises by half that, while each unit of $\kappa$ adds one bit to $\Omega_f$ and to $q_0$. At $\delta_{\mathrm{run}} = 10^{-9}$ and $\varepsilon_{\mathrm{run}} \in \{1, 4, 8\}$ the tight conversion loses $0.46$--$0.59\%$ of $\rho_{\mathrm{run}}$ at $\zeta = 0.1$ and $0.04$--$0.06\%$ at $\zeta = 0.01$, and $\zeta = 0.01$ raises $\kappa$ by $3$ bits at $\varepsilon_{\mathrm{run}} = 4$ and $5$ at $\varepsilon_{\mathrm{run}} = 8$ (by at most $1$ where the floor $\kappa_{\min} = 40$ binds). Table~\ref{tab:kappa} gives $\kappa$ and the resulting scale at the previous setting ($f_1 = 0.1$); at $f_1 = 0.25$ (setting I) the scale is about $0.13$ bits lower and $\kappa$ is the same.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Example at the evaluation settings: the flooding parameter from~\eqref{eq:kappa} and the final scale \textsc{Calibrate} chooses, simulation population ($p = 11$, joint mode, $n_{\mathrm{rel}} = 2$), $\delta_{\mathrm{run}} = 10^{-9}$, $\zeta = 0.1$, $\kappa_{\min} = 40$, $\Omega_U = 2^{68}$, $N = 2^{14}$, $q_0 \approx 2^{119}$, $\log_2(QP) = 357 \le 438$. Left: a single-run ledger. Right: ledger cap $(\varepsilon_L, \delta_L) = (10, 10^{-6})$ with $\zeta_L = 0.1$. Every row is feasible. At a fixed $\kappa = 40$, $\varepsilon_{\mathrm{run}} = 8$ is not: the slack exceeds $\delta_{\mathrm{run}}$.}
+  \caption{Example at the previous setting ($f_1 = 0.1$): the flooding parameter from~\eqref{eq:kappa} and the final scale \textsc{Calibrate} chooses, simulation population ($p = 11$, joint mode, $n_{\mathrm{rel}} = 2$), $\delta_{\mathrm{run}} = 10^{-9}$, $\zeta = 0.1$, $\kappa_{\min} = 40$, $\Omega_U = 2^{68}$, $N = 2^{14}$, $q_0 \approx 2^{119}$, $\log_2(QP) = 357 \le 438$. Left: a single-run ledger. Right: ledger cap $(\varepsilon_L, \delta_L) = (10, 10^{-6})$ with $\zeta_L = 0.1$. Every row is feasible. At a fixed $\kappa = 40$, $\varepsilon_{\mathrm{run}} = 8$ is not: the slack exceeds $\delta_{\mathrm{run}}$.}
   \label{tab:kappa}
   \begin{tabular}{@{}rrrrrrrrrr@{}}
     \toprule
@@ -686,13 +686,18 @@ Either the working model (conditionally independent, homoskedastic errors) is as
 \subsection{Stage 1: choosing the ridge}
 \label{sec:stats:stage1}
 
-Stage~1 releases $\hat\bB_1$ and $\hat\bC_1$ with s.d.\ $\sigma_1$, and $\Rp$ forms $\hat\bG_1$ with its exact $\bA$. With $r_1 = \sigma_1(2\sqrt p + 2\sqrt{\ln(1/\alpha_L)})$,
+Stage~1 releases $\hat\bB_1$ and $\hat\bC_1$ with s.d.\ $\sigma_1$, and $\Rp$ forms $\hat\bG_1$ with its exact $\bA$. The rule needs a radius $r_1$ with
 \[
-  \Pr\bigl[\lambda_{\max}(\hat\bG_1 - \bG) > r_1\bigr] \le \alpha_L ,
+  \Pr\bigl[\lambda_{\max}(\hat\bG_1 - \bG) > r_1\bigr] \le \alpha_L .
 \]
-so $\hat L = \max\{0, \lambda_{\min}(\hat\bG_1) - r_1\} \le \lambda_{\min}(\bG)$ with probability at least $1 - \alpha_L$. This one-sided event is the only one the procedure uses; a two-sided statement needs $\ln(2/\alpha_L)$. At $p = 11$ and $\alpha_L = 0.0025$ (the evaluation setting) the radius is about $1.55$ times conservative.
+Then $\hat L = \max\{0, \lambda_{\min}(\hat\bG_1) - r_1\} \le \lambda_{\min}(\bG)$ with probability at least $1 - \alpha_L$. This one-sided event is the only one the procedure uses. The protocol allows two radii.
+\begin{itemize}[noitemsep]
+  \item \emph{Union bound:} $r_1 = \sigma_1(2\sqrt p + 2\sqrt{\ln(1/\alpha_L)})$. It holds for sub-Gaussian noise, and it is the radius the proofs cover. At $p = 11$ and $\alpha_L = 0.0025$ it is about $1.55$ times conservative.
+  \item \emph{Exact quantile:} $r_1 = \sigma_1 q_{1-\alpha_L}$, where $q_{1-\alpha_L}$ is the $(1 - \alpha_L)$ quantile of $\lambda_{\max}(\mathbf E)$ and $\mathbf E$ is the stage-1 noise matrix with unit s.d.: symmetric, zero on $\bA$, and independent $\mathcal N(0, 1)$ on the released entries of $\triu\bB$ and $\bC$. Its law depends only on $(d_R, d_O)$, so $q_{1-\alpha_L}$ is computed offline by Monte Carlo from public quantities and costs no privacy. The implementation takes an upper 99\% confidence bound on the quantile from draws with at least $2{,}500$ expected exceedances ($10^6$ draws at $\alpha_L = 0.0025$). At $p = 11$ this gives $q_{0.9975} = 7.42$, against $11.53$ for the union bound.
+\end{itemize}
+A two-sided statement needs $\ln(2/\alpha_L)$ in the union bound and the $(1 - \alpha_L/2)$ quantile in the exact radius. The exact radius treats the slot-domain noise as Gaussian with the calibrated s.d. The encrypted noise is a discrete Gaussian on the coefficient lattice, and each slot value is a sum of $N$ independent terms of it.
 
-\tocheck{r-1: optionally set it to the exact (1 - alpha-L) quantile of lambda-max of the noise, computed offline by Monte Carlo (7.43 sigma-1 instead of 11.53 sigma-1 for p = 11), at no privacy cost.}
+\tocheck{The exact-quantile radius rests on a Monte Carlo quantile for Gaussian slot noise. Bound the error of this approximation for the discrete Gaussian on the coefficient lattice, or prove the quantile bound directly.}
 
 With the target $g^\star = 2\vartheta^\star\sigma_2\sqrt p$, the full ridge
 \[
@@ -707,7 +712,7 @@ $(\lambda, \Psi)$ is a function of the stage-1 release and of $\bA$ only, and is
 
 This is what makes the bias theory of Section~\ref{sec:bias} and the intervals below valid conditionally on $(\lambda, \Psi)$. Choosing $\lambda$ from the same release that is used for estimation would make $\lambda$ a function of the noise; Section~\ref{sec:bias:lambda} shows what goes wrong.
 
-\tocheck{The evaluation settings f-1 = 0.1, theta-star = 2.5 and kappa-Psi = 2 were chosen by simulation of earlier variants; confirm them under the two-stage rule.}
+\tocheck{Setting I re-chose only f-1 (0.25, Section 12). It keeps theta-star = 2.5 and kappa-Psi = 2, which were chosen by simulation of earlier variants; neither has been re-tuned under the two-stage rule with the exact radius. Setting P kept kappa-Psi = 2 as well.}
 
 \subsection{Stage 2: estimate and gate}
 \label{sec:stats:stage2}
@@ -716,7 +721,11 @@ Stage~2 releases every entry with s.d.\ $\sigma_2$. $\Rp$ assembles $\hat\bG_2$ 
 \[
   \tilde\btheta = \tilde\bP\hat\bc_2, \qquad \tilde\bP = (\hat\bG_2 + \lambda\Psi)^{-1}.
 \]
-The gate is post-processing; a refused release still spends the budget. For $\vartheta^\star > 2$ the probability of refusal is at most $\alpha_L + \exp(-p(\vartheta^\star - 2)^2)$ (proofs, Part~B, Lemma~S3).
+The gate is post-processing; a refused release still spends the budget. For $\vartheta^\star > 2$ the probability of refusal is at most $\alpha_L + \exp(-p(\vartheta^\star - 2)^2)$ (proofs, Part~B, Lemma~S3). For $\vartheta^\star < 1$, as in the prediction setting P of Section~\ref{sec:params}, there is no such bound. With $\Psi = \bI$ the ridge sets $\lambda_{\min}(\hat\bG_1 + \lambda\bI) = g^\star + r_1$, so the gate passes iff
+\[
+  r_1 + \bigl[\lambda_{\min}(\hat\bG_2) - \lambda_{\min}(\hat\bG_1)\bigr] \ge (1 - \vartheta^\star)\, 2\sigma_2\sqrt p .
+\]
+The bracket is the difference of the downward shifts that the two noise levels cause in $\lambda_{\min}$; on average it is negative when $\sigma_2 > \sigma_1$. A setting with $\vartheta^\star < 1$ therefore passes only when $r_1$ is large against $\sigma_2\sqrt p$, which depends on $\Delta_G/\Delta$ and $f_1$ through~\eqref{eq:sigmas}. Section~\ref{sec:eval:sweep} shows that this fails on block-normalized real data.
 
 \tocheck{Say whether the coverage statements below are conditional on passing the gate.}
 
@@ -730,7 +739,7 @@ The gate is post-processing; a refused release still spends the budget. For $\va
 \]
 with $\chi_{ij} = 0$ iff $i$ and $j$ both lie in $\Rp$'s block. $\Rp$ may use this closed form instead of the bootstrap.
 
-\paragraph{Wald interval for $\btheta_\lambda$.} The error level is split as $\alpha = \alpha_{\mathrm{CI}} + \alpha_L + \alpha_U$, a parameter (the evaluation setting is $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, so $\alpha_{\mathrm{CI}} = 0.045$ and $z_{1 - \alpha_{\mathrm{CI}}/2} = 2.005$). The interval is
+\paragraph{Wald interval for $\btheta_\lambda$.} The error level is split as $\alpha = \alpha_{\mathrm{CI}} + \alpha_L + \alpha_U$, a parameter. Setting I uses $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, so $\alpha_{\mathrm{CI}} = 0.045$ and $z_{1 - \alpha_{\mathrm{CI}}/2} = 2.005$. Setting P computes no intervals; its $\alpha_L = 0.5$ only sizes $r_1$. The interval is
 \[
   \tilde\theta_j \pm z_{1-\alpha_{\mathrm{CI}}/2}\sqrt{(\bV_{\mathrm{mech}})_{jj}} .
 \]
@@ -749,7 +758,7 @@ where $\mathrm{cv}_\alpha(t)$ is the $(1 - \alpha)$ quantile of $|Z + t|$ for $Z
 
 \begin{remark}[How accurate is first order?]
 \label{rem:firstorder}
-The validity ratio controls convergence of the Neumann series, but the relative size of the neglected mechanism bias in the Wald interval is of order $\sigma_2\tr(\bP_\lambda) \le \sqrt p/(2\vartheta_0)$, which at $\vartheta^\star = 2.5$ and $p = 11$ (the evaluation setting) can be $0.66$. Coverage claims are therefore asymptotic as $\vartheta_0 \to \infty$ at fixed $p$. Algorithm~\ref{alg:solve} reports $\sigma_2\tr(\tilde\bP)$ as a diagnostic.
+The validity ratio controls convergence of the Neumann series, but the relative size of the neglected mechanism bias in the Wald interval is of order $\sigma_2\tr(\bP_\lambda) \le \sqrt p/(2\vartheta_0)$, which at $\vartheta^\star = 2.5$ and $p = 11$ (setting I) can be $0.66$. Coverage claims are therefore asymptotic as $\vartheta_0 \to \infty$ at fixed $p$. Algorithm~\ref{alg:solve} reports $\sigma_2\tr(\tilde\bP)$ as a diagnostic.
 \end{remark}
 
 \tocheck{Consider centring the intervals at the bootstrap bias-corrected estimate 2 theta-tilde minus the bootstrap mean, as the proof review suggests.}
@@ -762,41 +771,48 @@ The stage-1 rule is explicit, so the intersection size from which it stops addin
 \paragraph{The threshold.} Let $\Sigma = \E[\bx\bx^\top]$ be the per-record second-moment matrix of the preprocessed, clipped design, intercept included, and $\ell = \lambda_{\min}(\Sigma)$ its weakest direction. With $n$ matched records $\bG \approx n\Sigma$ and $\lambda_{\min}(\bG) \approx n\ell$, up to a relative fluctuation of order $n^{-1/2}$. Ignoring the stage-1 noise in $\lambda_{\min}(\hat\bG_1)$, the full ridge is $\lambda_I(n) \approx \max\{0,\ g^\star + r_1 - n\ell\}$, which falls linearly in $n$ and vanishes at
 \begin{equation}
   n_{\mathrm{off}} = \frac{g^\star + r_1}{\ell}
-  = \frac{\sqrt p}{\ell\sqrt{2\rho_{\mathrm{run}}}}\left[\frac{2\vartheta^\star\Delta}{\sqrt{1 - f_1}} + \Bigl(2 + 2\sqrt{\ln(1/\alpha_L)/p}\Bigr)\frac{\Delta_G}{\sqrt{f_1}}\right],
+  = \frac{\sqrt p}{\ell\sqrt{2\rho_{\mathrm{run}}}}\left[\frac{2\vartheta^\star\Delta}{\sqrt{1 - f_1}} + \frac{q}{\sqrt p}\,\frac{\Delta_G}{\sqrt{f_1}}\right],
   \label{eq:noff}
 \end{equation}
-by~\eqref{eq:sigmas}. At the evaluation settings ($\vartheta^\star = 2.5$, $f_1 = 0.1$, $\alpha_L = 0.0025$) and $p = 11$ this is
+by~\eqref{eq:sigmas}, where $q = r_1/\sigma_1$ is $2\sqrt p + 2\sqrt{\ln(1/\alpha_L)}$ for the union bound and $q_{1-\alpha_L}$ for the exact radius (Section~\ref{sec:stats:stage1}). With $p = 11$, setting I ($\vartheta^\star = 2.5$, $f_1 = 0.25$, exact radius, $q = 7.42$) gives
 \[
-  n_{\mathrm{off}} \approx \frac{17.5\,\Delta + 36.5\,\Delta_G}{\ell\sqrt{2\rho_{\mathrm{run}}}},
+  n_{\mathrm{off}} \approx \frac{19.1\,\Delta + 14.8\,\Delta_G}{\ell\sqrt{2\rho_{\mathrm{run}}}},
 \]
-with $\sqrt{2\rho_{\mathrm{run}}} = 0.089$, $0.173$, $0.335$, $0.642$ and $1.21$ for $\varepsilon = 0.5$, $1$, $2$, $4$ and $8$ at $\delta = 10^{-9}$. Since $\sqrt{\rho_{\mathrm{run}}}$ grows almost linearly in $\varepsilon$ at fixed $\delta$, $n_{\mathrm{off}}$ scales like the sensitivity divided by $\ell\varepsilon$. The two terms have different origins. $g^\star/\ell$ is the threshold if $\ell$ were known in advance; $r_1/\ell$ is the price of learning it from stage~1. With $\Delta_G \approx 0.9\Delta$, as for the simulation population, $r_1 \approx 1.9g^\star$, so learning $\ell$ multiplies the threshold by about $2.9$. The private bound $\hat L$ on $\lambda_{\min}(\bG)$, which makes the interval for $\bbeta$ finite without a public bound on $\|\bbeta\|$, becomes positive earlier, from $n \approx r_1/\ell$ (about $0.65\,n_{\mathrm{off}}$ there).
+against $(17.5\,\Delta + 36.5\,\Delta_G)/(\ell\sqrt{2\rho_{\mathrm{run}}})$ at the previous setting ($f_1 = 0.1$, union bound) and $(3.7\,\Delta + 11.0\,\Delta_G)/(\ell\sqrt{2\rho_{\mathrm{run}}})$ at setting P ($\vartheta^\star = 0.5$, $f_1 = 0.2$, $q_{0.5} = 4.94$). Here $\sqrt{2\rho_{\mathrm{run}}} = 0.089$, $0.173$, $0.335$, $0.642$ and $1.21$ for $\varepsilon = 0.5$, $1$, $2$, $4$ and $8$ at $\delta = 10^{-9}$. Since $\sqrt{\rho_{\mathrm{run}}}$ grows almost linearly in $\varepsilon$ at fixed $\delta$, $n_{\mathrm{off}}$ scales like the sensitivity divided by $\ell\varepsilon$. The two terms have different origins. $g^\star/\ell$ is the threshold if $\ell$ were known in advance; $r_1/\ell$ is the price of learning it from stage~1. With $\Delta_G \approx 0.9\Delta$, as for the simulation population, $r_1 \approx 0.69\,g^\star$ under setting I, so learning $\ell$ multiplies the threshold by about $1.7$; at the previous setting $r_1 \approx 1.9\,g^\star$ and the factor was $2.9$. The private bound $\hat L$ on $\lambda_{\min}(\bG)$, which makes the interval for $\bbeta$ finite without a public bound on $\|\bbeta\|$, becomes positive earlier, from $n \approx r_1/\ell$: about $0.41\,n_{\mathrm{off}}$ under setting I and $0.65\,n_{\mathrm{off}}$ at the previous setting.
 
 \paragraph{Below the threshold.} With $\Psi = \bI$, the component of $\btheta_\lambda$ along an eigenvector of $\bG$ with eigenvalue $n\ell_k$ keeps the fraction $n\ell_k/(n\ell_k + \lambda)$ of the least-squares coefficient. In the weakest direction $n\ell + \lambda \approx g^\star + r_1 = n_{\mathrm{off}}\ell$, so the fraction kept is $n/n_{\mathrm{off}}$: the shrinkage there falls linearly in $n$ and is gone at $n_{\mathrm{off}}$. Directions with $\ell_k \gg \ell$ are barely shrunk. A weak direction carries little of the variation in $\bx$, so shrinking it costs little in prediction error but a lot in the coefficients that load on it; this is why prediction recovers before the coefficients do (Section~\ref{sec:eval:e2e}).
 
-\paragraph{The transition.} The noise lowers $\lambda_{\min}(\hat\bG_1)$ on average, the more so when several eigenvalues of $\Sigma$ are close to $\ell$, so the rule chooses a slightly larger $\lambda$ than the formula and switches off slightly after $n_{\mathrm{off}}$. Table~\ref{tab:noff_sim} simulates the stage-1 rule on the simulation population of Section~\ref{sec:eval:sim} ($\ell = 0.598$, $\Delta = 86.2$, $\Delta_G = 77.2$, $p = 11$): the ridge is never off at $0.8\,n_{\mathrm{off}}$, off in $1$--$3\%$ of releases at $n_{\mathrm{off}}$ and in $96$--$98\%$ at $1.2\,n_{\mathrm{off}}$; a repeat on fresh cohorts gives $3$--$5\%$ and $94$--$99\%$ (Table~\ref{tab:noff_check_v31}). We take $1.2\,n_{\mathrm{off}}$ as the size from which the ridge is off with high probability. Table~\ref{tab:calib_example} uses the committed bound $\ell = 0.494$ instead of the population value, so its thresholds are $21\%$ higher. Under the earlier mechanism, which used that committed bound instead of a stage-1 release, the ridge switched off at exactly $g^\star/\ell$ for that mechanism's $\sigma$ and $\vartheta^\star = 2$.
+\paragraph{The transition.} The noise lowers $\lambda_{\min}(\hat\bG_1)$ on average, the more so when several eigenvalues of $\Sigma$ are close to $\ell$, so the rule chooses a larger $\lambda$ than the formula and switches off after $n_{\mathrm{off}}$. Table~\ref{tab:noff_sim} gives the threshold for the simulation population of Section~\ref{sec:eval:sim} ($\ell = 0.599$, $\Delta = 86.2$, $\Delta_G = 77.2$, $p = 11$), and Table~\ref{tab:noff_check_v31} simulates the stage-1 rule at multiples of it.
+\begin{itemize}[noitemsep]
+  \item Setting I: the ridge is never off at $0.8\,n_{\mathrm{off}}$, off in $3$--$4\%$ of releases at $n_{\mathrm{off}}$, and off in $95$--$99.5\%$ at $1.2\,n_{\mathrm{off}}$. The previous setting gave $3$--$5\%$ and $94$--$99\%$. We take $1.2\,n_{\mathrm{off}}$ as the size from which the ridge is off with high probability.
+  \item Setting P: the transition comes later. No release is off at $n_{\mathrm{off}}$, $4$--$10\%$ are off at $1.2\,n_{\mathrm{off}}$ and $56$--$70\%$ at $1.4\,n_{\mathrm{off}}$. P's radius is smaller ($q_{0.5} = 4.94$), so the downward bias of $\lambda_{\min}(\hat\bG_1)$, which the formula ignores, is a larger share of $g^\star + r_1$.
+\end{itemize}
+Table~\ref{tab:calib_example} uses the committed bound $\ell = 0.494$ instead of the population value, so its thresholds are $21\%$ higher. Under the earlier mechanism, which used that committed bound instead of a stage-1 release, the ridge switched off at exactly $g^\star/\ell$ for that mechanism's $\sigma$ and $\vartheta^\star = 2$.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Ridge threshold for the simulation population, $\delta = 10^{-9}$, evaluation settings. $n_{\mathrm{off}}$ from~\eqref{eq:noff}; $g^\star/\ell$ is the threshold with $\ell$ known in advance. Last three columns: fraction of 400 simulated stage-1 releases with $\lambda = 0$ at $n = 0.8$, $1.0$ and $1.2$ times $n_{\mathrm{off}}$.}
+  \caption{Ridge threshold for the simulation population, $\delta = 10^{-9}$, setting I. $n_{\mathrm{off}}$ from~\eqref{eq:noff}; $g^\star/\ell$ is the threshold with $\ell$ known in advance. Last two columns: $n_{\mathrm{off}}$ at the previous setting and at setting P. Table~\ref{tab:noff_check_v31} gives the simulated switch-off.}
   \label{tab:noff_sim}
-  \begin{tabular}{@{}rrrrrrrccc@{}}
+  \begin{tabular}{@{}rrrrrrrrr@{}}
     \toprule
-    $\varepsilon$ & $\sigma_1$ & $\sigma_2$ & $g^\star$ & $r_1$ & $n_{\mathrm{off}}$ & $g^\star/\ell$ & $0.8$ & $1.0$ & $1.2$ \\
+    & \multicolumn{6}{c}{setting I} & previous & P \\
+    \cmidrule(lr){2-7}
+    $\varepsilon$ & $\sigma_1$ & $\sigma_2$ & $g^\star$ & $r_1$ & $n_{\mathrm{off}}$ & $g^\star/\ell$ & $n_{\mathrm{off}}$ & $n_{\mathrm{off}}$ \\
     \midrule
-    0.5 & 2746 & 1022 & 16942 & 31654 & 81{,}280 & 28{,}337 & 0.00 & 0.03 & 0.97 \\
-    1 & 1411 & 525 & 8705 & 16265 & 41{,}764 & 14{,}560 & 0.00 & 0.03 & 0.96 \\
-    2 & 729 & 271 & 4496 & 8400 & 21{,}570 & 7{,}520 & 0.00 & 0.01 & 0.98 \\
-    4 & 380 & 141 & 2345 & 4382 & 11{,}251 & 3{,}922 & 0.00 & 0.03 & 0.97 \\
-    8 & 202 & 75 & 1244 & 2325 & 5{,}970 & 2{,}081 & 0.00 & 0.03 & 0.98 \\
+    0.5 & 1737 & 1119 & 18{,}562 & 12{,}878 & 52{,}531 & 31{,}014 & 81{,}208 & 22{,}032 \\
+    1 & 892 & 575 & 9{,}538 & 6{,}617 & 26{,}993 & 15{,}937 & 41{,}729 & 11{,}321 \\
+    2 & 461 & 297 & 4{,}927 & 3{,}419 & 13{,}945 & 8{,}233 & 21{,}557 & 5{,}848 \\
+    4 & 240 & 155 & 2{,}569 & 1{,}783 & 7{,}272 & 4{,}293 & 11{,}241 & 3{,}050 \\
+    8 & 128 & 82 & 1{,}364 & 946 & 3{,}860 & 2{,}279 & 5{,}967 & 1{,}619 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Check on real data.} On protein (Section~\ref{sec:eval:e2e}, $19{,}206$ matched records, $p = 10$), $\ell$ computed from the matched design predicts the ridge the encrypted runs chose (Table~\ref{tab:noff_protein}). The runs chose $1$--$19\%$ more than predicted, always more, as the downward bias of $\lambda_{\min}(\hat\bG_1)$ implies; the gap is largest where $\sigma_1$ is largest.
+\paragraph{Check on real data.} On protein (Section~\ref{sec:eval:e2e}, $19{,}206$ matched records, $p = 10$), $\ell$ computed from the matched design predicts the ridge the encrypted runs chose (Table~\ref{tab:noff_protein}). Those runs used the previous setting ($f_1 = 0.1$, union-bound radius). The runs chose $1$--$19\%$ more than predicted, always more, as the downward bias of $\lambda_{\min}(\hat\bG_1)$ implies; the gap is largest where $\sigma_1$ is largest.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Protein, $19{,}206$ matched records, $\delta = 10^{-9}$: $\ell$ of the matched design, $n_{\mathrm{off}}$ from~\eqref{eq:noff}, the ridge $g^\star + r_1 - n\ell$ it predicts, and the median ridge of the five encrypted runs of Table~\ref{tab:e2e_protein}.}
+  \caption{Protein, $19{,}206$ matched records, $\delta = 10^{-9}$, previous setting: $\ell$ of the matched design, $n_{\mathrm{off}}$ from~\eqref{eq:noff}, the ridge $g^\star + r_1 - n\ell$ it predicts, and the median ridge of the five encrypted runs of Table~\ref{tab:e2e_protein}.}
   \label{tab:noff_protein}
   \begin{tabular}{@{}lrrrcrrr@{}}
     \toprule
@@ -812,7 +828,7 @@ with $\sqrt{2\rho_{\mathrm{run}}} = 0.089$, $0.173$, $0.335$, $0.642$ and $1.21$
   \end{tabular}
 \end{table}
 
-\paragraph{What sets $\ell$.} $\ell$ is a property of the joint design after preprocessing, so near-collinearity decides $n_{\mathrm{off}}$, and it may lie within either party's block or across them. On protein, $\ell$ is about $0.002$ under every preprocessing, which keeps the ridge on to between $186$k and $13$M records. Its source differs.
+\paragraph{What sets $\ell$.} $\ell$ is a property of the joint design after preprocessing, so near-collinearity decides $n_{\mathrm{off}}$, and it may lie within either party's block or across them. On protein, $\ell$ is about $0.002$ under every preprocessing, which keeps the ridge on to between $186$k and $13$M records at the previous setting. Setting I lowers these thresholds by a factor of $0.63$ (standardized) to $0.80$ (block-normalized), for example to $8.3$M and $555$k at $\varepsilon = 1$. The source of the small $\ell$ differs.
 \begin{itemize}[noitemsep]
   \item Standardized: the weakest direction is $0.77\,x_{R,1} - 0.62\,x_{O,5}$; the two features have correlation $0.997$, so the two parties hold almost the same variable. $\Rp$'s own block is much better conditioned, $\lambda_{\min}(\bA/n) = 0.010$. Neither party can see this collinearity in its own data.
   \item Block-normalized: the weakest direction lies inside $\Rp$'s block, $-0.66\,x_{R,1} + 0.69\,x_{R,2} - 0.27\,x_{R,3}$, and $\ell \approx \lambda_{\min}(\bA/n) = 0.0021$: normalizing a block of strongly correlated features leaves it close to degenerate.
@@ -821,7 +837,7 @@ Table~\ref{tab:noff_drop} repeats the full preprocessing with one feature remove
 
 \begin{table}[ht]
   \centering\small
-  \caption{Protein: $\ell$ and $n_{\mathrm{off}}$ ($\delta = 10^{-9}$) with one feature removed before preprocessing; bounds recomputed from the reference split.}
+  \caption{Protein: $\ell$ and $n_{\mathrm{off}}$ ($\delta = 10^{-9}$, previous setting) with one feature removed before preprocessing; bounds recomputed from the reference split.}
   \label{tab:noff_drop}
   \begin{tabular}{@{}llrrrr@{}}
     \toprule
@@ -839,38 +855,38 @@ Table~\ref{tab:noff_drop} repeats the full preprocessing with one feature remove
 
 Two diagnostics cost no budget. First, $\bA$ is a principal submatrix of $\bG$, so $\lambda_{\min}(\bG) \le \lambda_{\min}(\bA)$ by Cauchy interlacing, and after linkage $\Rp$ obtains from its exact $\bA$ the lower bound $n_{\mathrm{off}} \ge n(g^\star + r_1)/\lambda_{\min}(\bA)$ before any release; $\Op$ can bound $\ell$ the same way from its own block on the register. Second, a collinearity across the parties is invisible to both but visible on a public reference set that carries both schemas, where one exists, and screening features on it is a schema-level decision that can be made in Setup.
 
-\paragraph{Levers.} Table~\ref{tab:noff_levers} lists what lowers $n_{\mathrm{off}}$, at $\varepsilon = 1$ on the simulation population, where the evaluation settings give $41.8$k.
+\paragraph{Levers.} Table~\ref{tab:noff_levers} lists what lowers $n_{\mathrm{off}}$ at $\varepsilon = 1$ on the simulation population, where the previous setting gives $41.7$k. Setting I combines the exact radius with $f_1 = 0.25$, the value the pre-registered rule of Section~\ref{sec:params} chose. $n_{\mathrm{off}}$ alone would favour $f_1 \approx 0.35$, but it is flat over $0.25$--$0.45$, and the larger $\sigma_2$ of a larger $f_1$ costs accuracy once the ridge is off.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Levers on the ridge threshold, simulation population, $\varepsilon = 1$, $\delta = 10^{-9}$ (at the evaluation settings $n_{\mathrm{off}} = 41.8$k).}
+  \caption{Levers on the ridge threshold, simulation population, $\varepsilon = 1$, $\delta = 10^{-9}$ (at the previous setting, $f_1 = 0.1$ with the union-bound radius, $n_{\mathrm{off}} = 41.7$k).}
   \label{tab:noff_levers}
-  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.36\textwidth}l>{\raggedright\arraybackslash}X@{}}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.38\textwidth}l>{\raggedright\arraybackslash}X@{}}
     \toprule
     Lever & $n_{\mathrm{off}}$ & Cost \\
     \midrule
     Smaller $\Delta$, larger $\ell$: per-party transforms (Section~\ref{sec:protocol:preproc}); feature screening on public reference data & $\propto \Delta/\ell$ & none in privacy; on protein a factor $6.8$ from one feature \\
-    Exact $(1 - \alpha_L)$ quantile for $r_1$ ($7.43\sigma_1$ instead of $11.53\sigma_1$) & 32.1k ($-23\%$) & none \\
-    $f_1 = 0.35$ instead of $0.1$ & 31.7k ($-24\%$) & $\sigma_2$ up $18\%$ once the ridge is off \\
-    Both of the above & 26.5k ($-37\%$) & $\sigma_2$ up $18\%$ \\
-    $\vartheta^\star = 2$ instead of $2.5$ & 38.8k ($-7\%$) & thinner validity margin (Remark~\ref{rem:firstorder}) \\
+    Exact $(1 - \alpha_L)$ quantile for $r_1$ ($7.42\sigma_1$ instead of $11.53\sigma_1$) & 32.0k ($-23\%$) & none \\
+    $f_1 = 0.25$ instead of $0.1$ & 33.1k ($-21\%$) & $\sigma_2$ up $9.5\%$ once the ridge is off \\
+    Both of the above: \textbf{setting I} & 27.0k ($-35\%$) & $\sigma_2$ up $9.5\%$ \\
+    Exact radius and $f_1 = 0.35$ & 26.5k ($-37\%$) & $\sigma_2$ up $18\%$ \\
+    $\vartheta^\star = 2$ instead of $2.5$ (previous setting) & 38.8k ($-7\%$) & thinner validity margin (Remark~\ref{rem:firstorder}) \\
+    \textbf{Setting P}: $\vartheta^\star = 0.5$, $\alpha_L = 0.5$, $f_1 = 0.2$, exact radius & 11.3k ($-73\%$) & no interval guarantee; the ridge switches off only near $1.4\,n_{\mathrm{off}}$; the gate refuses most releases where $\Delta_G \ll \Delta$ (Section~\ref{sec:eval:sweep}) \\
     A public lower bound on $\ell$ instead of stage~1 & at best 14.6k ($-65\%$) & validity rests on the reference data being representative; the gate still guards each release \\
     Larger $\varepsilon$ & $\propto 1/\sqrt{\rho_{\mathrm{run}}} \approx 1/\varepsilon$ & budget \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Below $n_{\mathrm{off}}$ the ridge is not a tuning choice: it is what certifies the validity ratio $\vartheta^\star$ on which the expansion and the intervals rest (Remark~\ref{rem:validity}). The levers lower the threshold; none of them makes the ridge unnecessary below it. A study can be planned by evaluating~\eqref{eq:noff} at the intended $\varepsilon$, with $\ell$ estimated on public reference data or bounded through $\lambda_{\min}(\bA)$.
+Below $n_{\mathrm{off}}$ the ridge is not a tuning choice: it is what certifies the validity ratio $\vartheta^\star$ on which the expansion and the intervals rest (Remark~\ref{rem:validity}). The levers lower the threshold; none of them makes the ridge unnecessary below it while the intervals are wanted. Setting P lowers the target itself and gives up the intervals. A study can be planned by evaluating~\eqref{eq:noff} at the intended $\varepsilon$, with $\ell$ estimated on public reference data or bounded through $\lambda_{\min}(\bA)$.
 
-\tocheck{The threshold treats lambda-min of the noisy stage-1 Gram as n times ell and does not model its downward bias under noise; either derive a correction (it depends on how many eigenvalues of Sigma lie near ell) or keep the empirical factor 1.2.}
-
-\tocheck{Decide whether the exact-quantile r-1 and f-1 near 0.35 become the recommended settings (they lower the threshold by 37 percent together); coverage would need to be re-checked.}
+\tocheck{The threshold treats lambda-min of the noisy stage-1 Gram as n times ell and does not model its downward bias under noise; either derive a correction (it depends on how many eigenvalues of Sigma lie near ell and on the size of r-1 against the bias) or keep the empirical factors: 1.2 under setting I and the previous setting, about 1.5 under setting P.}
 
 \tocheck{Decide whether feature screening on public reference data becomes a Setup step, and what reference data it requires.}
 
 \subsection{Status of the statistical guarantees}
 
-The companion proofs (Part~B) establish: the operator-norm radius $r_1$ for the one-sided event (exact); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. A remedy for heteroskedasticity when clipping binds is open.
+The companion proofs (Part~B) establish: the union-bound radius $r_1$ for the one-sided event (exact; the exact-quantile radius of setting I is a Monte Carlo computation, checked by simulation in Section~\ref{sec:eval:sim}); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. A remedy for heteroskedasticity when clipping binds is open.
 
 % ==============================================================
 \section{Mechanism bias and the optional correction}
@@ -1008,7 +1024,46 @@ After a run, $\Rp$ holds $\tilde\btheta = (\tilde\btheta_{R}; \tilde\btheta_{O})
 
 The protocol is defined for a parameter vector $\mathcal P$. Table~\ref{tab:params} lists every parameter: its role, the constraint it must satisfy, and the value used in this paper's evaluation. The last column is an \emph{evaluation setting}, one admissible choice among many; it is not part of the protocol.
 
-The constraints are of three kinds. Some are hypotheses that $\mathcal P$ itself must meet, such as the ranges of the shares and the fact that the bounds and the preprocessing constants are public and fixed in advance; the parties check them in Setup. Some involve quantities that \textsc{Calibrate} derives: the existence of $\kappa$, $\delta_{\mathrm{DP}} > 0$, a scale that floods, the size of $q_0$ and the security bound on the chain. \textsc{Calibrate} checks these and refuses the run otherwise (Section~\ref{sec:privacy:calib}). The rest, such as $f_1$, $\vartheta^\star$ and $\kappa_\Psi$, affect only utility or cost and need only lie in their ranges. We call $\mathcal P$ \emph{admissible} if all constraints of Table~\ref{tab:params} hold. Theorem~\ref{thm:output}, Proposition~\ref{prop:compose}, the input-privacy and correctness statements of Section~\ref{sec:input} and the statistical results of Section~\ref{sec:stats} hold for every admissible $\mathcal P$, with the constants they state; none of them uses a particular value.
+The constraints are of three kinds. Some are hypotheses that $\mathcal P$ itself must meet, such as the ranges of the shares and the fact that the bounds and the preprocessing constants are public and fixed in advance; the parties check them in Setup. Some involve quantities that \textsc{Calibrate} derives: the existence of $\kappa$, $\delta_{\mathrm{DP}} > 0$, a scale that floods, the size of $q_0$ and the security bound on the chain. \textsc{Calibrate} checks these and refuses the run otherwise (Section~\ref{sec:privacy:calib}). The rest, such as $f_1$, $\vartheta^\star$ and $\kappa_\Psi$, affect only utility or cost and need only lie in their ranges. We call $\mathcal P$ \emph{admissible} if all constraints of Table~\ref{tab:params} hold. Theorem~\ref{thm:output}, Proposition~\ref{prop:compose} and the input-privacy and correctness statements of Section~\ref{sec:input} hold for every admissible $\mathcal P$, with the constants they state; none of them uses a particular value. The statistical results of Section~\ref{sec:stats} need in addition $\vartheta^\star > 1$ and the intervals on ($\alpha_{\mathrm{CI}} > 0$).
+
+\paragraph{Two evaluation settings.} Sections~\ref{sec:eval:sim}--\ref{sec:eval:lessons} use two named settings of the same protocol. They differ only in the statistical parameters (Table~\ref{tab:settings}).
+\begin{itemize}[noitemsep]
+  \item \textbf{Setting I (inference)} keeps the interval guarantee. It uses the exact-quantile radius (Section~\ref{sec:stats:stage1}), $\vartheta^\star = 2.5$, $\kappa_\Psi = 2$, $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, and $f_1 = 0.25$.
+  \item \textbf{Setting P (prediction)} is tuned for test error only. It uses the exact-quantile radius, $\vartheta^\star = 0.5$, $\alpha_L = 0.5$, $\kappa_\Psi = 2$ and $f_1 = 0.2$. Since $\vartheta^\star < 1$ and $\alpha_L > \alpha$, the statistical results of Section~\ref{sec:stats} do not apply to it, and $\Rp$ reports the estimate without intervals. The interval guarantee holds only under setting I.
+\end{itemize}
+Both keep the gate $\hat\vartheta \ge 1$, which is part of the protocol, and both have the same privacy guarantee: the noise depends only on $(\varepsilon, \delta, f_1)$, while $r_1$, $\vartheta^\star$, $\kappa_\Psi$ and $\alpha_L$ act on released statistics. The previous setting ($f_1 = 0.1$, union-bound radius, $\vartheta^\star = 2.5$, $\kappa_\Psi = 2$, $\alpha_L = \alpha_U = \alpha/20$), which Sections~\ref{sec:eval:crypto}--\ref{sec:eval:e2e} use, is kept as a reference.
+
+\paragraph{How the settings were chosen.} On the synthetic population of Section~\ref{sec:eval:sim} only, by a rule written down before any selection or real-data run (\nolinkurl{reports/v31_settings/settings_choice.md} in the repository): $\delta = 10^{-9}$, $\varepsilon \in \{0.5, 1, 2, 4, 8\}$, $14$ values of $n$ from $100$ to $100{,}000$ with $200$ cohorts each (seeds independent of the validation runs), $R^2 = 0.5$, and common random numbers across candidates.
+\begin{itemize}[noitemsep]
+  \item I takes the $f_1 \in \{0.20, 0.25, \dots, 0.50\}$ that minimizes the mean, over the $70$ $(n, \varepsilon)$ cells, of $\log(\mathrm{RMSE}_{\mathrm{DP}}/\mathrm{RMSE}_{\mathrm{OLS}})$ of the slopes against the true coefficients. $f_1 = 0.25$ wins. The criterion is flat between $0.2$ and $0.3$, and $R^2 = 0.3$ and $0.9$ give the same choice.
+  \item P takes the candidate in $\vartheta^\star \in \{0.5, 1, 1.5, 2.5\} \times \alpha_L \in \{0.0025, 0.25, 0.5\} \times f_1 \in \{0.1, 0.2, 0.35\}$ that minimizes the mean ratio of test MSE to that of non-private least squares on the same cohorts, with $\btheta = 0$ for a refused release. $(0.5, 0.5, 0.2)$ wins. It lies on the edge of the grid in $\vartheta^\star$ and $\alpha_L$, and as pre-registered the grid was not extended. The five best candidates are within $0.5\%$ of each other, and no candidate's gate refused more than $2\%$ of releases in any cell on the population (the chosen one refused none).
+\end{itemize}
+
+\begin{table}[ht]
+\centering\small
+\caption{The evaluation settings. Only the statistical parameters differ. $\sigma_1$, $\sigma_2$ and $n_{\mathrm{off}}$ for the simulation population at $\varepsilon = 1$, $\delta = 10^{-9}$.}
+\label{tab:settings}
+\begin{tabular}{@{}llll@{}}
+\toprule
+ & previous (reference) & I (inference) & P (prediction) \\
+\midrule
+radius $r_1$ & union bound & exact quantile & exact quantile \\
+$r_1/\sigma_1$ at $p = 11$ & $11.53$ & $7.42$ & $4.94$ \\
+$f_1$ & $0.1$ & $0.25$ & $0.2$ \\
+$\vartheta^\star$ & $2.5$ & $2.5$ & $0.5$ \\
+$\kappa_\Psi$ & $2$ & $2$ & $2$ \\
+$\alpha_L$, $\alpha_U$ & $0.0025$, $0.0025$ & $0.0025$, $0.0025$ & $0.5$, unused \\
+intervals & yes & yes & no \\
+$\sigma_1$, $\sigma_2$ & $1411$, $525$ & $892$, $575$ & $998$, $557$ \\
+$n_{\mathrm{off}}$ & $41.7$k & $27.0$k & $11.3$k \\
+used in & Sections~\ref{sec:eval:crypto}--\ref{sec:eval:e2e} & Sections~\ref{sec:eval:sim}--\ref{sec:eval:lessons} & Sections~\ref{sec:eval:sim}, \ref{sec:eval:adassp}--\ref{sec:eval:lessons} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\tocheck{Setting P's choice lies on the edge of its grid (theta-star = 0.5, alpha-L = 0.5), and at R-squared = 0.9 a larger f-1 (0.35) was better on the population. Any re-selection of a prediction setting should extend the grid in theta-star and alpha-L and include populations of different signal strength.}
+
+\tocheck{Setting I's criterion averages over n, so it trades accuracy after the switch-off for accuracy before it: once the ridge is off, f-1 = 0.25 leaves 9.5 percent more noise s.d. in stage 2, and twice-the-floor accuracy on the coefficients comes 9-13 percent later than at the previous setting at R-squared = 0.5 (Section 13.5). Decide whether the inference setting should weight the ridge-off regime more, or let f-1 depend on the planned n against n-off.}
 
 {\footnotesize
 \renewcommand{\arraystretch}{1.15}
@@ -1042,7 +1097,7 @@ $t_\eta$ & noise margin in $q_0$, in units of $\sigma_{c,s}$ & $t_\eta > 0$; cor
 \midrule
 \multicolumn{4}{@{}l}{\textbf{Privacy of a run}} \\*
 $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$ & budget of a run & $\varepsilon_{\mathrm{run}} > 0$, $\delta_{\mathrm{run}} \in (0, 1)$; admitted by the ledger & $\varepsilon \in \{0.5, 1, 2, 4, 8\}$, $\delta = 10^{-9}$ \\
-$f_1$ & share of $\rho_{\mathrm{run}}$ for stage~1 & $f_1 \in (0, 1)$, $f_1 + f_y < 1$ & $0.1$ \\
+$f_1$ & share of $\rho_{\mathrm{run}}$ for stage~1 & $f_1 \in (0, 1)$, $f_1 + f_y < 1$ & I: $0.25$; P: $0.2$ (previous: $0.1$) \\
 $f_y$ & share of a separate $\by^\top\by$ release (separate mode only) & $f_y \in (0, 1 - f_1)$; no protocol default & $0.1$ in the implementation; every evaluation run is in joint mode \\
 $\zeta$ & largest share of $\delta_{\mathrm{run}}$ the slack may take & $\zeta \in (0, 1)$ & $0.1$ \\
 mode, $n_{\mathrm{rel}}$ & $\by^\top\by$ in stage~2 or apart; number of releases & derived: joint ($n_{\mathrm{rel}} = 2$) iff $\by^\top\by$ is free (Remark~\ref{rem:yyfree}) & derived \\
@@ -1054,9 +1109,10 @@ admission rule & runs fixed in advance, or chosen adaptively & the filter rule u
 OPRF quota & membership look-ups per researcher and project & policy & none \\
 \midrule
 \multicolumn{4}{@{}l}{\textbf{Statistics}} \\*
-$\vartheta^\star$ & validity target of the ridge & $\vartheta^\star > 1$; the refusal bound needs $\vartheta^\star > 2$; coverage is asymptotic in $\vartheta^\star$ (Remark~\ref{rem:firstorder}) & $2.5$ \\
-$\kappa_\Psi$ & when to shrink only $\Op$'s block & $\kappa_\Psi \ge 0$ & $2$ \\
-$\alpha = \alpha_{\mathrm{CI}} + \alpha_L + \alpha_U$ & error level and its split & each part $> 0$, $\alpha < 1$ & $\alpha = 0.05$, $\alpha_L = \alpha_U = 0.0025$ \\
+$\vartheta^\star$ & validity target of the ridge & $\vartheta^\star > 0$; the statistical results need $\vartheta^\star > 1$, the refusal bound $\vartheta^\star > 2$; coverage is asymptotic in $\vartheta^\star$ (Remark~\ref{rem:firstorder}) & I: $2.5$; P: $0.5$ \\
+$r_1$ & stage-1 radius (Section~\ref{sec:stats:stage1}) & union bound, or an upper confidence bound on the exact $(1 - \alpha_L)$ quantile of the noise; both from public quantities & exact quantile, 99\% upper bound (I and P); union bound in the previous setting \\
+$\kappa_\Psi$ & when to shrink only $\Op$'s block & $\kappa_\Psi \ge 0$ & $2$ (all settings) \\
+$\alpha = \alpha_{\mathrm{CI}} + \alpha_L + \alpha_U$; intervals & error level and its split; intervals on or off & with intervals on, each part $> 0$ and $\alpha < 1$; with them off, only $\alpha_L \in (0, 1)$, which sizes $r_1$ & I: $\alpha = 0.05$, $\alpha_L = \alpha_U = 0.0025$; P: intervals off, $\alpha_L = 0.5$ \\
 $\eta_B$, $B$ & bootstrap truncation and number of draws & $\eta_B \in (0, 1)$; Monte Carlo error of relative order $B^{-1/2}$ & $1/2$; $2000$ \\
 $B_\beta^{\mathrm{pub}}$ & public a-priori bound on $\|\bbeta\|$ & $> 0$, or $\infty$ & $\infty$ unless stated \\
 bias correction & optional correction~\eqref{eq:bc} & on or off & off \\
@@ -1078,11 +1134,11 @@ $\Omega_u$ & scale of the one-hot masks & exactly representable & $q_1$ \\
 $\Omega_V$, $\Omega_f$ & scale of $\Op$'s data; final scale & derived: smallest $\Omega_f = \Omega_U\Omega_V\Omega_u/(q_1q_2)$ that floods, tracked exactly & derived (Table~\ref{tab:kappa}) \\
 \end{xltabular}}
 
-\paragraph{Derived quantities.} Table~\ref{tab:derived} follows \textsc{Calibrate} through one run at the evaluation settings.
+\paragraph{Derived quantities.} Table~\ref{tab:derived} follows \textsc{Calibrate} through one run at the previous setting ($f_1 = 0.1$). At setting I ($f_1 = 0.25$) the split gives $\rho_1 = 0.00374$ and $\rho_2 = 0.01123$, so $\sigma_1 = 892.4$ and $\sigma_2 = 575.2$, and $\Omega_f$ is $0.13$ bits lower ($2^{62.62}$); at setting P ($f_1 = 0.2$) $\sigma_1 = 997.8$ and $\sigma_2 = 556.9$. $\kappa$, $\gamma$, $\delta_{\mathrm{DP}}$ and $\rho_{\mathrm{run}}$ do not depend on $f_1$.
 
 \begin{table}[ht]
 \centering\small
-\caption{Example: the derived quantities at the evaluation settings for the simulation population ($d_R = 4$, $d_O = 6$, $p = 11$), $\varepsilon_{\mathrm{run}} = 1$, $\delta_{\mathrm{run}} = 10^{-9}$, a single-run ledger and $\bar n_O = 4{,}096$, as computed by the implementation.}
+\caption{Example: the derived quantities at the previous setting ($f_1 = 0.1$) for the simulation population ($d_R = 4$, $d_O = 6$, $p = 11$), $\varepsilon_{\mathrm{run}} = 1$, $\delta_{\mathrm{run}} = 10^{-9}$, a single-run ledger and $\bar n_O = 4{,}096$, as computed by the implementation.}
 \label{tab:derived}
 \begin{tabular}{@{}llr@{}}
 \toprule
@@ -1114,7 +1170,7 @@ $\log_2(QP)$ & chain & $357 \le 438$ \\
 \label{sec:eval}
 % ==============================================================
 
-All results in this section are for protocol v3.1: its calibration, the full OpenFHE implementation (Sections~\ref{sec:eval:crypto} and~\ref{sec:eval:e2e}), and plaintext simulations of its release and solve steps, which reproduce the encrypted runs (Sections~\ref{sec:eval:e2e} and~\ref{sec:eval:sim}). Each subsection states its settings. They are evaluation settings (Section~\ref{sec:params}), not part of the protocol: unless stated otherwise $\delta = 10^{-9}$, $f_1 = 0.1$, $\vartheta^\star = 2.5$, $\kappa_\Psi = 2$, $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, and the bias correction is off. Where a subsection compares with the earlier single-release mechanism of the previous version of this paper (one analytic-Gaussian release, a ridge set from a committed eigenvalue bound, and the bias correction applied), it says so. The scripts that produce every number are in the \texttt{experiments/} directory of the project repository.
+All results in this section are for protocol v3.1: its calibration, the full OpenFHE implementation (Sections~\ref{sec:eval:crypto} and~\ref{sec:eval:e2e}), and plaintext simulations of its release and solve steps, which reproduce the encrypted runs (Sections~\ref{sec:eval:e2e} and~\ref{sec:eval:sim}). Each subsection states its settings. They are evaluation settings (Section~\ref{sec:params}), not part of the protocol. Sections~\ref{sec:eval:crypto}--\ref{sec:eval:e2e} use the previous setting: $f_1 = 0.1$, the union-bound radius, $\vartheta^\star = 2.5$, $\kappa_\Psi = 2$ and $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$. Sections~\ref{sec:eval:sim}--\ref{sec:eval:lessons} use the two named settings of Table~\ref{tab:settings}: I (inference) and P (prediction), with the previous setting as a reference. Unless stated otherwise $\delta = 10^{-9}$ and the bias correction is off. Where a subsection compares with the earlier single-release mechanism of the previous version of this paper (one analytic-Gaussian release, a ridge set from a committed eigenvalue bound, and the bias correction applied), it says so. The scripts that produce every number are in the \texttt{experiments/} directory of the project repository.
 
 \subsection{The cryptographic layer is exact}
 \label{sec:eval:crypto}
@@ -1126,11 +1182,11 @@ A prototype of the linkage and aggregation steps was run end to end over sockets
 \subsection{Calibration under v3.1}
 \label{sec:eval:calib}
 
-Table~\ref{tab:calib_sigma} gives $\sigma_2/\Delta$ for two releases with $f_1 = 0.1$ and $\by^\top\by$ free; Table~\ref{tab:calib_ratio} compares it with the single analytic-Gaussian release the earlier experiments simulated. The planning formula of~\eqref{eq:sigmas} is conservative by $6$--$33\%$ over $\varepsilon \in [0.1, 8]$ and $\delta \in [10^{-9}, 10^{-6}]$.
+Table~\ref{tab:calib_sigma} gives $\sigma_2/\Delta$ for two releases with $f_1 = 0.1$ (the previous setting) and $\by^\top\by$ free; $\sigma_2$ scales as $1/\sqrt{1 - f_1}$, so it is $1.095$ times larger at setting I ($f_1 = 0.25$) and $1.061$ times at setting P ($f_1 = 0.2$); Table~\ref{tab:calib_ratio} compares it with the single analytic-Gaussian release the earlier experiments simulated. The planning formula of~\eqref{eq:sigmas} is conservative by $6$--$33\%$ over $\varepsilon \in [0.1, 8]$ and $\delta \in [10^{-9}, 10^{-6}]$.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Stage-2 noise $\sigma_2/\Delta$ under v3.1 (two releases, $f_1 = 0.1$, tight conversion).}
+  \caption{Stage-2 noise $\sigma_2/\Delta$ under v3.1 (two releases, $f_1 = 0.1$ as in the previous setting, tight conversion).}
   \label{tab:calib_sigma}
   \begin{tabular}{@{}lccccccc@{}}
     \toprule
@@ -1157,11 +1213,11 @@ Table~\ref{tab:calib_sigma} gives $\sigma_2/\Delta$ for two releases with $f_1 =
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:calib_example} works the calibration through for the simulation population of Section~\ref{sec:eval:sim} at $\delta = 10^{-9}$. Learning the ridge from stage~1 costs data: at $\varepsilon = 1$ the ridge stays on until about $51$k matched records, against $16$k for a single release with the eigenvalue bound known in advance.
+Table~\ref{tab:calib_example} works the calibration through for the simulation population of Section~\ref{sec:eval:sim} at $\delta = 10^{-9}$. Learning the ridge from stage~1 costs data: at $\varepsilon = 1$ the ridge stays on until about $51$k matched records at the previous setting ($33$k at setting I), against $16$k for a single release with the eigenvalue bound known in advance.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Worked calibration, simulation population ($B_R = 5.59$, $B_O = 6.24$, $B_y = 2.89$, $p = 11$, $\Delta = 86.15$, $\Delta_G = 77.16$, population eigenvalue bound $\ell = 0.494$), $\delta = 10^{-9}$. ``Ridge off from'': the $n$ above which the stage-1 rule gives $\lambda = 0$ (typically), and for comparison a single release with $\ell$ known.}
+  \caption{Worked calibration at the previous setting ($f_1 = 0.1$, union-bound radius), simulation population ($B_R = 5.59$, $B_O = 6.24$, $B_y = 2.89$, $p = 11$, $\Delta = 86.15$, $\Delta_G = 77.16$, population eigenvalue bound $\ell = 0.494$), $\delta = 10^{-9}$. ``Ridge off from'': the $n$ above which the stage-1 rule gives $\lambda = 0$ (typically), and for comparison a single release with $\ell$ known.}
   \label{tab:calib_example}
   \begin{tabular}{@{}rcrrrrrr@{}}
     \toprule
@@ -1197,12 +1253,12 @@ Table~\ref{tab:coverage} simulates the release and solve steps of Algorithm~\ref
   \end{tabularx}
 \end{table}
 
-\tocheck{The coverage table uses noise levels set directly (sigma-1 = 2.5 sigma-2). Repeat it with the calibrated sigma-1 and sigma-2 of a real budget, and on real data.}
+\tocheck{The coverage table uses noise levels set directly (sigma-1 = 2.5 sigma-2). Section 13.5 checks coverage with the calibrated noise of a real budget on the synthetic population, at the previous setting and at setting I; repeat the check on real data.}
 
 \subsection{End-to-end runs of the implementation}
 \label{sec:eval:e2e}
 
-These runs use the full implementation: OPRF and labeled PSI, threshold CKKS upload and aggregation, two releases with exact discrete-Gaussian noise inside $\Op$'s share, and the solver, with $\delta = 10^{-9}$ and about $40$--$45$\,s per run on one core per party. They were made with a fixed flooding parameter, $\kappa = 40$ at $\varepsilon \in \{1, 4\}$ and $\kappa = 48$ at $\varepsilon = 8$, before the rule~\eqref{eq:kappa}, which gives $40$, $41$ and $46$ at the evaluation settings. The difference changes $\Omega_f$ but $\sigma_1$ and $\sigma_2$ by less than $0.2\%$.
+These runs use the full implementation: OPRF and labeled PSI, threshold CKKS upload and aggregation, two releases with exact discrete-Gaussian noise inside $\Op$'s share, and the solver, with $\delta = 10^{-9}$ and about $40$--$45$\,s per run on one core per party. They use the previous statistical setting ($f_1 = 0.1$, union-bound radius, $\vartheta^\star = 2.5$). They were made with a fixed flooding parameter, $\kappa = 40$ at $\varepsilon \in \{1, 4\}$ and $\kappa = 48$ at $\varepsilon = 8$, before the rule~\eqref{eq:kappa}, which gives $40$, $41$ and $46$ at the evaluation settings. The difference changes $\Omega_f$ but $\sigma_1$ and $\sigma_2$ by less than $0.2\%$.
 
 \paragraph{Real data.} The protein dataset ($45{,}730$ rows, 9 features) is split into a public reference set of $10\%$ (standardization and transform constants, $99.5\%$ bounds), a test set of $20\%$, and $\Op$'s register ($32{,}011$ rows, padded to $32{,}768$). $\Rp$ holds 4 features and $\Op$ the other 5 and $y$. $\Rp$'s cohort is $19{,}206$ register members plus $1{,}000$ people $\Op$ does not hold. Table~\ref{tab:e2e_protein} gives five encrypted runs per setting. Every median lies inside the $95\%$ range of a plaintext simulation of the same mechanism, so the encryption does not change what the mechanism produces. Pooled over all 30 runs, the Wald interval covers $\btheta_\lambda$ for $286$ of $300$ coefficients (target $0.955$).
 
@@ -1237,44 +1293,48 @@ Block normalization costs a little in the non-private fit ($0.745$ against $0.72
 
 The mechanism is v3.1, simulated in plaintext with the implementation's own calibration and solver: a stage-1 release of $(\triu\bB, \bC)$ with s.d.\ $\sigma_1$, the stage-1 rule of Section~\ref{sec:stats:stage1}, a stage-2 release of every $\Op$-dependent entry with s.d.\ $\sigma_2$, the gate $\hat\vartheta \ge 1$, and the solve, with the bias correction off. The simulated noise is Gaussian in the slot domain with the calibrated s.d. The encrypted implementation's measured noise is $0.996\,\sigma_2$ and $0.976\,\sigma_1$ (Section~\ref{sec:eval:crypto}), and its estimates on protein lie inside the simulated range (Section~\ref{sec:eval:e2e}). A further encrypted check in the ridge-on regime is reported at the end of this subsection.
 
-The evaluation uses these settings, which are not protocol defaults: $\delta = 10^{-9}$, $f_1 = 0.1$, $\vartheta^\star = 2.5$, $\kappa_\Psi = 2$, $\alpha = 0.05$ with $\alpha_L = \alpha_U = \alpha/20$, $\by^\top\by$ in stage~2 (it is free for these bounds), and the flooding parameter $\kappa = 40$ for $\varepsilon \le 2$, $44$ at $\varepsilon = 4$ and $48$ at $\varepsilon = 8$. With $\Delta = 86.2$ and $\Delta_G = 77.2$ this gives $\sigma_1 = 2746$, $1411$, $729$, $380$, $202$ and $\sigma_2 = 1022$, $525$, $271$, $141$, $75$ for $\varepsilon = 0.5$, $1$, $2$, $4$, $8$ (Table~\ref{tab:noff_sim}). For each $n$ from $10^{2}$ to $10^{5}$ we draw 200 cohorts. For each cohort and each $\varepsilon$ we run an independent pair of releases, and we report the RMSE of the slopes against the true coefficients.
+This subsection uses setting I (Table~\ref{tab:settings}) for the coefficients and the intervals, and adds setting P for prediction. The previous setting is quoted for reference. Its runs used the same cohorts and the same unit noise draws, so the comparison is paired. All runs use $\delta = 10^{-9}$, $\by^\top\by$ in stage~2 (it is free for these bounds), and the flooding parameter $\kappa = 40$ for $\varepsilon \le 2$, $44$ at $\varepsilon = 4$ and $48$ at $\varepsilon = 8$. With $\Delta = 86.2$ and $\Delta_G = 77.2$, setting I gives $\sigma_1 = 1737$, $892$, $461$, $240$, $128$ and $\sigma_2 = 1119$, $575$, $297$, $155$, $82$ for $\varepsilon = 0.5$, $1$, $2$, $4$, $8$ (Table~\ref{tab:noff_sim}). For each $n$ from $10^{2}$ to $10^{5}$ we draw 200 cohorts. For each cohort and each $\varepsilon$ we run an independent pair of releases, and we report the RMSE of the slopes against the true coefficients.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/sim_rmse_vs_n_v31.png}
-  \caption{Protocol v3.1, $\delta = 10^{-9}$, $R^2 = 0.5$. Bottom: RMSE of the slopes against the true coefficients (standardized scale) against the intersection size $n$. Lines: median over 200 runs, each with a new cohort and a new pair of releases. Bands: 2.5--97.5\% of runs. Hollow markers: the stage-1 ridge is on in most releases. Grey: non-private least squares on the true matches. Top: share of releases with $\lambda > 0$; dashed verticals at $n_{\mathrm{off}}$ of~\eqref{eq:noff}.}
+  \includegraphics[width=\textwidth]{figures/sim_rmse_vs_n_v31s.png}
+  \caption{Setting I, $\delta = 10^{-9}$, $R^2 = 0.5$. Bottom: RMSE of the slopes against the true coefficients (standardized scale) against the intersection size $n$. Lines: median over 200 runs, each with a new cohort and a new pair of releases. Bands: 2.5--97.5\% of runs. Hollow markers: the stage-1 ridge is on in most releases. Grey: non-private least squares on the true matches. Top: share of releases with $\lambda > 0$; dashed verticals at $n_{\mathrm{off}}$ of~\eqref{eq:noff}.}
   \label{fig:sim_rmse_v31}
 \end{figure}
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Protocol v3.1, $\delta = 10^{-9}$, $R^{2} = 0.5$: median RMSE of the standardized slopes against the true coefficients, with the ratio to the non-private floor in brackets. $^\ast$: the stage-1 ridge is on in most releases.}
+  \caption{$\delta = 10^{-9}$, $R^{2} = 0.5$: median RMSE of the standardized slopes against the true coefficients, with the ratio to the non-private floor in brackets, under setting I and at the previous setting (same cohorts and unit noise). $^\ast$: the stage-1 ridge is on in most releases.}
   \label{tab:sim_rmse_v31}
-  \begin{tabular}{@{}rcccccc@{}}
+  \setlength{\tabcolsep}{4.5pt}
+  \begin{tabular}{@{}rlcccccc@{}}
     \toprule
-    $n$ & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ & $\varepsilon = 8$ & OLS floor \\
+    $n$ & setting & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ & $\varepsilon = 8$ & OLS floor \\
     \midrule
-    $10^{3}$ & 0.242 (10.8)$^\ast$ & 0.239 (10.7)$^\ast$ & 0.232 (10.4)$^\ast$ & 0.222 (9.9)$^\ast$ & 0.203 (9.0)$^\ast$ & 0.0224 \\
-    $10^{4}$ & 0.213 (29.8)$^\ast$ & 0.184 (25.7)$^\ast$ & 0.131 (18.3)$^\ast$ & 0.043 (6.0)$^\ast$ & 0.012 (1.7) & 0.0072 \\
-    $10^{5}$ & 0.014 (5.3) & 0.0076 (2.9) & 0.0045 (1.7) & 0.0033 (1.3) & 0.0028 (1.1) & 0.0026 \\
+    $10^{3}$ & I & 0.241 (10.7)$^\ast$ & 0.237 (10.5)$^\ast$ & 0.226 (10.1)$^\ast$ & 0.211 (9.4)$^\ast$ & 0.182 (8.1)$^\ast$ & 0.0224 \\
+     & previous & 0.242 (10.8)$^\ast$ & 0.239 (10.7)$^\ast$ & 0.232 (10.4)$^\ast$ & 0.222 (9.9)$^\ast$ & 0.203 (9.0)$^\ast$ & \\
+    $10^{4}$ & I & 0.197 (27.5)$^\ast$ & 0.154 (21.5)$^\ast$ & 0.079 (11.0)$^\ast$ & 0.023 (3.2) & 0.013 (1.8) & 0.0072 \\
+     & previous & 0.213 (29.8)$^\ast$ & 0.184 (25.7)$^\ast$ & 0.131 (18.3)$^\ast$ & 0.043 (6.0)$^\ast$ & 0.012 (1.7) & \\
+    $10^{5}$ & I & 0.015 (5.8) & 0.0083 (3.2) & 0.0048 (1.9) & 0.0034 (1.3) & 0.0028 (1.1) & 0.0026 \\
+     & previous & 0.014 (5.3) & 0.0076 (2.9) & 0.0045 (1.7) & 0.0033 (1.3) & 0.0028 (1.1) & \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Results.} Figure~\ref{fig:sim_rmse_v31} and Table~\ref{tab:sim_rmse_v31} show two regimes.
+\paragraph{Results.} Figure~\ref{fig:sim_rmse_v31} and Table~\ref{tab:sim_rmse_v31} show two regimes. Setting I moves the boundary between them and trades accuracy in one regime against the other.
 \begin{itemize}[noitemsep]
-  \item \emph{Ridge on.} While the stage-1 ridge is on, the estimate is shrunk towards zero, and its RMSE stays close to that of the all-zero estimate ($0.25$). At $n = 10^{4}$ the median RMSE is $0.213$, $0.184$, $0.131$ and $0.043$ for $\varepsilon = 0.5$ to $4$, which is $6$--$30$ times the floor.
-  \item \emph{Ridge off.} Once the ridge switches off, the DP error falls like $1/n$, faster than the sampling error, and merges into the floor. The error reaches twice the floor at $n \approx 7.3$k ($\varepsilon = 8$), $23$k ($\varepsilon = 4$) and $79$k ($\varepsilon = 2$). At $\varepsilon = 1$ and $0.5$ the ratio is still $2.9$ and $5.3$ at $n = 10^{5}$.
+  \item \emph{Ridge on.} While the stage-1 ridge is on, the estimate is shrunk towards zero, and its RMSE stays close to that of the all-zero estimate ($0.25$). The smaller ridge of setting I lowers the error here. At $n = 10^{4}$ the median RMSE is $0.197$, $0.154$ and $0.079$ for $\varepsilon = 0.5$, $1$ and $2$, against $0.213$, $0.184$ and $0.131$ at the previous setting. At $\varepsilon = 4$ the ridge is already off under I, and the RMSE is $0.023$ against $0.043$.
+  \item \emph{Ridge off.} Once the ridge switches off, the DP error falls like $1/n$, faster than the sampling error, and merges into the floor. Here setting I is slightly worse, because $f_1 = 0.25$ leaves $9.5\%$ more noise s.d.\ in stage~2. The error reaches twice the floor at $n \approx 8.0$k ($\varepsilon = 8$), $27$k ($\varepsilon = 4$) and $88$k ($\varepsilon = 2$), against $7.3$k, $23$k and $79$k at the previous setting. At $n = 10^{5}$ the ratio is $3.2$ and $5.8$ for $\varepsilon = 1$ and $0.5$, against $2.9$ and $5.3$.
 \end{itemize}
-A stronger signal lowers the floor but not the DP error. At $R^2 = 0.9$ the crossings are at $23$k and $51$k ($\varepsilon = 8$, $4$), and none is reached by $10^5$ for $\varepsilon \le 2$. At $R^2 = 0.3$ they are at $7.0$k, $15$k and $56$k ($\varepsilon = 8$, $4$, $2$).
+A stronger signal lowers the floor but not the DP error. At $R^2 = 0.9$ the crossings under I are at $25$k and $56$k ($\varepsilon = 8$, $4$; previous setting $23$k and $51$k), and none is reached by $10^5$ for $\varepsilon \le 2$. At $R^2 = 0.3$ they are at $5.9$k, $17$k and $67$k ($\varepsilon = 8$, $4$, $2$; previous setting $7.0$k, $15$k and $56$k). Only where the crossing lies close to $n_{\mathrm{off}}$, as at $R^2 = 0.3$ and $\varepsilon = 8$, does setting I reach it sooner.
 
-The earlier single-release mechanism ($\delta = 10^{-5}$, committed eigenvalue bound) reached twice the floor at $3.2$k, $9.4$k and $34$k for $\varepsilon = 8$, $4$ and $2$. Under v3.1 these crossings are $2.3$--$2.5$ times larger, close to the ratio $(\sigma_2/\sigma)^2 = 2.1$--$2.5$ of the noise variances.
+The earlier single-release mechanism ($\delta = 10^{-5}$, committed eigenvalue bound) reached twice the floor at $3.2$k, $9.4$k and $34$k for $\varepsilon = 8$, $4$ and $2$. Under setting I these crossings are $2.5$--$2.9$ times larger ($2.3$--$2.5$ at the previous setting), close to the ratio of the noise variances, $(\sigma_2/\sigma)^2 = 2.5$--$3.0$ under I and $2.1$--$2.5$ at the previous setting.
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Stage-1 rule on the simulation population, $\delta = 10^{-9}$: share of 200 releases with $\lambda = 0$ at $n = m\, n_{\mathrm{off}}$, each on a fresh cohort, and the median $\lambda$ at $0.8\,n_{\mathrm{off}}$ against the linear prediction $g^\star + r_1 - n\ell$ of Section~\ref{sec:stats:noff}.}
+  \caption{Stage-1 rule under setting I on the simulation population, $\delta = 10^{-9}$: share of 200 releases with $\lambda = 0$ at $n = m\, n_{\mathrm{off}}$, each on a fresh cohort, and the median $\lambda$ at $0.8\,n_{\mathrm{off}}$ against the linear prediction $g^\star + r_1 - n\ell$ of Section~\ref{sec:stats:noff}.}
   \label{tab:noff_check_v31}
   \begin{tabular}{@{}rrcccccrr@{}}
     \toprule
@@ -1282,57 +1342,66 @@ The earlier single-release mechanism ($\delta = 10^{-5}$, committed eigenvalue b
     \cmidrule(lr){3-7} \cmidrule(l){8-9}
     $\varepsilon$ & $n_{\mathrm{off}}$ & 0.6 & 0.8 & 1.0 & 1.2 & 1.4 & median & predicted \\
     \midrule
-    0.5 & 81{,}208 & 0.00 & 0.00 & 0.03 & 0.99 & 1.00 & 14{,}563 & 9{,}721 \\
-    1 & 41{,}729 & 0.00 & 0.00 & 0.04 & 0.97 & 1.00 & 7{,}500 & 4{,}995 \\
-    2 & 21{,}557 & 0.00 & 0.00 & 0.04 & 0.98 & 1.00 & 4{,}067 & 2{,}580 \\
-    4 & 11{,}241 & 0.00 & 0.00 & 0.04 & 0.95 & 1.00 & 2{,}080 & 1{,}346 \\
-    8 & 5{,}967 & 0.00 & 0.00 & 0.05 & 0.94 & 1.00 & 1{,}138 & 714 \\
+    0.5 & 52{,}531 & 0.00 & 0.00 & 0.03 & 0.99 & 1.00 & 9{,}186 & 6{,}288 \\
+    1 & 26{,}993 & 0.00 & 0.00 & 0.03 & 0.97 & 1.00 & 4{,}784 & 3{,}231 \\
+    2 & 13{,}945 & 0.00 & 0.00 & 0.04 & 0.99 & 1.00 & 2{,}618 & 1{,}669 \\
+    4 & 7{,}272 & 0.00 & 0.00 & 0.04 & 0.95 & 1.00 & 1{,}376 & 871 \\
+    8 & 3{,}860 & 0.00 & 0.00 & 0.04 & 0.95 & 1.00 & 744 & 462 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{When the ridge switches off.} Section~\ref{sec:stats:noff} predicts the switch-off at $n_{\mathrm{off}} = (g^\star + r_1)/\ell$: $81$k, $42$k, $22$k, $11$k and $6.0$k for $\varepsilon = 0.5$ to $8$. The simulation agrees.
+\paragraph{When the ridge switches off.} Section~\ref{sec:stats:noff} predicts the switch-off under setting I at $n_{\mathrm{off}} = 53$k, $27$k, $14$k, $7.3$k and $3.9$k for $\varepsilon = 0.5$ to $8$, $35\%$ below the $81$k, $42$k, $22$k, $11$k and $6.0$k of the previous setting. The simulation agrees.
 \begin{itemize}[noitemsep]
-  \item On the grid of Figure~\ref{fig:sim_rmse_v31}, the ridge is on in every release up to $0.92\,n_{\mathrm{off}}$, and in at most $11\%$ of releases from $1.16\,n_{\mathrm{off}}$.
-  \item Table~\ref{tab:noff_check_v31} puts the transition between $n_{\mathrm{off}}$ ($3$--$5\%$ of releases off) and $1.2\,n_{\mathrm{off}}$ ($94$--$99\%$ off), as in Table~\ref{tab:noff_sim}.
+  \item On the grid of Figure~\ref{fig:sim_rmse_v31}, every point below $n_{\mathrm{off}}$ has the ridge on in every release, and every point from $1.3\,n_{\mathrm{off}}$ has it off in every release. The two points just above $n_{\mathrm{off}}$ ($1.03$ and $1.08\,n_{\mathrm{off}}$) have it on in $91\%$ and $58\%$ of releases.
+  \item Table~\ref{tab:noff_check_v31} puts the transition between $n_{\mathrm{off}}$ ($3$--$4\%$ of releases off) and $1.2\,n_{\mathrm{off}}$ ($95$--$99.5\%$ off), as at the previous setting ($3$--$5\%$ and $94$--$99\%$).
   \item Below the threshold the rule chooses $1.5$--$1.6$ times the linear prediction, because $\lambda_{\min}(\hat\bG_1)$ is biased downward.
-  \item Near $n_{\mathrm{off}}$ the rule takes the $\Op$-block ridge $\Psi = \PiO$ in about half of the releases with $\lambda > 0$ ($51$--$53\%$ at $n_{\mathrm{off}}$), because $\lambda_{\min}(\bA)/n > \ell$. Below $0.8\,n_{\mathrm{off}}$ it never does.
+  \item Near $n_{\mathrm{off}}$ the rule takes the $\Op$-block ridge $\Psi = \PiO$ in about half of the releases with $\lambda > 0$ ($51$--$54\%$ at $n_{\mathrm{off}}$), because $\lambda_{\min}(\bA)/n > \ell$. Below $0.8\,n_{\mathrm{off}}$ it never does.
+  \item Under setting P the switch-off comes later relative to its own $n_{\mathrm{off}}$ (Section~\ref{sec:stats:noff}): no release is off at $n_{\mathrm{off}}$, $4$--$10\%$ at $1.2\,n_{\mathrm{off}}$ and $56$--$70\%$ at $1.4\,n_{\mathrm{off}}$, and at $0.8\,n_{\mathrm{off}}$ the rule chooses $3.0$--$3.4$ times the linear prediction.
 \end{itemize}
+While the ridge is on, setting I holds the validity ratio $\vartheta_\lambda = \lambda_{\min}(\bG + \lambda\bI)/(2\sigma_2\sqrt p)$ at a median of $5.0$--$5.2$ ($10$--$90\%$: $4.6$--$5.5$), against $7.9$--$9.2$ at the previous setting and $\vartheta^\star = 2.5$. Setting P holds it at $2.9$--$3.0$.
 
-\paragraph{Prediction recovers first.} On a held-out sample of the population, the test MSE comes within $10\%$ of that of non-private least squares at $n \approx 0.71\,n_{\mathrm{off}}$ for every $\varepsilon$ at $R^2 = 0.5$ ($4.2$k to $58$k), while the ridge is still on. It comes within $1\%$ at $1.1$--$1.2\,n_{\mathrm{off}}$. Twice-the-floor accuracy on the coefficients needs $1.7$, $2.9$ and $5.2$ times as many records as prediction within $10\%$, for $\varepsilon = 8$, $4$ and $2$.
-
-\paragraph{Coefficients on different scales.} Raw-scale errors cannot be compared across coefficients, so Figure~\ref{fig:sim_eff_v31} shows the \emph{efficiency ratio} $\mathrm{RMSE}_{\mathrm{DP},j}/\mathrm{SE}_{\mathrm{OLS},j}$. It does not change when $x_j$ or $y$ is rescaled. A ratio $r$ means the release is about as accurate as least squares on $n/r^2$ records. While the ridge is on, the ratio grows with $n$ and is largest for the largest coefficients, which the ridge shrinks most. Once $\lambda = 0$ in every release, the ten slopes' ratios lie within $-20\%$ and $+26\%$ of their median, except at $\varepsilon = 8$ and $n \ge 50$k, where one coefficient reaches $+36\%$. Neither block is consistently harder: the $\Op$-block average is $0.90$--$1.17$ times the $\Rp$-block average.
+\paragraph{Prediction recovers first, and fastest under setting P.} On a held-out sample of the population (clipped design, unclipped $y$), setting I brings the test MSE within $10\%$ of that of non-private least squares at $n \approx 38$k, $20$k, $10$k, $5.3$k and $2.9$k for $\varepsilon = 0.5$ to $8$ ($0.72$--$0.76\,n_{\mathrm{off}}$, while the ridge is still on). The previous setting needed $58$k, $30$k, $15$k, $8.0$k and $4.2$k. Setting P, which was chosen for this, needs $23$k, $12$k, $6.2$k, $3.6$k and $2.0$k (Figure~\ref{fig:sim_pred_v31s}): $1.5$--$1.7$ times fewer records than I and $2.2$--$2.5$ times fewer than the previous setting. Within $1\%$ the settings are closer: $68$k to $4.9$k for P, $72$k to $5.0$k for I, and $91$k to $7.0$k for the previous setting. P's advantage over I shrinks with a stronger signal. At $R^2 = 0.9$ P needs $1.06$--$1.25$ times fewer records than I ($\varepsilon = 1$: $27$k against $32$k); at $R^2 = 0.3$ it needs $1.5$--$1.7$ times fewer. The gate refused no release under either setting, at any $R^2$ and $n$. Under setting I, twice-the-floor accuracy on the coefficients needs $2.8$, $5.0$ and $8.8$ times as many records as prediction within $10\%$, for $\varepsilon = 8$, $4$ and $2$.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/sim_efficiency_ratio_v31.png}
-  \caption{Efficiency ratio $\mathrm{RMSE}_{\mathrm{DP},j}/\mathrm{SE}_{\mathrm{OLS},j}$ per coefficient against $n$, protocol v3.1, $\delta = 10^{-9}$, $R^{2} = 0.5$. Top row: $\Rp$'s block, with the intercept. Bottom row: $\Op$'s block. Hollow markers: the stage-1 ridge is on in most releases.}
+  \includegraphics[width=\textwidth]{figures/sim_pred_vs_n_v31s.png}
+  \caption{Test MSE on the population divided by that of non-private least squares on the same cohort, against $n$, $\delta = 10^{-9}$, $R^2 = 0.5$; mean over 200 cohorts, a refused release counted as $\btheta = 0$ (there were none). Blue: setting I. Orange: setting P. Grey dotted: the previous setting. Hollow markers: the stage-1 ridge is on in most releases. Dotted horizontal: within $10\%$.}
+  \label{fig:sim_pred_v31s}
+\end{figure}
+
+\paragraph{Coefficients on different scales.} Raw-scale errors cannot be compared across coefficients, so Figure~\ref{fig:sim_eff_v31} shows the \emph{efficiency ratio} $\mathrm{RMSE}_{\mathrm{DP},j}/\mathrm{SE}_{\mathrm{OLS},j}$ under setting I. It does not change when $x_j$ or $y$ is rescaled. A ratio $r$ means the release is about as accurate as least squares on $n/r^2$ records. While the ridge is on, the ratio grows with $n$ and is largest for the largest coefficients, which the ridge shrinks most. Once $\lambda = 0$ in every release, the ten slopes' ratios lie within $-21\%$ and $+25\%$ of their median, except at $\varepsilon = 8$ and $n \ge 50$k, where one coefficient reaches $+34\%$ (previous setting: $-20\%$ to $+26\%$, and $+36\%$). Neither block is consistently harder: the $\Op$-block average is $0.90$--$1.19$ times the $\Rp$-block average.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/sim_efficiency_ratio_v31s.png}
+  \caption{Efficiency ratio $\mathrm{RMSE}_{\mathrm{DP},j}/\mathrm{SE}_{\mathrm{OLS},j}$ per coefficient against $n$, setting I, $\delta = 10^{-9}$, $R^{2} = 0.5$. Top row: $\Rp$'s block, with the intercept. Bottom row: $\Op$'s block. Hollow markers: the stage-1 ridge is on in most releases.}
   \label{fig:sim_eff_v31}
 \end{figure}
 
-\paragraph{Inference.} At $R^2 = 0.5$ every release also runs the intervals of Section~\ref{sec:stats:ci}, with a bootstrap of $2{,}000$ antithetic pairs and no public bound on $\|\bbeta\|$.
+\paragraph{Inference under setting I.} At $R^2 = 0.5$ every release also runs the intervals of Section~\ref{sec:stats:ci}, with a bootstrap of $2{,}000$ antithetic pairs and no public bound on $\|\bbeta\|$. Coverage holds in every regime we simulated.
 \begin{itemize}[noitemsep]
-  \item \emph{Wald interval for $\btheta_\lambda$.} It covers $0.945$--$0.965$ of the coefficients in each of the 70 $(n, \varepsilon)$ cells, pooled over the 200 releases and 11 coefficients, with the ridge on or off (target $0.955$).
-  \item \emph{Bias-aware interval for $\bbeta$.} When the ridge is off in every release (20 cells), it is finite and covers the true slopes $0.930$--$0.964$ of the time, and the clipped-population coefficients $0.945$--$0.962$; at large $n$ clipping moves the target. While the ridge is on, $\hat L = 0$ in most releases and the interval is unbounded. Where $\hat L > 0$ it is finite but wide: median half-width up to $2.4$, against $0.033$ for the Wald interval.
-  \item \emph{Naive reading.} Read as an interval for $\bbeta$, the Wald interval covers only $2$--$60\%$ while the ridge is on.
+  \item \emph{Wald interval for $\btheta_\lambda$.} It covers $0.945$--$0.966$ of the coefficients in each of the 70 $(n, \varepsilon)$ cells, pooled over the 200 releases and 11 coefficients, with the ridge on or off (target $0.955$). The previous setting gave $0.945$--$0.965$. The lowest single coefficient in any cell covers $0.91$ under both settings, which is what 770 coefficient-cells of 200 releases produce by chance.
+  \item \emph{Bias-aware interval for $\bbeta$.} When the ridge is off in every release (27 cells under I, 20 at the previous setting), it is finite and covers the true slopes $0.930$--$0.964$ of the time and the clipped-population coefficients $0.946$--$0.962$ (previous setting: $0.930$--$0.964$ and $0.945$--$0.962$); at large $n$ clipping moves the target. While the ridge is on, $\hat L = 0$ in most releases and the interval is unbounded. Where $\hat L > 0$ it is finite but wide: median half-width up to $3.2$, against $0.058$ for the Wald interval.
+  \item \emph{Naive reading.} Read as an interval for $\bbeta$, the Wald interval covers only $9$--$85\%$ in the cells where the ridge is on in every release (previous setting: $2$--$60\%$). The smaller ridge of setting I shrinks less, so the naive reading is less wrong, but it is still wrong.
 \end{itemize}
 The gate refused no release in any cell, at any $R^2$.
 
-\paragraph{Encrypted check in the ridge-on regime.} We ran the full OpenFHE implementation ten times, in two batches, on one synthetic dataset from this population. It has $n = 10{,}000$ matched records in a register of $12{,}000$ rows padded to $16{,}384$, and we used $\varepsilon = 2$ and $\delta = 10^{-9}$, where the ridge is on ($n_{\mathrm{off}} = 21.6$k). Each run took $29$--$34$\,s.
+\paragraph{Encrypted check of settings I and P.} We ran the full OpenFHE implementation ten times on one synthetic dataset from this population: $n = 10{,}000$ matched records in a register of $12{,}000$ rows padded to $16{,}384$, $\delta = 10^{-9}$. Five runs used setting I at $\varepsilon = 2$ and five used setting P at $\varepsilon = 1$; in both the ridge is on (the matched design's $n_{\mathrm{off}}$ is $14.1$k and $11.5$k, and P switches off only near $1.4\,n_{\mathrm{off}}$). Each run took $29$--$31$\,s. $\Rp$ read the exact radius from the cached quantile: $r_1 = 3{,}419$ under I and $4{,}929$ under P.
 \begin{itemize}[noitemsep]
-  \item The ridge chosen in every run, $8{,}077$--$9{,}296$, lay inside the $95\%$ range of a plaintext simulation of the same mechanism on the same data ($7{,}659$--$10{,}187$).
-  \item The Wald interval covered $\btheta_\lambda$ for $105$ of $110$ coefficients.
-  \item In the second batch, the decrypted noise on the $306$ stage-1 and $372$ stage-2 entries, standardized by $\sigma_1$ and $\sigma_2$, had s.d.\ $0.98$ and $0.98$, mean $0.02$ and $0.06$, and no value beyond $3.3$; $\bA$ was exact.
-  \item Against the simulated distribution of $\tilde\btheta$ given each run's $\lambda$, 109 of the 110 encrypted coefficients lay within $2.5$ s.d. One lay at $3.85$ s.d.; it came from the first batch, whose raw noise was not recorded.
+  \item The ridge chosen in every run lay inside the $95\%$ range of a plaintext simulation of the same mechanism on the same data (4{,}000 draws): $3{,}162$--$3{,}729$ against $2{,}578$--$4{,}232$ under I, and $3{,}890$--$4{,}897$ against $2{,}197$--$5{,}543$ under P. No release was refused.
+  \item Against the simulated distribution of $\tilde\btheta$ given each run's $\lambda$, $54$ of $55$ encrypted coefficients lay within $2.5$ s.d.\ under each setting (largest $2.91$ and $2.58$ s.d.). Under I the Wald interval covered $\btheta_\lambda$ for $54$ of $55$ coefficients.
+  \item The raw decrypted noise on the $510$ stage-1 and $620$ stage-2 entries, standardized by the calibrated $\sigma_1$ and $\sigma_2$, had s.d.\ $1.00$ and mean $0.00$ pooled (Kolmogorov--Smirnov $p = 0.79$ against $\mathcal N(0, 1)$), s.d.\ $0.96$--$1.08$ for each setting and stage, and no value beyond $3.3$. $\bA$ was exact.
 \end{itemize}
+An earlier batch of ten runs at the previous setting ($\varepsilon = 2$, same data) gave the same picture, with one of 110 coefficients at $3.85$ s.d.\ in a run whose raw noise was not recorded.
 
-\tocheck{Encrypted spot check: one of 110 coefficients deviated by 3.85 s.d. from the simulated distribution (first batch, raw noise not recorded); the second batch's raw noise matches the calibrated s.d. Repeat with about 50 encrypted runs, recording the raw noise, before relying on it.}
+\tocheck{The encrypted checks of the ridge-on regime are small: 5 runs each for settings I and P and 10 for the previous setting, at one epsilon each. Repeat with about 50 encrypted runs per setting, recording the raw noise, before relying on them.}
 
 % ---------------------------------------------------------------- 12.6
 \subsection{Does the bias correction matter?}
 \label{sec:eval:bias}
 
-Under v3.1 the ridge comes from stage~1, so it is independent of the stage-2 noise (Proposition~\ref{prop:indep}), and Theorem~\ref{thm:ridge} applies conditionally on $(\lambda, \Psi)$. We ask the question again with the earlier conditional design, at the settings of Section~\ref{sec:eval:sim} ($\delta = 10^{-9}$, $R^2 = 0.5$).
+Under v3.1 the ridge comes from stage~1, so it is independent of the stage-2 noise (Proposition~\ref{prop:indep}), and Theorem~\ref{thm:ridge} applies conditionally on $(\lambda, \Psi)$. We ask the question again with the earlier conditional design at the previous setting ($\delta = 10^{-9}$, $R^2 = 0.5$), and repeat it more briefly under setting I.
 \begin{itemize}[noitemsep]
   \item For each $n \in \{500, 1{,}000, \dots, 128{,}000\}$ (doubling) and each $\varepsilon$ we draw five datasets.
   \item For each dataset we draw four stage-1 releases, each of which fixes $(\lambda, \Psi)$.
@@ -1343,7 +1412,7 @@ The comparison against the true coefficients uses the cohort-level runs of Secti
 \begin{table}[t]
   \centering
   \small
-  \caption{Mechanism bias and the optional correction~\eqref{eq:bc} under v3.1, $\delta = 10^{-9}$, $R^2 = 0.5$; 45 cells ($n$, $\varepsilon$), binned by $\vartheta_0 = \lambda_{\min}(\bG)/(2\sigma_2\sqrt p)$. Bias share and largest standardized bias: maxima over the cells of a bin. MSE ratio: corrected over uncorrected. $K$: smallest number of averaged releases of the same data at which the squared bias equals the variance of the average.}
+  \caption{Mechanism bias and the optional correction~\eqref{eq:bc} under v3.1 at the previous setting, $\delta = 10^{-9}$, $R^2 = 0.5$; 45 cells ($n$, $\varepsilon$), binned by $\vartheta_0 = \lambda_{\min}(\bG)/(2\sigma_2\sqrt p)$. Bias share and largest standardized bias: maxima over the cells of a bin. MSE ratio: corrected over uncorrected. $K$: smallest number of averaged releases of the same data at which the squared bias equals the variance of the average.}
   \label{tab:bias_v31}
   \setlength{\tabcolsep}{4pt}
   \begin{tabular}{@{}lcccccccr@{}}
@@ -1361,7 +1430,7 @@ The comparison against the true coefficients uses the cohort-level runs of Secti
   \end{tabular}
 \end{table}
 
-No, not even as a variance reduction (Table~\ref{tab:bias_v31}, Figure~\ref{fig:bias_v31}).
+No, not even as a variance reduction (Table~\ref{tab:bias_v31} and Figure~\ref{fig:bias_v31} for the previous setting; setting I below).
 \begin{itemize}[noitemsep]
   \item \emph{The bias is negligible.} The mechanism bias of Theorem~\ref{thm:ridge} is at most $0.048\%$ of the mean squared error around $\btheta_\lambda$ in any of the 45 cells. The largest coefficient bias is at most $0.044$ of its standard deviation. The earlier mechanism gave $0.75\%$ and $0.14$. The reason is the stage-1 rule: while the ridge is on it holds $\vartheta_\lambda$ at $7.9$--$9.2$, well above $\vartheta^\star = 2.5$, because of the radius $r_1$; in these cells the ridge is off only from $\vartheta_0 = 9.6$. The bias peaks around the switch-off and decays like $1/\vartheta_0^2$ after it.
   \item \emph{The theorem holds.} Wherever $\vartheta_0 \ge 1$, the simulated bias is $0.997$--$1.010$ times the leading term $\sigma_2^2 M(\bP_\lambda)\btheta_\lambda$.
@@ -1369,14 +1438,23 @@ No, not even as a variance reduction (Table~\ref{tab:bias_v31}, Figure~\ref{fig:
   \item \emph{Against the sample least-squares estimate}, with the ridge on, the correction raises the mean squared error by up to $1.1\%$. Deterministic shrinkage (Proposition~\ref{prop:shrink}) is $92$--$99.5\%$ of that error, and the correction leaves it alone by design.
   \item \emph{Against the true coefficients} it changes the mean squared error by $-0.4\%$ to $+1.7\%$. The largest increase is with a moderate ridge just below the switch-off ($n = 75$k at $\varepsilon = 0.5$).
   \item \emph{Averaging.} The bias would matter only if at least about $2{,}100$ releases of the same data were averaged. The earlier mechanism gave $130$.
-  \item \emph{Real data.} On the 29 datasets of Section~\ref{sec:eval:adassp} the correction changed the test MSE of v3.1 by $-0.01\%$ to $+0.39\%$, against $-3.7\%$ to $+2.3\%$ before.
+  \item \emph{Real data.} On the 29 datasets of Section~\ref{sec:eval:adassp} the correction changed the test MSE of v3.1 at the previous setting by $-0.01\%$ to $+0.39\%$, against $-3.7\%$ to $+2.3\%$ under the earlier mechanism.
 \end{itemize}
-Leaving the correction off therefore costs nothing.
+\paragraph{Setting I.} The same design with $5{,}000$ instead of $10{,}000$ antithetic pairs per $(\text{dataset}, \lambda)$ gives the same answer, with a larger but still negligible bias.
+\begin{itemize}[noitemsep]
+  \item The squared mechanism bias is at most $0.19\%$ of the mean squared error around $\btheta_\lambda$ in any of the 45 cells ($0.048\%$ at the previous setting), and the largest coefficient bias is $0.078$ of its standard deviation ($0.044$). It peaks around the switch-off, where $\vartheta_0 \approx 4.4$--$5.0$.
+  \item The bias is larger because setting I holds $\vartheta_\lambda$ at $4.6$--$5.3$ while the ridge is on, against $7.9$--$9.2$ at the previous setting; the leading term scales like $1/\vartheta_\lambda^2$.
+  \item Against $\btheta_\lambda$ the correction lowers the mean squared error by $1.4$--$1.7\%$ with the ridge on and by at most $1.4\%$ once it is off (previous setting: about $0.5\%$).
+  \item Theorem~\ref{thm:ridge} holds: wherever $\vartheta_0 \ge 1$, the simulated bias is $0.994$--$1.017$ times the leading term.
+  \item The bias would matter only if at least about $490$ releases of the same data were averaged ($2{,}100$ at the previous setting).
+  \item The gate refused no release.
+\end{itemize}
+Leaving the correction off therefore costs nothing that matters under either setting.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/bias_mse_ratio_v31.png}
-  \caption{The optional correction under v3.1, $\delta = 10^{-9}$, $R^2 = 0.5$, against $\vartheta_0 = \lambda_{\min}(\bG)/(2\sigma_2\sqrt{p})$, one line per $\varepsilon$; hollow markers: the stage-1 ridge is on in most releases. (a)~Squared mechanism bias as a share of the mean squared error around $\btheta_\lambda$ (uncorrected estimate). (b)~Mean squared error of the corrected estimate divided by that of the uncorrected one, against $\btheta_\lambda$. (c)~The same against the true coefficients, from the cohort-level runs of Section~\ref{sec:eval:sim}. Values below 1 favour the correction.}
+  \caption{The optional correction under v3.1 at the previous setting, $\delta = 10^{-9}$, $R^2 = 0.5$, against $\vartheta_0 = \lambda_{\min}(\bG)/(2\sigma_2\sqrt{p})$, one line per $\varepsilon$; hollow markers: the stage-1 ridge is on in most releases. (a)~Squared mechanism bias as a share of the mean squared error around $\btheta_\lambda$ (uncorrected estimate). (b)~Mean squared error of the corrected estimate divided by that of the uncorrected one, against $\btheta_\lambda$. (c)~The same against the true coefficients, from the cohort-level runs of Section~\ref{sec:eval:sim}. Values below 1 favour the correction.}
   \label{fig:bias_v31}
 \end{figure}
 
@@ -1391,15 +1469,15 @@ AdaSSP~\cite{wang2018revisiting} perturbs the same sufficient statistics and sol
   \item \emph{Rows.} In each fold, $10\%$ of all rows, taken from the training folds, form a public reference set. Only the per-party preprocessing uses it, to fix its constants and bounds. Every arm trains on the remaining training rows ($80\%$ of the data) and is tested on the held-out fold.
   \item \emph{Split.} $\Rp$ holds the first $\lfloor d/2 \rfloor$ features and $\Op$ the rest and $y$. Every training row counts as matched.
 \end{itemize}
-We compare five arms.
+We compare seven arms.
 \begin{itemize}[noitemsep]
   \item[(a)] \emph{AdaSSP (published):} Wang's algorithm and noise constants, with his preprocessing: z-scored features, each whole row scaled to unit norm, $y/\max|y|$. Its guarantee covers the whole record $(\bx, y)$.
   \item[(b)] \emph{AdaSSP (matched):} AdaSSP's adaptive ridge under our adjacency and our accountant. $\bA$ is exact; $\rho_{\mathrm{run}}/3$ goes to $\lambda_{\min}$ and $2\rho_{\mathrm{run}}/3$ to one joint release of the $\Op$-dependent entries with $\Delta = \sqrt{10}$, with the tight conversion. It is idealized, because its private $\lambda_{\min}$ step needs $\bX^{\top}\bX$ in the clear.
-  \item[(c)] \emph{v3.1 with joint row normalization:} v3.1 on Wang's preprocessed data, without an intercept, with $B_R = B_O = B_y = 1$. It is idealized too. Wang's normalization scales each row $(\bx_R, \bx_O)$ by its joint norm, which needs both parties' features in one row, and no party has them in the vertical setting. The arm isolates the change of mechanism from the change of preprocessing.
-  \item[(d)] \emph{v3.1 with block unit norm:} each party normalizes its own block of every row (Section~\ref{sec:protocol:preproc}), so $B_R^2 = 2$ with $\Rp$'s intercept and $B_O = 1$. $B_y$ is the $99.5\%$ quantile on the reference set.
-  \item[(e)] \emph{v3.1 with standardization:} each party standardizes its own columns with reference-set constants; the bounds are the $99.5\%$ quantiles on the reference set.
+  \item[(c)] \emph{v3.1 with joint row normalization, under settings I and P:} v3.1 on Wang's preprocessed data, without an intercept, with $B_R = B_O = B_y = 1$. It is idealized too. Wang's normalization scales each row $(\bx_R, \bx_O)$ by its joint norm, which needs both parties' features in one row, and no party has them in the vertical setting. The arm isolates the change of mechanism from the change of preprocessing.
+  \item[(d)] \emph{v3.1 with block unit norm, under settings I and P:} each party normalizes its own block of every row (Section~\ref{sec:protocol:preproc}), so $B_R^2 = 2$ with $\Rp$'s intercept and $B_O = 1$. $B_y$ is the $99.5\%$ quantile on the reference set.
+  \item[(e)] \emph{v3.1 with standardization, under setting I:} each party standardizes its own columns with reference-set constants; the bounds are the $99.5\%$ quantiles on the reference set.
 \end{itemize}
-The v3.1 arms run both releases, the stage-1 rule, the gate and the solve, with the bias correction off; a refused release would output $\btheta = 0$, but none was refused. Arms with different preprocessing have different non-private baselines. Each arm is therefore reported in two ways:
+The previous setting's arms (c)--(e) are taken from their earlier run on the same folds and matched rows, and are not rerun. AdaSSP was rerun with new noise draws, which changed its test MSE by a median of $0.0\%$ (at most $4.7\%$ on any dataset). The v3.1 arms run both releases, the stage-1 rule, the gate and the solve, with the bias correction off. A refused release outputs $\btheta = 0$. Settings I and P of one preprocessing share their unit noise draws. Arms with different preprocessing have different non-private baselines. Each arm is therefore reported in two ways:
 \begin{itemize}[noitemsep]
   \item as a ratio of its test MSE to that of its own non-private fit, $(\bZ^\top\bZ + \bI)^{-1}\bZ^\top\by$ (Wang's non-private estimator), on the same matched rows with the same preprocessing; arms (a)--(c) share this fit;
   \item as an absolute test MSE on one common scale, Wang's $y/\max|y|$, which adds the cost of the preprocessing.
@@ -1409,24 +1487,24 @@ Methods are compared by paired tests over folds (95\% CI of the mean difference 
 \begin{table}[t]
   \centering
   \small
-  \caption{Test MSE at $\varepsilon = 1$, $\delta = 10^{-6}$, as a ratio to each arm's own non-private fit. The first three columns give the non-private test MSE on Wang's $y/\max|y|$ scale under Wang's preprocessing (shared by (a)--(c)), block unit norm (d) and standardization (e). Last column: the earlier single-release mechanism from the previous version of this table (Wang's preprocessing, ratio to the same non-private fit as (a)--(c)).}
+  \caption{Test MSE at $\varepsilon = 1$, $\delta = 10^{-6}$, as a ratio to each arm's own non-private fit (Table~\ref{tab:adassp_abs_v31} gives the non-private test MSE). Last column: block unit norm at the previous setting, from its earlier run.}
   \label{tab:adassp_v31}
-  \setlength{\tabcolsep}{3.5pt}
-  \begin{tabular}{@{}lrrrrrccccccc@{}}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrcccccccc@{}}
     \toprule
-    & & & \multicolumn{3}{c}{non-private test MSE} & \multicolumn{5}{c}{ratio to own non-private} & earlier \\
-    \cmidrule(lr){4-6} \cmidrule(lr){7-11}
-    Dataset & $n$ & $d$ & Wang & block & std. & (a) & (b) & (c) & (d) & (e) & VFL \\
+    & & & \multicolumn{2}{c}{AdaSSP} & \multicolumn{2}{c}{(c) joint norm} & \multicolumn{2}{c}{(d) block norm} & (e) std. & (d) \\
+    \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-10}
+    Dataset & $n$ & $d$ & (a) & (b) & I & P & I & P & I & previous \\
     \midrule
-    housing & 506 & 13 & 0.0400 & 0.0396 & 0.0320 & 1.83 & 2.03 & 2.46 & 2.50 & 3.25 & 1.97 \\
-    wine & 1{,}599 & 11 & 0.0201 & 0.0252 & 0.0173 & 1.74 & 1.96 & 2.34 & 1.92 & 3.10 & 1.84 \\
-    airfoil & 1{,}503 & 5 & 0.0534 & 0.0521 & 0.0504 & 1.10 & 1.16 & 1.47 & 1.51 & 1.86 & 1.16 \\
-    concrete & 1{,}030 & 8 & 0.0445 & 0.0381 & 0.0490 & 1.54 & 1.74 & 2.35 & 2.69 & 2.41 & 1.69 \\
-    bike & 17{,}379 & 17 & 0.0279 & 0.0270 & 0.0288 & 1.04 & 1.07 & 1.33 & 1.43 & 1.68 & 1.06 \\
-    elevators & 16{,}599 & 18 & 0.00872 & 0.0229 & 0.00822 & 1.57 & 1.75 & 2.42 & 1.13 & 2.90 & 1.71 \\
-    pol & 15{,}000 & 26 & 0.135 & 0.123 & 0.184 & 1.04 & 1.08 & 1.38 & 1.63 & 1.71 & 1.06 \\
-    kin40k & 40{,}000 & 8 & 0.0632 & 0.0632 & 0.0634 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
-    protein & 45{,}730 & 9 & 0.119 & 0.121 & 0.119 & 1.01 & 1.01 & 1.04 & 1.03 & 1.15 & 1.01 \\
+    housing & 506 & 13 & 1.83 & 2.05 & 2.35 & 2.13 & 2.44 & 2.87 & 3.13 & 2.50 \\
+    wine & 1{,}599 & 11 & 1.75 & 1.94 & 2.21 & 1.95 & 1.87 & 2.24 & 3.02 & 1.92 \\
+    airfoil & 1{,}503 & 5 & 1.10 & 1.16 & 1.34 & 1.27 & 1.43 & 1.74 & 1.76 & 1.51 \\
+    concrete & 1{,}030 & 8 & 1.53 & 1.73 & 2.18 & 1.78 & 2.56 & 3.16 & 2.31 & 2.69 \\
+    bike & 17{,}379 & 17 & 1.04 & 1.07 & 1.22 & 1.08 & 1.38 & 3.93 & 1.47 & 1.43 \\
+    elevators & 16{,}599 & 18 & 1.57 & 1.77 & 2.26 & 1.91 & 1.13 & 1.60 & 2.68 & 1.13 \\
+    pol & 15{,}000 & 26 & 1.05 & 1.08 & 1.26 & 1.11 & 1.53 & 1.27 & 1.66 & 1.63 \\
+    kin40k & 40{,}000 & 8 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+    protein & 45{,}730 & 9 & 1.01 & 1.01 & 1.03 & 1.02 & 1.02 & 1.35 & 1.12 & 1.03 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1434,22 +1512,24 @@ Methods are compared by paired tests over folds (95\% CI of the mean difference 
 \begin{table}[t]
   \centering
   \small
-  \caption{Absolute test MSE at $\varepsilon = 1$, $\delta = 10^{-6}$, on Wang's $y/\max|y|$ scale; Table~\ref{tab:adassp_v31} gives the non-private test MSE on the same scale. Bold: lowest in the row.}
+  \caption{Absolute test MSE at $\varepsilon = 1$, $\delta = 10^{-6}$, on Wang's $y/\max|y|$ scale. The first two columns are the non-private fits under Wang's preprocessing (shared by (a)--(c)) and under block unit norm (d). Bold: lowest private arm in the row among (a)--(d).}
   \label{tab:adassp_abs_v31}
-  \begin{tabular}{@{}lccccc@{}}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lccccccccc@{}}
     \toprule
-    & (a) AdaSSP, & (b) AdaSSP, & (c) v3.1, & (d) v3.1, & (e) v3.1, \\
-    Dataset & published & matched & joint norm & block norm & standardize \\
+    & \multicolumn{2}{c}{non-private} & \multicolumn{2}{c}{AdaSSP} & \multicolumn{2}{c}{(c) joint norm} & \multicolumn{2}{c}{(d) block norm} & (d) \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+    Dataset & Wang & block & (a) & (b) & I & P & I & P & previous \\
     \midrule
-    housing & \textbf{0.0732} & 0.0813 & 0.0982 & 0.0990 & 0.104 \\
-    wine & \textbf{0.0350} & 0.0393 & 0.0469 & 0.0485 & 0.0537 \\
-    airfoil & \textbf{0.0588} & 0.0620 & 0.0785 & 0.0787 & 0.0937 \\
-    concrete & \textbf{0.0683} & 0.0774 & 0.105 & 0.103 & 0.118 \\
-    bike & \textbf{0.0290} & 0.0299 & 0.0372 & 0.0388 & 0.0485 \\
-    elevators & \textbf{0.0136} & 0.0153 & 0.0211 & 0.0260 & 0.0238 \\
-    pol & \textbf{0.141} & 0.146 & 0.186 & 0.201 & 0.315 \\
-    kin40k & 0.0633 & 0.0633 & 0.0633 & \textbf{0.0632} & 0.0634 \\
-    protein & \textbf{0.120} & 0.120 & 0.124 & 0.124 & 0.137 \\
+    housing & 0.0400 & 0.0396 & \textbf{0.0732} & 0.0821 & 0.0941 & 0.0851 & 0.0966 & 0.114 & 0.0990 \\
+    wine & 0.0201 & 0.0252 & \textbf{0.0350} & 0.0390 & 0.0444 & 0.0393 & 0.0472 & 0.0565 & 0.0485 \\
+    airfoil & 0.0534 & 0.0521 & \textbf{0.0586} & 0.0622 & 0.0715 & 0.0678 & 0.0746 & 0.0906 & 0.0787 \\
+    concrete & 0.0445 & 0.0381 & \textbf{0.0681} & 0.0770 & 0.0968 & 0.0792 & 0.0977 & 0.120 & 0.103 \\
+    bike & 0.0279 & 0.0270 & \textbf{0.0290} & 0.0299 & 0.0341 & 0.0301 & 0.0372 & 0.106 & 0.0388 \\
+    elevators & 0.00872 & 0.0229 & \textbf{0.0136} & 0.0154 & 0.0197 & 0.0166 & 0.0259 & 0.0367 & 0.0260 \\
+    pol & 0.135 & 0.123 & \textbf{0.141} & 0.146 & 0.170 & 0.149 & 0.188 & 0.156 & 0.201 \\
+    kin40k & 0.0632 & 0.0632 & 0.0633 & 0.0633 & 0.0633 & 0.0633 & \textbf{0.0632} & \textbf{0.0632} & 0.0632 \\
+    protein & 0.119 & 0.121 & \textbf{0.120} & 0.120 & 0.122 & 0.121 & 0.124 & 0.163 & 0.124 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1457,37 +1537,46 @@ Methods are compared by paired tests over folds (95\% CI of the mean difference 
 \begin{table}[t]
   \centering
   \small
-  \caption{Paired comparisons over all 29 datasets, $\delta = 10^{-6}$: number of datasets on which the first arm has significantly lower / higher absolute test MSE (95\% CI over folds). The remaining datasets show no significant difference.}
+  \caption{Paired comparisons over all 29 datasets, $\delta = 10^{-6}$: number of datasets on which the first arm has significantly lower / higher absolute test MSE (95\% CI over folds). The remaining datasets show no significant difference. Rows marked ``previous'' are from the earlier run of the previous setting.}
   \label{tab:verdicts_v31}
   \begin{tabular}{@{}lccccc@{}}
     \toprule
     Comparison & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ & $\varepsilon = 8$ \\
     \midrule
-    (d) v3.1, block vs (a) AdaSSP, published & 5 / 19 & 5 / 19 & 4 / 21 & 3 / 23 & 1 / 21 \\
-    (c) v3.1, joint vs (a) AdaSSP, published & 7 / 19 & 6 / 20 & 3 / 22 & 2 / 22 & 0 / 23 \\
-    (c) v3.1, joint vs (b) AdaSSP, matched & 10 / 17 & 8 / 18 & 5 / 20 & 5 / 21 & 3 / 20 \\
-    (d) v3.1, block vs (c) v3.1, joint & 4 / 8 & 4 / 8 & 4 / 6 & 4 / 6 & 5 / 7 \\
-    (e) v3.1, std.\ vs (d) v3.1, block & 1 / 25 & 2 / 25 & 2 / 25 & 2 / 24 & 2 / 23 \\
+    (d) block, I vs (a) AdaSSP, published & 6 / 19 & 5 / 20 & 4 / 21 & 3 / 22 & 1 / 21 \\
+    (d) block, P vs (a) & 6 / 19 & 5 / 20 & 3 / 21 & 2 / 24 & 2 / 22 \\
+    (d) block, previous vs (a) & 5 / 19 & 5 / 19 & 4 / 21 & 3 / 23 & 1 / 21 \\
+    \midrule
+    (c) joint, I vs (a) AdaSSP, published & 7 / 19 & 5 / 23 & 4 / 23 & 1 / 21 & 0 / 22 \\
+    (c) joint, P vs (a) & 6 / 20 & 4 / 22 & 1 / 25 & 0 / 24 & 0 / 26 \\
+    (c) joint, previous vs (a) & 7 / 19 & 6 / 20 & 3 / 22 & 2 / 22 & 0 / 23 \\
+    \midrule
+    (c) joint, I vs (b) AdaSSP, matched & 8 / 15 & 6 / 18 & 6 / 20 & 5 / 19 & 2 / 20 \\
+    (c) joint, P vs (b) & 11 / 10 & 6 / 11 & 6 / 12 & 5 / 12 & 3 / 12 \\
+    (c) joint, previous vs (b) & 10 / 17 & 8 / 18 & 5 / 20 & 5 / 21 & 3 / 20 \\
+    \midrule
+    (d) block, I vs (d) block, previous & 18 / 4 & 19 / 1 & 21 / 1 & 23 / 1 & 24 / 0 \\
+    (d) block, P vs (d) block, I & 4 / 20 & 3 / 19 & 3 / 19 & 3 / 20 & 5 / 16 \\
+    (c) joint, P vs (c) joint, I & 20 / 8 & 20 / 6 & 21 / 6 & 20 / 5 & 20 / 4 \\
+    (e) std., I vs (d) block, I & 2 / 24 & 2 / 24 & 2 / 25 & 2 / 23 & 2 / 18 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/adassp_mse_vs_eps_v31.png}
-  \caption{Test MSE divided by each arm's own non-private test MSE against $\varepsilon$, $\delta = 10^{-6}$, on nine of the datasets. Points: mean over 10 folds and 50 noise draws. Error bars: 95\% CI of the mean ($t$ over folds). Stars: the earlier single-release mechanism at $\varepsilon = 1$, from the previous version of this comparison.}
+  \includegraphics[width=\textwidth]{figures/adassp_mse_vs_eps_v31s.png}
+  \caption{Test MSE divided by each arm's own non-private test MSE against $\varepsilon$, $\delta = 10^{-6}$, on nine of the datasets. Blue: v3.1 with block unit norm, setting I. Orange: the same, setting P. Aqua: AdaSSP, published (dashed) and matched (dotted). Grey dotted: v3.1 with block unit norm at the previous setting, from its earlier run. Points: mean over 10 folds and 50 noise draws. Error bars: 95\% CI of the mean ($t$ over folds).}
   \label{fig:adassp_v31}
 \end{figure}
 
-\paragraph{Results.} Tables~\ref{tab:adassp_v31}--\ref{tab:verdicts_v31} and Figure~\ref{fig:adassp_v31} separate three effects.
+\paragraph{Results.} Tables~\ref{tab:adassp_v31}--\ref{tab:verdicts_v31} and Figure~\ref{fig:adassp_v31} separate the mechanism, the setting and the preprocessing.
 \begin{itemize}
-  \item \emph{The mechanism.} Arm (c) has the same preprocessing as AdaSSP. At $\varepsilon = 1$ it has significantly higher test MSE than AdaSSP (published) on 20 of 29 datasets and lower on 6, with a median gap of $+28\%$. Against AdaSSP (matched), which has our guarantee, it is higher on 18 and lower on 8, with a median gap of $+15\%$. The earlier mechanism beat AdaSSP (matched) on 27 of 29 datasets at $\varepsilon \le 1$. v3.1 is significantly worse than AdaSSP (matched) on 17--21 datasets, and better on 3--10, at every $\varepsilon$ from $0.5$ to $8$.
-
-  The cause is the ridge, not the noise. For unit bounds at $\varepsilon = 1$, the stage-2 noise of v3.1 ($\sigma_2 = 15.1$) is lower than that of AdaSSP (matched) ($17.6$). But the stage-1 rule sets $\lambda \approx g^\star + r_1 - \lambda_{\min}(\hat\bG_1)$, which certifies $\vartheta \ge \vartheta^\star = 2.5$ with probability $1 - \alpha_L$ from a release that has only $10\%$ of the budget. Its median ridge at $\varepsilon = 1$ is $3.2$--$5.8$ times that of AdaSSP (matched) and $4.7$--$12$ times that of AdaSSP (published), for example $786$, $188$ and $127$ on housing and $559$, $150$ and $101$ on protein. The earlier mechanism's fixed ridge $2\vartheta^\star\sigma\sqrt p$ with $\vartheta^\star = 2$ was $193$ on housing.
-
-  v3.1 is ahead only where there is little linear signal (forest, fertility, pendulum, pumadyn32nm, solar, tamielectric), and there shrinking towards zero costs little. On the largest datasets (3droad, kin40k, tamielectric) all arms are within $0.1\%$ of non-private.
-  \item \emph{The preprocessing.} Block normalization (d) and joint normalization (c) differ significantly on only 12 of 29 datasets in absolute test MSE ($\varepsilon = 1$), and their ratios to their own non-private fits are similar. Their differences come from the non-private fits: on elevators, block normalization's non-private test MSE is $2.6$ times that of Wang's preprocessing, while on concrete it is $0.86$ times. Plain standardization (e) is worse than block normalization on 23--25 datasets, because heavy tails inflate the bounds.
-  \item \emph{The implementable protocol.} Arm (d) has higher test MSE than AdaSSP (published) on 19 of 29 datasets at $\varepsilon = 1$ and lower on 5. The median gap is $+31\%$ at $\varepsilon = 1$ and $+12\%$ at $\varepsilon = 8$. On protein the gap is $3.6\%$ ($0.124$ against $0.120$), and on bike it is $34\%$.
+  \item \emph{Setting I narrows the gap, but not the count.} Arm (c) has the same preprocessing as AdaSSP. Under setting I, at $\varepsilon = 1$, it has significantly higher test MSE than AdaSSP (published) on 23 of 29 datasets and lower on 5, with a median gap of $+19\%$; at the previous setting the counts were 20 and 6 and the gap $+28\%$. Against AdaSSP (matched), which has our guarantee, it is higher on 18 and lower on 6, with a median gap of $+12\%$ ($18$ and $8$, $+17\%$ at the previous setting). At $\varepsilon = 8$ the median gaps are $+11\%$ against (a) and $+6\%$ against (b). The ridge is still the cause. Setting I's median ridge is $2.8$ times that of AdaSSP (matched) (range $2.4$--$3.9$ over 26 datasets) and $4.1$ times that of AdaSSP (published), against $4.2$ times AdaSSP (matched) at the previous setting; for example $536$, $188$ and $127$ on housing and $372$, $150$ and $101$ on protein ($786$ and $559$ before). Setting I still certifies $\vartheta^\star = 2.5$ at confidence $1 - \alpha_L$ from a quarter of the budget.
+  \item \emph{Setting P closes the gap under joint normalization.} Arm (c) under P has a median gap of $+0.8\%$ against AdaSSP (matched) at $\varepsilon = 1$: lower test MSE on 6 datasets, higher on 11, and no significant difference on 12. At every $\varepsilon$ its median gap to (b) is between $+0.2\%$ and $+1.1\%$, and to (a) between $+7\%$ and $+9\%$. Its ridge is $1.3$ times that of AdaSSP (matched). It beats (c) under I on 20--21 datasets at every $\varepsilon$. Its gate refused $1.8\%$ of releases on average, and at most $29\%$ on any dataset and $\varepsilon$ (servo).
+  \item \emph{The implementable arm.} Under block normalization, (d) under setting I has higher test MSE than AdaSSP (published) on 20 of 29 datasets at $\varepsilon = 1$ and lower on 5; the median gap is $+25\%$ at $\varepsilon = 1$ and $+11\%$ at $\varepsilon = 8$. The previous setting, against the same AdaSSP draws, gives $+28\%$ and $+12\%$ (19 and 5 datasets at $\varepsilon = 1$ in its earlier run). Setting I has lower test MSE than the previous setting on 18--24 datasets and higher on at most 4 at every $\varepsilon$, by a median of $1$--$3\%$. On protein the gap to AdaSSP is $3.0\%$ ($0.124$ against $0.120$), and on bike it is $28\%$.
+  \item \emph{Setting P fails under block normalization.} Its gate refused $65\%$ of block-normalized releases on average over the 29 datasets and all $\varepsilon$, at least a quarter on 25 of them and all of them on elevators, gas and solar. It passes only on 3droad, kin40k and tamielectric, where the ridge is off, and on pol, where it refused at most $1\%$. A refused release outputs $\btheta = 0$, so (d) under P is worse than AdaSSP (published) by a median of $+36\%$ at $\varepsilon = 1$ and $+81\%$ at $\varepsilon = 8$, and worse than (d) under I on 16--20 datasets. Section~\ref{sec:eval:sweep} explains why block normalization makes P's gate fail.
+  \item \emph{The preprocessing.} Under setting I, block normalization (d) and joint normalization (c) differ significantly on 17 of 29 datasets in absolute test MSE ($\varepsilon = 1$; 5 lower, 12 higher), and their ratios to their own non-private fits are similar. Their differences come mostly from the non-private fits: on elevators, block normalization's non-private test MSE is $2.6$ times that of Wang's preprocessing, while on concrete it is $0.86$ times. Plain standardization (e) is worse than block normalization on 18--25 datasets, because heavy tails inflate the bounds.
 \end{itemize}
 
 \paragraph{AdaSSP's published noise constants.} AdaSSP adds noise of s.d.\ $s = \sqrt{\log(6/\delta)}/(\varepsilon/3)$ to each of three statistics: $\lambda_{\min}$, $\bX^\top\bX$ (symmetrized, so off-diagonal s.d.\ $s/\sqrt2$) and $\bX^\top\by$.
@@ -1500,64 +1589,82 @@ The published column therefore overstates AdaSSP's advantage only slightly. The 
 
 \tocheck{AdaSSP's adjacency: the published constants are consistent with add/remove adjacency (sensitivity 1 for each statistic); confirm against the statement in Wang (2018) before citing it.}
 
-\tocheck{The v3.1 ridge is sized for interval validity (theta-star = 2.5, r-1 at the 1 - alpha-L quantile from 10 percent of the budget), not for prediction. The levers of Section 9.5 (exact-quantile r-1, f-1 near 0.35) would shrink it by about 37 percent; rerun this comparison with them if they become the evaluation's settings.}
-
 % ---------------------------------------------------------------- 12.8
 \subsection{Intersection size on real data}
 \label{sec:eval:sweep}
 
-Figure~\ref{fig:sweep_v31} repeats the experiment of Figure~\ref{fig:sim_rmse_v31} on the four datasets with at least 15{,}000 rows and a real linear signal: bike, elevators, pol and protein. The settings are those of Section~\ref{sec:eval:sim}, with $\delta = 10^{-9}$ for v3.1 and for AdaSSP alike.
+Figure~\ref{fig:sweep_v31} repeats the experiment of Figure~\ref{fig:sim_rmse_v31} on the four datasets with at least 15{,}000 rows and a real linear signal: bike, elevators, pol and protein. It runs v3.1 with block normalization under settings I and P, and AdaSSP (published), all at $\delta = 10^{-9}$. The previous setting is taken from its earlier run on the same folds and matched sets.
 \begin{itemize}[noitemsep]
   \item In each fold the reference set is set aside as in Section~\ref{sec:eval:adassp}. The remaining training rows are shuffled once, and the first $n$ form the matched set, nested across $n$. The held-out fold is the test set.
-  \item There are 40 noise draws per fold and $n$.
+  \item There are 40 noise draws per fold and $n$. The v3.1 runs of settings I and P share their unit noise draws.
   \item Each arm is compared with its own non-private fit at the same $n$.
 \end{itemize}
-Table~\ref{tab:sweep_v31} gives the $n$ at which v3.1 with block normalization, and AdaSSP (published), come within $10\%$ of non-private test MSE.
+Table~\ref{tab:sweep_v31} gives the $n$ at which each arm comes within $10\%$ of its own non-private test MSE.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/sweep_n_v31.png}
-  \caption{Test MSE divided by the arm's own non-private test MSE at the same $n$, against the number of matched records, $\delta = 10^{-9}$. Solid: v3.1 with block unit norm. Dashed: AdaSSP (published). Colour: $\varepsilon$. Error bars: 95\% CI over folds.}
+  \includegraphics[width=\textwidth]{figures/sweep_n_v31s.png}
+  \caption{Test MSE divided by the arm's own non-private test MSE at the same $n$, against the number of matched records, $\delta = 10^{-9}$; top row $\varepsilon = 1$, bottom row $\varepsilon = 4$. Blue: v3.1 with block unit norm, setting I. Orange: the same, setting P. Aqua dashed: AdaSSP (published). Grey dotted: v3.1 with block unit norm at the previous setting. Error bars: 95\% CI over folds.}
   \label{fig:sweep_v31}
 \end{figure}
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Matched records needed to come within $10\%$ of the arm's own non-private test MSE, $\delta = 10^{-9}$: v3.1 with block unit norm, with AdaSSP (published) in brackets. ``$>$'' means not reached at the sizes available.}
+  \caption{Matched records needed to come within $10\%$ of the arm's own non-private test MSE, $\delta = 10^{-9}$: v3.1 with block unit norm under settings I and P and at the previous setting, and AdaSSP (published). ``$>$'' means not reached at the sizes available.}
   \label{tab:sweep_v31}
-  \setlength{\tabcolsep}{4.5pt}
-  \begin{tabular}{@{}lrccccc@{}}
+  \begin{tabular}{@{}llccccc@{}}
     \toprule
-    Dataset & $n$ available & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ & $\varepsilon = 8$ \\
+    Dataset ($n$ available) & Arm & $\varepsilon = 0.5$ & $\varepsilon = 1$ & $\varepsilon = 2$ & $\varepsilon = 4$ & $\varepsilon = 8$ \\
     \midrule
-    bike & 13{,}903 & $>$14k ($>$14k) & $>$14k (9.1k) & $>$14k (4.4k) & $>$14k (2.3k) & 8.3k (1.1k) \\
-    elevators & 13{,}279 & $>$13k ($>$13k) & $>$13k ($>$13k) & $>$13k ($>$13k) & 8.9k ($>$13k) & 4.7k (8.7k) \\
-    pol & 12{,}000 & $>$12k ($>$12k) & $>$12k (8.5k) & $>$12k (4.3k) & $>$12k (2.2k) & $>$12k (1.0k) \\
-    protein & 36{,}584 & 20k (4.6k) & 10k (2.1k) & 5.2k (1.0k) & 2.6k (0.4k) & 1.3k (0.2k) \\
+    bike (13{,}903) & v3.1, I & $>$14k & $>$14k & $>$14k & 13.6k & 7.3k \\
+     & v3.1, P & $>$14k & $>$14k & $>$14k & $>$14k & $>$14k \\
+     & v3.1, previous & $>$14k & $>$14k & $>$14k & $>$14k & 8.3k \\
+     & AdaSSP & $>$14k & 9.1k & 4.5k & 2.3k & 1.2k \\
+    \midrule
+    elevators (13{,}279) & v3.1, I & $>$13k & $>$13k & $>$13k & 8.0k & 4.1k \\
+     & v3.1, P & $>$13k & $>$13k & $>$13k & $>$13k & $>$13k \\
+     & v3.1, previous & $>$13k & $>$13k & $>$13k & 8.9k & 4.7k \\
+     & AdaSSP & $>$13k & $>$13k & $>$13k & $>$13k & 8.8k \\
+    \midrule
+    pol (12{,}000) & v3.1, I & $>$12k & $>$12k & $>$12k & $>$12k & $>$12k \\
+     & v3.1, P & $>$12k & $>$12k & $>$12k & 12.0k & 6.4k \\
+     & v3.1, previous & $>$12k & $>$12k & $>$12k & $>$12k & $>$12k \\
+     & AdaSSP & $>$12k & 8.5k & 4.3k & 2.2k & 1.0k \\
+    \midrule
+    protein (36{,}584) & v3.1, I & 16k & 8.2k & 4.1k & 2.1k & 985 \\
+     & v3.1, P & $>$37k & $>$37k & $>$37k & $>$37k & 32k \\
+     & v3.1, previous & 20k & 10k & 5.2k & 2.6k & 1.3k \\
+     & AdaSSP & 4.5k & 2.2k & 992 & 427 & 166 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{itemize}
-  \item \emph{Protein.} v3.1 comes within $10\%$ of non-private at $20$k, $10$k, $5.2$k, $2.6$k and $1.3$k matched records for $\varepsilon = 0.5$ to $8$; doubling $\varepsilon$ halves the records needed. The earlier mechanism needed $5.4$k, $2.8$k, $1.4$k and $619$ for $\varepsilon = 0.5$ to $4$. AdaSSP needs $4.4$--$7.8$ times fewer records than v3.1, against $1.4$--$2.1$ times fewer than the earlier mechanism.
-  \item \emph{Bike and pol.} v3.1 gets within $10\%$ only on bike at $\varepsilon = 8$ ($8.3$k). At the largest size available its test MSE is $1.56$ and $1.74$ times non-private at $\varepsilon = 1$, and $1.12$ and $1.27$ times at $\varepsilon = 4$.
-  \item \emph{Elevators.} The entries for v3.1 are relative to block normalization's own non-private fit, which is $2.8$ times worse than that on standardized features. Against the standardized non-private fit, v3.1 with block normalization never comes within $10\%$ at these sizes.
-  \item \emph{The ridge stays on throughout.} At the largest $n$ and $\varepsilon = 1$ the median stage-1 ridge is $1{,}334$ on protein and $2{,}226$ on bike. Section~\ref{sec:stats:noff} puts the switch-off for protein at $691$k matched records at $\varepsilon = 1$.
+  \item \emph{Protein, setting I.} v3.1 comes within $10\%$ of non-private at $16$k, $8.2$k, $4.1$k, $2.1$k and $985$ matched records for $\varepsilon = 0.5$ to $8$, $18$--$24\%$ fewer than the previous setting ($20$k, $10$k, $5.2$k, $2.6$k, $1.3$k). AdaSSP needs $3.6$--$5.9$ times fewer records than setting I ($4.4$--$7.8$ times fewer than the previous setting). The earlier single-release mechanism needed $5.4$k, $2.8$k, $1.4$k and $619$ for $\varepsilon = 0.5$ to $4$.
+  \item \emph{Bike, elevators and pol, setting I.} Bike now comes within $10\%$ at $\varepsilon = 4$ ($13.6$k) and $\varepsilon = 8$ ($7.3$k); the previous setting did so only at $\varepsilon = 8$ ($8.3$k). Elevators does at $8.0$k and $4.1$k for $\varepsilon = 4$ and $8$ (previous: $8.9$k and $4.7$k), relative to block normalization's own non-private fit, which is $2.8$ times worse than that on standardized features. Pol does not, at the $12$k records available: at that size its test MSE is $1.63$ and $1.22$ times non-private at $\varepsilon = 1$ and $4$ (previous: $1.74$ and $1.27$).
+  \item \emph{Setting P is refused by the gate on three of the four datasets.} While the ridge is on, the gate refused $96$--$100\%$ of P's releases on bike, $100\%$ on elevators and $82$--$97\%$ on protein, at every $n$ and $\varepsilon$. A refused release outputs $\btheta = 0$ and still spends the budget, so P's test MSE stays near that of predicting the mean: at the largest $n$ it is $3.9$, $1.6$ and $1.34$ times non-private. P reaches $10\%$ on protein only at $\varepsilon = 8$, where its ridge switches off ($32$k). On pol the gate refused at most $2\%$ of P's releases, and there P beats I: within $10\%$ at $12.0$k ($\varepsilon = 4$) and $6.4$k ($\varepsilon = 8$), and $1.34$ and $1.10$ times non-private at $12$k for $\varepsilon = 1$ and $4$.
+  \item \emph{Why P fails here.} With $\vartheta^\star = 0.5$ the gate passes only if $r_1$ exceeds $\sigma_2\sqrt p$ by more than the extra downward shift that the stage-2 noise causes in $\lambda_{\min}$ (Section~\ref{sec:stats:stage2}). On the synthetic population, where $\Delta_G \approx 0.9\Delta$, P has $\sigma_1 = 1.79\,\sigma_2$ and $r_1 = 8.9\,\sigma_2$, far above $\sigma_2\sqrt{11} = 3.3\,\sigma_2$. Block normalization bounds $\bx$ tightly but leaves $B_y$ as large as before, so $\Delta_G/\Delta \approx 0.34$ on protein. Then $\sigma_1 \approx 0.67\,\sigma_2$ and $r_1 = q_{0.5}\sigma_1 \approx 4.53 \times 0.67\,\sigma_2 \approx 3.1\,\sigma_2$ ($p = 10$), below $\sigma_2\sqrt{10} = 3.2\,\sigma_2$ even before the stage-2 noise, the larger of the two, lowers $\lambda_{\min}$ further. The selection population never entered this regime, so the pre-registered rule could not see it.
+  \item \emph{The ridge stays on throughout.} At the largest $n$ and $\varepsilon = 1$ the median stage-1 ridge under setting I is $1{,}056$ on protein and $1{,}936$ on bike (previous setting: $1{,}334$ and $2{,}226$). Section~\ref{sec:stats:noff} puts the switch-off for protein at $555$k matched records at $\varepsilon = 1$ under setting I.
 \end{itemize}
+
+\tocheck{Setting P was chosen on a synthetic population with Delta-G about 0.9 Delta, where its gate never refuses; on block-normalized real data (Delta-G about 0.34 Delta on protein) the gate refuses 82-100 percent of its releases on bike, elevators and protein. A prediction setting needs a selection rule that covers this regime, for example a selection population with block-normalized features, or theta-star at least 1, and a new pre-registered choice validated on fresh data.}
 
 \subsection{Where the utility goes}
 \label{sec:eval:lessons}
 
-\paragraph{Prediction is not interpretation.} Test MSE includes the irreducible noise, so it is forgiving. On the simulation population, prediction comes within $10\%$ of non-private at about $0.71\,n_{\mathrm{off}}$, while the ridge is still on; coefficients within twice the non-private error take $1.7$--$5.2$ times as many records (Section~\ref{sec:eval:sim}). Intervals for $\bbeta$ are informative only once the ridge is off or a public bound on $\|\bbeta\|$ is available.
+\paragraph{Prediction is not interpretation.} Test MSE includes the irreducible noise, so it is forgiving. On the simulation population, setting I brings prediction within $10\%$ of non-private at about $0.73\,n_{\mathrm{off}}$, while the ridge is still on; coefficients within twice the non-private error take $2.8$--$8.8$ times as many records (Section~\ref{sec:eval:sim}). Intervals for $\bbeta$ are informative only once the ridge is off or a public bound on $\|\bbeta\|$ is available.
 
-\paragraph{The gap to AdaSSP is the ridge, not the noise.} At the same $(\varepsilon, \delta)$ and unit bounds, the stage-2 noise of v3.1 is lower than that of AdaSSP under our guarantee ($\sigma_2 = 15.1$ against $17.6$ at $\varepsilon = 1$, $\delta = 10^{-6}$). Its ridge is $3$--$6$ times larger (Section~\ref{sec:eval:adassp}), because the stage-1 rule certifies the validity ratio $\vartheta^\star$ on which the intervals rest, from a release with a tenth of the budget and at confidence $1 - \alpha_L$. While it is on, the rule holds $\vartheta_\lambda$ near $8$--$9$ rather than at $\vartheta^\star = 2.5$: on the simulation population, where $\sigma_1 \approx 2.7\,\sigma_2$, the radius $r_1$ alone adds $r_1/(2\sigma_2\sqrt p) \approx 4.7$ to the target (Section~\ref{sec:eval:bias}). AdaSSP sizes its ridge for accuracy and gives no intervals. The levers of Section~\ref{sec:stats:noff} shrink the v3.1 ridge by about $37\%$; a setting meant only for prediction could also lower $\vartheta^\star$, giving up the interval guarantee. Neither has been evaluated yet. Per-party block normalization costs little against Wang's joint normalization, which no party can apply in the vertical setting: the two differ significantly on 12 of 29 datasets, mostly through their non-private fits.
-
-\tocheck{Evaluate the interval-free prediction setting (smaller theta-star, exact-quantile r-1, larger f-1) against AdaSSP, and decide whether the paper presents two settings of the same protocol: one for inference and one for prediction.}
+\paragraph{The gap to AdaSSP is the ridge; the two settings shrink it only in part.} At the same $(\varepsilon, \delta)$ and unit bounds, the stage-2 noise of v3.1 is lower than that of AdaSSP under our guarantee: $\sigma_2 = 16.5$ at setting I, $16.0$ at P and $15.1$ at the previous setting, against $17.6$, at $\varepsilon = 1$ and $\delta = 10^{-6}$. The difference lies in the ridge, which the stage-1 rule sizes to certify $\vartheta^\star$ at confidence $1 - \alpha_L$.
+\begin{itemize}[noitemsep]
+  \item \emph{Setting I keeps the interval guarantee.} The exact radius and $f_1 = 0.25$ cut the ridge by about a third ($2.8$ instead of $4.2$ times that of AdaSSP (matched)), hold $\vartheta_\lambda$ near $5$ instead of $8$--$9$, and lower $n_{\mathrm{off}}$ by $35\%$ and the records needed for prediction within $10\%$ by a third on the simulation population; its intervals cover in every simulated regime. On real data it improves on the previous setting on 18--24 of 29 datasets, but it does not change the verdict against AdaSSP: with block normalization it is still worse on 20 of 29 at $\varepsilon = 1$, and the median gap falls only from $28\%$ to $25\%$. Once the ridge is off, its larger $\sigma_2$ costs $9.5\%$ in noise s.d.
+  \item \emph{Setting P gives up the interval guarantee.} With joint normalization its ridge is $1.3$ times that of AdaSSP (matched), and it matches that arm to within about $1\%$ in median test MSE. With block normalization, the preprocessing a vertical deployment can use, its gate refuses most releases and it is the worst v3.1 arm. The gate is part of the protocol: with $\vartheta^\star < 1$ it passes only when the stage-1 noise is not much smaller than the stage-2 noise ($\sigma_1 = 1.34\,\sigma_2$ for unit bounds, about $0.67\,\sigma_2$ for block-normalized protein), and block normalization makes $\Delta_G$ about a third of $\Delta$. A prediction setting that works under block normalization has not yet been chosen or evaluated.
+\end{itemize}
+Per-party block normalization costs little against Wang's joint normalization, which no party can apply in the vertical setting; under setting I the two differ significantly on 17 of 29 datasets, mostly through their non-private fits.
 
 \paragraph{How well the data fill their bounds matters as much as $n$.} The noise is sized for the committed bounds, so headroom the data do not use is lost signal. After scaling by $\max|y|$, the typical $|y|$ is only $0.19$ of its bound on elevators and $0.24$ on wine. Choosing bounds that typical records come close to, and units or transforms that make this possible (for example log income), is part of using the protocol well.
 
-\paragraph{Conditioning decides when the coefficients become usable.} The ridge is off from about $(g^\star + r_1)/\ell$ matched records (Section~\ref{sec:stats:noff}). On protein a near-collinearity involving a single feature keeps it on until $691$k records with block normalization and $13$M without, at $\varepsilon = 1$; removing that feature, a decision that public reference data can inform, lowers the threshold to $102$k.
+\paragraph{Conditioning decides when the coefficients become usable.} The ridge is off from about $(g^\star + r_1)/\ell$ matched records (Section~\ref{sec:stats:noff}). On protein a near-collinearity involving a single feature keeps it on until $555$k records with block normalization and $8.3$M without, at $\varepsilon = 1$ under setting I ($691$k and $13$M at the previous setting). Removing that feature, a decision that public reference data can inform, lowers the block-normalized threshold about sevenfold ($102$k at the previous setting).
 
 \paragraph{Budget.} Every release, including a refused one, is charged to $\Op$'s ledger. Model search and exploratory re-runs spend the budget quickly; the protocol suits a pre-specified model per research question.
 
@@ -1613,14 +1720,14 @@ Replacing labeled PSI with circuit-PSI (for example VOLE-PSI with payloads~\cite
 \label{sec:summary}
 % ==============================================================
 
-Protocol v3.1 links records with an OPRF and labeled PSI, aggregates under two-party threshold CKKS, and makes each release a threshold decryption in which $\Op$'s share carries the DP noise and floods the encryption error. $\Op$ never decrypts, $\Rp$ never sees a noiseless statistic that depends on $\Op$'s data, and the budget is enforced by $\Op$'s control of its share. Two releases separate the choice of the ridge from the estimate, which makes the bias theory and the intervals valid. The protocol and its guarantees are stated for any admissible parameter vector (Section~\ref{sec:params}); \textsc{Calibrate} derives the flooding parameter, the scale and the noise from it, and the ledger composes runs, fixed or adaptive, under a per-register cap.
+Protocol v3.1 links records with an OPRF and labeled PSI, aggregates under two-party threshold CKKS, and makes each release a threshold decryption in which $\Op$'s share carries the DP noise and floods the encryption error. $\Op$ never decrypts, $\Rp$ never sees a noiseless statistic that depends on $\Op$'s data, and the budget is enforced by $\Op$'s control of its share. Two releases separate the choice of the ridge from the estimate, which makes the bias theory and the intervals valid. The protocol and its guarantees are stated for any admissible parameter vector (Section~\ref{sec:params}); \textsc{Calibrate} derives the flooding parameter, the scale and the noise from it, and the ledger composes runs, fixed or adaptive, under a per-register cap. The evaluation uses two settings of the same protocol, chosen on synthetic data by a pre-registered rule. Setting I keeps the interval guarantee: with an exact Monte Carlo quantile for the stage-1 radius and $f_1 = 0.25$ it lowers the ridge threshold by $35\%$, and its intervals cover in every simulated regime. Setting P gives up the intervals for a smaller ridge. It predicts best on the synthetic population, but on block-normalized real data its gate refuses most releases, so a prediction setting remains open.
 
 \paragraph{Remaining obligations.}
 \begin{enumerate}[noitemsep, label=O\arabic*.]
   \item The worst-case error bound: proven for the circuit as written, as an explicit function of the parameters ($B_{\mathrm{tot}} \approx 2^{25.3}$ at the proofs' example); proofs for the restructured circuit are open.
   \item Smudging for the discrete Gaussian, for every $\sigma_c \ge 2^{20}$ (proven), and a concrete constant-time exact sampler (open).
   \item Simulation security of threshold key generation and rotation keys against a semi-honest $\Rp$ (reduced to RLWE with circular security).
-  \item The two-stage rule, the RSS correction and the coverage of both intervals, checked by simulation (Section~\ref{sec:eval:coverage}) and still to be checked on real data under v3.1.
+  \item The two-stage rule, the RSS correction and the coverage of both intervals, checked by simulation (Sections~\ref{sec:eval:coverage} and~\ref{sec:eval:sim}, the latter at setting I) and still to be checked on real data under v3.1.
   \item PSI parameters with explicit failure probabilities (correctness only, not charged to $\delta$), an item length that meets them at $\bar n_O = 10^6$, and a worst-case bound $B_\psi$ on the evaluation noise of the PSI replies, which \textsc{SanitizeBFV} floods.
 \end{enumerate}
 
@@ -1739,7 +1846,7 @@ Composition across runs (Proposition~\ref{prop:compose}) & non-adaptive proven; 
 G4 with \textsc{SanitizeBFV} & argued & needs a worst-case bound $B_\psi$ on the BFV evaluation noise \\
 Replace-one sensitivity (Proposition~\ref{prop:sens}) & proven, exact for $d_O \ge 2$ & regime 3 reduces to three cubics; $d_O = 1$ valid but conservative \\
 When $\by^\top\by$ is free & partly proven & boundary between $2(r + o)$ and $3(r + o)$ numerical only \\
-Operator-norm radius $r_1$ & proven (one-sided) & about $1.55\times$ conservative \\
+Operator-norm radius $r_1$ & union bound proven (one-sided); exact quantile by Monte Carlo & union bound about $1.55\times$ conservative at $p = 11$; the exact quantile (settings I and P) is an upper confidence bound for Gaussian slot noise, not proven \\
 Two-stage $(\lambda, \Psi)$ & proven & independent of the stage-2 noise; closed form for $\lambda_O$ \\
 Bound on $\|\bbeta\|$ & proven & for the projection coefficient, no model assumed \\
 Coverage & partly first order & Wald remainder exact; plug-in variance first order; normality asymptotic \\
