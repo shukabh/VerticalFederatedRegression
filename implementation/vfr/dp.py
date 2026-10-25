@@ -314,6 +314,25 @@ LOG2_QP_MAX = {128: {1024: 27, 2048: 54, 4096: 109, 8192: 218, 16384: 438, 32768
 SIGMA_C_FLOOR = 2.0 ** 42   # floor on sigma_c: the factor 1 + 2^-80 of the smudging lemma needs sigma_c >= 2.1 * 2^40
 
 
+# Relative margin by which the flooding test rounds B_tot and the needed sigma_c up.  B_tot is a sum of positive
+# terms evaluated in double precision (relative error about 1e-15), so a margin of 2^-40 covers it many times over.
+_FLOOD_REL = 2.0 ** -40
+
+
+def flood_needed(B_tot: float, kappa: int) -> float:
+    """sigma_c needed for flooding, max(2^kappa B_tot / sqrt(2 pi), SIGMA_C_FLOOR), with B_tot and the result
+    rounded up by the relative margin _FLOOD_REL (so the float value is never below the exact one)."""
+    B_up = B_tot * (1 + _FLOOD_REL)
+    return max(_up(2.0 ** kappa * B_up / math.sqrt(2 * math.pi) * (1 + _FLOOD_REL)), SIGMA_C_FLOOR)
+
+
+def floods(sigma_c2: int, B_tot: float, kappa: int) -> bool:
+    """The flooding condition sigma_c >= flood_needed(B_tot, kappa), tested exactly: the integer sigma_c^2 against
+    the square of the rounded-up float, as rationals.  Floating-point error can only make this test refuse a case
+    that exact arithmetic would admit, never the converse."""
+    return Fraction(int(sigma_c2)) >= Fraction(flood_needed(B_tot, kappa)) ** 2
+
+
 def slack_per_release(kappa: int, delta_B: float) -> float:
     """Statistical distance charged per release: delta_B + 2^-kappa (1 + 2^-80) + 2^-97 (Lemma smudge), computed
     exactly and rounded up to a float (in double precision 2^-kappa (1 + 2^-80) would round down to 2^-kappa)."""
@@ -474,11 +493,11 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
             Denc = math.sqrt(2 / N) * Om * sens[s] + Dx + math.sqrt(N)
             sig2 = math.ceil(Fraction(Denc) ** 2 / (2 * Fraction(rho[s])))     # integer sigma_c^2
             sig = math.sqrt(sig2)
-            need = max(2.0 ** kappa * Bt / math.sqrt(2 * math.pi), SIGMA_C_FLOOR)   # Theorem output: both floors
+            need = flood_needed(Bt, kappa)                                      # Theorem output: both floors
             rows[s] = dict(B_tot=Bt, Delta_x=Dx, Delta_enc=Denc, sigma_c2=int(sig2), sigma_c=sig,
                            rho=rho[s], rho_exact=Denc ** 2 / (2 * sig2), flood_needed=need,
                            sigma_slot=sig * math.sqrt(N / 2) / Om, Delta=sens[s])
-            ok &= sig >= need
+            ok &= floods(sig2, Bt, kappa)
         if ok:
             chosen = (Om, OmV, rows)
             break
@@ -493,7 +512,13 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
     B_max = max(v['B_tot'] for v in rows.values())
     q0_need = 2 * (Om * S_max + 2.0 ** kappa * B_max + ag.t_eta * sig_max)
     nE = bt.entry_counts(ag.d_R, ag.d_O, joint)
-    q0_need_Q = max(2 * (Om * 2 * nE[s] / N * S_max + 2.0 ** 35 + 0.5 + rows[s]['B_tot']
+    # diagnostic only: the sharper condition (Q) of the proofs, with the proved decoding offset d_max
+    # (crypto proofs, Proposition 4.5) for at most n_max = min(n_R^max, n_bar_O) matched rows
+    n_max = min(ag.n_R_max, ag.n_bar_O)
+    cp = cparams(OmV)
+    for s in stages:
+        rows[s]['d_max'] = bt.offset_bounds(cp, s, joint, n_max)['d_max']
+    q0_need_Q = max(2 * (Om * 2 * nE[s] / N * S_max + rows[s]['d_max'] + 0.5 + rows[s]['B_tot']
                          + ag.t_eta * rows[s]['sigma_c']) for s in stages)
     if q0 <= q0_need:
         # the log QP a chain with a large enough q0 would have, for the operator
@@ -507,6 +532,7 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
                 rho_run=rho_run, Omega_f=Om, log2_Omega_f=math.log2(Om),
                 Omega_U=(int(OmU) if OmU.denominator == 1 else float(OmU)), Omega_u=int(Omu), Omega_V=OmV,
                 q0_bits=math.log2(q0), q0_need_bits=math.log2(q0_need), q0_need_Q_bits=math.log2(q0_need_Q),
+                n_max_offset=n_max, log2_d_max=max(math.log2(rows[s]['d_max']) for s in stages),
                 log2_QP=log2_QP, log2_QP_max=QP_max,
                 releases={str(s): v for s, v in rows.items()}, variant=ag.variant, kappa=kappa,
                 kappa_info=kappa_info, delta_B=ag.delta_B, entries={str(k): v for k, v in nE.items()},

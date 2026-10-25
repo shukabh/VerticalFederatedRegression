@@ -164,3 +164,22 @@ def test_calibrate_flooding_and_q0():
         assert cal['q0_bits'] > cal['q0_need_bits']
     # restructured circuit needs about 2^53.7 (proof review)
     assert 53.3 < cal['log2_Omega_f'] < 54.2
+
+
+def test_round_published():
+    from vfr.party_r import round_published
+    assert round_published(1234.5678, 525.0, 2) == pytest.approx(1235.0)      # step 10^(2 - 2) = 1
+    assert round_published(1234.5678, 525.0, 3) == pytest.approx(1234.6)      # step 0.1
+    assert round_published(-0.0123456, 0.0042, 1) == pytest.approx(-0.0123)   # step 10^(-3 - 1)
+    x = np.array([10.26, -3.14159, 0.0])
+    r = round_published(x, 1.0, 1)
+    assert r.shape == x.shape and np.allclose(r, [10.3, -3.1, 0.0])
+    # the rounding error is at most half a step, so far below sigma
+    rng = np.random.default_rng(0)
+    for sigma in (0.37, 525.0, 1410.3, 3.2e7):
+        v = rng.normal(0, 10 * sigma, size=100)
+        assert np.max(np.abs(round_published(v, sigma, 2) - v)) <= 0.5 * 10.0 ** (math.floor(math.log10(sigma)) - 2) * (1 + 1e-9)
+    with pytest.raises(ValueError):
+        round_published(1.0, 0.0)
+    with pytest.raises(ValueError):
+        round_published(1.0, 1.0, -1)

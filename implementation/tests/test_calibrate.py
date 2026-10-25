@@ -155,3 +155,46 @@ def test_sigma_c_floor_is_2_to_the_42(ctx, monkeypatch):
     assert all(r['flood_needed'] == 2.0 ** 42 for r in c['releases'].values())
     assert min(r['sigma_c'] for r in c['releases'].values()) >= 2.0 ** 42
     assert min(r['sigma_c'] for r in c['releases'].values()) < 2.0 ** (42 + 1 / 16)   # smallest scale on the grid
+
+
+def test_flooding_test_is_conservative():
+    # A case that a double-precision test passes but exact arithmetic with the margin refuses: sigma_c^2 equal to
+    # the ceiling of the float value of (2^kappa B_tot / sqrt(2 pi))^2.
+    kappa, Bt = 40, 2.0 ** 26.59
+    need_float = 2.0 ** kappa * Bt / math.sqrt(2 * math.pi)
+    s2 = math.ceil(Fraction(need_float) ** 2)
+    assert math.sqrt(s2) >= need_float                     # the old test admits it
+    assert not dp.floods(s2, Bt, kappa)                    # the conservative test refuses it
+    assert Fraction(dp.flood_needed(Bt, kappa)) > Fraction(need_float) * (1 + Fraction(1, 2 ** 40))
+    s2_ok = math.ceil(Fraction(need_float) ** 2 * (1 + Fraction(1, 2 ** 37)))
+    assert dp.floods(s2_ok, Bt, kappa)
+    assert not dp.floods(int(dp.SIGMA_C_FLOOR ** 2) - 1, 1.0, 0)   # the floor binds and is tested exactly
+    assert dp.floods(int(dp.SIGMA_C_FLOOR ** 2), 1.0, 0)
+
+
+def test_calibrate_floods_in_exact_arithmetic(ctx):
+    # every release Calibrate returns satisfies sigma_c^2 >= (2^kappa B_tot (1 + 2^-40)/sqrt(2 pi))^2 exactly,
+    # with sqrt(2 pi) bounded above by a rational
+    sqrt2pi_up = Fraction(2506628274631001, 10 ** 15)      # > sqrt(2 pi) = 2.50662827463100050...
+    assert sqrt2pi_up ** 2 > 2 * Fraction(math.pi)
+    for eps in (1, 4, 8):
+        c = _cal(ctx, eps_run=eps)
+        for r in c['releases'].values():
+            need = Fraction(2) ** c['kappa'] * Fraction(r['B_tot']) * (1 + Fraction(1, 2 ** 40)) / sqrt2pi_up
+            assert Fraction(r['sigma_c2']) >= need ** 2
+            assert Fraction(r['sigma_c2']) >= Fraction(dp.SIGMA_C_FLOOR) ** 2
+
+
+@pytest.mark.parametrize('n_bar,n_R_max,log2_dmax', [(10 ** 6, 2000, 30.3), (10 ** 6, 10 ** 6, 38.6),
+                                                     (4096, 2000, 29.7)])
+def test_q0_diagnostic_uses_proved_offset(ctx, n_bar, n_R_max, log2_dmax):
+    # crypto proofs, Proposition 4.5: d_max = 2^30.3 at n_bar_O = 10^6 with n_R^max = 2,000 and 2^38.6 if every
+    # row may match (previous setting, eps = 1); it does not change the q0 decision: q0 = 2^119 against a need of
+    # 2^81.0 (4k) and 2^89.0 (1M), and the sharper condition (Q) 2^74.1 and 2^81.9
+    c = _cal(ctx, n_bar_O=n_bar, n_R_max=n_R_max, eps_run=1)
+    assert c['n_max_offset'] == min(n_bar, n_R_max)
+    assert abs(c['log2_d_max'] - log2_dmax) < 0.05
+    assert abs(c['q0_need_Q_bits'] - (81.94 if n_bar == 10 ** 6 else 74.08)) < 0.01
+    assert c['q0_need_Q_bits'] < c['q0_need_bits'] < c['q0_bits']
+    for r in c['releases'].values():                       # d_max is far below the dominant term of (Q)
+        assert math.log2(r['d_max']) < c['q0_need_Q_bits'] - 40

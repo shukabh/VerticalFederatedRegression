@@ -30,7 +30,7 @@ NTTs, hybrid key switching and BFV evaluation.
 scripts/build_openfhe.sh /opt/openfhe-1.5.1          # once (about 5 min on 4 cores)
 python3 -m pip install numpy scipy cryptography pybind11 pytest
 native/build.sh /opt/openfhe-1.5.1                   # builds vfr/vfr_native*.so
-python3 -m pytest -q tests/                          # 78 tests, about 4 min (8 min on a loaded machine)
+python3 -m pytest -q tests/                          # 89 tests, about 2.5 min (8 min on a loaded machine)
 python3 run_protocol.py toy
 python3 run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300   # [--eps 8] [--kappa auto|48] [--ledger_eps none]
 #                                                     [--setting prev|I|P] [--r1_mode union|exact] [--f1 F] ...
@@ -44,11 +44,11 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 
 | phase (spec algorithm) | where | what |
 |---|---|---|
-| 0 Setup (Alg. 1, 7) | `vfr/dp.py` | `delta_rep` (exact enumeration over the three cubics, all regimes; Delta and Delta_noyy), `delta_G`, joint/separate mode, `rho_tight` (Canonne-Kamath-Steinke, rounded down), `eps_smudge` (eps'(kappa, delta') of the hockey-stick smudging lemma, rounded up), `choose_kappa` (derived flooding parameter: max(kappa_min, kappa_run, kappa_L), with the hockey-stick kappa_L rule by default), `calibrate` (paper's Algorithm 7: gamma with (1+e^eps), Delta_x of the centred mechanism, integer sigma_c^2, smallest admissible scale with sigma_c >= max(2^kappa B_tot / sqrt(2 pi), 2^42), q0 check, log QP against the 128-bit bound for N; the run's ledger cost; raises `CalibrationRefused`), `Ledger` (cap per base register; hockey-stick accounting with three sums rho, eps', Gamma and the share xi_L = 1e-3 of eps_L for smudging, or the earlier statistical-distance accounting with `xi=None`; 'filter' rule for adaptive runs, 'fixed' rule for runs fixed in advance; the full cost of a run is charged once, at admission, under a file lock, and never refunded; exact fractions, capacities rounded down, no tolerance; OPRF quota) |
+| 0 Setup (Alg. 1, 7) | `vfr/dp.py` | `delta_rep` (exact enumeration over the three cubics, all regimes; Delta and Delta_noyy), `delta_G`, joint/separate mode, `rho_tight` (Canonne-Kamath-Steinke, rounded down), `eps_smudge` (eps'(kappa, delta') of the hockey-stick smudging lemma, rounded up), `choose_kappa` (derived flooding parameter: max(kappa_min, kappa_run, kappa_L), with the hockey-stick kappa_L rule by default), `calibrate` (paper's Algorithm 7: gamma with (1+e^eps), Delta_x of the centred mechanism, integer sigma_c^2, smallest admissible scale with sigma_c >= max(2^kappa B_tot / sqrt(2 pi), 2^42) (tested exactly, with B_tot rounded up), q0 check (diagnostic (Q) with the proved decoding offset), log QP against the 128-bit bound for N; the run's ledger cost; raises `CalibrationRefused`), `Ledger` (cap per base register; hockey-stick accounting with three sums rho, eps', Gamma and the share xi_L = 1e-3 of eps_L for smudging, or the earlier statistical-distance accounting with `xi=None`; 'filter' rule for adaptive runs, 'fixed' rule for runs fixed in advance; the full cost of a run is charged once, at admission, under a file lock, and never refunded; exact fractions, capacities rounded down, no tolerance; OPRF quota) |
 | | `vfr/btot.py` | worst-case, data-independent B_tot (port of the proofs' btot.py, generalized to separate scales and OpenFHE's gadget; reproduces the proofs' table) and Delta_x |
 | | `native: CKKSCore.pk_share / make_pk / rotkey_share / make_rotkeys` | threshold keygen with a CRS (SHAKE-256): `p0 = -a s + e` with `s = s_R + s_O`; joint rotation keys for the 13 shifts 2^i in OpenFHE's hybrid layout; no relinearization or conjugation key |
 | 1 Link (Alg. 2) | `vfr/oprf.py` | 2HashDH OPRF, RFC 9497 mode 0, ristretto255-SHA512 over libsodium; passes the RFC test vectors; fresh key k per run; exactly n_R^max blinded queries |
-| | `vfr/psi.py`, `native: BFVCore, psi_build_polys` | labeled PSI: cuckoo hashing at R (h = 3, N_bins = 16384), O's membership/label polynomials per bin and partition (labels tau(j) + H(F'_k(id)) mod t), windowed powers under R's own BFV key, fresh masks r1, r2, SanitizeBFV (switch to 2 limbs + Enc_pk(0) + exact discrete-Gaussian flooding with 2^40 B_err); R recovers I and pi, computes A exactly |
+| | `vfr/psi.py`, `native: BFVCore, psi_build_polys` | labeled PSI: cuckoo hashing at R (h = 3, N_bins = 16384; random walk with an augmenting-path fallback), O's membership/label polynomials per bin and partition (labels tau(j) + H(F'_k(id)) mod t), windowed powers under R's own BFV key, fresh masks r1, r2, SanitizeBFV (switch to 2 limbs + Enc_pk(0) + exact discrete-Gaussian flooding with 2^40 B_err); R recovers I and pi, computes A exactly |
 | 2 Upload (Alg. 3) | `native: encrypt_seeded / convert` | R: `c0 = -a s_R + e + Ecd(v)`, `a = PRG(seed)`, sends (c0, seed) (seeded form, half size); O: `c0 <- c0 - a s_O` |
 | 3 Aggregate (Alg. 4) | `vfr/aggregate.py` | circuit A as written (`T_e = EvalSum(Rescale(sum_h U_e[h] * Ecd(V_e[h])))`, `P_e = Rescale(T_e * Ecd(u_slot))`, M1 = sum over (triu B, C), M2 = all stage-2 entries, My if separate); circuit C as an option; optional entry-parallel threads |
 | 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; sends only (c1', h_O) (the ledger was charged at admission) |
@@ -87,15 +87,18 @@ and the operations are the same, so the timings carry over. BFV N_B = 2^14,
 t = 4293918721, 7 x 60-bit limbs, reply switched to 2 limbs, SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50,
 delta_psi = 2^-40.
 
-## Tests (`tests/`, 78 passing)
+## Tests (`tests/`, 89 passing)
 
 - `test_primitives.py`: RFC 9497 vectors; exact sampler (chi-square at sigma^2 = 3, moments and low bits at
   sigma = 2^55); DeltaRep against the closed forms, the paper's (1, 1, 5) example and a random search; rho_run =
-  0.01496; the generalized B_tot reproduces the proofs' table (2^25.34 for A, 2^17.56 for C'); Calibrate floods.
+  0.01496; the generalized B_tot reproduces the proofs' table (2^25.34 for A, 2^17.56 for C'); Calibrate floods;
+  `round_published` rounds to the stated precision relative to sigma.
 - `test_ckks_psi.py`: encoder round trip at scales up to 2^61.5; seeded upload and key conversion (and failure
   with a wrong share or seed); EvalSum with joint keys = trace; circuits A, A with Omega_U = 2^68, and C reproduce
   the plaintext statistics with eta = 0; the randomness-dependent error measured from two independent key sets
-  stays more than 3 bits below the worst-case B_tot; fresh re-randomization; labeled PSI exact recovery.
+  stays more than 3 bits below the worst-case B_tot; fresh re-randomization; labeled PSI exact recovery; the cuckoo insertion's augmenting-path fallback
+  (forced by a cut-off walk) returns an assignment exactly when one exists (checked against scipy's bipartite
+  matching), and the walk alone is unchanged at the evaluation's load.
 - `test_protocol.py` (two processes): toy example (I = {104, 221}, pi(104) = 6, pi(221) = 3; B, C, c_R, c_O, y'y
   equal toy.json to < 1e-10); synthetic cohort n_bar_O = 4096, n = 300: exact match set and alignment, noise-off
   G and c equal to 1e-11 relative; transcript checks (allowed message types only; both transcripts agree frame by
@@ -111,7 +114,9 @@ delta_psi = 2^-40.
   kappa_L (46 at eps = 1) with `ledger_xi=None`; under either accounting the ledger filter is exhausted by rho, not by
   slack; at a fixed kappa = 40 the statistical-distance ledger converts the slack at the cap's eps and refuses after two
   runs, the hockey-stick ledger after 102; a single-run ledger is filled exactly; the floor sigma_c >= 2^42, and
-  Calibrate raises the scale to it when it binds.
+  Calibrate raises the scale to it when it binds; the flooding test is conservative (a case that the double-precision
+  test passes at the boundary is refused, and every release floods in exact rational arithmetic); the q0 diagnostic
+  uses the proved decoding offset (d_max = 2^30.3 at 1M rows with n_R^max = 2,000, 2^38.6 if every row may match).
 - `test_ledger.py`: eps'(kappa, delta') equals the tight values of the composition proof and is below the closed form;
   rho_tight rounds down and is tight to 1e-9; the capacities are rounded down and the delta budget adds up (Corollary
   5.4); the filter and the fixed rule test without tolerance (a run that fills a capacity exactly is admitted, the

@@ -19,7 +19,26 @@ from . import dp, oprf, psi, solve
 from .wire import Channel, Transcript
 
 
+def round_published(x, sigma: float, digits: int = 2):
+    """Publishing guidance (paper, Algorithm 5 and the remark on publishing): before R publishes any decoded value
+    Dcd(v) of a release with slot-domain noise s.d. sigma, it rounds the value to a fixed precision relative to
+    sigma, here to a multiple of 10^(floor(log10 sigma) - digits), i.e. `digits` decimal digits below the leading
+    digit of sigma.  Rounding is post-processing and costs no budget.  R never publishes the raw slot vectors
+    (out['decoded']) or v itself.  Works on scalars and arrays; returns floats."""
+    if not (sigma > 0 and math.isfinite(sigma)):
+        raise ValueError('sigma must be positive and finite')
+    if digits < 0:
+        raise ValueError('digits must be non-negative')
+    e = math.floor(math.log10(sigma)) - int(digits)
+    step = 10.0 ** e
+    r = np.round(np.asarray(x, dtype=float) / step) * step
+    return float(r) if np.ndim(r) == 0 else r
+
+
 def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
+    """R's side of one run.  The returned dict holds local values only: in particular out['decoded'] holds the
+    full decoded slot vectors, which must not be published as such (use round_published on any decoded value
+    that is published)."""
     tr = Transcript('R', keep_raw=opts.get('keep_raw', False))
     ch = Channel(sock, tr)
     T = {}

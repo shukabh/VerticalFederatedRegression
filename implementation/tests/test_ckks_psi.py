@@ -177,3 +177,60 @@ def test_psi_rejects_repeated_position():
     with pytest.raises(psi.PSIOutputRejected, match='not injective'):
         psi.check_injective(found)
     psi.check_injective({0: 17, 1: 18, 2: 40})            # distinct positions are accepted
+
+
+def _valid_assignment(tab, cand):
+    assert tab is not None and len(tab) == len(cand)
+    assert sorted(tab.values()) == list(range(len(cand)))
+    for b, i in tab.items():
+        assert b in cand[i]
+
+
+def test_cuckoo_fallback_finds_assignment():
+    # The random walk is cut off (max_kicks = 1) on dense tables (54 items, 64 bins), so it fails; the
+    # augmenting-path fallback then returns an assignment exactly when one exists (checked against scipy's
+    # maximum bipartite matching), also with max_kicks = 0 (everything placed by augmenting paths).
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import maximum_bipartite_matching
+    n_bins, h, n_exist, n_none = 64, 3, 0, 0
+    for seed in range(20):
+        rng = np.random.default_rng(seed)
+        cand = [[int(b) for b in rng.integers(n_bins, size=h)] for _ in range(54)]
+        rows = [i for i, c in enumerate(cand) for _ in c]
+        M = csr_matrix((np.ones(len(rows)), (rows, [b for c in cand for b in c])), shape=(len(cand), n_bins))
+        exists = bool((maximum_bipartite_matching(M, perm_type='column') >= 0).sum() == len(cand))
+        for kicks in (1, 0):
+            stats = {}
+            tab = psi.cuckoo(cand, n_bins, h, np.random.default_rng(1), max_kicks=kicks, stats=stats)
+            assert stats['fallback']
+            if exists:
+                _valid_assignment(tab, cand)
+            else:
+                assert tab is None
+        n_exist += exists
+        n_none += not exists
+    assert n_exist > 0 and n_none > 0
+
+
+def test_cuckoo_fallback_on_a_walk_that_cycles():
+    # Items 0-2 compete for bins {0, 1} and {0, 1, 2}; the walk from item 2 only ever kicks inside {0, 1} when
+    # its own candidates are {0, 1, 1}, but an assignment exists through item 1's third bin.
+    cand = [[0, 1, 0], [1, 0, 2], [0, 1, 1]]
+    stats = {}
+    tab = psi.cuckoo(cand, 3, 3, np.random.default_rng(0), max_kicks=2, stats=stats)
+    _valid_assignment(tab, cand)
+    # no assignment exists: four items with candidates in three bins
+    cand4 = [[0, 1, 2], [0, 1, 2], [0, 1, 2], [2, 1, 0]]
+    assert psi.cuckoo(cand4, 3, 3, np.random.default_rng(0), max_kicks=50, stats=stats) is None
+    assert stats['fallback']
+
+
+def test_cuckoo_without_fallback_is_unchanged():
+    # At the evaluation's load (2,000 items in 16,384 bins) the walk succeeds and the fallback does not run.
+    rng = np.random.default_rng(3)
+    cand = [list(rng.integers(2 ** 14, size=3)) for _ in range(2000)]
+    stats = {}
+    tab = psi.cuckoo(cand, 2 ** 14, 3, np.random.default_rng(5), stats=stats)
+    assert not stats['fallback']
+    _valid_assignment(tab, cand)
+    assert tab == psi.cuckoo(cand, 2 ** 14, 3, np.random.default_rng(5))

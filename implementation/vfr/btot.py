@@ -102,6 +102,35 @@ def nu_U(cp: CircuitParams, stage, joint: bool):
     return 1.0
 
 
+def zeta_E(cp: CircuitParams, stage, joint: bool):
+    """Largest contribution of one row to the statistic, sqrt(sup_t sum_e (U_{e,t} V_{e,t})^2) (crypto proofs,
+    docs/crypto_proofs.tex, Section 4, before Proposition 4.5, with r = B_R^2)."""
+    r, o, w = cp.B_R ** 2, cp.o, cp.w
+    if stage == 1:
+        return sqrt(o * o + r * o)
+    if stage == 2:
+        return sqrt(o * o + r * (o + w) + o * w + (w * w if joint else 0.0))
+    return w  # separate y'y release
+
+
+def offset_bounds(cp: CircuitParams, stage, joint: bool, n_max: int) -> dict:
+    """Public bound on the decoding offset (crypto proofs, docs/crypto_proofs.tex, Proposition 4.5) for at most
+    n_max matched rows: d_bar (slot domain, on the slots of the entries) and d_max (coefficient domain, l2 norm of
+    Zhat_s(D) - Omega_f tau^{-1}(z_s(D))), the d_max of the no-wraparound condition (Q).  Public parameters only."""
+    N, m = cp.N, cp.m
+    nE = entry_counts(cp.d_R, cp.d_O, joint)[stage]
+    Gam, nuU, zeta = gamma_E(cp, stage, joint), nu_U(cp, stage, joint), zeta_E(cp, stage, joint)
+    OmU, OmV, Omu, q12 = cp.Omega_U, cp.Omega_V, cp.Omega_u, cp.q1 * cp.q2
+    Omf = OmU * OmV * Omu / q12
+    A = (N * sqrt(m) / (2 * sqrt(2)) * (sqrt(n_max) * nuU / OmV + sqrt(cp.n_bar * Gam) / OmU)
+         + sqrt(nE) * m * N ** 2 / (8 * OmU * OmV))
+    d_bar = A + N * sqrt(nE) / (2 * sqrt(2) * Omu) * (n_max * zeta + A) + N / (2 * sqrt(2) * Omf)
+    r_bar = OmU * OmV * A
+    d_max = (sqrt(2 / N) * Omu / q12 * r_bar
+             + sqrt(N) / (2 * q12) * sqrt(nE) * (OmU * OmV * n_max * zeta + r_bar))
+    return dict(d_bar=d_bar, d_max=d_max)
+
+
 def bounds(cp: CircuitParams, stage, joint: bool, variant: str = 'A', fresh: bool = True):
     """Return the dict of term bounds B1..B8 (Proposition terms of 03b_error_bound.tex, generalized)."""
     N, L, sig_e, v_s, v_u = cp.N, cp.L, cp.sigma_e, cp.v_s, cp.v_u

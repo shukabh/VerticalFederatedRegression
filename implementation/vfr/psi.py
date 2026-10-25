@@ -159,9 +159,17 @@ def _uniform_nonzero(rng, n, t):
 
 
 # ------------------------------------------------------------------------------------------- R side
-def cuckoo(items_bins, n_bins: int, h: int, rng, max_kicks: int = 2000):
-    """items_bins[i] = list of h candidate bins of item i.  Returns dict bin -> item index, or None."""
+def cuckoo(items_bins, n_bins: int, h: int, rng, max_kicks: int = 2000, stats: dict | None = None):
+    """items_bins[i] = list of h candidate bins of item i.  Returns dict bin -> item index, or None.
+
+    Random-walk insertion with at most max_kicks evictions per item.  If the walk exceeds its step limit, the
+    partial assignment it holds is completed by augmenting paths (bipartite matching between items and their
+    candidate bins), which finds an assignment whenever one exists (Berge); None is returned only when no
+    assignment exists.  When the walk succeeds, the result and the use of rng are as without the fallback.
+    If `stats` is a dict, stats['fallback'] records whether the fallback ran."""
     table = {}
+    if stats is not None:
+        stats['fallback'] = False
     for i in range(len(items_bins)):
         cur = i
         for _ in range(max_kicks):
@@ -176,8 +184,45 @@ def cuckoo(items_bins, n_bins: int, h: int, rng, max_kicks: int = 2000):
             b = items_bins[cur][int(rng.integers(h))]
             cur, table[b] = table[b], cur
         else:
-            return None
+            if stats is not None:
+                stats['fallback'] = True
+            # cur is homeless and items i+1, ... are not yet inserted; every other item holds a distinct bin
+            for u in [cur] + list(range(i + 1, len(items_bins))):
+                if not _augment(table, items_bins, u):
+                    return None
+            return table
     return table
+
+
+def _augment(table: dict, items_bins, u: int) -> bool:
+    """Place item u by an augmenting path: breadth-first search over items, from u, along candidate bins; a bin
+    held by item v leads to v.  On success the path is flipped (each item on it moves to the next bin) and True is
+    returned; if no free bin is reachable, the table is unchanged and False is returned.  Once an item cannot be
+    placed it cannot be placed after later augmentations either, so no assignment of all items exists."""
+    parent = {}                       # bin -> (item that reaches it, bin that item currently holds or None)
+    holds = {v: b for b, v in table.items()}
+    frontier, seen_items = [u], {u}
+    while frontier:
+        nxt = []
+        for v in frontier:
+            for b in items_bins[v]:
+                if b in parent:
+                    continue
+                parent[b] = v
+                if b not in table:    # free bin: flip the path back to u
+                    while True:
+                        w = parent[b]
+                        prev = holds.get(w) if w != u else None
+                        table[b] = w
+                        if prev is None:
+                            return True
+                        b = prev
+                w = table[b]
+                if w not in seen_items:
+                    seen_items.add(w)
+                    nxt.append(w)
+        frontier = nxt
+    return False
 
 
 def receiver_batches(oprf_outputs, pp: PSIParams, rng):
