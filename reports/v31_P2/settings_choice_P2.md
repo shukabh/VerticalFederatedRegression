@@ -145,3 +145,84 @@ The setting is not changed after any of the following results, whatever they sho
 4. **Encrypted spot check.** 5 full OpenFHE runs of P2 at ε = 1. The data are the synthetic dataset of the earlier
    check (n = 10,000 matched in a 12,000-row register padded to 16,384; never more than 16,384 rows). Recorded: the
    raw decrypted noise. Checked: λ and θ against the plaintext simulation's 95% range on the same data.
+
+## Result of the selection (appended after the run; the rule above is unchanged)
+
+Run: `select_P2.py run` (140 cells × 200 cohorts at R² = 0.5, plus R² = 0.3 and 0.9), then `choose`. The grid choice
+lay on an edge, so `run --ext` and `choose` again, as the rule requires. Full output: `selection_P2.json`. The chosen
+values: `setting_P2.json`. Exact radius at p = 11 (d_A = 5, d_O = 6), as r₁/σ₁: 7.415 at α_L = 0.0025, 6.303 at 0.05,
+5.468 at 0.25, 4.940 at 0.5, and 4.442 at 0.75. These are upper 99% bounds, from 1e6 draws at 0.0025 and 2e5 draws
+otherwise.
+
+**Grid (112 candidates).** Every one of the 140 cells is binding: setting ϑ* ≥ 2 refuses nothing anywhere. 56
+candidates are feasible. The best feasible is (ϑ*, α_L, f₁) = (1.5, 0.5, 0.25) with C = 1.2426. (1.25, 0.05, 0.2), at
+C = 1.2437, is within 0.1%, and the tie goes to the larger ϑ*. The choice lies on the upper edge in α_L, so α_L =
+0.75 was added, crossed with all ϑ* and f₁ (28 candidates).
+
+**Extended grid (140 candidates; final).** 68 are feasible.
+
+**P2 = (ϑ* = 1.5, α_L = 0.75, f₁ = 0.25)**, with r₁ exact (4.442σ₁ at p = 11), κ_Ψ = 2, intervals off and the gate
+kept. C = 1.2409 (std 1.3186, bn 1.1632). Its largest refusal rate in any cell is 0 on (a) and 0.010 on (b), which is
+2 of 200 and exactly at the bound; the mean over the (b) cells is 0.0006. (1.5, 0.75, 0.2) is within 0.1% (C =
+1.2421), and the tie goes to the f₁ closest to 0.25.
+
+**P2 lies on the edge of the extended grid in α_L (0.75).** As pre-registered, it is kept, with no second extension.
+The radius at α_L = 0.75 is the 25% quantile of λ_max. Since ϑ* = 1.5 > 1, the gate's margin comes from g*, not from
+r₁ (Section 9 of the paper). The gain from extending was 0.14% in C over the grid choice.
+
+Top ten feasible candidates (R² = 0.5; refusal in the (b) cells, largest and mean; (a) refused nothing for all ten):
+
+| rank | ϑ* | α_L | f₁ | C | C (a) std | C (b) bn | largest refusal (b) | mean refusal (b) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1.5 | 0.75 | 0.25 | **1.2409** | 1.3186 | 1.1632 | 0.010 | 0.0006 |
+| 2 | 1.5 | 0.75 | 0.2 | 1.2421 | 1.3216 | 1.1626 | 0.000 | 0.0000 |
+| 3 | 1.5 | 0.5 | 0.25 | 1.2426 | 1.3211 | 1.1641 | 0.010 | 0.0004 |
+| 4 | 1.25 | 0.05 | 0.2 | 1.2437 | 1.3271 | 1.1602 | 0.010 | 0.0009 |
+| 5 | 1.5 | 0.5 | 0.2 | 1.2441 | 1.3245 | 1.1637 | 0.000 | 0.0000 |
+| 6 | 1.5 | 0.25 | 0.25 | 1.2444 | 1.3238 | 1.1650 | 0.005 | 0.0001 |
+| 7 | 1.5 | 0.25 | 0.2 | 1.2462 | 1.3276 | 1.1648 | 0.000 | 0.0000 |
+| 8 | 1.25 | 0.75 | 0.1 | 1.2471 | 1.3343 | 1.1598 | 0.000 | 0.0000 |
+| 9 | 1.5 | 0.05 | 0.35 | 1.2472 | 1.3253 | 1.1691 | 0.010 | 0.0011 |
+| 10 | 1 | 0.25 | 0.1 | 1.2473 | 1.3377 | 1.1569 | 0.005 | 0.0003 |
+
+By ϑ* (20 candidates each):
+
+| ϑ* | feasible | best feasible (α_L, f₁): C | best overall (α_L, f₁): C, largest refusal (b) |
+|---|---|---|---|
+| 0.5 | 0 | — | (0.0025, 0.1): 1.2500, 0.090 |
+| 0.75 | 1 | (0.0025, 0.1): 1.2524 | (0.5, 0.1): 1.2439, 0.130 |
+| 1 | 3 | (0.25, 0.1): 1.2473 | (0.05, 0.2): 1.2414, 0.145 |
+| 1.25 | 7 | (0.05, 0.2): 1.2437 | (0.75, 0.2): 1.2374, 0.045 |
+| 1.5 | 17 | (0.75, 0.25): 1.2409 | (0.75, 0.25): 1.2409, 0.010 |
+| 2 | 20 | (0.75, 0.25): 1.2530 | (0.75, 0.25): 1.2530, 0.000 |
+| 2.5 | 20 | (0.75, 0.25): 1.2647 | (0.75, 0.25): 1.2647, 0.000 |
+
+**The constraint binds.** Six infeasible candidates, all with ϑ* = 1.25, have a lower C than P2, by at most 0.28%
+(best: (1.25, 0.75, 0.2) at C = 1.2374). They refuse 2–15% of releases in 7–27 cells of (b). No candidate with ϑ* =
+0.5 is feasible: on (b) every one refuses up to 9–100% of releases in some cell.
+
+**Reference settings on the same 140 cells:**
+
+| setting | C | C (a) std | C (b) bn | largest refusal (b) | mean refusal (b) |
+|---|---|---|---|---|---|
+| I | 1.2744 | 1.3553 | 1.1935 | 0 | 0 |
+| old P | 1.2861 | 1.3036 | 1.2687 | 1.000 | 0.367 |
+| previous | 1.3058 | 1.4057 | 1.2059 | 0 | 0 |
+
+On (a), the old P stays 1.1% better than P2 (1.3036 against 1.3186). On (b), its gate refuses 37% of releases on
+average and all of them in some cells. P2 is 2.6% better than I on (a) and 2.5% on (b).
+
+**Robustness (not used).**
+- R² = 0.3: P2 is first by C (1.1012; I 1.1139, old P 1.1221) and feasible. Under the tie rule the choice there would
+  be (1.5, 0.5, 0.25), which is within 0.1% and has the smaller α_L.
+- R² = 0.9: P2 is first by C (2.8138; I 3.0724, old P 3.0005) and feasible. The rule applied there picks P2 itself.
+
+P2's largest refusal on (b) is 0.005 at R² = 0.3 and 0.010 at R² = 0.9. It refuses nothing on (a) at any R².
+
+**n_off of P2**, eq. (noff), ε = 0.5, 1, 2, 4, 8:
+- (a): 31.5k, 16.2k, 8.4k, 4.4k, 2.3k (I: 52.5k, 27.0k, 13.9k, 7.3k, 3.9k; old P: 22.0k, 11.3k, 5.8k, 3.0k, 1.6k)
+- (b), ℓ = 0.105: 16.0k, 8.2k, 4.2k, 2.2k, 1.2k
+
+In closed form at p = 11, n_off = (11.5Δ + 8.9Δ_G)/(ℓ√(2ρ_run)) under P2, against (19.1Δ + 14.8Δ_G) under I.
+
+The setting is now fixed. Validation, real-data and encrypted runs follow as stated above.

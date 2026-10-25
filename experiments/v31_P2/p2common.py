@@ -21,6 +21,7 @@ from __future__ import annotations
 import math
 import os
 import sys
+from functools import lru_cache
 
 import numpy as np
 
@@ -82,17 +83,23 @@ def reference_settings():
 
 
 # ------------------------------------------------------------------------------------------- populations
+@lru_cache(maxsize=None)
 def population(r2):
     return sa.population(r2)
 
 
-def bounds(kind, r2):
+@lru_cache(maxsize=None)
+def _bounds(kind, r2):
     pop = population(r2)
     if kind == 'std':
         return dict(B_R=pop.B_R, B_O=pop.B_O, B_y=pop.B_y)
     if kind == 'bn':
         return dict(B_R=math.sqrt(2.0), B_O=1.0, B_y=pop.B_y)
     raise ValueError(kind)
+
+
+def bounds(kind, r2):
+    return dict(_bounds(kind, float(r2)))
 
 
 def _unit_rows(X):
@@ -125,6 +132,11 @@ def pop_moments(kind, r2, rows=4_000_000, chunk=250_000):
     moments of Section 13.5); 'bn' is computed here the same way (4 million rows, its own seed)."""
     if kind == 'std':
         return sa.pop_moments(r2)
+    return _pop_moments_bn(float(r2), rows, chunk)
+
+
+@lru_cache(maxsize=None)
+def _pop_moments_bn(r2, rows, chunk):
     path = os.path.join(WORK, f'pop_moments_bn_r2_{r2}.npz')
     if os.path.exists(path):
         return dict(np.load(path))
