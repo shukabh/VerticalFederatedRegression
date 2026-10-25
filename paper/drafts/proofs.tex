@@ -1,0 +1,277 @@
+% =====================================================================================================
+% Draft: the status of the proof obligations after a second reading of the companion book's proofs.
+%
+% What changed (proofs documents v31/proofs/, cited as "proofs, Part A/B"; numbering of the rebuilt documents):
+%   Part A, Section 4: Lemma 4.1 (OpenFHE's uncentred key switching, model M3'), Lemma 4.3 (centre sensitivity with
+%     decoupled scales, any changed row), Proposition 4.5 (public bound on the decoding offset);
+%   Part A, Section 7: Theorem 7.3 (G4, first layer, random oracles and CDH), Lemma 7.5 (cuckoo-hashing slack),
+%     Proposition 7.7 / Corollary 7.8 (PSI evaluation noise in the textbook BFV model);
+%   Part A, Proposition 8.1 (no wraparound: no condition at the earlier levels);
+%   Part A, Section 9: Proposition 9.1 (Calibrate is sound), Corollary 9.3 (standard simulation of R's view with its
+%     output), Proposition 9.5 (O's work);
+%   Part B: Lemma S0(b) (proved total-variation constant of the coupling), Proposition S7 (exact radius),
+%     Proposition S8 and Lemma S8' (switch-off bracket, tightness, size of the downward bias), Theorem S9 (mechanism bias
+%     with explicit constants), Propositions S10a (FWS plug-in RSS), S10b (binding clipping), Theorem S10c (full-record
+%     sensitivity in closed form).
+% Check items: closed  FWS plug-in s^2 (Q17); narrowed  G4 (Q08), clipping (Q10), lambda-min bias (Q14), full-record
+%   sensitivity (Q19).  Remaining obligations O1, O3, O5 and "Other open items" updated; the status table is rewritten.
+%
+% How to merge into paper/main.tex (mechanical): each block runs from "%R-BEGIN <id>" to "%R-END <id>". The lines
+% starting with "%OLD| " give the exact old text of main.tex (strip the prefix "%OLD| "; "%OLD|" alone is an empty line;
+% join with newlines); each occurs exactly once in main.tex as of commit 77fa220 (unchanged in b4d42b4). Replace it by
+% the lines between "%NEW-BEGIN" and "%NEW-END", verbatim. No block overlaps the blocks of paper/drafts/more.tex.
+%     python experiments/v31_P2/apply_p2_draft.py --main paper/main.tex --draft paper/drafts/proofs.tex --check
+%     python experiments/v31_P2/apply_p2_draft.py --main paper/main.tex --draft paper/drafts/proofs.tex --out <copy.tex>
+% Checks of the numbers: experiments/proofs_check/ (check_btot_offset.py, tv1_cuckoo.py, lmin_bias_bound.py,
+% fws_s2_bias.py, fws_s2_corrected.py, sens_full_closed.py, bpsi_model.py).
+% =====================================================================================================
+
+%R-BEGIN Q01 Section 7.2 (the centre): sensitivity of the centre with decoupled scales, any changed row
+%OLD| Its sensitivity is (proofs, Part~A, corollary on the sensitivity of the centre)
+%NEW-BEGIN
+Its sensitivity is, for any encoding scales and for neighbours that differ in a matched or an unmatched row (proofs, Part~A, Lemma~4.3; Corollary~3.13 there is the equal-scale case)
+%NEW-END
+%R-END Q01
+
+%R-BEGIN Q02 Section 7.2 (worst-case bound): OpenFHE's key switching is covered by a proof for its model
+%OLD| Here $k_j$ is the number of primes in digit $j$ and $k_P$ the number of special primes. The dominant terms are the key-switching gadget term ($2^{25.3}$) and the ModDown roundings ($2^{25.7}$).
+%NEW-BEGIN
+Here $k_j$ is the number of primes in digit $j$ and $k_P$ the number of special primes. The dominant terms are the key-switching gadget term ($2^{25.3}$) and the ModDown roundings ($2^{25.7}$). These two properties, and OpenFHE's order of operations (it switches the key before it applies the automorphism), define an abstract model of its key switching, for which the bound is proved, with every other term unchanged (proofs, Part~A, Lemma~4.1). That OpenFHE~1.5.1 realizes the model was checked by reading its source again at tag v1.5.1 (\texttt{ApproxSwitchCRTBasis}, \texttt{ApproxModDown}, the hybrid key switch and \texttt{EvalAutomorphism}); this is a statement about a program and is not proved.
+%NEW-END
+%R-END Q02
+
+%R-BEGIN Q03 Section 7.3 (calibration): soundness of Calibrate
+%OLD| \textsc{Calibrate} refuses the run when a step has no solution: no admissible $\kappa$, $\delta_{\mathrm{DP}} \le 0$, no scale that floods, $q_0$ too small, or a chain above the security bound.
+%NEW-BEGIN
+\textsc{Calibrate} refuses the run when a step has no solution: no admissible $\kappa$, $\delta_{\mathrm{DP}} \le 0$, no scale that floods, $q_0$ too small, or a chain above the security bound. When it does not refuse, its outputs are functions of public values only and satisfy hypotheses (i) and (ii) of Theorem~\ref{thm:output}, the no-wraparound condition of Section~\ref{sec:input} and, under a ledger cap, the per-run shares of Section~\ref{sec:privacy:ledger} (proofs, Part~A, Proposition~9.1).
+%NEW-END
+%R-END Q03
+
+%R-BEGIN Q04 Section 7.2, Remark (who knows the noise): standard simulation jointly with the output
+%OLD| The simulator of Theorem~\ref{thm:output} therefore needs only $\mathcal M(D)$, never the exact $f_s(D)$.
+%NEW-BEGIN
+The simulator of Theorem~\ref{thm:output} therefore needs only $\mathcal M(D)$, never the exact $f_s(D)$. It is also output-consistent, so $\Rp$'s view jointly with its output is simulated in the standard sense, not only the liberal one, when the ideal output is the centred residue of $f_s(D) + \eta_s$ modulo $q_0$ (proofs, Part~A, Corollary~9.3).
+%NEW-END
+%R-END Q04
+
+%R-BEGIN Q05 Section 8 (G1): the cuckoo-hashing slack is bounded
+%OLD| up to a slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$: the failure probability of cuckoo hashing,
+%NEW-BEGIN
+up to a slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$: the failure probability of cuckoo hashing (at most $2^{-49.1}$ with $n_R^{\max} = 2{,}000$ items, $h = 3$ hash functions and $2^{14}$ bins, and at most $2^{-40}$ up to a load of $0.64$, provided $\Rp$'s insertion finds an assignment whenever one exists; proofs, Part~A, Lemma~7.5),
+%NEW-END
+%R-END Q05
+
+%R-BEGIN Q06 Section 8 (G4, first layer): proved in the random-oracle model under CDH
+%OLD| A simulator that knows $(I, \pi|_I)$, the public sizes and $\Rp$'s view of the OPRF can therefore run $\Op$'s evaluation on fresh random items and labels outside $I$ and obtain replies indistinguishable from the real ones, under the security of the OPRF. Even without circuit privacy, then, what the noise reveals about $\Op$'s register beyond $(I, \pi|_I)$ is pseudorandom.
+%NEW-BEGIN
+A simulator that knows $(I, \pi|_I)$, the public sizes and $\Rp$'s view of the OPRF can therefore run $\Op$'s evaluation on fresh random items and labels outside $I$ and obtain replies indistinguishable from the real ones. In the random-oracle model for $H_1$, $H_2$ and the derived hashes, this holds under the computational Diffie--Hellman assumption in the OPRF group, with distinguishing advantage at most $q_{H_2}\mathrm{Adv}_{\mathrm{CDH}}$ plus a negligible collision term, for every input (proofs, Part~A, Theorem~7.3). Even without circuit privacy, then, what the noise reveals about $\Op$'s register beyond $(I, \pi|_I)$ is pseudorandom.
+%NEW-END
+%R-END Q06
+
+%R-BEGIN Q07 Section 8 (G4, second layer): the evaluation noise is bounded in the textbook BFV model
+%OLD| The switched evaluation noise is covered by the $+1$ only by measurement ($2^{-72}$ after the switch), not by a worst-case bound.
+%NEW-BEGIN
+In the textbook BFV model a worst-case bound covers the switched evaluation noise as well: for every input of $\Op$ its $\ell_2$ norm is at most $2^{-31}$ after the switch (product trees of depth $3$, $65$ coefficients per polynomial, $q_B$ of seven limbs and $q'$ of two; proofs, Part~A, Proposition~7.7 and Corollary~7.8), against $2^{-72}$ measured. Whether OpenFHE's BFVrns, whose multiplication and scaling are RNS approximations, satisfies that model was not checked, so for the implementation the $+1$ still rests on the measurement.
+%NEW-END
+%R-END Q07
+
+%R-BEGIN Q08 Section 8 (G4): check item narrowed to the conformance of OpenFHE's BFVrns
+%OLD| \tocheck{G4: derive a worst-case, data-independent bound on the BFV evaluation noise of the PSI replies after the switch to q', so that B-psi is proven (the implementation's value is measured). The circuit-privacy statements of CLR17 and the role of OPRF preprocessing in CHLR18 were checked only through search-engine extracts; confirm against the full texts, including whether CHLR18 state that OPRF preprocessing removes the need for circuit privacy.}
+%NEW-BEGIN
+\tocheck{G4, second layer: check that OpenFHE~1.5.1's BFVrns (its RNS multiplication, scaling and relinearization) satisfies the BFV model of the proofs' bound on the evaluation noise (Part~A, Proposition~7.7), or bound that noise directly for it. The circuit-privacy statements of CLR17 and the role of OPRF preprocessing in CHLR18 were checked only through search-engine extracts; confirm against the full texts, including whether CHLR18 state that OPRF preprocessing removes the need for circuit privacy.}
+%NEW-END
+%R-END Q08
+
+%R-BEGIN Q09 Section 8 (correctness): no condition at the earlier levels; a proved offset bound
+%OLD| \paragraph{Correctness.} With $q_0$ from \textsc{Calibrate}, honest inputs never wrap around; the failure probability is at most $\delta_B + 2Ne^{-t_\eta^2/2}$ per release, a correctness event that is not charged to $\delta$.
+%NEW-BEGIN
+\paragraph{Correctness.} With $q_0$ from \textsc{Calibrate}, honest inputs never wrap around; the failure probability is at most $\delta_B + 2Ne^{-t_\eta^2/2}$ per release, a correctness event that is not charged to $\delta$. No condition is needed at the earlier levels of the circuit: the error decomposition is an identity of congruences whatever the size of the intermediate plaintexts, so only the final reduction modulo $q_0$ can wrap around (proofs, Part~A, Proposition~8.1). The deterministic offset of the centre from $\Omega_f\tau_{\mathrm{can}}^{-1}(\mathbf z_s(D))$ has a proved public bound, $2^{30.3}$ in the coefficient domain at $\bar n_O = 10^6$ with $n_R^{\max} = 2{,}000$ (Proposition~4.5 there), far inside the slack of \textsc{Calibrate}'s condition.
+%NEW-END
+%R-END Q09
+
+%R-BEGIN Q10 Section 9.1 (clipping): a valid interval with a public variance bound; check item narrowed
+%OLD| \tocheck{Clipping that binds makes the clipped errors heteroskedastic, even when the errors before clipping are homoskedastic. What the bias-aware interval for $\bbeta$ guarantees then, and a remedy, are open.}
+%NEW-BEGIN
+When clipping binds, the clipped errors are heteroskedastic even if the errors before clipping are homoskedastic, and the homoskedastic sampling variance of the bias-aware interval (Section~\ref{sec:stats:ci}) need not hold. The interval stays valid for the projection coefficient, to the same order, if $\tilde s^2$ is replaced by a public bound $\bar\sigma^2$ on the conditional variances of the clipped response: $B_y^2$ always, or any bound on the error variance before clipping when only $\by$ is clipped, since clipping is $1$-Lipschitz and cannot increase a variance (proofs, Part~B, Proposition~S10b). On the synthetic population $B_y^2 = 8.35$ widens the sampling part of the interval by a factor of about $4$.
+
+\tocheck{With the data-driven residual variance the bias-aware interval is not guaranteed when clipping binds: $\tilde s^2$ estimates an average of the conditional variances, not their maximum, and a sandwich variance would need a further release. Decide whether to report the interval with a public variance bound.}
+%NEW-END
+%R-END Q10
+
+%R-BEGIN Q11 Section 9.2 (stage 1): the coupling constant is proved
+%OLD| except with probability about $10^{-37}$ at the evaluation setting ($N = 2^{14}$, $\varepsilon = 1$, previous setting);
+%NEW-BEGIN
+except with probability at most $N\,\mathrm{TV}_1(\sigma_{c,s})$, about $10^{-37}$ at the evaluation setting ($N = 2^{14}$, $\varepsilon = 1$, previous setting), where the total-variation constant $\mathrm{TV}_1(\sigma) \le 0.0202\,\sigma^{-2} + 0.0315\,\sigma^{-3} + e^{-2\pi^2\sigma^2}$ of one coordinate is proved (proofs, Part~B, Lemma~S0);
+%NEW-END
+%R-END Q11
+
+%R-BEGIN Q12 Section 9.2 (stage 1): the decoding offset has a proved bound
+%OLD| which collects the rounding of $\mathbf Z$, the flooded error and the decoding offset.
+%NEW-BEGIN
+which collects the rounding of $\mathbf Z$, the flooded error and the decoding offset, whose public bound is proved (proofs, Part~A, Proposition~4.5; Part~B, Proposition~S7).
+%NEW-END
+%R-END Q12
+
+%R-BEGIN Q13 Section 9.5 (bracket): its upper end is tight among Gram matrices with a given lambda-min
+%OLD| The ratio $\sigma_1/(g^\star + r_1)$ does not depend on $\varepsilon$.
+%NEW-BEGIN
+The ratio $\sigma_1/(g^\star + r_1)$ does not depend on $\varepsilon$. The upper end cannot be improved in terms of $\lambda_{\min}(\bG)$ alone: for $\bG$ proportional to the identity it is attained exactly (proofs, Part~B, Proposition~S8).
+%NEW-END
+%R-END Q13
+
+%R-BEGIN Q14 Section 9.5: a bound on the size of the downward bias; check item narrowed
+%OLD| \tocheck{The size of the downward bias of lambda-min of the stage-1 Gram, which places the switch-off inside the bracket (at about 1.2 n-off under setting I and the previous setting, about 1.4 n-off under setting P), is not derived; these factors are empirical.}
+%NEW-BEGIN
+A comparison bound gives the size of the bias for any spectrum: $\E\lambda_{\min}(\hat\bG_1) \ge \E\min_{\|\mathbf u\| = 1}(\mathbf u^\top\bG\mathbf u - 2\sigma_1\mathbf g^\top\mathbf u)$ with $\mathbf g$ standard normal, by the Sudakov--Fernique inequality, and $\lambda_{\min}(\hat\bG_1)$ concentrates with variance proxy $2\sigma_1^2$ (proofs, Part~B, Lemma~S8$'$). On the simulation population at $n_{\mathrm{off}}$ under setting I it bounds the downward bias by $3.2\,\sigma_1$, against $1.7\,\sigma_1$ in simulation, which is too loose to improve on the bracket.
+
+\tocheck{The switch-off factors 1.2 (setting I and the previous setting) and 1.4 (setting P) remain empirical. A bound needs a tail bound for lambda-min of the noisy stage-1 Gram that uses the spectrum and is much sharper than the comparison bound; at n-off the three smallest eigenvalues of the simulation population's Gram lie within about 2.4 sigma-1 of each other, too close for second-order perturbation.}
+%NEW-END
+%R-END Q14
+
+%R-BEGIN Q15 Section 9.6 (status of the statistical guarantees): updated
+%OLD| The companion proofs (Part~B) establish: the union-bound radius $r_1$ for the one-sided event (exact); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. The exact-quantile radius of settings I and P has an exact level for Gaussian slot noise with fresh Monte Carlo draws, and the coupling of Section~\ref{sec:stats:stage1} transfers it to the lattice noise at a cost of about $10^{-37}$ in probability and a relative $10^{-8}$ in the radius; one constant of the coupling is checked numerically. The bracket on the switch-off of Section~\ref{sec:stats:noff} is proved for Gaussian slot noise. A remedy for heteroskedasticity when clipping binds is open.
+%NEW-BEGIN
+The companion proofs (Part~B) establish: the union-bound radius $r_1$ for the one-sided event (exact); the independence and closed forms of the two-stage rule; the bound on $\|\bbeta\|$ for the projection coefficient with no model assumed; the Wald remainder exactly, with the plug-in variance to first order and normality of the sampling term asymptotically; and the bootstrap RSS correction to first order, without explicit constants. The exact-quantile radius of settings I and P has an exact level for Gaussian slot noise with fresh Monte Carlo draws, and the coupling of Section~\ref{sec:stats:stage1} transfers it to the lattice noise at a cost of about $10^{-37}$ in probability and a relative $10^{-8}$ in the radius; the total-variation constant of the coupling and the decoding offset have proved bounds (Part~B, Lemma~S0 and Proposition~S7; Part~A, Proposition~4.5). The bracket on the switch-off of Section~\ref{sec:stats:noff} is proved for Gaussian slot noise and transfers to the protocol by the same coupling; its upper end is attained by Gram matrices proportional to the identity, and the size of the downward bias of $\lambda_{\min}(\hat\bG_1)$ is bounded only loosely (Part~B, Section~S8). The mechanism bias of Section~\ref{sec:bias} is proved with explicit constants (Part~B, Theorem~S9). When clipping binds, the bias-aware interval stays valid with a public bound on the conditional variance of the clipped response in place of $\tilde s^2$ (Part~B, Proposition~S10b); a guarantee with $\tilde s^2$ itself is open.
+%NEW-END
+%R-END Q15
+
+%R-BEGIN Q16 Section 10, Theorem (leading-order bias): explicit constants
+%OLD| where the constants depend on $\|\bP\|_{\mathrm{op}}$, $\|\hat{\bbeta}\|$, $p$ and $\eta$.
+%NEW-BEGIN
+where the constants are explicit: in the norm $\|\mathbf v\|_{\bG} = (\mathbf v^\top\bG\mathbf v)^{1/2}$ the remainder is at most $\Pr(\mathcal E_\eta)^{-1}\bigl[\kappa_p^4\vartheta_0^{-4}(1 - \eta)^{-1}(\|\hat\bbeta\|_{\bG} + \sigma\sqrt{\tr\bP}) + 2\sqrt2\,\kappa_p^2\vartheta_0^{-2}e^{-p(\eta\vartheta_0 - 1)^2/2}\|\hat\bbeta\|_{\bG}\bigr]$, with $\kappa_p = (2\sqrt p + 2.512 + 2\sqrt2)/(2\sqrt p)$, which is $1.81$ at $p = 11$ (proofs, Part~B, Theorem~S9).
+%NEW-END
+%R-END Q16
+
+%R-BEGIN Q17 Section 13.4 (FWS): the plug-in residual variance; check item closed
+%OLD| \tocheck{FWS releases s-squared through its own mechanism; here it is the plug-in from the released y'y, which is biased by the noise at order sigma-2 squared, without our bootstrap correction. Check whether the correction changes FWS's coverage in the ridge-on cells.}
+%NEW-BEGIN
+FWS release $s^2$ through their own mechanism; here it is the plug-in from the released $\by^\top\by$. Its residual sum of squares is biased downward by $\sigma_2^2\tr\bP + \hat\bbeta^\top\E[\bE\bP\bE]\hat\bbeta$ to second order, with $\bP = \bG^{-1}$ and an explicit remainder (proofs, Part~B, Proposition~S10a). Correcting it by that term changes FWS's coverage of the ten slopes by at most $0.0005$ in each of the $41$ ridge-on cells of Table~\ref{tab:fws_cov}, and its median half-width by at most $3\%$: where the ridge is on, the mechanism noise dominates FWS's width, and the plug-in is floored at $0.1$ in up to half of the releases.
+%NEW-END
+%R-END Q17
+
+%R-BEGIN Q18 Section 13.9, Proposition (full-record sensitivity): closed form for blocks of dimension at least two
+%OLD| What remains, $(y, y')$ and the norms of one-dimensional blocks, is maximized on a dense grid and refined by local search, with the result rounded up by a relative $10^{-12}$ as for Proposition~\ref{prop:sens}.
+%NEW-BEGIN
+For blocks of dimension at least two what remains is a maximization over $t = yy' \in [-B_y^2, B_y^2]$ of an explicit piecewise quartic, attained at $t = \pm B_y^2$, at a breakpoint of the pieces or at a real root of a cubic, so the supremum has a closed form computed by exact enumeration, as for Proposition~\ref{prop:sens} (proofs, Part~B, Theorem~S10c); for a block of dimension one that value is a valid, conservative bound. The values below use the earlier numerical maximization (a dense grid refined by local search, rounded up by a relative $10^{-12}$), which agrees with the enumeration to $10^{-12}$ over $19$ bound vectors.
+%NEW-END
+%R-END Q18
+
+%R-BEGIN Q19 Section 13.9 (full-record SSP): check item narrowed
+%OLD| \tocheck{Full-record SSP: the sensitivity of the full-record release is computed numerically after the monotonicity reduction (a grid over y and y-prime, refined by local search). Derive closed forms, as for Proposition prop:sens, or keep the numerical computation and its checks.}
+%NEW-BEGIN
+\tocheck{Full-record SSP: the closed form of the proofs (Part B, Theorem S10c) covers blocks of dimension at least two; for tamielectric, whose block for R has dimension one, it is a conservative bound and the reported value comes from the numerical maximization. Decide whether the baseline code should switch to the enumeration.}
+%NEW-END
+%R-END Q19
+
+%R-BEGIN Q20 Section 14, Proposition (work linear in the scope): the proof is in the proofs document
+%OLD| The companion book on the protocol proves this in a cell-probe model (Chapter~20 there).
+%NEW-BEGIN
+The proofs (Part~A, Proposition~9.5) prove this in a cell-probe model, following the companion book on the protocol (Chapter~20 there).
+%NEW-END
+%R-END Q20
+
+%R-BEGIN Q21 Section 16 (remaining obligation O1): OpenFHE's key switching and decoupled scales
+%OLD| \item The worst-case error bound: proven for the circuit as written, as an explicit function of the parameters ($B_{\mathrm{tot}} \approx 2^{25.3}$ at the proofs' example); proofs for the restructured circuit are open.
+%NEW-BEGIN
+\item The worst-case error bound: proven for the circuit as written, as an explicit function of the parameters, for centred key switching ($B_{\mathrm{tot}} \approx 2^{25.3}$ at the proofs' example) and for OpenFHE's uncentred key switching in the model it defines ($2^{26.6}$ at the evaluation settings), with decoupled scales; that OpenFHE~1.5.1 realizes the model rests on reading its source, and (M5) for its sampler on a numerical check. Proofs for the restructured circuit, which is not used, are open.
+%NEW-END
+%R-END Q21
+
+%R-BEGIN Q22 Section 16 (remaining obligation O3): proven
+%OLD| \item Simulation security of threshold key generation against a semi-honest $\Rp$ (reduced to plain RLWE, since $\Op$ sends only its public-key share).
+%NEW-BEGIN
+\item Simulation security of threshold key generation against a semi-honest $\Rp$: proven, by a reduction to plain RLWE, since $\Op$ sends only its public-key share (hybrid H4 of Theorem~\ref{thm:output}).
+%NEW-END
+%R-END Q22
+
+%R-BEGIN Q23 Section 16 (remaining obligation O5): cuckoo slack bounded, B-psi proved in a model
+%OLD| \item PSI parameters with explicit failure probabilities (correctness only, not charged to $\delta$), an item length that meets them at $\bar n_O = 10^6$, and a worst-case bound $B_\psi$ on the evaluation noise of the PSI replies, which \textsc{SanitizeBFV} floods.
+%NEW-BEGIN
+\item PSI parameters with explicit failure probabilities (correctness only, not charged to $\delta$) and an item length that meets them at $\bar n_O = 10^6$. The cuckoo-hashing failure probability is now bounded, given an insertion that finds an assignment whenever one exists, and the worst-case bound $B_\psi$ on the evaluation noise of the PSI replies, which \textsc{SanitizeBFV} floods, is proved for the textbook BFV model; checking OpenFHE's BFVrns against that model remains.
+%NEW-END
+%R-END Q23
+
+%R-BEGIN Q24 Section 16 (other open items): updated
+%OLD| \paragraph{Other open items.} Whether the rule for runs fixed in advance stays valid when requests are chosen adaptively (Proposition~\ref{prop:compose}); a proof of the subgaussianity of OpenFHE's error sampler, which is checked only numerically; guidance on the precision at which $\Rp$ publishes results; no-wraparound constants at the earlier levels; precise modulus-chain sizes; the free-set boundary for $\by^\top\by$ and a closed form for $d_O = 1$; explicit constants for the bootstrap RSS correction; a remedy for heteroskedasticity when clipping binds; and sixteen citation details flagged for verification in the proofs.
+%NEW-BEGIN
+\paragraph{Other open items.} Whether the rule for runs fixed in advance stays valid when requests are chosen adaptively (Proposition~\ref{prop:compose}); a proof of the subgaussianity of OpenFHE's error sampler, which is checked only numerically, and of the match between OpenFHE's key switching and the model in which the error bound is proved, which rests on reading its source; guidance on the precision at which $\Rp$ publishes results; the free-set boundary for $\by^\top\by$ and a closed form for $d_O = 1$; explicit constants for the bootstrap RSS correction; a guarantee for the data-driven variance of the bias-aware interval when clipping binds (a public variance bound gives a valid interval); a bound on the downward bias of $\lambda_{\min}(\hat\bG_1)$ sharp enough to turn the switch-off factors $1.2$ and $1.4$ into bounds; and sixteen citation details flagged for verification in the proofs. The no-wraparound condition at the earlier levels, which earlier drafts listed here, is proved, and \textsc{Calibrate}, which sizes the modulus chain, is proved sound.
+%NEW-END
+%R-END Q24
+
+%R-BEGIN Q25 Appendix C (status of the proofs): introduction
+%OLD| The companion proofs document (Part~A: cryptography and DP; Part~B: sensitivity and statistics; and a composition appendix on composition across runs and the hockey-stick ledger) labels every step as exact, first order, asymptotic, numerical or open. Table~\ref{tab:status} summarizes it.
+%NEW-BEGIN
+The companion proofs document (Part~A: cryptography and DP; Part~B: sensitivity and statistics; and a composition appendix on composition across runs and the hockey-stick ledger) labels every step as exact, first order, asymptotic, numerical or open. Several results were first written in the companion book on the protocol and added to the proofs after a second reading that checked every step and constant (Part~A, Sections~4, 7 and~9; Part~B, Sections~S7--S10). Table~\ref{tab:status} summarizes it.
+%NEW-END
+%R-END Q25
+
+%R-BEGIN Q26 Appendix C (status of the proofs): the table
+%OLD| \begin{table}[ht]
+%OLD| \centering\small
+%OLD| \caption{Status of the claims.}
+%OLD| \label{tab:status}
+%OLD| \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}X@{}}
+%OLD| \toprule
+%OLD| Claim & Status & Notes \\
+%OLD| \midrule
+%OLD| Encoding sensitivity (Lemma~\ref{lem:enc}) & proven & $\sqrt{2/N}$ and the $\sqrt N$ rounding term \\
+%OLD| Smudging (Lemma~\ref{lem:smudge}) & proven & explicit constants; the factor $1 + 2^{-80}$ needs $\sigma_c \ge 2^{42}$ (earlier stated for $2^{20}$); hockey-stick form (Remark~\ref{rem:sharperslack}) proven with no floor \\
+%OLD| Worst-case $B_{\mathrm{tot}}$ (Theorem~\ref{thm:btot}) & proven, explicit & $\approx 2^{25.3}$ for the circuit as written; assumes (M5) and honestly sampled errors; measured errors $7.8$--$8.7$ bits below it \\
+%OLD| zCDP of the ideal mechanism; tight conversion & proven & $\rho_{\mathrm{run}} = 0.01496$ at $\varepsilon = 1$, $\delta = 10^{-9}$ \\
+%OLD| Output privacy (Theorem~\ref{thm:output}) & proven (hybrids) & RLWE for the re-randomizer and plain RLWE for $\Op$'s public-key share; $\Rp$'s errors honestly sampled; slack $\gamma$ statistical, not negligible in $\lambda_{\mathrm{sec}}$ \\
+%OLD| Input and cohort privacy (G1, G2) & proven & $\Op$'s view only; simulators, up to the slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$ of $\Rp$'s observable aborts \\
+%OLD| Correctness (no wraparound) & proven & failure probability $\le \delta_B + 2Ne^{-t_\eta^2/2}$ per release \\
+%OLD| Composition across runs (Proposition~\ref{prop:compose}) & proven, fixed and adaptive (filter) & composition appendix, Theorem~4.2; hockey-stick ledger, Corollary~5.4; the rule for fixed runs with adaptively chosen requests is not proved \\
+%OLD| G4 with \textsc{SanitizeBFV} & argued & needs a worst-case bound $B_\psi$ on the BFV evaluation noise \\
+%OLD| Replace-one sensitivity (Proposition~\ref{prop:sens}) & proven, exact for $d_O \ge 2$ & regime 3 reduces to three cubics; $d_O = 1$ valid but conservative \\
+%OLD| When $\by^\top\by$ is free & partly proven & boundary between $2(r + o)$ and $3(r + o)$ numerical only \\
+%OLD| Operator-norm radius $r_1$ & union bound proven (one-sided); exact quantile proven with a caveat & union bound about $1.55\times$ conservative at $p = 11$; the exact quantile (settings I and P) has an exact level with fresh draws, transferred to the lattice noise by a coupling (failure about $10^{-37}$) whose constant is checked numerically \\
+%OLD| Two-stage $(\lambda, \Psi)$ & proven & independent of the stage-2 noise; closed form for $\lambda_O$ \\
+%OLD| Bound on $\|\bbeta\|$ & proven & for the projection coefficient, no model assumed \\
+%OLD| Coverage & partly first order & Wald remainder exact; plug-in variance first order; normality asymptotic \\
+%OLD| Bootstrap RSS correction & first order & constants not explicit \\
+%OLD| \bottomrule
+%OLD| \end{tabularx}
+%OLD| \end{table}
+%NEW-BEGIN
+{\small
+\setlength{\LTcapwidth}{\textwidth}
+\begin{xltabular}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}X@{}}
+\caption{Status of the claims.}
+\label{tab:status}\\
+\toprule
+Claim & Status & Notes \\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\emph{Table~\ref{tab:status}, continued}} \\
+\toprule
+Claim & Status & Notes \\
+\midrule
+\endhead
+Encoding sensitivity (Lemma~\ref{lem:enc}) & proven & $\sqrt{2/N}$ and the $\sqrt N$ rounding term \\
+Sensitivity of the centre, eq.~\eqref{eq:denc} & proven & any encoding scales, any changed row; $\Delta_{x,2} \approx 2^{27.6}$ at the evaluation settings \\
+Smudging (Lemma~\ref{lem:smudge}) & proven & explicit constants; the factor $1 + 2^{-80}$ needs $\sigma_c \ge 2^{42}$ (earlier stated for $2^{20}$); hockey-stick form (Remark~\ref{rem:sharperslack}) proven with no floor \\
+Worst-case $B_{\mathrm{tot}}$ (Theorem~\ref{thm:btot}) & proven, explicit & $\approx 2^{25.3}$ for the circuit as written with centred key switching; $\approx 2^{26.6}$ for OpenFHE's key switching, proven for the model it defines, whose match with OpenFHE~1.5.1 rests on reading its source; assumes (M5) and honestly sampled errors; measured errors $7.8$--$8.7$ bits below it \\
+Decoding offset & proven & public bound, $10^{-8}$ to $5 \cdot 10^{-6}$ in the slots at the evaluation settings \\
+zCDP of the ideal mechanism; tight conversion & proven & $\rho_{\mathrm{run}} = 0.01496$ at $\varepsilon = 1$, $\delta = 10^{-9}$ \\
+Output privacy (Theorem~\ref{thm:output}) & proven (hybrids) & RLWE for the re-randomizer and plain RLWE for $\Op$'s public-key share; $\Rp$'s errors honestly sampled; slack $\gamma$ statistical, not negligible in $\lambda_{\mathrm{sec}}$; standard simulation jointly with $\Rp$'s output \\
+\textsc{Calibrate} & proven & its outputs meet the hypotheses of Theorem~\ref{thm:output} and the no-wraparound condition \\
+Input and cohort privacy (G1, G2) & proven & $\Op$'s view only; simulators, up to the slack $p_{\mathrm{cuckoo}} + p_{\mathrm{false}}$ of $\Rp$'s observable aborts; $p_{\mathrm{cuckoo}} \le 2^{-49.1}$ at the evaluation's $n_R^{\max}$ for an insertion that finds an assignment whenever one exists \\
+Correctness (no wraparound) & proven & failure probability $\le \delta_B + 2Ne^{-t_\eta^2/2}$ per release; no condition at the earlier levels \\
+Composition across runs (Proposition~\ref{prop:compose}) & proven, fixed and adaptive (filter) & composition appendix, Theorem~4.2; hockey-stick ledger, Corollary~5.4; the rule for fixed runs with adaptively chosen requests is not proved \\
+G4 with \textsc{SanitizeBFV} & proven (random oracles, CDH) & first layer without circuit privacy; second layer proven for the textbook BFV model (evaluation noise $\le 2^{-31}$ after the switch), with OpenFHE's BFVrns not checked against the model \\
+$\Op$'s work (Proposition~\ref{prop:lower}) & proven & cell-probe model, in $n_{\mathrm{Sc}}$ \\
+Replace-one sensitivity (Proposition~\ref{prop:sens}) & proven, exact for $d_O \ge 2$ & regime 3 reduces to three cubics; $d_O = 1$ valid but conservative \\
+Full-record sensitivity (Proposition~\ref{prop:sens_full}) & proven, closed form for blocks of dimension $\ge 2$ & exact enumeration; conservative for a block of dimension one \\
+When $\by^\top\by$ is free & partly proven & boundary between $2(r + o)$ and $3(r + o)$ numerical only \\
+Operator-norm radius $r_1$ & proven (one-sided), both radii & union bound about $1.55\times$ conservative at $p = 11$; the exact quantile (settings I and P) has an exact level with fresh draws, transferred to the lattice noise by a coupling (failure about $10^{-37}$) whose constants are proved \\
+Two-stage $(\lambda, \Psi)$ & proven & independent of the stage-2 noise; closed form for $\lambda_O$ \\
+Switch-off bracket & proven & tight among Gram matrices with a given $\lambda_{\min}$; the factors $1.2$ and $1.4$ are empirical \\
+Bound on $\|\bbeta\|$ & proven & for the projection coefficient, no model assumed \\
+Mechanism bias (Theorems~\ref{thm:bias} and~\ref{thm:ridge}) & proven, explicit constants & remainder $O(\vartheta_0^{-4})$ relative \\
+Coverage & partly first order & Wald remainder exact; plug-in variance first order; normality asymptotic; under binding clipping valid with a public variance bound, open with $\tilde s^2$ \\
+Bootstrap RSS correction & first order & constants not explicit; the plug-in RSS of the FWS comparison has an explicit second-order bias \\
+\bottomrule
+\end{xltabular}}
+%NEW-END
+%R-END Q26
