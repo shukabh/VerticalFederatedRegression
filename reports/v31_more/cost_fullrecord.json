@@ -1,0 +1,205 @@
+{
+ "source": "implementation/bench/cost_model.py with micro_t1.json (single thread, N = 2^14)",
+ "rows": [
+  {
+   "n_bar_O": 4096,
+   "m": 1,
+   "d_R": 4,
+   "d_O": 6,
+   "n_R_max": 2000,
+   "v31": {
+    "entries": 63,
+    "upload_vectors": 6,
+    "agg": 16.332000079398767,
+    "cpu_O": 21.522271403244684,
+    "cpu_R": 1.5201828781782751,
+    "comm_MB": 48.387824058532715,
+    "upload_MB": 3.00018310546875,
+    "release_s": 0.821601444999942,
+    "measured_wall": 24.521520614624023,
+    "measured_agg": 14.742589235305786
+   },
+   "full_record": {
+    "entries": 77,
+    "upload_vectors": 16,
+    "extra_agg": 3.629333350977504,
+    "extra_agg_cached_ones": 3.5019315439813,
+    "extra_cpu_O": 3.6977033109769764,
+    "extra_cpu_R": 0.20138398999733909,
+    "extra_comm_MB": 5.00030517578125,
+    "extra_release_s": 0.0,
+    "breakdown": {
+     "O.agg.encode": 0.13720194599591196,
+     "O.agg.mul_add": 0.019073655990723637,
+     "O.agg.evalsum": 3.3311510329958764,
+     "O.agg.rescale_mask": 0.14190671599499183,
+     "O.upload_convert": 0.06836995999947248,
+     "R.upload_encrypt": 0.20138398999733909,
+     "O.release": 0.0,
+     "R.release": 0.0
+    }
+   },
+   "ratio": {
+    "agg": 1.2222222222222223,
+    "agg_cached": 1.2144214748320168,
+    "cpu_O": 1.1718082279372943,
+    "cpu_R": 1.132473528605104,
+    "comm": 1.103338087071917,
+    "wall_single_thread_est": 1.1590067501217276
+   }
+  },
+  {
+   "n_bar_O": 16384,
+   "m": 2,
+   "d_R": 4,
+   "d_O": 6,
+   "n_R_max": 2000,
+   "v31": {
+    "entries": 63,
+    "upload_vectors": 6,
+    "agg": 17.035240288338628,
+    "cpu_O": 25.396991086206825,
+    "cpu_R": 1.6786330021768663,
+    "comm_MB": 53.1394157409668,
+    "upload_MB": 6.0003662109375,
+    "release_s": 0.821601444999942,
+    "measured_wall": 27.468579292297363,
+    "measured_agg": 14.556825160980225
+   },
+   "full_record": {
+    "entries": 77,
+    "upload_vectors": 16,
+    "extra_agg": 3.7856089529641395,
+    "extra_agg_cached_ones": 3.5210051999720235,
+    "extra_cpu_O": 3.9223488729630844,
+    "extra_cpu_R": 0.40276797999467817,
+    "extra_comm_MB": 10.0006103515625,
+    "extra_release_s": 0.0,
+    "breakdown": {
+     "O.agg.encode": 0.2744038919918239,
+     "O.agg.mul_add": 0.038147311981447274,
+     "O.agg.evalsum": 3.3311510329958764,
+     "O.agg.rescale_mask": 0.14190671599499183,
+     "O.upload_convert": 0.13673991999894497,
+     "R.upload_encrypt": 0.40276797999467817,
+     "O.release": 0.0,
+     "R.release": 0.0
+    }
+   },
+   "ratio": {
+    "agg": 1.2222222222222223,
+    "agg_cached": 1.2066894942704334,
+    "cpu_O": 1.1544414792937154,
+    "cpu_R": 1.2399380802548057,
+    "comm": 1.1881957152165812,
+    "wall_single_thread_est": 1.157456882168296
+   }
+  },
+  {
+   "n_bar_O": 65536,
+   "m": 8,
+   "d_R": 4,
+   "d_O": 6,
+   "n_R_max": 2000,
+   "v31": {
+    "entries": 63,
+    "upload_vectors": 6,
+    "agg": 21.25468154197779,
+    "cpu_O": 40.87862118817058,
+    "cpu_R": 2.4412350961674747,
+    "comm_MB": 72.89192295074463,
+    "upload_MB": 24.00146484375,
+    "release_s": 0.821601444999942,
+    "measured_wall": 42.48013520240784,
+    "measured_agg": 19.76389718055725
+   },
+   "full_record": {
+    "entries": 77,
+    "upload_vectors": 16,
+    "extra_agg": 4.723262564883953,
+    "extra_agg_cached_ones": 3.6354471359163654,
+    "extra_cpu_O": 5.270222244879733,
+    "extra_cpu_R": 1.6110719199787127,
+    "extra_comm_MB": 40.00244140625,
+    "extra_release_s": 0.0,
+    "breakdown": {
+     "O.agg.encode": 1.0976155679672956,
+     "O.agg.mul_add": 0.1525892479257891,
+     "O.agg.evalsum": 3.3311510329958764,
+     "O.agg.rescale_mask": 0.14190671599499183,
+     "O.upload_convert": 0.5469596799957799,
+     "R.upload_encrypt": 1.6110719199787127,
+     "O.release": 0.0,
+     "R.release": 0.0
+    }
+   },
+   "ratio": {
+    "agg": 1.2222222222222223,
+    "agg_cached": 1.171042183282605,
+    "cpu_O": 1.1289236792165784,
+    "cpu_R": 1.6599413233522469,
+    "comm": 1.5487911388108242,
+    "wall_single_thread_est": 1.1619885184468153
+   }
+  }
+ ],
+ "other_sizes": [
+  {
+   "n_bar_O": 24576,
+   "extra_agg": 3.941884554950775,
+   "agg": 17.738480497278488,
+   "ratio_agg": 1.2222222222222223,
+   "extra_cpu": 4.75114640494121,
+   "cpu": 29.88092838643248,
+   "extra_comm_MB": 15.00091552734375,
+   "comm_MB": 56.13959884643555
+  },
+  {
+   "n_bar_O": 32768,
+   "extra_agg": 4.098160156937411,
+   "agg": 18.441720706218348,
+   "ratio_agg": 1.2222222222222223,
+   "extra_cpu": 5.177175956924657,
+   "cpu": 32.64517575219779,
+   "extra_comm_MB": 20.001220703125,
+   "comm_MB": 60.89119052886963
+  }
+ ],
+ "calibration": {
+  "v31": {
+   "entries": {
+    "1": 51,
+    "2": 63,
+    "y": 1
+   },
+   "log2_Omega_f": 62.62499976941343,
+   "kappa": 40,
+   "log2_B_tot": {
+    "1": 26.431788866873976,
+    "2": 26.592206615325647
+   },
+   "sigma_slot": {
+    "1": 891.9605909086139,
+    "2": 574.9752422701948
+   }
+  },
+  "full_record": {
+   "entries": {
+    "1": 65,
+    "2": 77,
+    "y": 1
+   },
+   "log2_Omega_f": 62.781250040707576,
+   "kappa": 40,
+   "log2_B_tot": {
+    "1": 26.616001943702766,
+    "2": 26.745369029263998
+   },
+   "sigma_slot": {
+    "1": 891.9605909058491,
+    "2": 574.9752422684679
+   }
+  }
+ },
+ "note": "extra entries per release: d_R(d_R+1)/2 + d_R = 14 at d_R = 4 (triu A without n, intercept included); extra upload vectors d_R(d_R+1)/2 = 10; releases unchanged (one ciphertext each)"
+}
