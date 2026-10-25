@@ -66,8 +66,8 @@ def simulate(G, c, cal, st, S, seed, dA):
     return s1, so
 
 
-def cost_block(cell, runs, ref):
-    pr = lc.predict(ref['n_bar_O'], cell['n_R_max'])
+def cost_block(cell, runs, ref, inputs='published', polys='model'):
+    pr = lc.predict(ref['n_bar_O'], cell['n_R_max'], inputs=inputs, polys=polys)
     meas = {k: float(np.mean([r['phases'][k] for r in runs])) for k in runs[0]['phases']}
     rows, fails = {}, []
     for k, v in pr['phases'].items():
@@ -106,7 +106,7 @@ def cost_block(cell, runs, ref):
                 traffic=traffic, comm_MB=comm / MB, comm_model_MB=pr['comm'] / MB,
                 model=dict(D=pr['D'], alpha=pr['alpha'], W=pr['W'], tables=pr['tables'], felts=pr['felts'], m=pr['m'],
                            cpu_O_1core=pr['cpu_O_1core'], cpu_R_1core=pr['cpu_R_1core'], mem_O_MB=sum(pr['mem'].values()) / MB),
-                fails=fails, ok=not fails)
+                inputs=inputs, polys=polys, fails=fails, ok=not fails)
 
 
 def stats_block(cell, runs, ref, S, ncov, workers):
@@ -204,10 +204,11 @@ def stats_block(cell, runs, ref, S, ncov, workers):
     enc_cov = [x for d in per_run for x in d.get('wald_covered', [])]
     out['coverage_encrypted'] = dict(covered=int(sum(enc_cov)), total=len(enc_cov)) if enc_cov else None
     if st['intervals']:
-        hb = [np.array(r['half_beta']) for r in runs if r.get('half_beta') is not None]
-        ht = [np.array(r['half_theta']) for r in runs if r.get('half_theta') is not None]
+        hb = [np.array(r['half_beta'], dtype=float) for r in runs if r.get('half_beta') is not None]
+        ht = [np.array(r['half_theta'], dtype=float) for r in runs if r.get('half_theta') is not None]
         out['intervals'] = dict(half_beta_runs=[h.tolist() for h in hb], half_theta_runs=[h.tolist() for h in ht],
                                 half_beta_median=float(np.median(np.concatenate(hb))) if hb else None,
+                                half_beta_median_finite=float(np.median(np.concatenate(hb)[np.isfinite(np.concatenate(hb))])) if hb and np.isfinite(np.concatenate(hb)).any() else None,
                                 half_beta_finite=[bool(np.isfinite(h).all()) for h in hb],
                                 ridge_off_runs=int(sum(r['lam'] == 0 for r in runs)), runs=len(runs))
     return out
@@ -219,13 +220,19 @@ def gate(stage, cells_out):
     th_in = [x for v in cells_out.values() for d in v['stats']['runs'] for x in d.get('theta_in_95', [])]
     zs = [abs(x) for v in cells_out.values() for d in v['stats']['runs'] for x in d.get('z_given_lambda', [])]
     noise_sd = {cid: {s: v['stats']['noise'][s]['sd'] for s in v['stats']['noise']} for cid, v in cells_out.items()}
+    rem = [v.get('cost_remeasured') for v in cells_out.values()]
     checks = dict(
         cost=all(v['cost']['ok'] for v in cells_out.values()),
         psi_exact=all(v['stats']['psi_exact'] for v in cells_out.values()),
         lam=lam_miss <= max(1, int(0.1 * runs_total)),
         theta=(np.mean(th_in) >= 0.85 if th_in else True) and (max(zs) < 4 if zs else True),
         noise=all(abs(sd - 1) <= 0.03 for d in noise_sd.values() for sd in d.values()))
+    other = all(v for k, v in checks.items() if k != 'cost')
+    cost_rem = all(r['ok'] for r in rem) if all(r is not None for r in rem) else None
     return dict(stage=stage, passed=all(checks.values()), checks=checks, lam_misses=lam_miss, runs=runs_total,
+                cost_remeasured_ok=cost_rem, passed_with_remeasured_inputs=(other and cost_rem) if cost_rem is not None else None,
+                cost_fails_remeasured={cid: v['cost_remeasured']['fails'] for cid, v in cells_out.items()
+                                       if v.get('cost_remeasured') and v['cost_remeasured']['fails']},
                 theta_in_95=float(np.mean(th_in)) if th_in else None, max_abs_z=float(max(zs)) if zs else None,
                 noise_sd=noise_sd, cost_fails={cid: v['cost']['fails'] for cid, v in cells_out.items() if v['cost']['fails']})
 
@@ -244,7 +251,9 @@ def main():
             continue
         ref = lc.load_json(os.path.join(lc.WORK, f'ref_{cell["id"]}.json'))
         t0 = time.time()
+        have_rem = os.path.exists(os.path.join(lc.REPORT, 'micro_t4_remeasured.json'))
         out[cell['id']] = dict(cell=cell, n=ref['n'], n_bar_O=ref['n_bar_O'], cost=cost_block(cell, runs, ref),
+                               cost_remeasured=cost_block(cell, runs, ref, 'remeasured', 'fill') if have_rem else None,
                                stats=stats_block(cell, runs, ref, a.sim, a.cov, a.workers), git_heads=sorted({r['git_head'] for r in runs}))
         c = out[cell['id']]
         print(f"[{cell['id']}] {len(runs)} runs, {time.time() - t0:.0f}s: cost ok={c['cost']['ok']} "
@@ -258,6 +267,8 @@ def main():
     if g:
         print('GATE', 'PASSED' if g['passed'] else 'FAILED', g['checks'], 'lam misses', g['lam_misses'], '/', g['runs'],
               'theta in 95%', g['theta_in_95'], 'max|z|', g['max_abs_z'], 'cost fails', g['cost_fails'], flush=True)
+        print('  with re-measured inputs: cost ok', g['cost_remeasured_ok'], 'passed', g['passed_with_remeasured_inputs'],
+              'fails', g['cost_fails_remeasured'], flush=True)
 
 
 if __name__ == '__main__':

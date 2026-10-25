@@ -236,27 +236,64 @@ def setting_dict(name):
 
 
 # ------------------------------------------------------------------------------------------- cost model
-@lru_cache(maxsize=1)
-def _cost_inputs():
+@lru_cache(maxsize=None)
+def _cost_inputs(inputs='published'):
+    """Cost-model inputs: 'published' = implementation/bench/results/micro_t{1,4}.json (the committed model);
+    'remeasured' = the same microbenchmarks re-run on the idle machine (reports/large/micro_t{1,4}_remeasured.json,
+    experiments/large/micro_large.py).  The fit (binning per row, BFV keygen) and the measured 4-core speedups are the
+    committed ones in both cases."""
     import cost_model as CM
-    mu1 = CM.load('micro_t1.json')
-    mu4 = CM.load('micro_t4.json')
+    if inputs == 'published':
+        mu1, mu4 = CM.load('micro_t1.json'), CM.load('micro_t4.json')
+    else:
+        mu1 = load_json(os.path.join(REPORT, 'micro_t1_remeasured.json'))
+        mu4 = load_json(os.path.join(REPORT, 'micro_t4_remeasured.json'))
     fitj = CM.load('cost_model.json')
     return CM, mu1, mu4, fitj['fit'], fitj['speedups_4cores']
 
 
-def predict(n_bar_O, n_R_max, threads=THREADS, workers=THREADS):
+def polys_at_fill(n_bar_O, threads=THREADS):
+    """Measured interpolation time at the actual partition fill (reports/large/micro_large.json), or None."""
+    path = os.path.join(REPORT, 'micro_large.json')
+    if not os.path.exists(path):
+        return None
+    for r in load_json(path)['polys_at_fill']:
+        if r['n_bar_O'] == n_bar_O and r['threads'] == threads:
+            return r['seconds']
+    return None
+
+
+def predict(n_bar_O, n_R_max, threads=THREADS, workers=THREADS, inputs='published', polys='model'):
     """Cost-model prediction for the run configuration: per-phase seconds of bench/cost_model.model evaluated with
-    the 4-thread microbenchmarks (micro_t4.json: OpenFHE's and the PSI interpolation's OpenMP), and, for the
-    aggregation, the single-thread model divided by the measured speedup of parallel entries (cost_model.json,
-    speedups_4cores['aggregate']).  Communication is exact.  Returns the model dicts and the mapping to the
-    implementation's phases."""
-    CM, mu1, mu4, fit, sp = _cost_inputs()
+    the 4-thread microbenchmarks (micro_t4: OpenFHE's and the PSI interpolation's OpenMP), and, for the aggregation,
+    the single-thread model divided by the measured speedup of parallel entries (cost_model.json,
+    speedups_4cores['aggregate']).  Communication is exact.  inputs: 'published' or 'remeasured' microbenchmarks
+    (_cost_inputs); polys: 'model' (the published term: one full-partition measurement scaled by alpha D^2) or
+    'fill' (the interpolation measured at the size's actual partition fill, micro_large.py).  Returns the model
+    dicts and the mapping to the implementation's phases."""
+    CM, mu1, mu4, fit, sp = _cost_inputs(inputs)
     m1 = CM.model(n_bar_O, n_R_max, mu1, fit)
     m4 = CM.model(n_bar_O, n_R_max, mu4 if threads == 4 else mu1, fit)
     t = dict(m4['t'])
+    sp_agg = sp['aggregate']
+    if inputs == 'remeasured':
+        # the OPRF and binning phases are single-threaded Python (libsodium, hashlib): OpenMP does not touch them, so
+        # their single-thread inputs apply (the 4-thread OPRF microbenchmark is a 200-item timing, noisy)
+        for k in ('O.psi.oprf_self', 'O.psi.oprf_requests', 'O.psi.binning', 'R.psi.oprf'):
+            t[k] = m1['t'][k]
+        # the aggregation speedup measured in the run configuration (4 OpenMP threads x 4 parallel entries, which
+        # oversubscribes the 4 cores) instead of the published one (1 thread x 4 entries)
+        mp = os.path.join(REPORT, 'micro_large.json')
+        if os.path.exists(mp):
+            ag_ = {(r['threads'], r['workers']): r['seconds'] for r in load_json(mp).get('aggregate', [])}
+            if (1, 1) in ag_ and (threads, workers) in ag_:
+                sp_agg = ag_[(1, 1)] / ag_[(threads, workers)]
+    if polys == 'fill':
+        pf = polys_at_fill(n_bar_O, threads)
+        if pf is not None:
+            t['O.psi.polys'] = pf
     agg1 = sum(v for k, v in m1['t'].items() if k.startswith('O.agg'))
-    agg = agg1 / (sp['aggregate'] if workers == 4 else 1.0)
+    agg = agg1 / (sp_agg if workers == 4 else 1.0)
     phases = {
         'O.oprf_self': t['O.psi.oprf_self'],
         'O.psi_preprocess': t['O.psi.binning'] + t['O.psi.polys'],
@@ -275,7 +312,13 @@ def predict(n_bar_O, n_R_max, threads=THREADS, workers=THREADS):
     }
     return dict(phases=phases, single_thread=dict(m1['t'], **{'O.agg_total': agg1}), bytes=m1['bytes'],
                 comm=m1['comm'], mem=m1['mem'], cpu_O_1core=m1['cpu_O'], cpu_R_1core=m1['cpu_R'],
-                D=m1['D'], alpha=m1['alpha'], W=m1['W'], tables=m1['batches'], felts=m1['felts'], m=m1['m'])
+                D=m1['D'], alpha=m1['alpha'], W=m1['W'], tables=m1['batches'], felts=m1['felts'], m=m1['m'],
+                inputs=inputs, polys=polys, speedup_aggregate=sp_agg)
+
+
+def measured_phases(R, O):
+    """Per-phase seconds of a run (see measured_phases_from)."""
+    return measured_phases_from(R, O)
 
 
 def _mark_cpu(marks, name):
@@ -287,7 +330,7 @@ def _mark_cpu(marks, name):
     raise KeyError(name)
 
 
-def measured_phases(R, O):
+def measured_phases_from(R, O):
     """Per-phase seconds of a run, on the phases of `predict`: the parties' own wall timers, except R's OPRF phase and
     O's answer to the OPRF request, whose timers include waiting for the other party; for these two single-threaded
     phases the CPU time between the phase marks is used."""

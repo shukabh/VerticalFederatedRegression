@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lcommon as lc  # noqa: E402
 from lcommon import cs, ev, dp, solve  # noqa: E402
 
-NS = [100_000, 200_000, 500_000, 1_000_000]
+NS = [12_000, 60_000, 95_000, 100_000, 200_000, 500_000, 1_000_000]
 EPS = [0.5, 1.0, 2.0, 4.0, 8.0]
 ARMS = [('std', 'I'), ('std', 'P'), ('bn', 'P')]
 P, DA = 11, 5
