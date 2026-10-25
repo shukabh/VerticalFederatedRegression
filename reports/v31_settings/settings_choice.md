@@ -65,3 +65,41 @@ extended.
    under I and P, (e) under I; the previous setting from the existing results.
 4. Real-data sweep (13.8): bike, elevators, pol, protein at δ = 1e-9; (d) under I and P, and AdaSSP.
 5. Encrypted spot check: 5–10 OpenFHE runs, register ≤ 16,384 rows, I and P each at one ε with the ridge on.
+
+## Result of the selection (appended after the run; the rule above is unchanged)
+
+Run: `select_settings.py run --reps 200` then `choose`; full output in `selection.json`, the chosen values in
+`settings.json`. Exact radius at p = 11 (d_A = 5, d_O = 6): r₁/σ₁ = 7.415 at α_L = 0.0025 (union bound 11.529),
+5.468 at α_L = 0.25 (8.988), 4.940 at α_L = 0.5 (8.298); upper 99% confidence bounds from 1e6, 2e5 and 2e5 draws.
+
+**Setting I: f₁ = 0.25** (r₁ exact, ϑ* = 2.5, κ_Ψ = 2, α = 0.05, α_L = α_U = 0.0025, intervals on).
+
+| f₁ | 0.20 | 0.25 | 0.30 | 0.35 | 0.40 | 0.45 | 0.50 | previous (union, 0.1) |
+|---|---|---|---|---|---|---|---|---|
+| C_I, R² = 0.5 (decides) | 1.6743 | **1.6719** | 1.6762 | 1.6851 | 1.6978 | 1.7140 | 1.7336 | 1.8006 |
+| C_I, R² = 0.3 | 1.3759 | 1.3754 | 1.3803 | 1.3895 | 1.4020 | 1.4177 | 1.4364 | |
+| C_I, R² = 0.9 | 2.4048 | 2.4017 | 2.4057 | 2.4152 | 2.4289 | 2.4464 | 2.4677 | |
+| n_off at ε = 1 | 27.8k | 27.0k | 26.6k | 26.5k | 26.6k | 26.9k | 27.3k | 41.7k |
+
+The criterion is flat between 0.2 and 0.3 and agrees at R² = 0.3 and 0.9. n_off alone would favour 0.35 (as
+Section 9.5 said), but the larger σ₂ of a larger f₁ costs accuracy once the ridge is off. The gate refused no
+release for any f₁. n_off under I: 52.5k, 27.0k, 13.9k, 7.3k, 3.9k for ε = 0.5, 1, 2, 4, 8 (previous: 81.2k,
+41.7k, 21.6k, 11.2k, 6.0k).
+
+**Setting P: ϑ* = 0.5, α_L = 0.5, f₁ = 0.2** (r₁ exact, κ_Ψ = 2, intervals off, the gate kept).
+
+C_P at R² = 0.5 (the gate-refusal rate, largest over the 70 cells, in brackets where it is not 0):
+
+| ϑ* \ α_L, f₁ | 0.0025, 0.1 | 0.0025, 0.2 | 0.0025, 0.35 | 0.25, 0.1 | 0.25, 0.2 | 0.25, 0.35 | 0.5, 0.1 | 0.5, 0.2 | 0.5, 0.35 |
+|---|---|---|---|---|---|---|---|---|---|
+| 0.5 | 1.3420 | 1.3157 | 1.3075 | 1.3259 | 1.3046 | 1.3028 (0.01) | 1.3214 | **1.3017** | 1.3025 (0.02) |
+| 1 | 1.3517 | 1.3266 | 1.3172 | 1.3362 | 1.3152 | 1.3100 | 1.3318 | 1.3121 | 1.3083 |
+| 1.5 | 1.3610 | 1.3375 | 1.3282 | 1.3462 | 1.3260 | 1.3202 | 1.3420 | 1.3229 | 1.3181 |
+| 2.5 | 1.3784 | 1.3579 | 1.3508 | 1.3648 | 1.3474 | 1.3429 | 1.3609 | 1.3445 | 1.3407 |
+
+The previous setting gives C_P = 1.4045 and I gives 1.3538. The chosen P refused no release in any cell (largest
+mean refusal rate on the grid: 0.001). **P lies on the grid edge in ϑ* (0.5) and α_L (0.5).** As pre-registered,
+the grid is not extended; the top five candidates are within 0.5% of each other in C_P. At R² = 0.3 the same
+candidate is best; at R² = 0.9 it is third (3.631 against 3.560 for f₁ = 0.35), so the best f₁ for P depends on
+the signal strength. I's f₁ = 0.25 is best at all three R².
+n_off under P: 22.0k, 11.3k, 5.8k, 3.1k, 1.6k for ε = 0.5, 1, 2, 4, 8.

@@ -178,3 +178,33 @@ def stage2_from_unit(G, c, Z2, f2, lam, Psi, sigma2):
     st = ev.stage2_solve(G2, c2, lam, Psi, sigma2)
     th = np.where(st['refused'][:, None], 0.0, st['theta'])
     return th, st['theta'], st['gate'], st['refused'], G2, c2
+
+
+# ------------------------------------------------------------------------------------------- r_1 cache
+def _r1_job(key):
+    dA, dO, al = key
+    return key, solve.r1_quantile_mc(dA, dO, al, solve.r1_draws(al))
+
+
+def precompute_r1(keys, workers=4):
+    """Fill vfr/r1_quantiles.json for the (d_A, d_O, alpha_L) keys before parallel runs start.  Monte Carlo in
+    worker processes; the parent writes the cache (no write races)."""
+    from concurrent.futures import ProcessPoolExecutor
+    have = solve._read_cache(solve.R1_CACHE)
+    todo = []
+    for dA, dO, al in sorted(set(keys), key=lambda k: -(k[0] + k[1]) ** 3 * solve.r1_draws(k[2])):
+        key = solve._r1_key(dA, dO, al, solve.r1_draws(al), solve.R1_CONF, solve.R1_SEED)
+        if key not in have:
+            todo.append((dA, dO, al))
+    if not todo:
+        return 0
+    from concurrent.futures import as_completed
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        futs = [ex.submit(_r1_job, k) for k in todo]
+        for fu in as_completed(futs):                  # written as each finishes (robust to interruption)
+            (dA, dO, al), entry = fu.result()
+            key = solve._r1_key(dA, dO, al, entry['draws'], entry['conf'], entry['seed'])
+            solve._write_cache(solve.R1_CACHE, key, entry)
+            print(f'r1 cache: dA={dA} dO={dO} alpha_L={al}: {entry["ucb"]:.4f} (union {entry["union"]:.4f})', flush=True)
+    solve.r1_quantile_exact.cache_clear()
+    return len(todo)
