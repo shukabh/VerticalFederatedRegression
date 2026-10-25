@@ -240,15 +240,20 @@ LOG2_OMEGA_U_A = 68.0   # R's encoding scale for circuit A
 # Named evaluation settings of the statistical parameters (paper, Section "Parameters").  None of them is part
 # of the protocol.  'prev' is the earlier evaluation setting (the Agreement defaults).  'I' (inference) keeps the
 # interval guarantee with the exact stage-1 radius and a larger stage-1 share; 'P' (prediction) is tuned for test
-# error only and gives up the interval guarantee.  I and P were chosen on the synthetic population only, by the
-# rule pre-registered in reports/v31_settings/settings_choice.md.
+# error only and gives up the interval guarantee.  All were chosen on the synthetic population only: I by the rule
+# pre-registered in reports/v31_settings/settings_choice.md, and P by the rule in
+# reports/v31_P2/settings_choice_P2.md, which adds a gate-refusal constraint and a block-normalized population.
+# 'P0' is the first prediction setting, whose gate refused most releases on block-normalized real data; it is
+# kept only to reproduce the earlier results.
 SETTINGS = {
     'prev': dict(f1=0.1, theta_star=2.5, kappa_Psi=2.0, alpha=0.05, alpha_L=None, alpha_U=None, r1_mode='union',
                  intervals=True),
     'I': dict(f1=0.25, theta_star=2.5, kappa_Psi=2.0, alpha=0.05, alpha_L=0.0025, alpha_U=0.0025, r1_mode='exact',
               intervals=True),
-    'P': dict(f1=0.2, theta_star=0.5, kappa_Psi=2.0, alpha=0.05, alpha_L=0.5, alpha_U=0.0025, r1_mode='exact',
+    'P': dict(f1=0.25, theta_star=1.5, kappa_Psi=2.0, alpha=0.05, alpha_L=0.75, alpha_U=0.0025, r1_mode='exact',
               intervals=False),
+    'P0': dict(f1=0.2, theta_star=0.5, kappa_Psi=2.0, alpha=0.05, alpha_L=0.5, alpha_U=0.0025, r1_mode='exact',
+               intervals=False),
 }
 
 

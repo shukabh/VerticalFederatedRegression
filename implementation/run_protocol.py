@@ -9,7 +9,7 @@
                                      [--alpha_L A] [--r1_mode union|exact] [--no_intervals]
 
 --setting picks a named evaluation setting of the statistical parameters (vfr/dp.py SETTINGS: 'I' inference, the
-default; 'P' prediction, without intervals; 'prev' the earlier one); the explicit options override single fields.
+default; 'P' prediction, without intervals; 'P0' the first prediction setting; 'prev' the earlier one); the explicit options override single fields.
 
 kappa 'auto' lets Calibrate derive the flooding parameter from (eps, delta, zeta, kappa_min) and the ledger cap.
 The default ledger file holds a multi-run cap (ledger_eps, ledger_delta) with the hockey-stick accounting
