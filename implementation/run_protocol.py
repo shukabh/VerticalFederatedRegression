@@ -7,8 +7,8 @@
                                      [--setting prev|I|P] [--f1 F] [--theta_star T] [--kappa_Psi K]
                                      [--alpha_L A] [--r1_mode union|exact] [--no_intervals]
 
---setting picks a named evaluation setting of the statistical parameters (vfr/dp.py SETTINGS: 'prev' the earlier
-one, 'I' inference, 'P' prediction); the explicit options override single fields of it.
+--setting picks a named evaluation setting of the statistical parameters (vfr/dp.py SETTINGS: 'I' inference, the
+default; 'P' prediction, without intervals; 'prev' the earlier one); the explicit options override single fields.
 
 kappa 'auto' lets Calibrate derive the flooding parameter from (eps, delta, zeta, kappa_min) and the ledger cap.
 The default ledger file holds a multi-run cap (ledger_eps, ledger_delta); --ledger_eps none gives a single-run
@@ -53,7 +53,7 @@ def main():
     ap.add_argument('--ledger', default=os.path.join(HERE, 'ledger_O.json'))
     ap.add_argument('--transcript', default=None)
     ap.add_argument('--seed', type=int, default=0)
-    ap.add_argument('--setting', default='prev', choices=sorted(dp.SETTINGS),
+    ap.add_argument('--setting', default='I', choices=sorted(dp.SETTINGS),
                     help='named evaluation setting of the statistical parameters (vfr/dp.py SETTINGS)')
     ap.add_argument('--f1', type=float, default=None, help='stage-1 share of rho_run (overrides the setting)')
     ap.add_argument('--theta_star', type=float, default=None)

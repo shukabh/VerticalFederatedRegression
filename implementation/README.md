@@ -60,8 +60,11 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 
 Statistical settings (`vfr/dp.py`, `SETTINGS`; DEVIATIONS A18-A19). The Agreement defaults are the previous
 evaluation setting `'prev'` (union-bound r_1, f_1 = 0.1, theta* = 2.5, kappa_Psi = 2, alpha_L = alpha_U = alpha/20).
-The paper's two settings of the same protocol are `'I'` (inference: exact r_1, a larger f_1, the interval guarantee)
-and `'P'` (prediction: tuned for test error, no intervals); both keep the gate theta_hat >= 1. Pass them as
+The paper's two settings of the same protocol are `'I'` (inference: exact r_1, f_1 = 0.25, theta* = 2.5,
+alpha_L = alpha_U = 0.0025, the interval guarantee) and `'P'` (prediction: exact r_1, f_1 = 0.2, theta* = 0.5,
+alpha_L = 0.5, no intervals); both keep the gate theta_hat >= 1 and kappa_Psi = 2. They were chosen on the synthetic
+population by the rule pre-registered in `reports/v31_settings/settings_choice.md`. Caution: P's gate refuses most
+releases on block-normalized real data (paper, Section 13.8), where Delta_G is small against Delta. Pass them as
 `dp.Agreement(..., **dp.setting('I'))` or `run_protocol.py --setting I`. Both parties check every statistical field
 of the agreement; O refuses an ill-formed setting (intervals on with alpha_L + alpha_U >= alpha).
 

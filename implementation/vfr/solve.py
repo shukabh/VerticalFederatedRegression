@@ -47,7 +47,7 @@ R1_EXCEED = 2_500              # draws: at least this many expected exceedances 
 R1_MAX_DRAWS = 4_000_000
 R1_SEED = 20261024             # public; the quantile is a function of public quantities only
 R1_CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'r1_quantiles.json')
-_CHUNK = 20_000
+_CHUNK = 20_000                # draws per batch (fewer for large p: about 2e7 / p^2, so memory stays bounded)
 
 
 def r1_union_unit(p, alpha_L):
@@ -95,8 +95,9 @@ def r1_quantile_mc(dA, dO, alpha_L, draws, conf=R1_CONF, seed=R1_SEED):
     p = dA + dO
     rng = np.random.default_rng([seed, dA, dO])
     lm = np.empty(draws)
-    for s in range(0, draws, _CHUNK):
-        k = min(_CHUNK, draws - s)
+    chunk = min(_CHUNK, max(500, int(2e7 / p ** 2)))     # = _CHUNK for p <= 31
+    for s in range(0, draws, chunk):
+        k = min(chunk, draws - s)
         lm[s:s + k] = np.linalg.eigvalsh(masked_noise(rng, k, p, dA, 1.0))[:, -1]
     j = int(binom.ppf(conf, draws, 1 - alpha_L))          # 0-based index of the order statistic
     j = min(j, draws - 1)
