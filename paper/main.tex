@@ -136,12 +136,12 @@ This document proposes a cryptographic protocol for \emph{vertical federated lea
 
 \paragraph{The design in one paragraph.} Linkage is labeled private set intersection (PSI) on oblivious-PRF values of the identifiers, after which $\Rp$ knows its matches and their positions in $\Op$'s secretly shuffled register. $\Rp$ computes its own Gram block exactly and uploads its features, aligned to $\Op$'s order and zero elsewhere, encrypted under its share of a two-party CKKS key. $\Op$ converts them to the joint key and multiplies them by its own plaintext columns, which gives encryptions of every statistic that involves its data. A release is a threshold decryption in which $\Op$ computes its share of the decryption, adds discrete-Gaussian noise to it, and sends it without the part of the ciphertext that would let $\Rp$ remove the noise. $\Op$ never decrypts anything, $\Rp$ never sees a noiseless statistic that depends on $\Op$'s data, and every decryption needs $\Op$'s cooperation, so $\Op$ can refuse once the budget is spent.
 
-\paragraph{Contributions.}
+\paragraph{Contributions.} Each ingredient of the protocol has a precedent (Section~\ref{sec:related}): DP noise added at collective decryption, DP noise on partial decryptions as a defence for threshold approximate HE, noisy sufficient statistics for vertical linear regression, and a block that each data owner computes locally. What is new is their combination, made precise in the items below; Section~\ref{sec:related} says what we do not claim.
 \begin{enumerate}[noitemsep]
   \item \textbf{Protocol.} A two-party protocol that combines OPRF-based labeled PSI, a seeded upload under $\Rp$'s key share converted by $\Op$, plaintext--ciphertext aggregation, and a release in which $\Op$'s decryption share carries the DP noise (Section~\ref{sec:protocol}, Algorithms~\ref{alg:setup}--\ref{alg:sub}).
-  \item \textbf{Privacy.} The exact replace-one sensitivity of the released statistics; a lattice discrete-Gaussian release that is exactly $\rho_s$-zCDP and statistically floods every encryption error term; simulation-based output privacy; composition of runs, fixed or adaptively chosen, under a per-register ledger; input and cohort privacy (Sections~\ref{sec:privacy} and~\ref{sec:input}).
+  \item \textbf{Privacy.} The exact replace-one sensitivity of the released statistics; a release whose single noise term, an exact lattice discrete Gaussian in $\Op$'s decryption share, is exactly $\rho_s$-zCDP and also floods every encryption error term against a worst-case bound; simulation-based output privacy; composition of runs, fixed or adaptively chosen, under a per-register ledger with a privacy filter; input and cohort privacy (Sections~\ref{sec:privacy} and~\ref{sec:input}).
   \item \textbf{Parameters.} The protocol and every theorem are stated for a parameter vector with explicit admissibility constraints; \textsc{Calibrate} derives the flooding parameter from the budget and the ledger cap, and the scale and the noise from both (Section~\ref{sec:params}).
-  \item \textbf{Statistics.} A two-stage ridge whose choice is independent of the noise in the estimation release; two named estimands; a Wald interval from a parametric bootstrap of the mechanism; a bias-aware interval for the regression coefficients; and the leading-order mechanism bias with an optional correction (Sections~\ref{sec:stats} and~\ref{sec:bias}).
+  \item \textbf{Statistics.} A two-stage ridge whose choice is independent of the noise in the estimation release; two named estimands; a Wald interval from a parametric bootstrap of the mechanism, after Ferrando et al.~\cite{ferrando2022parametric}; a bias-aware interval for the regression coefficients, after Armstrong et al.~\cite{armstrong2020bias}; and the leading-order mechanism bias with an optional correction (Sections~\ref{sec:stats} and~\ref{sec:bias}).
   \item \textbf{Preprocessing.} Per-party transforms with public constants that make typical records fill the clipping bounds, which no joint computation is needed for (Section~\ref{sec:protocol:preproc}).
   \item \textbf{Evaluation.} Exactness of the cryptographic layer, the calibration of the two-release protocol, interval coverage, end-to-end runs of a full implementation on real and synthetic data, coefficient accuracy against the intersection size, and a benchmark against AdaSSP on 29 UCI datasets, under two named settings of the protocol chosen on synthetic data by a pre-registered rule: one for inference and one for prediction (Section~\ref{sec:eval}).
 \end{enumerate}
@@ -151,17 +151,46 @@ This document proposes a cryptographic protocol for \emph{vertical federated lea
 \label{sec:related}
 % ==============================================================
 
-\tocheck{All bibliographic details in this section were written from memory and must be verified. The positioning against Froelicher et al. also needs a careful read of their papers.}
+\tocheck{The bibliographic details of the entries cited in this section are taken from the literature review's verified reference list, and the fields that list omits (some given names, volumes and pages) are omitted here too. Three are still unverified. (a) UnLynx~\cite{froelicher2017unlynx} is not in the verified list. Its authors, title, issue, pages and DOI were confirmed only through a search-engine summary of the PoPETs page, and the description of its noise protocol comes from the Drynx paper, through search-engine extracts; check it against the UnLynx text. (b) Ion et al.~\cite{ion2020deploying} is not in the verified list. The title of ePrint 2019/723 and its nine-author list conflict with Google Research's listing of the EuroS\&P~2020 paper, which has a different title and six authors; the bibliography gives the ePrint title and the first two authors only. Confirm the published title, the authors and the pages ($370$--$389$). (c) The later title and the venue of Hwang et al.~\cite{hwang2025insecurity}: see Check~(T1) in Section~\ref{sec:privacy:mech}.}
 
-\paragraph{Vertical federated regression.} Linear and logistic regression on vertically partitioned data has been built from additively homomorphic encryption with entity resolution~\cite{hardy2017private} and from secure multiparty computation~\cite{gascon2017privacy}; see~\cite{yang2019federated} for a survey. These systems typically assume a coordinator or reveal the exact fitted model, and they do not give the output a differential-privacy guarantee.
+The protocol draws on secure regression for vertically partitioned data, differentially private regression and inference, threshold homomorphic encryption, and private set intersection. We review each and then state what is new.
 
-\paragraph{Multiparty and threshold homomorphic encryption.} Threshold fully homomorphic encryption goes back to Asharov et al.~\cite{asharov2012multiparty}. Mouchet et al.~\cite{mouchet2021multiparty} give practical $n$-out-of-$n$ multiparty schemes from RLWE, with collective key generation and collective key switching, which we use with two parties. Froelicher et al.~\cite{froelicher2020drynx,froelicher2021truly} build federated analytics on multiparty HE and add differential-privacy noise when results are collectively decrypted. Our release follows the same principle of attaching the noise to the decryption. Our setting differs: the data are vertically partitioned, records must first be linked privately, one party is the only analyst, and we give the exact sensitivity under the resulting adjacency, the flooding analysis for CKKS, and valid inference.
+\paragraph{Secure regression on vertically partitioned data.} The statistics literature on this problem predates federated learning. Sanil, Karr, Lin and Reiter~\cite{sanil2004privacy} compute exact global regression coefficients and goodness-of-fit measures for agencies that hold different attributes of the same records, without revealing the attributes. Karr, Lin, Sanil and Reiter~\cite{karr2009privacy} compute the off-diagonal blocks of the covariance matrix by secure matrix products between pairs of owners, and each owner computes its own diagonal block locally. They release coefficients, standard errors and diagnostics, use no third party, and assume that the records are already aligned. Our aggregation has the same block structure: $\Rp$ computes $\bA$ locally, and only the blocks that involve $\Op$'s data are computed jointly. Du, Han and Chen~\cite{du2004privacy} give two-party protocols for multivariate linear regression. Hall, Fienberg and Nardi~\cite{hall2011secure} compute linear and ridge regression under homomorphic encryption, release only the final result, and test the method on the Current Population Survey. In cryptography and machine learning, Nikolaenko et al.~\cite{nikolaenko2013privacy} combine linearly homomorphic encryption with garbled circuits for ridge regression on hundreds of millions of records, and Giacomelli et al.~\cite{giacomelli2018privacy} use linearly homomorphic encryption alone. Gasc\'on et al.~\cite{gascon2017privacy} solve vertical linear regression with garbled circuits, inner-product protocols and a fixed-point conjugate-gradient method. Hardy et al.~\cite{hardy2017private} link records by privacy-preserving entity resolution and train logistic regression under additively homomorphic encryption, with a coordinator as a third party. SecureML~\cite{mohassel2017secureml} trains linear and logistic regression on two servers, and the FATE platform~\cite{liu2021fate} includes PSI and two-party linear regression among its components. Yang et al.~\cite{yang2019federated} and Liu et al.~\cite{liu2024vertical} survey federated and vertical federated learning. All of these give the analyst the exact model or exact statistics. None gives the output a differential-privacy guarantee.
 
-\paragraph{Differentially private linear regression.} Sufficient-statistics perturbation is the standard approach~\cite{dwork2014dp,sheffet2017differentially}; AdaSSP~\cite{wang2018revisiting} adds an adaptive ridge chosen from a private estimate of the smallest eigenvalue. These methods assume one curator who holds the joined table. Our ridge rule borrows the idea of choosing $\lambda$ from a private eigenvalue bound, but takes the bound from a separate release so that the estimation noise is independent of $\lambda$.
+\paragraph{Differentially private linear regression.} Sufficient-statistics perturbation (SSP) adds noise to $\bX^\top\bX$, $\bX^\top\by$ and $\by^\top\by$ and solves from the noisy statistics. Vu and Slavkovi\'c~\cite{vu2009differential} add noise to sufficient statistics for tests on clinical-trial data. The functional mechanism of Zhang et al.~\cite{zhang2012functional} perturbs the coefficients of the polynomial objective, which for least squares is SSP with Laplace noise. Foulds et al.~\cite{foulds2016theory} use Laplace SSP for conjugate exponential-family posteriors. AdaSSP~\cite{wang2018revisiting} adds a ridge chosen from a private estimate of the smallest eigenvalue of the Gram matrix. Other estimators perturb the objective~\cite{chaudhuri2011differentially,kifer2012private}. TukeyEM~\cite{amin2023easy} fits least squares on disjoint subsets and selects among the fits by the exponential mechanism on approximate Tukey depth; it needs no bounds on the features or the labels. Insufficient statistics perturbation~\cite{brown2024insufficient} has error linear in the dimension and independent of the condition number for data of bounded leverage. All of these assume one curator who holds the joined table, and they protect the whole record. Our ridge rule borrows AdaSSP's idea of choosing $\lambda$ from a private eigenvalue bound, but takes the bound from a separate release, so that the estimation noise is independent of $\lambda$ (Proposition~\ref{prop:indep}).
 
-\paragraph{Private set intersection.} Labeled PSI from homomorphic encryption~\cite{chen2017fast,chen2018labeled,cong2021labeled} builds on polynomial evaluation~\cite{freedman2004efficient} and cuckoo hashing~\cite{pagh2004cuckoo}. We hash identifiers with the 2HashDH oblivious PRF~\cite{jarecki2014round}, standardized in RFC~9497~\cite{rfc9497}. Circuit-PSI~\cite{rindal2021vole} would hide the match set from $\Rp$ as well (Remark~\ref{rem:modeM}).
+\paragraph{Differentially private inference.} Sheffet~\cite{sheffet2017differentially} derives $t$-values and confidence intervals for differentially private ordinary least squares. Ferrando, Wang and Sheldon~\cite{ferrando2022parametric} form intervals by a parametric bootstrap of the mechanism, which accounts for sampling and privacy noise together, and prove consistency for a least-squares variant. Our Wald interval applies their idea to a ridge target with noise on only part of the statistics (Section~\ref{sec:stats:ci}). Evans, King, Schwenzfeier and Thakurta~\cite{evans2023statistically} give bias-corrected estimates with valid uncertainty from privacy-protected data. Brown et al.~\cite{brown2024private} derive instance-specific intervals from private gradient descent for least squares. Lin, Slavkovi\'c and Bhoomireddy~\cite{lin2026differentially} give a bias-corrected estimator for linear regression with asymptotic intervals under Gaussian DP. Barrientos, Reiter, Machanavajjhala and Chen~\cite{barrientos2019differentially} test whether a regression coefficient would be significant on the confidential data when the analyst sees only synthetic or protected outputs; the test adds Laplace noise to the mean of truncated $t$-statistics over subsamples. All of these are central methods. Our bias-aware interval for $\bbeta$ follows Armstrong, Koles\'ar and Kwon~\cite{armstrong2020bias}, with the ridge bias bounded through a public or a private bound on $\|\bbeta\|$.
 
-\paragraph{Homomorphic encryption and differential privacy.} Li and Micciancio~\cite{li2021security} showed that decrypted CKKS values can leak the secret key, and Li, Micciancio, Schultz and Sorrell~\cite{li2022securing} use differential privacy to protect approximate HE. Our release floods the error statistically with noise that is also the DP noise of the statistic (Section~\ref{sec:privacy}).
+\paragraph{Differential privacy on vertically partitioned data.} Dwork and Nissim~\cite{dwork2004privacy} extend noisy statistical databases to vertically partitioned databases. Xu, Yuan and Wu~\cite{xu2019achieving} apply the functional mechanism to vertically partitioned multiparty learning, including linear regression. A server splits the objective into single-party and cross-party terms, the parties perturb the polynomial coefficients, and one round of noise addition and secure aggregation gives the utility of the centralized functional mechanism. Differentially private vertical linear regression from noisy sufficient statistics is therefore not new. Wu et al.~\cite{wu2022differentially} let parties that hold disjoint attributes of the same subjects each release differentially private data. They show that a direct Gaussian mechanism suffers from small eigenvalues and give a release from which the regression converges to the non-private solution, without cryptography. Mohammed et al.~\cite{mohammed2014secure} release differentially private data from two parties with a two-party exponential mechanism. Heinze-Deml, McWilliams and Meinshausen~\cite{heinzedeml2017preserving} share perturbed random projections of each party's features. Other work adds noise to the intermediate results of iterative training~\cite{wang2020hybrid,dejong2022differentially}. None of these links records; they assume aligned rows. Krichene et al.~\cite{krichene2024private} treat some features as public and add noise only to the sufficient statistics that involve the private features or the labels. Our guarantee has this shape: $\Rp$'s features are fixed under the adjacency (Definition~\ref{def:adj}), so $\bA$ needs no noise.
+
+\paragraph{Two-party and computational differential privacy.} McGregor et al.~\cite{mcgregor2010limits} show that information-theoretic two-party differentially private protocols lose accuracy on functions such as the inner product and the Hamming distance. Computational DP~\cite{mironov2009computational} asks for privacy only against computationally bounded adversaries. Our guarantee to $\Rp$ is SIM-CDP in this sense (Definition~\ref{def:simcdp}). It is also one-sided: DP protects $\Op$'s records from $\Rp$, while $\Rp$'s data are protected from $\Op$ by encryption alone (G1 and G2 in Table~\ref{tab:guarantees}).
+
+\paragraph{Distributed noise and noise inside the encryption.} Dwork et al.~\cite{dwork2006our} let the parties generate Gaussian or exponential noise jointly, so that no trusted curator is needed. Shi et al.~\cite{shi2011privacy} let an aggregator decrypt only the sum of users' encrypted values, with the randomness distributed among the users so that the sum stays differentially private even if some users are compromised. Kairouz, Liu and Steinke~\cite{kairouz2021distributed} analyse sums of discrete Gaussians under secure aggregation. In these schemes the noise is split so that no single party knows all of it. In v3.1 all of it comes from $\Op$, the party whose records it protects; Remark~\ref{rem:whoknows} discusses what $\Op$'s knowledge of the noise implies. Stevens et al.~\cite{stevens2022efficient} use the LWE error of the encryption as DP noise in secure aggregation. Ogilvie~\cite{ogilvie2024differential} uses the CKKS error as DP noise, with ridge regression by gradient descent as the case study. Our release reuses noise in the other direction: the DP noise floods the encryption error.
+
+\paragraph{Threshold homomorphic encryption with noise at decryption.} Threshold fully homomorphic encryption goes back to Asharov et al.~\cite{asharov2012multiparty}, and Boneh et al.~\cite{boneh2018threshold} smudge partial decryptions with noise. Mouchet et al.~\cite{mouchet2021multiparty} give $N$-out-of-$N$ multiparty HE from RLWE, with collective key generation and collective key switching; we use their key generation with two parties (Section~\ref{sec:blocks:he}). Froelicher, Hubaux and coauthors build federated-analytics systems that attach DP noise to the collective decryption. UnLynx~\cite{froelicher2017unlynx} and Drynx~\cite{froelicher2020drynx} encrypt under a collective EC-ElGamal key. For a differentially private answer, the computing nodes shuffle a list of encrypted Laplace noise values in turn and add the first entry of the shuffled list to the encrypted result, before the collective key switch to the querier. SPINDLE~\cite{froelicher2021scalable} trains generalized linear models under RLWE multiparty CKKS and states that collectively generated noise should be added to the result before the distributed key switch. FAMHE~\cite{froelicher2021truly} lets the parties choose whether the querier receives exact or differentially private results, without specifying a mechanism. In all four the data are horizontally partitioned, and the noise is added under encryption before the key switch, not inside a decryption share. Nor is it used to flood a decryption error; the ElGamal-based systems have none. Kluczniak and Santato~\cite{kluczniak2025circuit} supply the cryptographic half of our release. In threshold and multikey approximate HE, they apply a differentially private mechanism to the partial decryptions, with noise sized to the worst-case error growth, and obtain IND-CPA-style security against an adversary who also sees the partial decryptions. Our release uses noise of this kind. What we add is that the same noise is also the zCDP noise of the released statistic, with a simulation-based proof at a concrete flooding parameter (Section~\ref{sec:privacy:mech}).
+
+\paragraph{Attacks on approximate homomorphic encryption.} Li and Micciancio~\cite{li2021security} recover the CKKS secret key from decryptions that the adversary sees (IND-CPA$^{D}$ security). Li, Micciancio, Schultz and Sorrell~\cite{li2022securing} add Gaussian noise after decryption to restore security, with nearly matching bounds on the noise needed. Guo et al.~\cite{guo2024key} recover the key in OpenFHE when the flooding noise is set from non-worst-case noise estimates. Checri et al.~\cite{checri2024practical} show that threshold BFV, BGV and CKKS are exposed to such attacks unless smudging noise is added after partial decryption. Hwang et al.~\cite{hwang2025insecurity} show that two-party CKKS protocols in which each party adds its own smudging noise meet only a relaxed simulation notion when both parties have inputs. Section~\ref{sec:privacy:mech} shows how v3.1 answers the first three: $\Op$'s share, the only partial decryption that is sent, carries noise calibrated to a worst-case bound. Remark~\ref{rem:whoknows} explains why the fourth does not affect the guarantee to $\Rp$ but does apply to $\Op$.
+
+\paragraph{Private set intersection and computation on the intersection.} Labeled PSI from homomorphic encryption~\cite{chen2017fast,chen2018labeled,cong2021labeled} builds on PSI by oblivious polynomial evaluation~\cite{freedman2004efficient} and on cuckoo hashing~\cite{pagh2004cuckoo}. We key the items with the 2HashDH oblivious PRF~\cite{jarecki2014round}, specified in RFC~9497~\cite{rfc9497}. In these protocols the receiver learns the intersection. Circuit-PSI~\cite{pinkas2019efficient,rindal2021vole} gives the parties secret shares instead, and would hide the match set from $\Rp$ as well (Remark~\ref{rem:modeM}). Other protocols compute on the intersection without revealing it. The protocol of Ion et al.~\cite{ion2020deploying} reveals only the cardinality of the intersection and the sum of the values attached to it. Buddhavarapu et al.~\cite{buddhavarapu2020private} give private matching protocols whose outputs are secret-shared, for later computation. Lepoint et al.~\cite{lepoint2021private} compute inner products over the intersection from PIR with default, hiding even its size. In v3.1 $\Rp$ learns the match, which lets it compute $\bA$ exactly and locally. Lin, Paquette and Kolaczyk~\cite{lin2024differentially} study DP linear regression after probabilistic record linkage, under central DP, with error bounds that separate the linkage error, the estimation error and the cost of privacy. Our linkage is exact on identifiers, and linkage error is outside our model (Section~\ref{sec:ext}).
+
+\paragraph{Statistical agencies.} Bogdanov et al.~\cite{bogdanov2016students} joined about ten million Estonian tax records with about half a million education records under secure multiparty computation for a statistical study. Dasylva et al.~\cite{dasylva2025linking} link trade data held by different national statistical offices, Statistics Canada among them, by PSI. Reiter, Oganian and Karr~\cite{reiter2009verification} propose verification servers, which tell an analyst how closely results from altered public-use data match those from the confidential data; the tests of Barrientos et al.~\cite{barrientos2019differentially} are a differentially private check of this kind. Barrientos, Williams, Snoke and Bowen~\cite{barrientos2024feasibility} evaluate DP summary statistics and regression on IRS tax data and the Current Population Survey, and report that accurate DP regression estimates and intervals were hard to obtain. The application setting is therefore not new. None of these works gives a DP release, under the agency's control, on a cohort that the researcher brings.
+
+\paragraph{What is new.} Each ingredient has a precedent, and we do not claim them:
+\begin{itemize}[noitemsep]
+  \item DP noise attached to collective decryption (UnLynx, Drynx, SPINDLE, FAMHE);
+  \item DP noise on partial decryptions as a defence for threshold approximate HE (Kluczniak and Santato);
+  \item noisy sufficient statistics for vertical linear regression (Xu, Yuan and Wu);
+  \item each owner's block computed locally (Karr et al.);
+  \item noise only on the statistics that involve private data (Krichene et al.).
+\end{itemize}
+We found no prior protocol that combines them as follows:
+\begin{enumerate}[noitemsep, label=(\roman*)]
+  \item vertically partitioned data linked by OPRF-based labeled PSI and aggregated under two-party threshold CKKS;
+  \item a release in which a single party's decryption share carries an exactly sampled discrete Gaussian that is at once the zCDP noise for that party's records and the worst-case flooding noise for the CKKS error, with a simulation-based proof (Theorem~\ref{thm:output});
+  \item $\Rp$'s block kept exact and local, with the adjacency and the noise covering $\Op$'s records only;
+  \item a two-stage ridge whose choice is independent of the estimation noise, on which the validity of the Wald and bias-aware intervals rests (Proposition~\ref{prop:indep}, Section~\ref{sec:stats:ci});
+  \item a per-register ledger that composes runs, fixed or chosen adaptively, under a privacy filter~\cite{rogers2016odometers}, with the flooding slack accounted next to the zCDP cost (Section~\ref{sec:privacy:ledger}).
+\end{enumerate}
 
 % ==============================================================
 \section{Setting and notation}
@@ -1954,20 +1983,55 @@ M.~Albrecht, M.~Chase, H.~Chen, J.~Ding, S.~Goldwasser, S.~Gorbunov, S.~Halevi, 
 ``Homomorphic encryption security standard,''
 HomomorphicEncryption.org, Toronto, Canada, November 2018.
 
+\bibitem{amin2023easy}
+K.~Amin, M.~Joseph, M.~Ribero, and S.~Vassilvitskii,
+``Easy differentially private linear regression,''
+in \textit{Proc.\ ICLR}, 2023. arXiv:2208.07353.
+
 \bibitem{armstrong2020bias}
 T.~B.~Armstrong, M.~Koles\'ar, and S.~Kwon,
 ``Bias-aware inference in regularized regression models,''
-arXiv:2012.14823, 2020.
+arXiv:2012.14823, 2020 (v2, 2023). Working paper.
 
 \bibitem{asharov2012multiparty}
 G.~Asharov, A.~Jain, A.~L\'opez-Alt, E.~Tromer, V.~Vaikuntanathan, and D.~Wichs,
 ``Multiparty computation with low communication, computation and interaction via threshold FHE,''
-in \textit{Proc.\ EUROCRYPT}, 2012.
+in \textit{Proc.\ EUROCRYPT}, LNCS vol.~7237, 2012.
 
-\bibitem{balle2018improving}
-B.~Balle and Y.-X.~Wang,
-``\href{http://proceedings.mlr.press/v80/balle18a.html}{Improving the Gaussian mechanism for differential privacy: Analytical calibration and optimal denoising},''
-in \textit{Proc.\ ICML}, 2018, pp.\ 394--403.
+\bibitem{barrientos2019differentially}
+A.~F.~Barrientos, J.~P.~Reiter, A.~Machanavajjhala, and Y.~Chen,
+``Differentially private significance tests for regression coefficients,''
+\textit{J.\ Comput.\ Graph.\ Statist.}, pp.\ 440--453, 2019.
+
+\bibitem{barrientos2024feasibility}
+A.~F.~Barrientos, A.~R.~Williams, J.~Snoke, and C.~M.~Bowen,
+``A feasibility study of differentially private summary statistics and regression analyses with evaluations on administrative and survey data,''
+\textit{J.\ Amer.\ Statist.\ Assoc.}, vol.~119, no.~545, pp.\ 52--65, 2024.
+
+\bibitem{bogdanov2016students}
+D.~Bogdanov, L.~Kamm, B.~Kubo, R.~Rebane, V.~Sokk, and R.~Talviste,
+``Students and taxes: a privacy-preserving study using secure computation,''
+\textit{Proc.\ Privacy Enhancing Technologies}, vol.~2016, no.~3, pp.\ 117--135, 2016.
+
+\bibitem{boneh2018threshold}
+Boneh, Gennaro, Goldfeder, Jain, Kim, Rasmussen, and Sahai,
+``Threshold cryptosystems from threshold fully homomorphic encryption,''
+in \textit{Proc.\ CRYPTO}, 2018, pp.\ 565--596.
+
+\bibitem{brown2024insufficient}
+G.~Brown, J.~Hayase, S.~Hopkins, W.~Kong, X.~Liu, S.~Oh, J.~C.~Perdomo, and A.~Smith,
+``Insufficient statistics perturbation: Stable estimators for private least squares (extended abstract),''
+in \textit{Proc.\ COLT}, PMLR vol.~247, 2024, pp.\ 750--751. Full version: arXiv:2404.15409.
+
+\bibitem{brown2024private}
+Brown, Dvijotham, G.~Evans, Liu, Smith, and A.~G.~Thakurta,
+``Private gradient descent for linear regression: Tighter error bounds and instance-specific uncertainty estimation,''
+in \textit{Proc.\ ICML}, PMLR vol.~235, 2024, pp.\ 4561--4584.
+
+\bibitem{buddhavarapu2020private}
+P.~Buddhavarapu, A.~Knox, P.~Mohassel, S.~Sengupta, E.~Taubeneck, and V.~Vlaskin,
+``Private matching for compute,''
+Cryptology ePrint Archive, Paper 2020/599, 2020.
 
 \bibitem{bun2016concentrated}
 M.~Bun and T.~Steinke,
@@ -1977,7 +2041,12 @@ in \textit{Proc.\ TCC}, 2016.
 \bibitem{canonne2020discrete}
 C.~L.~Canonne, G.~Kamath, and T.~Steinke,
 ``\href{https://proceedings.neurips.cc/paper/2020/hash/b53b3a3d6ab90ce0268229151c9bde11-Abstract.html}{The discrete Gaussian for differential privacy},''
-in \textit{Proc.\ NeurIPS}, 2020, pp.\ 15676--15688.
+in \textit{Proc.\ NeurIPS}, 2020.
+
+\bibitem{chaudhuri2011differentially}
+Chaudhuri, Monteleoni, and Sarwate,
+``Differentially private empirical risk minimization,''
+\textit{J.\ Mach.\ Learn.\ Res.}, vol.~12, pp.\ 1069--1109, 2011.
 
 \bibitem{checri2024practical}
 Checri, Sirdey, Boudguiga, and Bultel,
@@ -1987,12 +2056,12 @@ in \textit{Advances in Cryptology -- CRYPTO 2024}, 2024. Cryptology ePrint Archi
 \bibitem{chen2017fast}
 H.~Chen, K.~Laine, and P.~Rindal,
 ``Fast private set intersection from homomorphic encryption,''
-in \textit{Proc.\ ACM CCS}, 2017.
+in \textit{Proc.\ ACM CCS}, 2017, pp.\ 1243--1255.
 
 \bibitem{chen2018labeled}
 H.~Chen, Z.~Huang, K.~Laine, and P.~Rindal,
 ``Labeled PSI from fully homomorphic encryption with malicious security,''
-in \textit{Proc.\ ACM CCS}, 2018.
+in \textit{Proc.\ ACM CCS}, 2018, pp.\ 1223--1237.
 
 \bibitem{cheon2017homomorphic}
 J.-H.~Cheon, A.~Kim, M.~Kim, and Y.~Song,
@@ -2000,104 +2069,249 @@ J.-H.~Cheon, A.~Kim, M.~Kim, and Y.~Song,
 in \textit{Proc.\ ASIACRYPT}, 2017, pp.\ 409--437.
 
 \bibitem{cong2021labeled}
-K.~Cong, R.~Cruz Moreno, M.~B.~da Gama, W.~Dai, I.~Iliashenko, K.~Laine, and M.~Rosenberg,
+Cong, Cruz Moreno, da~Gama, Dai, Iliashenko, Laine, and Rosenberg,
 ``Labeled PSI from homomorphic encryption with reduced computation and communication,''
-in \textit{Proc.\ ACM CCS}, 2021.
+in \textit{Proc.\ ACM CCS}, 2021, pp.\ 1135--1150. Page range from an institutional (imec) record.
+
+\bibitem{dasylva2025linking}
+A.~Dasylva, M.~De~Cubellis, F.~De~Fausti, and L.~Franssen,
+``Linking trade data from different national statistical offices through a private set intersection,''
+\textit{J.\ Official Statist.}, vol.~41, no.~2, pp.\ 569--597, 2025.
+
+\bibitem{dejong2022differentially}
+J.~de~Jong, B.~Kamphorst, and S.~Kroes,
+``Differentially private block coordinate descent for linear regression on vertically partitioned data,''
+\textit{J.\ Cybersecurity and Privacy}, vol.~2, no.~4, pp.\ 862--881, 2022.
+
+\bibitem{du2004privacy}
+W.~Du, Y.~S.~Han, and S.~Chen,
+``Privacy-preserving multivariate statistical analysis: Linear regression and classification,''
+in \textit{Proc.\ SIAM SDM}, 2004, pp.\ 222--233.
 
 \bibitem{dua2019uci}
 D.~Dua and C.~Graff,
 \textit{UCI Machine Learning Repository}.
 University of California, Irvine, School of Information and Computer Sciences, 2019.
 
-\bibitem{dwork2014dp}
-C.~Dwork and A.~Roth,
-\textit{\href{https://doi.org/10.1561/0400000042}{The Algorithmic Foundations of Differential Privacy}}.
-Now Publishers, 2014.
+\bibitem{dwork2004privacy}
+Dwork and Nissim,
+``Privacy-preserving datamining on vertically partitioned databases,''
+in \textit{Proc.\ CRYPTO}, LNCS vol.~3152, 2004, pp.\ 528--544.
+
+\bibitem{dwork2006our}
+C.~Dwork, K.~Kenthapadi, F.~McSherry, I.~Mironov, and M.~Naor,
+``Our data, ourselves: Privacy via distributed noise generation,''
+in \textit{Proc.\ EUROCRYPT}, LNCS vol.~4004, 2006, pp.\ 486--503.
+
+\bibitem{evans2023statistically}
+G.~Evans, G.~King, M.~Schwenzfeier, and A.~Thakurta,
+``Statistically valid inferences from privacy-protected data,''
+\textit{American Political Science Review}, vol.~117, no.~4, pp.\ 1275--1290, 2023.
 
 \bibitem{feldman2021individual}
 V.~Feldman and T.~Zrnic,
 ``Individual privacy accounting via a R\'enyi filter,''
 in \textit{Advances in Neural Information Processing Systems 34 (NeurIPS)}, 2021. arXiv:2008.11193.
 
+\bibitem{ferrando2022parametric}
+C.~Ferrando, S.~Wang, and D.~Sheldon,
+``Parametric bootstrap for differentially private confidence intervals,''
+in \textit{Proc.\ AISTATS}, PMLR vol.~151, 2022, pp.\ 1598--1618.
+
+\bibitem{foulds2016theory}
+J.~Foulds, J.~Geumlek, M.~Welling, and K.~Chaudhuri,
+``On the theory and practice of privacy-preserving Bayesian data analysis,''
+in \textit{Proc.\ UAI}, 2016.
+
 \bibitem{freedman2004efficient}
-M.~J.~Freedman, K.~Nissim, and B.~Pinkas,
+Freedman, Nissim, and Pinkas,
 ``\href{https://doi.org/10.1007/978-3-540-24676-3_1}{Efficient private matching and set intersection},''
-in \textit{Proc.\ EUROCRYPT}, 2004, pp.\ 1--19.
+in \textit{Proc.\ EUROCRYPT}, LNCS vol.~3027, 2004, pp.\ 1--19.
+
+\bibitem{froelicher2017unlynx}
+D.~Froelicher, P.~Egger, J.~S.~Sousa, J.~L.~Raisaro, Z.~Huang, C.~Mouchet, B.~Ford, and J.-P.~Hubaux,
+``UnLynx: A decentralized system for privacy-conscious data sharing,''
+\textit{Proc.\ Privacy Enhancing Technologies}, vol.~2017, no.~4, pp.\ 232--250, 2017.
 
 \bibitem{froelicher2020drynx}
 D.~Froelicher, J.~R.~Troncoso-Pastoriza, J.~S.~Sousa, and J.-P.~Hubaux,
 ``Drynx: Decentralized, secure, verifiable system for statistical queries and machine learning on distributed datasets,''
-\textit{IEEE Trans.\ Inf.\ Forensics Security}, 2020.
+\textit{IEEE Trans.\ Inf.\ Forensics Security}, vol.~15, pp.\ 3035--3050, 2020.
+
+\bibitem{froelicher2021scalable}
+D.~Froelicher, J.~R.~Troncoso-Pastoriza, A.~Pyrgelis, S.~Sav, J.~S.~Sousa, J.-P.~Bossuat, and J.-P.~Hubaux,
+``Scalable privacy-preserving distributed learning,''
+\textit{Proc.\ Privacy Enhancing Technologies}, vol.~2021, no.~2, pp.\ 323--347, 2021.
 
 \bibitem{froelicher2021truly}
 D.~Froelicher, J.~R.~Troncoso-Pastoriza, J.~L.~Raisaro, M.~A.~Cuendet, J.~S.~Sousa, H.~Cho, B.~Berger, J.~Fellay, and J.-P.~Hubaux,
-``Truly privacy-preserving federated analytics for precision medicine with multiparty homomorphic encryption,''
-\textit{Nature Communications}, vol.~12, 2021.
+``\href{https://doi.org/10.1038/s41467-021-25972-y}{Truly privacy-preserving federated analytics for precision medicine with multiparty homomorphic encryption},''
+\textit{Nature Communications}, vol.~12, article 5910, 2021.
 
 \bibitem{gascon2017privacy}
 A.~Gasc\'on, P.~Schoppmann, B.~Balle, M.~Raykova, J.~Doerner, S.~Zahur, and D.~Evans,
 ``Privacy-preserving distributed linear regression on high-dimensional data,''
-\textit{Proc.\ Privacy Enhancing Technologies}, 2017.
+\textit{Proc.\ Privacy Enhancing Technologies}, vol.~2017, no.~4, pp.\ 345--364, 2017.
+
+\bibitem{giacomelli2018privacy}
+I.~Giacomelli, S.~Jha, M.~Joye, C.~D.~Page, and K.~Yoon,
+``Privacy-preserving ridge regression with only linearly-homomorphic encryption,''
+in \textit{Proc.\ ACNS}, LNCS vol.~10892, 2018, pp.\ 243--261.
 
 \bibitem{guo2024key}
 Q.~Guo, D.~Nabokov, E.~Suvanto, and T.~Johansson,
 ``Key recovery attacks on approximate homomorphic encryption with non-worst-case noise flooding countermeasures,''
 in \textit{Proc.\ 33rd USENIX Security Symposium}, 2024.
 
+\bibitem{hall2011secure}
+R.~Hall, S.~E.~Fienberg, and Y.~Nardi,
+``Secure multiple linear regression based on homomorphic encryption,''
+\textit{J.\ Official Statist.}, vol.~27, no.~4, pp.\ 669--691, 2011.
+
 \bibitem{hardy2017private}
 S.~Hardy, W.~Henecka, H.~Ivey-Law, R.~Nock, G.~Patrini, G.~Smith, and B.~Thorne,
 ``Private federated learning on vertically partitioned data via entity resolution and additively homomorphic encryption,''
 arXiv:1711.10677, 2017.
+
+\bibitem{heinzedeml2017preserving}
+C.~Heinze-Deml, B.~McWilliams, and N.~Meinshausen,
+``Preserving differential privacy between features in distributed estimation,''
+arXiv:1703.00403, 2017.
 
 \bibitem{hwang2025insecurity}
 I.~Hwang, Y.~Hwang, M.~Kim, D.~Lee, and Y.~Song,
 ``On the (in)security of approximate computation protocols from CKKS,''
 Cryptology ePrint Archive, Paper 2025/395, 2025. Earlier title: ``Provably secure approximate computation protocols from CKKS.''
 
+\bibitem{ion2020deploying}
+M.~Ion, B.~Kreuter, et al.,
+``On deploying secure computing: Private intersection-sum-with-cardinality,''
+in \textit{Proc.\ IEEE EuroS\&P}, 2020, pp.\ 370--389. Cryptology ePrint Archive, Paper 2019/723.
+
 \bibitem{jarecki2014round}
 S.~Jarecki, A.~Kiayias, and H.~Krawczyk,
-``Round-optimal password-protected secret sharing and T-PAKE in the password-only model,''
+``\href{https://doi.org/10.1007/978-3-662-45608-8_13}{Round-optimal password-protected secret sharing and T-PAKE in the password-only model},''
 in \textit{Proc.\ ASIACRYPT}, 2014.
+
+\bibitem{kairouz2021distributed}
+P.~Kairouz, Z.~Liu, and T.~Steinke,
+``The distributed discrete Gaussian mechanism for federated learning with secure aggregation,''
+in \textit{Proc.\ ICML}, PMLR vol.~139, 2021, pp.\ 5201--5212.
+
+\bibitem{karr2009privacy}
+A.~F.~Karr, X.~Lin, A.~P.~Sanil, and J.~P.~Reiter,
+``Privacy-preserving analysis of vertically partitioned data using secure matrix products,''
+\textit{J.\ Official Statist.}, vol.~25, no.~1, pp.\ 125--138, 2009.
+
+\bibitem{kifer2012private}
+D.~Kifer, A.~Smith, and A.~Thakurta,
+``Private convex empirical risk minimization and high-dimensional regression,''
+in \textit{Proc.\ COLT}, PMLR vol.~23, 2012, pp.\ 25.1--25.40.
 
 \bibitem{kluczniak2025circuit}
 K.~Kluczniak and G.~Santato,
 ``On circuit private, multikey and threshold approximate homomorphic encryption,''
 \textit{IACR Communications in Cryptology}, vol.~2, no.~1, 2025. Cryptology ePrint Archive, Paper 2023/301.
 
+\bibitem{krichene2024private}
+W.~Krichene, N.~E.~Mayoraz, S.~Rendle, S.~Song, A.~Thakurta, and L.~Zhang,
+``Private learning with public features,''
+in \textit{Proc.\ AISTATS}, PMLR vol.~238, 2024, pp.\ 4150--4158.
+
+\bibitem{lepoint2021private}
+T.~Lepoint, S.~Patel, M.~Raykova, K.~Seth, and N.~Trieu,
+``Private join and compute from PIR with default,''
+in \textit{Proc.\ ASIACRYPT}, 2021.
+
 \bibitem{li2021security}
 B.~Li and D.~Micciancio,
-``On the security of homomorphic encryption on approximate numbers,''
-in \textit{Proc.\ EUROCRYPT}, 2021.
+``\href{https://doi.org/10.1007/978-3-030-77870-5_23}{On the security of homomorphic encryption on approximate numbers},''
+in \textit{Proc.\ EUROCRYPT}, LNCS vol.~12696, 2021, pp.\ 648--677.
 
 \bibitem{li2022securing}
 B.~Li, D.~Micciancio, M.~Schultz, and J.~Sorrell,
-``Securing approximate homomorphic encryption using differential privacy,''
-in \textit{Proc.\ CRYPTO}, 2022.
+``\href{https://doi.org/10.1007/978-3-031-15802-5_20}{Securing approximate homomorphic encryption using differential privacy},''
+in \textit{Proc.\ CRYPTO}, LNCS vol.~13507, 2022, pp.\ 560--589.
+
+\bibitem{lin2024differentially}
+S.~Lin, E.~Paquette, and E.~D.~Kolaczyk,
+``Differentially private linear regression with linked data,''
+\textit{Harvard Data Science Review}, vol.~6, no.~3, 2024. arXiv:2308.00836.
+
+\bibitem{lin2026differentially}
+S.~Lin, A.~Slavkovi\'c, and D.~R.~Bhoomireddy,
+``Differentially private linear regression and synthetic data generation with statistical guarantees,''
+in \textit{Proc.\ AISTATS}, PMLR vol.~300, 2026. arXiv:2510.16974.
+
+\bibitem{liu2021fate}
+Y.~Liu, T.~Fan, T.~Chen, Q.~Xu, and Q.~Yang,
+``FATE: An industrial grade platform for collaborative learning with data protection,''
+\textit{J.\ Mach.\ Learn.\ Res.}, vol.~22, no.~226, pp.\ 1--6, 2021.
+
+\bibitem{liu2024vertical}
+Y.~Liu, Y.~Kang, T.~Zou, Y.~Pu, Y.~He, X.~Ye, Y.~Ouyang, Y.-Q.~Zhang, and Q.~Yang,
+``\href{https://doi.org/10.1109/TKDE.2024.3352628}{Vertical federated learning: Concepts, advances, and challenges},''
+\textit{IEEE Trans.\ Knowl.\ Data Eng.}, 2024.
+
+\bibitem{mcgregor2010limits}
+McGregor, Mironov, Pitassi, Reingold, Talwar, and Vadhan,
+``The limits of two-party differential privacy,''
+in \textit{Proc.\ IEEE FOCS}, 2010, pp.\ 81--90.
 
 \bibitem{mironov2009computational}
-I.~Mironov, O.~Pandey, O.~Reingold, and S.~Vadhan,
+Mironov, Pandey, Reingold, and Vadhan,
 ``Computational differential privacy,''
-in \textit{Proc.\ CRYPTO}, 2009.
+in \textit{Proc.\ CRYPTO}, LNCS vol.~5677, 2009, pp.\ 126--142.
 
 \bibitem{mironov2012significance}
 I.~Mironov,
 ``\href{https://dl.acm.org/doi/10.1145/2382196.2382264}{On significance of the least significant bits for differential privacy},''
 in \textit{Proc.\ ACM CCS}, 2012, pp.\ 650--661.
 
+\bibitem{mohammed2014secure}
+Mohammed, D.~Alhadidi, B.~C.~M.~Fung, and M.~Debbabi,
+``Secure two-party differentially private data release for vertically partitioned data,''
+\textit{IEEE Trans.\ Dependable Secure Comput.}, vol.~11, no.~1, pp.\ 59--71, 2014.
+
+\bibitem{mohassel2017secureml}
+P.~Mohassel and Y.~Zhang,
+``SecureML: A system for scalable privacy-preserving machine learning,''
+in \textit{Proc.\ IEEE S\&P}, 2017.
+
 \bibitem{mouchet2021multiparty}
 C.~Mouchet, J.~Troncoso-Pastoriza, J.-P.~Bossuat, and J.-P.~Hubaux,
 ``Multiparty homomorphic encryption from ring-learning-with-errors,''
-\textit{Proc.\ Privacy Enhancing Technologies}, 2021.
+\textit{Proc.\ Privacy Enhancing Technologies}, vol.~2021, no.~4, pp.\ 291--311, 2021.
+
+\bibitem{nikolaenko2013privacy}
+V.~Nikolaenko, U.~Weinsberg, S.~Ioannidis, M.~Joye, D.~Boneh, and N.~Taft,
+``Privacy-preserving ridge regression on hundreds of millions of records,''
+in \textit{Proc.\ IEEE S\&P}, 2013, pp.\ 334--348.
+
+\bibitem{ogilvie2024differential}
+T.~Ogilvie,
+``Differential privacy for free? Harnessing the noise in approximate homomorphic encryption,''
+in \textit{Proc.\ CT-RSA}, 2024, pp.\ 292--315. Cryptology ePrint Archive, Paper 2023/701.
 
 \bibitem{pagh2004cuckoo}
 R.~Pagh and F.~F.~Rodler,
 ``Cuckoo hashing,''
-\textit{J.\ Algorithms}, vol.~51, no.~2, 2004.
+\textit{J.\ Algorithms}, vol.~51, no.~2, pp.\ 122--144, 2004.
+
+\bibitem{pinkas2019efficient}
+B.~Pinkas, T.~Schneider, O.~Tkachenko, and A.~Yanai,
+``Efficient circuit-based PSI with linear communication,''
+in \textit{Proc.\ EUROCRYPT}, LNCS vol.~11478, 2019, pp.\ 122--153.
+
+\bibitem{reiter2009verification}
+J.~P.~Reiter, A.~Oganian, and A.~F.~Karr,
+``Verification servers: Enabling analysts to assess the quality of inferences from public use data,''
+\textit{Comput.\ Statist.\ Data Anal.}, vol.~53, no.~4, pp.\ 1475--1482, 2009.
 
 \bibitem{rfc9497}
 A.~Davidson, A.~Faz-Hern\'andez, N.~Sullivan, and C.~A.~Wood,
 ``Oblivious pseudorandom functions (OPRFs) using prime-order groups,''
-RFC~9497, 2023.
+RFC~9497 (Informational, IRTF CFRG stream), December 2023.
 
 \bibitem{rindal2021vole}
 P.~Rindal and P.~Schoppmann,
@@ -2109,26 +2323,66 @@ R.~Rogers, A.~Roth, J.~Ullman, and S.~Vadhan,
 ``Privacy odometers and filters: Pay-as-you-go composition,''
 in \textit{Advances in Neural Information Processing Systems 29 (NIPS)}, 2016, pp.\ 1921--1929.
 
+\bibitem{sanil2004privacy}
+A.~P.~Sanil, A.~F.~Karr, X.~Lin, and J.~P.~Reiter,
+``Privacy preserving regression modelling via distributed computation,''
+in \textit{Proc.\ ACM SIGKDD}, 2004, pp.\ 677--682.
+
 \bibitem{sheffet2017differentially}
 O.~Sheffet,
 ``Differentially private ordinary least squares,''
-in \textit{Proc.\ ICML}, 2017.
+in \textit{Proc.\ ICML}, PMLR vol.~70, 2017, pp.\ 3105--3114.
+
+\bibitem{shi2011privacy}
+E.~Shi, T.-H.~H.~Chan, E.~Rieffel, R.~Chow, and D.~Song,
+``Privacy-preserving aggregation of time-series data,''
+in \textit{Proc.\ NDSS}, 2011.
+
+\bibitem{stevens2022efficient}
+T.~Stevens, C.~Skalka, C.~Vincent, J.~Ring, S.~Clark, and J.~Near,
+``Efficient differentially private secure aggregation for federated learning via hardness of learning with errors,''
+in \textit{Proc.\ USENIX Security}, 2022, pp.\ 1379--1395.
+
+\bibitem{vu2009differential}
+D.~Vu and A.~Slavkovi\'c,
+``Differential privacy for clinical trial data: Preliminary evaluations,''
+in \textit{Proc.\ IEEE ICDM Workshops}, 2009, pp.\ 138--143.
 
 \bibitem{wang2018revisiting}
 Y.-X.~Wang,
 ``Revisiting differentially private linear regression: optimal and adaptive prediction \& estimation in unbounded domain,''
-in \textit{Proc.\ UAI}, 2018.
+in \textit{Proc.\ UAI}, 2018, pp.\ 93--103.
 Code and data: \url{https://github.com/yuxiangw/optimal_dp_linear_regression}.
+
+\bibitem{wang2020hybrid}
+C.~Wang, J.~Liang, M.~Huang, B.~Bai, K.~Bai, and H.~Li,
+``Hybrid differentially private federated learning on vertically partitioned data,''
+arXiv:2009.02763, 2020.
 
 \bibitem{whitehouse2023fully}
 J.~Whitehouse, A.~Ramdas, R.~Rogers, and Z.~S.~Wu,
 ``Fully-adaptive composition in differential privacy,''
 in \textit{Proc.\ ICML}, PMLR vol.~202, 2023, pp.\ 36990--37007.
 
+\bibitem{wu2022differentially}
+R.~Wu, X.~Yang, Y.~Yao, J.~Sun, T.~Liu, K.~Q.~Weinberger, and C.~Wang,
+``Differentially private multi-party data release for linear regression,''
+in \textit{Proc.\ UAI}, PMLR vol.~180, 2022, pp.\ 2128--2137.
+
+\bibitem{xu2019achieving}
+D.~Xu, S.~Yuan, and X.~Wu,
+``Achieving differential privacy in vertically partitioned multiparty learning,''
+arXiv:1911.04587, 2019.
+
 \bibitem{yang2019federated}
 Q.~Yang, Y.~Liu, T.~Chen, and Y.~Tong,
 ``\href{https://dl.acm.org/doi/10.1145/3298981}{Federated machine learning: Concept and applications},''
-\textit{ACM Trans.\ Intell.\ Syst.\ Technol.}, vol.~10, no.~2, 2019.
+\textit{ACM Trans.\ Intell.\ Syst.\ Technol.}, vol.~10, no.~2, pp.\ 12:1--12:19, 2019.
+
+\bibitem{zhang2012functional}
+J.~Zhang, Z.~Zhang, X.~Xiao, Y.~Yang, and M.~Winslett,
+``Functional mechanism: Regression analysis under differential privacy,''
+\textit{Proc.\ VLDB Endow.}, vol.~5, no.~11, 2012.
 
 \end{thebibliography}
 
