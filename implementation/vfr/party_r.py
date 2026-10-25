@@ -114,6 +114,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         T['psi_decode'] += time.time() - ta
     if amb or bad:
         raise RuntimeError(f'PSI produced ambiguous or invalid labels: {len(amb)} ambiguous, {len(bad)} invalid')
+    psi.check_injective(found)
     I = sorted(i for i in found if i < len(ids))
     pi = {ids[i]: int(found[i]) for i in I}
     n = len(I)

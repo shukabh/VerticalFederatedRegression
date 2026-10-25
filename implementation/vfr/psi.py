@@ -211,6 +211,21 @@ def window_values(q: np.ndarray, W: int, t: int):
     return out
 
 
+class PSIOutputRejected(RuntimeError):
+    """R rejects the PSI output: the run aborts (O observes the abort)."""
+
+
+def check_injective(found):
+    """R: reject an output in which two identifiers receive the same position.  An honest O assigns distinct
+    positions tau(j), so a repeated position can only come from a false match; aborting keeps it out of pi."""
+    seen = {}
+    for i, pos in sorted(found.items()):
+        if pos in seen:
+            raise PSIOutputRejected(f'PSI output is not injective: items {seen[pos]} and {i} both received '
+                                    f'position {pos}; abort the run')
+        seen[pos] = i
+
+
 def receiver_decode(S_list, Q_list, slot_item, oprf_outputs, t: int, n_bar_O: int):
     """From the decrypted replies of each partition, recover {item index: position}.  Flags ambiguities."""
     found, ambiguous = {}, set()

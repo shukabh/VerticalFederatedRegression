@@ -99,6 +99,36 @@ def test_delta_rep_is_an_upper_bound_by_random_search():
     assert best <= D
 
 
+def test_delta_rep_regime3_against_brute_force():
+    """Regime 3 (w - r > 2o): the exact enumeration over the roots of three cubics agrees with a direct maximization
+    over the vectors (d_O = 2, ||xd|| = B_R; multistart L-BFGS-B) and is never below it."""
+    from scipy.optimize import minimize
+
+    def brute(BR, BO, By, starts=25, seed=0):
+        rng = np.random.default_rng(seed)
+
+        def neg(z):
+            a, b, ra, rb, s, sp = z
+            x = BO / (1 + np.exp(-np.clip(ra, -50, 50))) * np.array([np.cos(a), np.sin(a)])
+            xp = BO / (1 + np.exp(-np.clip(rb, -50, 50))) * np.array([np.cos(b), np.sin(b)])
+            y, yp = By * np.tanh(s), By * np.tanh(sp)
+            dB = np.outer(x, x) - np.outer(xp, xp)
+            return -(np.sum(dB[np.triu_indices(2)] ** 2) + BR ** 2 * (np.sum((x - xp) ** 2) + (y - yp) ** 2)
+                     + np.sum((x * y - xp * yp) ** 2) + (y * y - yp * yp) ** 2)
+        best = 0.0
+        for _ in range(starts):
+            z0 = rng.normal(size=6) * np.array([3, 3, 3, 3, 1, 1])
+            r = minimize(neg, z0, method='L-BFGS-B', options=dict(ftol=1e-15, gtol=1e-12, maxiter=5000))
+            best = max(best, -r.fun)
+        return math.sqrt(best)
+
+    for BR, BO, By in [(1.0, 1.0, 5.0), (0.5, 0.5, 3.0)]:
+        assert By ** 2 - BR ** 2 > 2 * BO ** 2                     # regime 3
+        D = dp.delta_rep(BR, BO, By)[0]
+        bf = brute(BR, BO, By)
+        assert bf <= D and bf >= D * (1 - 1e-8)
+
+
 def test_rho_tight_matches_proofs():
     gamma = 3 * (2 ** -50 + 2 ** -40)
     rho = dp.rho_tight(1.0, 1e-9 - (1 + math.e) * gamma)

@@ -159,3 +159,21 @@ def test_labeled_psi_exact_recovery():
         found.update(f)
     expect = {ri: tau[O_ids.index(R_ids[ri])] for ri in range(len(R_ids)) if R_ids[ri] in O_ids}
     assert found == expect
+
+
+def test_psi_rejects_repeated_position():
+    """R aborts when two identifiers decode to the same position (only a false match can cause it)."""
+    t, n_bar = psi.T_DEFAULT, 100
+    outs = [oprf.evaluate(oprf.keygen(), f'id{i}'.encode()) for i in range(3)]
+    slot_item = {5: 0, 9: 1, 11: 2}
+    pos = {0: 17, 1: 17, 2: 40}                          # items 0 and 1 both decode to position 17
+    S_ = np.ones(32, dtype=np.uint64)
+    Q_ = np.zeros(32, dtype=np.uint64)
+    for b, i in slot_item.items():
+        S_[b] = 0
+        Q_[b] = (pos[i] + psi.label_key(outs[i], t)) % t
+    found, amb, bad = psi.receiver_decode([S_], [Q_], slot_item, outs, t, n_bar)
+    assert found == pos and not amb and not bad          # the per-item checks pass
+    with pytest.raises(psi.PSIOutputRejected, match='not injective'):
+        psi.check_injective(found)
+    psi.check_injective({0: 17, 1: 18, 2: 40})            # distinct positions are accepted
