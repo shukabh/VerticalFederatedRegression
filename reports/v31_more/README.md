@@ -73,7 +73,7 @@ synthetic dataset of the earlier checks: n = 10,000 matched, register 12,000 row
 seed 11, delta = 1e-9. **Implementation at commit f30b025** ("Implementation: reject a PSI output with a repeated
 position ..."); the first 50 runs of each configuration ran with HEAD = f30b025, the rest with HEAD = 77fa220, a
 paper-only commit (no file under implementation/ changed). Median 21-23 s per run (29 s for the replication, three runs
-in parallel). 550 encrypted runs in total.
+in parallel). 450 encrypted runs in total (100 each for I2, P1 and I8, plus 150 for the I2 replication I2r).
 
 Configurations: **I2** (setting I, eps = 2, ridge on), **P1** (setting P, eps = 1, ridge on), **I8** (setting I,
 eps = 8, ridge off: n_off of the matched design 3.9k). Specified as about 50 runs each; since runs took about 20 s, all
@@ -104,7 +104,7 @@ three were extended to 100 (after a look at the first 22-26 runs only). Because 
   * the slots outside the packed entries carry the same noise on a plaintext 0: about 16,000 values per release,
     **1.6-2.4 million per configuration and release**; their mean is within 0.0011 of zero (SE 0.0006-0.0008) and their
     s.d. 0.9992-1.0008 in every configuration, and the s.d. of the per-release s.d. matches its sampling value (0.005-0.006),
-    so the noise scale is right release by release. Over all 14.7 million slot values of the 550 runs the mean is
+    so the noise scale is right release by release. Over all 14.7 million slot values of the 450 runs the mean is
     -0.0004 (SE 0.0003).
   * The earlier spot checks' means (-0.17 on I's release 1, 255 entries; -0.10 under P, 565 entries) are **not
     reproduced**: the same configurations now give +0.026 (I2, 5,100 entries), -0.0006 (I2r, 7,650) and +0.006 / -0.003
