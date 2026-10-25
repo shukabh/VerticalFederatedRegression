@@ -1,0 +1,161 @@
+% ==============================================================
+\section{Obligation O1: a worst-case bound on the whole error}
+\label{sec:err}
+
+The review requires the bound to be worst case over the data, for two reasons. CKKS decryptions leak the secret through their error~\cite{LM21}. And flooding calibrated to average-case noise estimates has been broken by adversarially chosen inputs~\cite{GNSJ24}. Below, every polynomial determined by the data, or by the public randomness, is treated adversarially. Probabilities are taken only over secrets, errors and fresh coins, which are independent of those polynomials (Lemma~\ref{lem:c1indep}).
+
+\subsection{Probability tools}
+
+A real random variable $X$ is \emph{$v$-subgaussian} if $\Ex e^{\lambda X}\le e^{v\lambda^2/2}$ for all $\lambda\in\R$.
+
+\begin{lemma}[Variance proxies]\label{lem:proxy}
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item The uniform distribution on $\{-1,0,1\}$ is $\frac23$-subgaussian. Sums of independent variables add proxies, so each coefficient of $s=s_R+s_O$ is $\frac43$-subgaussian.
+  \item $\DG(0,\sigma^2)$ is $\sigma^2$-subgaussian.
+  \item A mean-zero variable supported on an interval of length $1$ is $\frac14$-subgaussian.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Expand in powers of $\lambda$: $\frac13+\frac23\cosh\lambda=1+\sum_{k\ge1}\frac{2}{3(2k)!}\lambda^{2k}$ and $e^{\lambda^2/3}=1+\sum_{k\ge1}\frac{\lambda^{2k}}{3^kk!}$. Compare the series term by term, using $\frac23\,3^kk!\le(2k)!$ for all $k\ge1$.
+
+(b) Complete the square:
+\[
+  \Ex e^{\lambda X}=\frac{\sum_z e^{-z^2/(2\sigma^2)+\lambda z}}{\rho_\sigma(\Z)}=e^{\lambda^2\sigma^2/2}\,\frac{\rho_\sigma(\Z-\lambda\sigma^2)}{\rho_\sigma(\Z)}\le e^{\lambda^2\sigma^2/2},
+\]
+by Lemma~\ref{lem:gsum}.
+
+(c) This is Hoeffding's lemma.
+\end{proof}
+
+\begin{lemma}[Hsu, Kakade and Zhang~\cite{HKZ12}, Theorem~1]\label{lem:hkz}
+Let $x\in\R^n$ satisfy $\Ex e^{\alpha^\top x}\le e^{\nrm\alpha^2/2}$ for all $\alpha$. This holds, for example, when the coordinates are independent and $1$-subgaussian. Let $A\in\R^{m\times n}$ and $\Sigma=A^\top A$. Then, for all $t>0$,
+\[
+  \Pr\bigl[\nrm{Ax}^2>\tr\Sigma+2\sqrt{\tr(\Sigma^2)t}+2\nrm\Sigma t\bigr]\le e^{-t}.
+\]
+Since $\tr(\Sigma^2)\le\nrm\Sigma\tr\Sigma$, it follows that $\nrm{Ax}_2\le\nrm A_F+\sqrt{2t}\,\nrm A_{\mathrm{op}}$ with probability at least $1-e^{-t}$.
+\end{lemma}
+
+\begin{corollary}[Products with fixed polynomials]\label{cor:polyhkz}
+Let $\xi_1,\dots,\xi_m\in\Z^N$ be independent random vectors with independent coordinates, where those of $\xi_j$ are mean-zero and $v_j$-subgaussian. Let $f_1,\dots,f_m$ be fixed polynomials, or random but independent of the $\xi_j$. Then, with probability at least $1-e^{-t}$,
+\[
+  \Bigl\|\sum_j f_j\xi_j\Bigr\|_2\le\Bigl(N\sum_jv_j\nrm{f_j}_2^2\Bigr)^{1/2}+\Bigl(2t\sum_jv_j(\cann{f_j})^2\Bigr)^{1/2}.
+\]
+More generally, for any fixed real-linear map $\ell:(\R^N)^m\to\R^d$ with matrix $A$ in the scaled variables $\xi_j/\sqrt{v_j}$, $\nrm{\ell(\xi)}\le\nrm A_F(1+\sqrt{2t})$ with probability at least $1-e^{-t}$.
+\end{corollary}
+\begin{proof}
+Multiplication by $f$ has the matrix $M_f=N^{-1}W^*\mathrm{diag}(\sigma(f))W$. This matrix is normal, so $\nrm{M_f}_F^2=\nrm{\sigma(f)}^2=N\nrm f^2$ and $\nrm{M_f}_{\mathrm{op}}=\cann f$. Apply Lemma~\ref{lem:hkz} to the block matrix $[\sqrt{v_1}M_{f_1}\mid\cdots\mid\sqrt{v_m}M_{f_m}]$. Its operator norm satisfies $\nrm A_{\mathrm{op}}^2\le\sum_jv_j\nrm{M_{f_j}}_{\mathrm{op}}^2$. For the general form, use $\nrm A_{\mathrm{op}}\le\nrm A_F$. When the $f_j$ are random and independent of the $\xi_j$, condition on them.
+\end{proof}
+
+\begin{lemma}[Norms of random polynomials]\label{lem:randnorm}
+Let $\xi\in\Z^N$ have independent, mean-zero, $v$-subgaussian coordinates. Then:
+\begin{itemize}[nosep]
+  \item $\nrm\xi_2\le\sqrt v(\sqrt N+\sqrt{2t})$ with probability at least $1-e^{-t}$;
+  \item $\cann\xi\le\sqrt{2vN\ln(2N/\delta)}$ with probability at least $1-\delta$.
+\end{itemize}
+\end{lemma}
+\begin{proof}
+The first bound is Lemma~\ref{lem:hkz} with $A=\bI$.
+
+For the second, take $h$ odd. The real part $\Re\sigma(\xi)_h=\sum_k\xi_k\cos(\pi hk/N)$ is $vN/2$-subgaussian, because $\sum_{k<N}\cos^2(\pi hk/N)=N/2$; the same holds for the imaginary part. So each part exceeds $a$ in absolute value with probability at most $2e^{-a^2/(vN)}$. There are $N/2$ conjugate pairs of slots and two parts each, so a union bound gives $\cann\xi\le\sqrt2\,a$ except with probability $2Ne^{-a^2/(vN)}$.
+\end{proof}
+
+\subsection{The circuit, made explicit}
+\label{sec:model}
+
+The specification fixes the circuit only up to standard choices for CKKS~\cite{CKKS17}, its RNS variant~\cite{CHKKS18} and hybrid key switching~\cite{HK20}. We make the following choices explicit; Section~\ref{sec:fix} discusses deviations from them.
+
+\begin{enumerate}[nosep,label=(M\arabic*)]
+  \item \emph{Moduli.} Ciphertexts start at $Q_2=q_0q_1q_2$, where $q_0$ may be a product of RNS primes. $P$ is the special modulus. $\textsc{Rescale}_{q}$ maps $c\mapsto(c-[c]_q)/q$ component-wise, as RNS-CKKS does. Its rounding error on each component lies in $[-\frac12,\frac12]^N$.
+  \item \emph{Scales.} $\Rp$ encodes its vectors at scale $\Omega_U$. $\Op$ encodes $V_e$ at $\Omega_V$ and the masks at $\Omega_u$. The final scale $\Omf:=\Omega_U\Omega_V\Omega_u/(q_1q_2)$ is public, and $\Rp$ decodes with $\Omf$. The example uses $\Omega_U=q_2$ and $\Omega_V=\Omega_u=q_1=\Omf=\Omega$.
+  \item \emph{Key switching}, in the hybrid form.
+  \begin{itemize}[nosep]
+    \item \emph{Gadget.} The primes of $Q_1=q_0q_1$ are partitioned into $d_{\mathrm{num}}$ digits with products $\tilde Q_j$. Let $\mathsf g_j$ be the CRT idempotent of digit $j$: it is $\equiv1$ modulo the primes of digit $j$ and $\equiv0$ modulo the others.
+    \item \emph{Decomposition.} $\tilde D_j(c)\in\Rr$ satisfies $\tilde D_j(c)\equiv c\pmod{\tilde Q_j}$ and $\nrm{\tilde D_j(c)}_\infty\le\varsigma_{\uparrow}\tilde Q_j/2$. Here $\varsigma_\uparrow=1$ for exact ModUp, and $\varsigma_\uparrow\le k_j$, the number of primes in digit $j$, for fast base extension.
+    \item \emph{Joint rotation keys.} The key for $\psi_g$ is $\mathrm{rk}_j=(b_j,a_j)$, with $b_j=-a_js+P\mathsf g_j\psi_g(s)+e^{\mathrm{rk}}_j\bmod PQ_2$. Here $a_j$ is a common random string and $e^{\mathrm{rk}}_j=e^{\mathrm{rk}}_{R,j}+e^{\mathrm{rk}}_{O,j}$. This is the sum of the two parties' shares $-a_js_P+P\mathsf g_j\psi_g(s_P)+e^{\mathrm{rk}}_{P,j}$ in the protocol of Mouchet et al.~\cite{MTBH21}. It is used at level~1 after reduction modulo $PQ_1$.
+    \item \emph{The switch.} $\mathrm{KS}(c_0,c_1)=\bigl(c_0+\lfloor P^{-1}\sum_j\tilde D_j(c_1)b_j\rceil,\ \lfloor P^{-1}\sum_j\tilde D_j(c_1)a_j\rceil\bigr)$. The ModDown rounding errors $\mathrm{rd}_0,\mathrm{rd}_1$ lie in $[-\frac12,\frac12]^N$.
+  \end{itemize}
+  \item \emph{Release} is Algorithm~5 at level~0, with $p_0=-as+e^{\mathrm{pk}}\bmod q_0$ and $e^{\mathrm{pk}}=e^{\mathrm{pk}}_R+e^{\mathrm{pk}}_O$. After two rescales the ciphertext is at $q_0$. The ``modulus switch to $q_0$'' of Algorithm~4 is therefore a no-op, or an exact limb drop.
+  \item \emph{Distributions.} $s_R,s_O,u\gets\chikey$, uniform ternary. Every error is drawn from $\chierr=\DG(0,\sigma_e^2)^N$, with $\sigma_e=3.2$.
+\end{enumerate}
+
+\begin{lemma}[Key switching]\label{lem:ks}
+Suppose $c_0+c_1\psi_g(s)\equiv\mu\pmod{Q_1}$. Then $\mathrm{KS}(c_0,c_1)=(c_0',c_1')$ satisfies $c_0'+c_1's\equiv\mu+e_{\mathrm{ks}}\pmod{Q_1}$, where
+\[
+  e_{\mathrm{ks}}=P^{-1}\sum_j\tilde D_j(c_1)\,e^{\mathrm{rk}}_j+\mathrm{rd}_0+\mathrm{rd}_1s .
+\]
+\end{lemma}
+\begin{proof}
+Modulo $PQ_1$, $\sum_j\tilde D_j(b_j+a_js)=P\sum_j\tilde D_j\mathsf g_j\psi_g(s)+\sum_j\tilde D_je^{\mathrm{rk}}_j$. By the CRT, $\sum_j\tilde D_j(c_1)\mathsf g_j\equiv c_1\pmod{Q_1}$. Divide by $P$, which is exact modulo $Q_1$ for multiples of $P$, and add the rounding errors.
+\end{proof}
+
+\begin{lemma}[The $c_1$-components are independent of all secrets and errors]\label{lem:c1indep}
+At every step of Algorithm~4, the $c_1$-component of every ciphertext is a deterministic function of three things: the seeds' expansions $a_h$, the common random strings $a_j$ of the rotation keys, and the data. Consequently $\tilde D_j(\cdot)$, $\mathrm{rd}_1$ and the $c_1$-rounding errors of every rescale are independent of $(s_R,s_O,u,\text{all errors})$.
+\end{lemma}
+\begin{proof}
+By induction over the operations:
+\begin{itemize}[nosep]
+  \item the conversion leaves $c_1=a_h$;
+  \item a ct--pt product maps $c_1\mapsto m_Vc_1$, and additions add $c_1$-components;
+  \item a rescale maps $c_1\mapsto\lfloor c_1/q\rceil$;
+  \item an automorphism maps $c_1\mapsto\psi_g(c_1)$;
+  \item key switching outputs $\lfloor P^{-1}\sum_j\tilde D_j(c_1)a_j\rceil$.
+\end{itemize}
+None of these uses $c_0$, a secret or an error.
+\end{proof}
+
+\subsection{The noiseless centre and the error decomposition}
+
+For entry $e$, let $U_e$ be $\Rp$'s vector and $V_e$ $\Op$'s vector. Define the plaintexts $m_{U_e,h}=\Ecd_{\Omega_U}(U_e[h])$, $m_{V_e,h}=\Ecd_{\Omega_V}(V_e[h])$ and $m_{u_e}=\Ecd_{\Omega_u}(\mathbf u_{k_e})=\Omega_u\tau^{-1}(\mathbf u_{k_e})+r_{u_e}$.
+
+\begin{definition}[Noiseless evaluation]\label{def:centre}
+For release $s$,
+\[
+  \Zh_s(D)=\sum_{e\in\mathcal E_s}\frac{1}{q_1q_2}\,\Tr\Bigl(\sum_{h\le m}m_{U_e,h}m_{V_e,h}\Bigr)m_{u_e}\ \in\Q[X]/(X^N+1),
+  \qquad \fs_s(D)=\lfloor\Zh_s(D)\rceil\in\Z^N .
+\]
+This is a deterministic function of $\Op$'s data, $\Rp$'s data and the public parameters. It does not depend on any key, error or random coin.
+\end{definition}
+
+\begin{proposition}[Error decomposition]\label{prop:decomp}
+Let $v_s=h_{O,s}+c'_{1,s}s_R\bmod q_0$. Under (M1)--(M5),
+\[
+  v_s\equiv\fs_s(D)+\etots+\eta_s\pmod{q_0},\qquad \etots=\sum_{i=1}^8T_i\in\Z^N,
+\]
+where, writing $\Pi_e(y):=q_1^{-1}y\,\Omega_u\tau^{-1}(\mathbf u_{k_e})$ for the main part of masking and rescaling,
+\begin{align*}
+  T_1&=\sum_e\Pi_e\bigl(\Tr(x^R_e)\bigr),\quad x^R_e=q_2^{-1}\sum_he^{(U_e)}_{R,h}m_{V_e,h} &&\text{($\Rp$'s encryption errors)}\\
+  T_2&=\sum_e\Pi_e\bigl(\Tr(\varepsilon_{0,e}+\varepsilon_{1,e}s)\bigr) &&\text{(first rescale)}\\
+  T_3&=\sum_e\Pi_e\Bigl(\sum_{i<L}T_{i+1}\bigl(P^{-1}\textstyle\sum_j\tilde D_{e,i,j}e^{\mathrm{rk},(i)}_j\bigr)\Bigr) &&\text{(key-switching gadget)}\\
+  T_4&=\sum_e\Pi_e\Bigl(\sum_{i<L}T_{i+1}\bigl(\mathrm{rd}_{0,e,i}+\mathrm{rd}_{1,e,i}s\bigr)\Bigr) &&\text{(ModDown roundings)}\\
+  T_5&=\sum_e(\varepsilon'_{0,e}+\varepsilon'_{1,e}s) &&\text{(second rescale)}\\
+  T_6&=e^{\mathrm{pk}}u+e_0+e_1s &&\text{(fresh encryption)}\\
+  T_7&=\Zh_s(D)-\fs_s(D),\quad\nrm{T_7}_\infty\le\tfrac12 &&\text{(rounding of the centre)}\\
+  T_8&=\sum_eq_1^{-1}Y_e\,r_{u_e} &&\text{(mask spill of the errors)}.
+\end{align*}
+Here $Y_e=\Tr(x^R_e+\varepsilon_{0,e}+\varepsilon_{1,e}s)+\sum_iT_{i+1}(e_{\mathrm{ks},e,i})$. All $\varepsilon$ and $\mathrm{rd}$ vectors lie in $[-\frac12,\frac12]^N$, and $e^{\mathrm{rk},(i)}_j$ is the error of digit $j$ of the key for $\psi_{g_i}$.
+\end{proposition}
+\begin{proof}
+Track the decryption invariant $c_0+c_1s$, as integer polynomials, through Algorithm~4.
+
+\emph{Conversion and products.} The conversion gives $c_0+a_hs=m_{U,h}+e_{R,h}$ exactly. After the products and the chunk sum, the value is $\mu_{\Z}+KQ_2$ for some $K\in\Rr$, with $\mu_\Z=\sum_hm_{U,h}m_{V,h}+\sum_he_{R,h}m_{V,h}$.
+
+\emph{First rescale.} Write the rounding of $c_j/q_2$ as $c_j/q_2+\varepsilon_j$. Then $c_0'+c_1's=\mu_\Z/q_2+\varepsilon_0+\varepsilon_1s+KQ_1$.
+
+\emph{\textsc{EvalSum}.} By Lemma~\ref{lem:ks} and $\psi_g(c_0)+\psi_g(c_1)\psi_g(s)=\psi_g(c_0+c_1s)$, induction over the $L$ steps gives $\Tr(\mu^{(2)})+\sum_iT_{i+1}(e_{\mathrm{ks},i})\pmod{Q_1}$, by Lemma~\ref{lem:trace}.
+
+\emph{Masking and second rescale.} Multiplying by $m_{u_e}$ and rescaling by $q_1$ adds $\varepsilon'_0+\varepsilon'_1s$ modulo $q_0$.
+
+\emph{Release.} Summing over $e$, the release adds $(-as+e^{\mathrm{pk}})u+e_0+(au+e_1)s+\eta=e^{\mathrm{pk}}u+e_0+e_1s+\eta$.
+
+\emph{Collecting terms.} Split $m_{u_e}=\Omega_u\tau^{-1}(\mathbf u_{k_e})+r_{u_e}$. The terms not involving any key, error or rounding make up exactly $\Zh_s(D)$; the rest are $T_1,\dots,T_6$ and $T_8$. Since $v_s$, $\fs_s$ and $\eta_s$ are integral, so is $\etots$.
+\end{proof}
+
+\begin{remark}[Why the centre matters]\label{rem:centre}
+The specification centres the mechanism at $\Ecd_\Omega(\mathbf z_s(D))$ and counts the encoding roundings of $V_e$ and $\mathbf u_k$ as error. The deterministic difference $\Zh_s(D)-\Omega\tau^{-1}(\mathbf z_s(D))$ contains the following terms:
+\begin{itemize}[nosep]
+  \item the \emph{mask spill} of the statistic itself, $\sum_e(\Omega_U\Omega_V/(q_1q_2))S_e\,r_{u_e}$, where $S_e$ is the entry's value. Its $\ell_2$ norm is about $\sqrt{N/12}\,(\sum_eS_e^2)^{1/2}$. This is up to $2^{30.7}$ for $\bar n_O=10^6$, and up to $2^{34.5}$ by the triangle inequality;
+  \item the cross terms $\Tr(r_U\cdot\Omega_V\tau^{-1}(V))$ between $\Rp$'s rounding and $\Op$'s data. These are up to $\tfrac{\sqrt N}{2}\sqrt m\,(\bar n_O\Gamma_{\mathcal E})^{1/2}\approx2^{25}$, in the notation of Section~\ref{sec:bounds};
+  \item a nominal-versus-exact scale mismatch of relative size about $2^{-30}$ when the implementation decodes with a nominal scale, as OpenFHE's FIXEDMANUAL does. This gives about $2^{23}$; see Section~\ref{sec:empirical}.
+\end{itemize}
+All three are deterministic functions of $D$. They are part of the \emph{query}, not hints about secrets. They need no flooding, provided the mechanism is centred at $\fs_s(D)$ and the sensitivity of $\fs_s$ is used (Corollary~\ref{cor:sensZ}). Flooding them instead would require $\Btot\approx2^{30.7}$ to $2^{34.5}$, and hence $\log_2\Omega\approx67$ to $71$ for stage~2 of the example (script \texttt{scratch/ecd\_centre.py}).
+\end{remark}

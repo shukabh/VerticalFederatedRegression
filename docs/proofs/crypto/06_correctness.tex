@@ -1,0 +1,77 @@
+% ==============================================================
+\section{Correctness: no wraparound, and the exact sampler}
+\label{sec:corr}
+
+\begin{proposition}[Decryption without wraparound]\label{prop:wrap}
+Let $S_{\max}=\max_e\sup_D|\mathbf z_e(D)|$. Each entry is a sum over at most $\bar n_O$ rows of a product bounded by one of $o$, $\sqrt{ro}$, $\sqrt{rw}$, $\sqrt{ow}$ or $w$; so $S_{\max}\le\bar n_O\max(o,\sqrt{ro},\sqrt{rw},\sqrt{ow},w)$. Let $d_{\max}$ bound $\nrm{\Zh_s(D)-\Omf\tau^{-1}(\mathbf z_s(D))}_2$ over all $D$; Proposition~\ref{prop:offset} gives an explicit, proved $d_{\max}$ ($2^{30.3}$ at the evaluation setting with $\bar n_O=10^6$ and $n_R^{\max}=2{,}000$, and $2^{38.6}$ if every row may match). Suppose
+\[
+  q_0>2\Bigl(\Omf\,\tfrac{2|\mathcal E_s|}{N}\,S_{\max}+d_{\max}+\tfrac12+B_{\mathrm{tot},s}+t_\eta\,\sigma_{c,s}\Bigr).
+  \tag{Q}
+\]
+Then $v_s$, reduced to its centred representative modulo $q_0$, equals the integer polynomial $\fs_s(D)+\etots+\eta_s$. This holds except with probability at most
+\[
+  \delta_B+2Ne^{-t_\eta^2/2}
+\]
+over the keys and the fresh randomness. Moreover $\Dcd(v_s)=\tau(\Zh_s)/\Omf+\tau(\etots+T'_7+\eta_s)/\Omf$, where $T'_7=\fs_s-\Zh_s$.
+\end{proposition}
+\begin{proof}
+\emph{Size of the centre.} From the inversion formula in the proof of Lemma~\ref{lem:parseval}, $\nrm{\tau^{-1}(\mathbf z)}_\infty\le\frac2N\nrm{\mathbf z}_1\le\frac{2|\mathcal E|}{N}S_{\max}$. So $\nrm{\fs_s}_\infty\le\Omf\frac{2|\mathcal E|}NS_{\max}+d_{\max}+\frac12$.
+
+\emph{Size of the error.} $\nrm{\etots}_\infty\le\nrm{\etots}_2\le B_{\mathrm{tot},s}$, except with probability $\delta_B$ (Theorem~\ref{thm:O1}).
+
+\emph{Size of the noise.} Each $\eta_k$ is $\sigma^2$-subgaussian (Lemma~\ref{lem:proxy}(b)), so $\Pr[|\eta_k|>t_\eta\sigma]\le2e^{-t_\eta^2/2}$. A union bound over the $N$ coefficients gives the second term.
+
+Under (Q), the integer polynomial $\fs_s+\etots+\eta_s$ lies strictly inside $(-q_0/2,q_0/2)^N$. So the centred reduction of $v_s$ returns it exactly, and the decoding identity follows.
+
+\emph{Earlier levels: no condition is needed.} Proposition~\ref{prop:decomp} is an identity of congruences that holds whatever the size of the intermediate plaintexts. A rescale satisfies $c_0'+c_1's=(c_0+c_1s)/q+\varepsilon_0+\varepsilon_1s$ exactly in $\mathbb Q[X]/(X^N+1)$; if $c_0+c_1s=\mu+KQ$ with $K$ integral, whatever the size of $\mu$, then $(c_0+c_1s)/q=\mu/q+K(Q/q)$, so the invariant modulo $Q/q$ is $\mu/q+\varepsilon_0+\varepsilon_1s$. Plaintext products, additions and automorphisms are congruences modulo the current modulus, and so is key switching (Lemmas~\ref{lem:ks} and~\ref{lem:gadget}), again with no size condition; the rounding errors are bounded through their sup-norms only. Hence only the final reduction modulo $q_0$ can wrap around, and (Q) suffices. (This replaces the argued step of an earlier version, which bounded the intermediate plaintexts; the argument is that of the companion book, Chapter~9, Proposition \texttt{agg.wrap}, checked here.)
+\end{proof}
+
+\begin{remark}[The specification's condition]
+\textsc{Calibrate} requires
+\[
+  q_0>2\bigl(\Omega S_{\max}+2^{\kappa}\Btot+10\,\sigma_{c,\max}\bigr).
+\]
+This implies (Q) with $t_\eta=10$ when $\Omega=\Omf$. The reasons:
+\begin{itemize}[nosep]
+  \item $2|\mathcal E|/N\le1$, and the slack $\Omf S_{\max}(1-2|\mathcal E|/N)$ is far larger than $d_{\max}+\frac12$;
+  \item $2^\kappa\Btot\ge\Btot$.
+\end{itemize}
+The specification should still state the correctness-failure probability $2Ne^{-50}\approx2^{-57.1}$ per release. This is a correctness event, not a privacy event, because the view is the same whether or not wraparound occurs. The term $\Omega S_{\max}$ overestimates by a factor $N/(2|\mathcal E|)\approx2^{7}$, so $q_0$ could be about $7$ bits smaller.
+\end{remark}
+
+\paragraph{The exact sampler.}
+\textsc{SampleDG} is Algorithm~3 of Canonne, Kamath and Steinke~\cite{CKS20}. It draws a discrete Laplace candidate $Y$ with integer scale $t=\lfloor\sigma\rfloor+1$, accepts it with probability $\exp(-(|Y|-\sigma^2/t)^2/(2\sigma^2))$, and repeats otherwise. The acceptance coins come from an exact $\mathrm{Bernoulli}(e^{-\gamma})$ sampler for rational $\gamma$. CKS20 prove the following, for rational $\sigma^2$:
+\begin{itemize}[nosep]
+  \item the output is \emph{exactly} $\DG(0,\sigma^2)$;
+  \item only integer arithmetic and uniform random bits are used;
+  \item the expected number of iterations is bounded by a constant.
+\end{itemize}
+\unsure{the exact constant bounding the expected iterations in CKS20}
+
+Two implementation requirements follow:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item \emph{$\sigma_{c,s}^2$ must be rational.} Set $\sigma_{c,s}^2:=\lceil\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)\rceil$. Increasing $\sigma$ lowers $\rho_s$ and only helps flooding.
+  \item \emph{Big integers must be arbitrary-precision.} At $\sigma\approx2^{55}$, $t$ and $\sigma^2$ exceed 64 bits, so all arithmetic must be exact arbitrary-precision integer or rational arithmetic, and the coins must come from a CSPRNG.
+\end{enumerate}
+
+\paragraph{What ``constant-time'' must mean.}
+The model of the specification abstracts side channels away. Its remaining obligation O2 nevertheless asks for a constant-time sampler, and $\Rp$ can at least observe $\Op$'s response time. The requirement is therefore:
+\begin{quote}
+(CT) The joint distribution of everything $\Rp$ can observe about the execution of the release, in particular its duration, is independent of $(\eta,s_O,u,e_0,e_1)$ given the public parameters.
+\end{quote}
+
+The rejection structure helps only in part:
+\begin{itemize}[nosep]
+  \item In rejection sampling, the number of \emph{rejected} trials is independent of the accepted value.
+  \item But the time of the accepting trial depends on the accepted $Y$. The discrete Laplace and $\mathrm{Bernoulli}(e^{-\gamma})$ subroutines loop for value-dependent numbers of iterations, and big-integer operations take time that depends on operand length.
+\end{itemize}
+So a direct implementation of CKS20 does not satisfy (CT).
+
+A sufficient implementation has four parts:
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item every inner loop runs for a fixed public number of iterations $T_{\max}$, with the result selected branch-free;
+  \item the probability that some loop would have needed more than $T_{\max}$ iterations is at most $2^{-\kappa'}$ per sample, and the total $Nn_{\mathrm{rel}}2^{-\kappa'}$ is added to the slack $\gamma$;
+  \item all arithmetic is done in fixed-width limbs;
+  \item the $N$ samples of a release are produced in one batch whose duration is padded to a public bound.
+\end{enumerate}
+\gap{We have not analysed a concrete constant-time variant of CKS20. Generic constant-time samplers by convolution, such as that of Micciancio and Walter~\cite{MW17}, are Rényi-close rather than exact; using one would require adding its divergence to the privacy analysis.}

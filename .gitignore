@@ -14,3 +14,13 @@ reports/coef_accuracy/raw_estimates_*.npz
 reports/bias_correction/*.npz
 reports/bias_correction/quick/
 paper/*.loc
+docs/**/*.aux
+docs/**/*.log
+docs/**/*.out
+docs/**/*.toc
+docs/**/*.loc
+docs/**/*.bbl
+docs/**/*.blg
+docs/**/*.fls
+docs/**/*.fdb_latexmk
+docs/**/*.synctex.gz

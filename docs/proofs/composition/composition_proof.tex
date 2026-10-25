@@ -1,0 +1,843 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs, array, tabularx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black, urlcolor=blue!60!black]{hyperref}
+\setlength{\emergencystretch}{3em}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{assumption}[definition]{Assumption}
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{corollary}[definition]{Corollary}
+
+% ---------- macros of protocol_v31.tex / crypto_proofs.tex ----------
+\newcommand{\Rp}{\mathsf{R}}
+\newcommand{\Op}{\mathsf{O}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rr}{\mathcal{R}}
+\newcommand{\Ex}{\mathbb{E}}
+\newcommand{\nrm}[1]{\lVert #1\rVert}
+\newcommand{\SD}{\mathrm{SD}}
+\newcommand{\negl}{\mathrm{negl}}
+\newcommand{\view}{\mathrm{view}}
+\newcommand{\Btot}{B_{\mathrm{tot}}}
+\newcommand{\etot}{e_{\mathrm{tot}}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\fs}{f}
+\newcommand{\chikey}{\chi_{\mathrm{key}}}
+\newcommand{\chierr}{\chi_{\mathrm{err}}}
+\newcommand{\DG}{\mathcal{N}_{\Z}}
+\newcommand{\gap}[1]{\textcolor{red!65!black}{\textbf{[Not fully rigorous:} #1\textbf{]}}}
+\newcommand{\unsure}[1]{\textcolor{orange!75!black}{[\emph{citation detail unverified:} #1]}}
+% ---------- additional macros ----------
+\newcommand{\bD}{\mathfrak D}
+\newcommand{\fix}{\mathrm{fix}}
+\newcommand{\Real}{\mathsf{Real}}
+\newcommand{\Hyb}{\mathsf{Hyb}}
+\newcommand{\Ideal}{\mathsf{Ideal}}
+\newcommand{\Adv}{\mathrm{Adv}}
+\newcommand{\HSd}{\mathsf{E}}
+\newcommand{\Ma}{\mathsf{M}}
+\newcommand{\Cal}{\textsc{Calibrate}}
+\newcommand{\adm}{\mathrm{adm}}
+\newcommand{\made}{\mathrm{made}}
+\newcommand{\nrel}{n_{\mathrm{rel}}}
+\newcommand{\simb}{\sim_{\mathrm b}}
+\newcommand{\CP}{\textup{[CP]}}
+\newcommand{\Pp}{\textup{[P]}}
+
+\title{\textbf{Protocol v3.1: composition across runs}\\[4pt]
+\large Proof of Proposition~\texttt{prop:compose} for runs fixed in advance and for adaptively\\ chosen runs under the ledger's filter, and a hockey-stick treatment of the smudging slack}
+\date{Draft for review}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+This note proves the composition statement of protocol v3.1 (Proposition~\texttt{prop:compose} of the paper) and closes the check item ``the adaptive hybrid of Proposition~\texttt{prop:compose} is argued here but not yet written out in the proofs''. We model all researchers as one adaptive coalition that chooses each run's parameters and inputs from the joint view of earlier runs, follows the protocol inside each run, may interleave and abort runs, and faces $\Op$'s ledger. We prove that the joint view is $(\varepsilon_L,\delta_L)$-IND-CDP for adjacency on the base register, under each admission rule (Theorem~\ref{thm:main}). The proof has four parts: one statistical hybrid that removes every encryption error at once, a computational hybrid run by run, a self-contained R\'enyi filter for adaptively parameterized lattice Gaussian mechanisms, and the conversion. Part~2 measures the smudging step in hockey-stick divergence (Lemma~\ref{lem:hssmudge}, Theorem~\ref{thm:hs}). With a reserved share $\xi_L=10^{-3}$ of $\varepsilon_L$, the ledger's flooding requirement $\kappa_L$ at $(\varepsilon_L,\delta_L,\zeta_L)=(10,10^{-6},0.1)$ falls from $48,46,44,42,40$ to $22,21,19,17,15$ for $\varepsilon_{\mathrm{run}}=0.5,1,2,4,8$, so it no longer binds against the floor $\kappa_{\min}=40$.
+\end{abstract}
+
+\paragraph{References to other documents.} This note is Part~C of the proofs appendix (\texttt{protocol\_v31\_proofs.tex}). \CP{} is \texttt{crypto\_proofs.tex}, the proofs of the cryptographic and DP claims (Part~A of the proofs appendix); result numbers are those of its current build, and labels are given in typewriter font. \Pp{} is the paper, \texttt{paper/main.tex}. Notation follows \CP{}.
+
+\paragraph{Status (2026-10-25).} The paper, the implementation and \CP{} now follow this note: the paper states Theorem~\ref{thm:main} as Proposition~\texttt{prop:compose} with base-register adjacency (\texttt{def:baseadj}); its ledger is the ledger of Definition~\ref{def:ledgerhs} with $\xi_L=10^{-3}$ and $\delta'=2^{-100}$, charged in full at admission; its $\kappa_L$ is that of Proposition~\ref{prop:kappaL}; and the floor is $2^{42}$ in the paper, in \CP{} (Corollary~2.4, corrected) and in the implementation. The issues of Section~\ref{sec:issues} are resolved accordingly, except that rule~(N) with adaptively chosen requests remains unproved (Remark~\ref{rem:Nadaptive}).
+
+\paragraph{Summary of results.}
+\begin{itemize}[nosep]
+  \item \textbf{Theorem~\ref{thm:main}} replaces Proposition~\texttt{prop:compose}. For every PPT coalition of researchers, with arbitrary collusion, adaptivity, interleaving and aborts, the joint view is simulated by an ideal experiment with slack $\Ex[\sum_{k\ \mathrm{admitted}}\gamma_k]+\negl(\lambda)$. The ideal experiment is $\rho^*$-zCDP whenever the admitted runs satisfy $\sum_k\rho_k\le\rho^*$ pointwise. Under the filter rule the joint view is $(\varepsilon_L,\delta_L)$-IND-CDP for every adaptive coalition. Under the non-adaptive rule the same holds when the run requests are fixed in advance.
+  \item \textbf{The adaptive case goes through as the paper's sketch claims}, with three precisions.
+  \begin{enumerate}[nosep,label=(\roman*)]
+    \item All smudging steps of all runs are made in one statistical hybrid, before any computational step. The slack is then a single expectation under the real experiment, which the pointwise filter bounds. Taken step by step, the sketch's ``expectation of $\gamma_k$'' would be an expectation under a different hybrid for each step.
+    \item The $\delta_B$ part of a run's slack must be charged for \emph{every planned release of every admitted run}, aborted or not. A researcher's decision to continue may depend on $s_R$ and on its own encryption errors, which enter $\etot$. The simplest rule is to charge a run's full cost at admission, with no refund.
+    \item The RLWE assumptions are needed for adaptively chosen parameter sets (a finite menu suffices) and against non-uniform adversaries, since the reduction knows the data.
+  \end{enumerate}
+  \item \textbf{The R\'enyi filter} (Theorem~\ref{thm:filter}) is proved here from scratch by the supermartingale argument. It covers lattice Gaussian steps whose dimension, centre and $\sigma$ depend on the history, together with refusals and other public steps.
+  \item \textbf{The $\delta$ budget adds up exactly}: $\delta(\rho_L,\varepsilon_L)+(1+e^{\varepsilon_L})\Gamma_L=(1-\zeta_L)\delta_L+\zeta_L\delta_L=\delta_L$. Numerically the sum is $9.99999999999\cdot10^{-7}$. The paper's $\kappa_L$ values $48,46,44,42,40$ are reproduced.
+  \item \textbf{Part~2.} A shifted lattice Gaussian with $\nrm{\mathbf e}\le\Btot$ and $\sigma\ge2^\kappa\Btot/\sqrt{2\pi}$ is $(\varepsilon',\delta')$-indistinguishable from the unshifted one with $\varepsilon'\le2\sqrt{\pi\ln(1/\delta')}\,2^{-\kappa}+\pi4^{-\kappa}$. This bound needs no smoothing condition. Composing with an $(\varepsilon',\delta')$ smudging step gives a three-budget ledger and a new rule for $\kappa_L$ (Section~\ref{sec:hs}).
+  \item \textbf{Issues in the paper} are collected in Section~\ref{sec:issues}. None invalidates the stated guarantee once the ledger charges at admission. They include a constant in the smudging lemma: the factor $1+2^{-80}$ needs $\sigma_c\ge2^{42}$, not $2^{20}$.
+\end{itemize}
+
+\tableofcontents
+
+% ==============================================================
+\section{Setting}
+\label{sec:setting}
+
+\subsection{The base register and its adjacency}
+
+The paper's adjacency (\Pp, Definition~\texttt{def:adj}) is stated for the padded scope register of one run, with the cohort fixed. Runs on one base register may use different scopes, models and cohorts, so the joint statement needs an adjacency on the base register itself.
+
+\begin{definition}[Base register; base adjacency]\label{def:base}
+A \emph{base register} is $\bD=(\mathrm{id}_j,\mathbf a_j,\bx_j,y_j)_{j\le n_{\mathrm b}}$. Here $\mathrm{id}_j$ is an identifier, $\mathbf a_j$ holds the public attributes that scopes may use, $\bx_j$ holds all of $\Op$'s feature columns and $y_j$ is the response. The \emph{fixed part} of $\bD$ is $\fix(\bD)=(n_{\mathrm b},(\mathrm{id}_j,\mathbf a_j)_j)$. Two base registers are adjacent, $\bD\simb\bD'$, if $\fix(\bD)=\fix(\bD')$ and $(\bx_j,y_j)\ne(\bx'_j,y'_j)$ for exactly one $j$.
+\end{definition}
+
+\begin{definition}[Dataset of a run]\label{def:rundata}
+A run's public parameters $P$ fix four things:
+\begin{itemize}[nosep]
+  \item a scope predicate $\Phi$ on public attributes;
+  \item a row map $g_P$ from $(\bx,y)$ to $\Op$'s preprocessed and clipped columns, which selects the model's columns and applies public constants;
+  \item a padded size $\bar n_O\ge|\{j:\Phi(\mathbf a_j)\}|$;
+  \item the number of dummy rows.
+\end{itemize}
+Given dummy identifiers $\mathbf d$, the run's dataset is the scope register $D_P(\bD;\mathbf d)$. It consists of the rows $(\mathrm{id}_j,g_P(\bx_j,y_j))$ with $\Phi(\mathbf a_j)$, padded with rows $(\mathrm d_i,\mathbf 0,0)$ to $\bar n_O$ rows.
+\end{definition}
+
+\begin{lemma}[Base adjacency induces scope adjacency]\label{lem:scopeadj}
+Let $\bD\simb\bD'$. Then for every $P$ and every $\mathbf d$, the datasets $D_P(\bD;\mathbf d)$ and $D_P(\bD';\mathbf d)$ either coincide or are adjacent in the sense of \Pp, Definition~\texttt{def:adj}. Adjacent here means that they have the same identifiers and the same scope, and differ in $(\bx_O,y)$ of exactly one row.
+\end{lemma}
+\begin{proof}
+The selected rows depend on the public attributes, which are equal. The map $g_P$ acts row by row with public constants, so only the row $j$ in which $\bD$ and $\bD'$ differ can change, and only if $\Phi(\mathbf a_j)$ holds. The dummy rows are equal.
+\end{proof}
+
+The lemma needs row-wise preprocessing with public constants. A data-dependent transformation, such as standardizing $\Op$'s columns by register means, would let one row change every row, and is excluded by Assumption~\ref{as:all}(A4).
+
+\subsection{Runs, costs and the ledger}
+
+\begin{definition}[Run request; costs]\label{def:request}
+A \emph{run request} is a pair $(P,\chi)$:
+\begin{itemize}[nosep]
+  \item $P\in\mathcal P_\lambda$ is a public parameter vector of the paper's Section~\texttt{sec:params}. It comprises the scope, the model and its preprocessing, the bounds, the run budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the splits, $\zeta$, the policy for $\kappa$, $\delta_B$, and an HE parameter set $p\in\Pi_\lambda$ (ring dimension, modulus chain, distributions).
+  \item $\chi$ is the researcher's private input: at most $n_R^{\max}$ cohort identifiers, with features $\bX_R$.
+\end{itemize}
+\Cal$(P)$ is deterministic. It either refuses or returns $\kappa$, $\nrel$ and $(\sigma_{c,s},\rho_s,B_{\mathrm{tot},s})_{s\le\nrel}$. The run's \emph{costs} are
+\[
+  \rho(P)=\sum_{s\le\nrel}\rho_s,\qquad
+  \gamma(P)=\sum_{s\le\nrel}\gamma_s,\qquad
+  \gamma_s=\delta_B+\gamma'(\kappa),\qquad
+  \gamma'(\kappa)=2^{-\kappa}(1+2^{-80})+2^{-97}.
+\]
+The costs are public, because they are functions of $P$.
+\end{definition}
+
+Throughout, $\delta(\rho,\varepsilon)$ is the tight conversion of Lemma~\ref{lem:conv}, which is the function of \CP, Proposition~4.4 (\texttt{prop:conv}).
+
+\begin{definition}[Ledger]\label{def:ledger}
+The ledger of a base register has public parameters $(\varepsilon_L,\delta_L,\zeta_L)$. It derives
+\[
+  \rho_L=\max\{\rho\ge0:\delta(\rho,\varepsilon_L)\le(1-\zeta_L)\delta_L\},\qquad\Gamma_L=\frac{\zeta_L\delta_L}{1+e^{\varepsilon_L}} .
+\]
+Its state is $(\rho_\Sigma,\Gamma_\Sigma)$, initially $(0,0)$. It processes requests one at a time. Let a request have costs $(\rho_k,\gamma_k)$ and let \Cal{} not refuse it. The ledger uses one of two rules, fixed when the ledger is created:
+\begin{itemize}[nosep]
+  \item[\textbf{(F)}] \emph{filter:} admit iff $\rho_\Sigma+\rho_k\le\rho_L$ and $\Gamma_\Sigma+\gamma_k\le\Gamma_L$;
+  \item[\textbf{(N)}] \emph{non-adaptive:} admit iff $\delta(\rho_\Sigma+\rho_k,\varepsilon_L)+(1+e^{\varepsilon_L})(\Gamma_\Sigma+\gamma_k)\le\delta_L$.
+\end{itemize}
+On admission the ledger sets $(\rho_\Sigma,\Gamma_\Sigma)\gets(\rho_\Sigma+\rho_k,\Gamma_\Sigma+\gamma_k)$ at once. The full planned cost is charged before any message of the run that depends on a secret, and it is not refunded if the run is aborted.
+\end{definition}
+
+\begin{remark}[Differences from the paper's ledger]\label{rem:ledgerdiff}
+The paper's earlier text defined the state as the sum of the costs ``of every release made'' and admitted a run against its full cost. The implementation (\texttt{vfr/dp.py}, class \texttt{Ledger}, and \texttt{vfr/party\_o.py}) checked a run's full cost at setup but charged each release only when it was made. This was a reservation-free scheme with implicit refunds on abort. Both now charge the full cost at admission, atomically (the implementation under an exclusive file lock), with no refund. Remark~\ref{rem:refunds} shows which refunds are sound: those of $\rho_s$ and of $\gamma'(\kappa)$ for releases not made. The $\delta_B$ part of an aborted run's unmade releases must stay charged. Without reservation, two runs admitted against the same state can together exceed the cap. Definition~\ref{def:ledger} avoids both problems.
+\end{remark}
+
+\subsection{The multi-run experiment}
+
+\begin{definition}[The real experiment $\Real_{\mathcal A}(\bD)$]\label{def:exp}
+Let $\mathcal A$ be an interactive PPT machine, the \emph{coalition}. It receives $1^\lambda$ and draws its random tape $\omega_{\mathcal A}$. Until it halts it repeats one of the following actions, each chosen as a function of $\omega_{\mathcal A}$ and of everything it has received so far.
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item \emph{Request.} $\mathcal A$ submits a run request $(P_k,\chi_k)$; requests are numbered in order of submission. $\Op$ computes \Cal$(P_k)$ and answers $\bot_{\mathrm{cal}}$ if it refuses. Otherwise $\Op$ submits the costs to the ledger and answers $\bot_{\mathrm{led}}$ if the ledger refuses. Otherwise run $k$ is \emph{admitted}, the ledger charges it, and the run becomes \emph{open}. $\Op$ draws fresh coins $\omega_{O,k}$, and the honest researcher machine $\Rp_k=\Rp(P_k,\chi_k;\omega_{R,k})$ gets fresh uniform coins $\omega_{R,k}$, which are given to $\mathcal A$. The coins $\omega_{O,k}$ comprise:
+  \begin{itemize}[nosep]
+    \item $\Op$'s key shares $s_O$ and their errors;
+    \item the common random strings;
+    \item the OPRF key, the shuffle $\tau_k$, the dummy identifiers and the PSI sanitization coins;
+    \item for each release $s\le\nrel$, the re-randomization coins $(u,e_0,e_1)$ and the noise $\eta\sim D_{\Z^N,\sigma_{c,s}}$.
+  \end{itemize}
+  \item \emph{Step.} $\mathcal A$ selects an open run. The next message of that run is computed by the honest party whose turn it is, either $\Rp_k$ or $\Op(\bD,P_k;\omega_{O,k})$, and delivered. $\mathcal A$ receives every message that $\Rp_k$ sends or receives.
+  \item \emph{Abort.} $\mathcal A$ closes an open run, and no further message of that run is sent. In Algorithm~5 the researcher requests each release, so not requesting a release is an abort.
+  \item \emph{Halt.} $\mathcal A$ outputs a bit, which is the output of $\Real_{\mathcal A}(\bD)$.
+\end{enumerate}
+$\view_{\mathcal A}(\bD)$ consists of $\omega_{\mathcal A}$ and every answer, coin $\omega_{R,k}$ and message that $\mathcal A$ received.
+\end{definition}
+
+The model makes the researchers semi-honest within each run: the researcher side of every run is the honest machine. Across runs they are fully adaptive in what they request, when, how they interleave open runs, and when they abort. One machine stands for all researchers, so arbitrary collusion is covered. Non-colluding researchers are the special case in which $\mathcal A$'s actions for researcher $i$ depend only on $i$'s part of the view. The view of any subset of researchers is a function of $\view_{\mathcal A}$.
+
+\begin{definition}[IND-CDP of the multi-run protocol]\label{def:indmulti}
+The protocol is \emph{$(\varepsilon,\delta)$-IND-CDP for $\simb$} if, for every PPT coalition $\mathcal A$, there is a negligible $\nu$ such that for all $\bD\simb\bD'$
+\[
+  \Pr[\Real_{\mathcal A}(\bD)=1]\le e^\varepsilon\Pr[\Real_{\mathcal A}(\bD')=1]+\delta+\nu(\lambda).
+\]
+$\mathcal A$'s output may be any PPT function of its view, so this is the IND-CDP of \Pp, Definition~\texttt{def:simcdp}, applied to the joint view. The coalition's adaptive strategy is built into the experiment.
+\end{definition}
+
+\subsection{Assumptions}
+
+\begin{assumption}\label{as:all}
+\begin{enumerate}[nosep,label=(A\arabic*)]
+  \item \emph{Honest data holder and honest, atomic ledger.} $\Op$ follows the protocol. Its ledger behaves as in Definition~\ref{def:ledger}, with one rule. $\Op$ produces decryption shares only within admitted runs. The answers $\bot_{\mathrm{cal}}$ and $\bot_{\mathrm{led}}$ depend only on $P_k$ and the ledger state. $\Op$ aborts a run only on events determined by $\fix(\bD)$, $P_k$, its coins other than $(s_O$, its errors, $u,e_0,e_1,\eta)$, and the messages it has received. An overflow of the PSI tables is an example of such an event.
+  \item \emph{Semi-honest researchers with arbitrary collusion}, as in Definition~\ref{def:exp}. In particular each $\Rp_k$ clips its features, and its coins are uniform.
+  \item \emph{Fresh coins.} Each admitted run draws $\omega_{O,k}$ and $\omega_{R,k}$ independently of each other and of everything before, with the protocol's distributions. The CKKS key material of $\Op$ and $\Rp$ ($s_O$, $s_R$, their errors and the common random strings) is fresh in every run. $(u,e_0,e_1,\eta)$ is fresh in every release, and $\eta$ is \emph{exactly} $D_{\Z^N,\sigma_{c,s}}$.
+  \item \emph{Static register, public scopes, row-wise public preprocessing.} $\bD$ is the same in all runs. Every scope uses public attributes only, and every $g_P$ is row-wise with public constants. Lemma~\ref{lem:scopeadj} therefore holds.
+  \item \emph{Per-run hypotheses.} Every $P\in\mathcal P_\lambda$ that \Cal{} does not refuse satisfies the hypotheses of \CP, Theorem~4.11 (\texttt{thm:output}), for every release $s$:
+  \begin{itemize}[nosep]
+    \item (M1)--(M5);
+    \item $\sigma_{c,s}\ge\max\{2^{\kappa}B_{\mathrm{tot},s}/\sqrt{2\pi},\,2^{42}\}$ (see Remark~\ref{rem:floor} for the floor);
+    \item $\rho_s\ge\widehat\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)$, where $\widehat\Delta_{\mathrm{enc},s}$ bounds the sensitivity of the centre $\fs_s$ under scope adjacency, for every arrangement and every researcher input in the clipped domain (\CP, Corollary~3.13, \texttt{cor:sensZ});
+    \item $B_{\mathrm{tot},s}$ satisfies \CP, Theorem~3.12 (\texttt{thm:O1}): $\Pr[\nrm{e_{\mathrm{tot},s}}_2>B_{\mathrm{tot},s}]\le\delta_B$ for every dataset in the clipped domain, every researcher input and every value of the public randomness. The probability is over the run's key shares, errors and fresh coins.
+  \end{itemize}
+  \item \emph{RLWE for every parameter set in a finite menu.} \CP, Assumptions~4.9 (\texttt{as:rlweu}) and~4.10 (\texttt{as:rlweO}) hold for every $p\in\Pi_\lambda$, and $|\Pi_\lambda|\le\mathrm{poly}(\lambda)$. They hold against non-uniform adversaries: for every polynomial $t$, the best advantages $\Adv_{1,p}(\lambda,t(\lambda))$ and $\Adv_{2,p}(\lambda,t(\lambda))$ of circuits of size $t$ are negligible.
+  \item \emph{Efficiency.} \Cal{} and the ledger tests run in deterministic polynomial time. The centre $\fs_s(D;\pi)$ is computable in time polynomial in $\lambda$ and $|\bD|$. The exact sampler runs in expected polynomial time; a reduction may cut it off at a polynomial time bound, which changes its output with probability $2^{-\lambda}$, so it suffices.
+  \item \emph{PPT coalition.} $\mathcal A$ runs in time $t_{\mathcal A}(\lambda)\le\mathrm{poly}(\lambda)$, so it makes at most $t_{\mathcal A}(\lambda)$ requests and actions.
+\end{enumerate}
+\end{assumption}
+
+(A3) is used only for the CKKS key material and for the release coins. Fresh OPRF keys and shuffles matter for cohort and linkage privacy (G2, G4) across runs, not for Theorem~\ref{thm:main}: the theorem never replaces the Link phase, and the sensitivity bound holds for every arrangement.
+
+% ==============================================================
+\section{Divergences on countable spaces}
+\label{sec:div}
+
+Every object below is a probability mass function (pmf) on a countable set. This covers every transcript of the protocol, which consists of bit strings, ring elements and lattice points.
+
+\begin{definition}[Divergences]\label{def:div}
+Let $P,Q$ be pmfs on a countable set $\mathcal Y$. Let $\phi_a(p,q)=p^aq^{1-a}$ for $q>0$, with $\phi_a(0,0)=0$ and $\phi_a(p,0)=\infty$ for $p>0$.
+\begin{itemize}[nosep]
+  \item For $a>1$, $\Ma_a(P\Vert Q)=\sum_y\phi_a(P(y),Q(y))$, and the R\'enyi divergence is $D_a(P\Vert Q)=\frac1{a-1}\ln\Ma_a(P\Vert Q)$.
+  \item For $\varepsilon\ge0$, the hockey-stick divergence is
+  \[
+    \HSd_\varepsilon(P\Vert Q)=\sum_y(P(y)-e^\varepsilon Q(y))_+=\sup_{\varphi:\mathcal Y\to[0,1]}\bigl(\Ex_P\varphi-e^\varepsilon\Ex_Q\varphi\bigr).
+  \]
+  \item $\SD=\HSd_0$ is the statistical distance.
+\end{itemize}
+$P$ and $Q$ are \emph{$(\varepsilon,\delta)$-indistinguishable} if $\HSd_\varepsilon(P\Vert Q)\le\delta$ and $\HSd_\varepsilon(Q\Vert P)\le\delta$. A finite $D_a(P\Vert Q)$ implies $P\ll Q$.
+\end{definition}
+
+The supremum form of $\HSd_\varepsilon$ is attained at $\varphi=\mathbf 1\{P>e^\varepsilon Q\}$. It covers randomized tests: a distinguisher $\mathcal B$ with coins defines $\varphi(y)=\Pr[\mathcal B(y)=1]\in[0,1]$.
+
+\begin{lemma}[Post-processing; mixtures with common weights]\label{lem:post}
+Let $K$ be a Markov kernel from $\mathcal Y$ to a countable $\mathcal Z$, and write $PK(z)=\sum_yP(y)K(z\mid y)$. Then $\Ma_a(PK\Vert QK)\le\Ma_a(P\Vert Q)$ and $\HSd_\varepsilon(PK\Vert QK)\le\HSd_\varepsilon(P\Vert Q)$. In particular, for pmfs $\mu$ on a countable index set and families $(P_r)$, $(Q_r)$,
+\[
+  \Ma_a\Bigl(\textstyle\sum_r\mu_rP_r\Bigm\Vert\sum_r\mu_rQ_r\Bigr)\le\sum_r\mu_r\Ma_a(P_r\Vert Q_r),\qquad
+  \HSd_\varepsilon\Bigl(\textstyle\sum_r\mu_rP_r\Bigm\Vert\sum_r\mu_rQ_r\Bigr)\le\sum_r\mu_r\HSd_\varepsilon(P_r\Vert Q_r).
+\]
+\end{lemma}
+\begin{proof}
+Both $\phi_a$ and $\psi_\varepsilon(p,q)=(p-e^\varepsilon q)_+$ are convex, lower semicontinuous and positively homogeneous of degree one on $[0,\infty)^2$. Here $\phi_a$ is the closed perspective of $x\mapsto x^a$. Such a function $f$ is subadditive, since $f(x+x')=2f(\frac{x+x'}2)\le f(x)+f(x')$. By lower semicontinuity this extends to countable sums: $f(\sum_ix_i)\le\liminf_n\sum_{i\le n}f(x_i)\le\sum_if(x_i)$. Hence
+\[
+  \Ma_a(PK\Vert QK)=\sum_z\phi_a\Bigl(\sum_yK(z\mid y)(P(y),Q(y))\Bigr)\le\sum_z\sum_yK(z\mid y)\,\phi_a(P(y),Q(y))=\Ma_a(P\Vert Q),
+\]
+and likewise for $\psi_\varepsilon$. For the mixture statement, apply this to the joint pmfs $\mu_rP_r(y)$ and $\mu_rQ_r(y)$ of $(r,y)$, whose $\Ma_a$ and $\HSd_\varepsilon$ equal the right-hand sides, and to the projection $(r,y)\mapsto y$.
+\end{proof}
+
+\begin{lemma}[Conversion; \cite{CKS20}, \CP, Proposition~4.4]\label{lem:conv}
+Suppose $D_a(P\Vert Q)\le a\rho$ for every $a>1$. Then for every $\varepsilon\ge0$,
+\[
+  \HSd_\varepsilon(P\Vert Q)\le\delta(\rho,\varepsilon)=\inf_{a>1}e^{(a-1)(a\rho-\varepsilon)}\,\frac{(a-1)^{a-1}}{a^a}.
+\]
+Moreover $\delta(\rho,\varepsilon)\le e^{-(\varepsilon-\rho)^2/(4\rho)}$ for $\varepsilon\ge\rho$. Hence $\HSd_\varepsilon(P\Vert Q)\le\delta'$ whenever $\varepsilon\ge\rho+2\sqrt{\rho\ln(1/\delta')}$. The function $\delta(\cdot,\varepsilon)$ is continuous, and strictly increasing on the set where it is below $1$; for $\varepsilon>0$, $\delta(0,\varepsilon)=0$.
+\end{lemma}
+\begin{proof}
+For $x\ge0$ and $a>1$ we have $(x-e^\varepsilon)_+\le c_ax^a$, where
+\[
+  c_a=\sup_{x>0}\frac{(x-e^\varepsilon)_+}{x^a}=e^{-(a-1)\varepsilon}\frac{(a-1)^{a-1}}{a^a}.
+\]
+The supremum is attained at $x=ae^\varepsilon/(a-1)$. Since $P\ll Q$,
+\[
+  \HSd_\varepsilon(P\Vert Q)=\sum_{Q(y)>0}Q(y)\Bigl(\frac{P(y)}{Q(y)}-e^\varepsilon\Bigr)_+\le c_a\Ma_a(P\Vert Q)\le c_ae^{(a-1)a\rho} .
+\]
+Take the infimum over $a$. For the simple form, note that $(a-1)^{a-1}/a^a=\frac1a(1-\frac1a)^{a-1}\le1$, and take $a=(\varepsilon+\rho)/(2\rho)$, which exceeds $1$ when $\varepsilon>\rho$. The exponent is then $(a-1)(a\rho-\varepsilon)=-(\varepsilon-\rho)^2/(4\rho)$.
+
+Continuity is \CP, Proposition~4.4. For strict monotonicity, let $\rho<\rho'$ with $\delta(\rho',\varepsilon)<1$. The objective is continuous in $a$, tends to $1$ as $a\to1$ and to $+\infty$ as $a\to\infty$, so its infimum $\delta(\rho',\varepsilon)<1$ is attained at some $a^*$. Then $\delta(\rho,\varepsilon)\le e^{(a^*-1)(a^*\rho-\varepsilon)}c'<e^{(a^*-1)(a^*\rho'-\varepsilon)}c'=\delta(\rho',\varepsilon)$, where $c'=(a^*-1)^{a^*-1}/a^{*a^*}$.
+\end{proof}
+
+\begin{lemma}[Integer shifts of the lattice Gaussian; \CP, Lemma~2.2]\label{lem:shift}
+Let $\eta\sim D_{\Z^n,\sigma}$ and $\mathbf e\in\Z^n$. Then $D_a(\mathbf e+\eta\Vert\eta)\le a\nrm{\mathbf e}_2^2/(2\sigma^2)$ for every $a>1$.
+\end{lemma}
+\begin{proof}
+Let $Z=\rho_\sigma(\Z^n)$. Since $\mathbf e$ is integral, $\mathbf e+\eta$ has pmf $\rho_\sigma(y-\mathbf e)/Z$ on $\Z^n$. By the identity $a\nrm{y-\mathbf e}^2+(1-a)\nrm y^2=\nrm{y-a\mathbf e}^2+a(1-a)\nrm{\mathbf e}^2$,
+\[
+  \Ma_a=e^{a(a-1)\nrm{\mathbf e}^2/(2\sigma^2)}\,\frac{\rho_\sigma(\Z^n-a\mathbf e)}{Z}\le e^{a(a-1)\nrm{\mathbf e}^2/(2\sigma^2)} .
+\]
+The inequality is \CP, Lemma~2.1 (\texttt{lem:gsum}), proved there by Poisson summation.
+\end{proof}
+
+The same bound holds for $D_a(\eta\Vert\mathbf e+\eta)$: shift both laws by $-\mathbf e$, which is a bijection of $\Z^n$.
+
+\begin{lemma}[Smudging in statistical distance; \CP, Lemma~2.3(b) and Corollary~2.4]\label{lem:sdsmudge}
+Let $\eta\sim D_{\Z^N,\sigma}$ with $N\le2^{20}$, let $\mathbf e\in\Z^N$ with $\nrm{\mathbf e}_2\le B$, and let $\sigma\ge\max\{2^\kappa B/\sqrt{2\pi},2^{42}\}$. Then $\SD(\mathbf e+\eta,\eta)\le\gamma'(\kappa)=2^{-\kappa}(1+2^{-80})+2^{-97}$.
+\end{lemma}
+\begin{proof}
+\CP, Lemma~2.3(b), with smoothing error $\epsilon=2^{-100}$ and $\sigma_2=2.1$, gives
+\[
+  \SD\le\frac{\nrm{\mathbf e}}{\sqrt{2\pi}\,\sigma_1}+\frac{4\epsilon}{1-\epsilon}\le2^{-\kappa}\,\frac\sigma{\sigma_1}+2^{-97.99},
+\]
+where $\sigma_1=\sqrt{\sigma^2-\sigma_2^2}$. The choice $\sigma_2=2.1$ is admissible for $N\le2^{20}$, because by~\cite[Lemma~3.3]{MR07}
+\[
+  \frac{\eta_\epsilon(\Z^N)}{\sqrt{2\pi}}\le\frac{\sqrt{\ln(2N(1+2^{100}))/\pi}}{\sqrt{2\pi}}\le2.07 .
+\]
+Finally, $\sigma/\sigma_1=(1-\sigma_2^2/\sigma^2)^{-1/2}\le1+\sigma_2^2/\sigma^2\le1+4.41\cdot2^{-84}<1+2^{-81}$.
+\end{proof}
+
+\begin{remark}[The floor on $\sigma_c$]\label{rem:floor}
+\CP{} and \Pp{} stated the bound $\gamma'(\kappa)$ under $\sigma_c\ge\max\{2^\kappa\Btot/\sqrt{2\pi},2^{20}\}$; both now use $2^{42}$. At $\sigma=2^{20}$, however, $\sigma/\sigma_1$ is $1+2^{-38.9}$, and the proof's bound $1+\sigma_2^2/\sigma^2$ is $1+2^{-37.9}$. Either way the factor is not $1+2^{-80}$. Correspondingly, the last step of \CP, Corollary~2.4 ($2^{-\kappa}\sigma/\sigma_1+2^{-97.9}\le2^{-\kappa}+2^{-97}$ ``for every $\sigma\ge2^{20}$'') fails for $\kappa<60$. The factor $1+2^{-80}$ needs $\sigma\ge2.1\cdot2^{40}\approx2^{41.1}$. This has no practical effect: at every evaluation setting $\kappa\ge40$ and $\Btot\ge2^{17}$, so $\sigma_c\ge2^{\kappa}\Btot/\sqrt{2\pi}\ge2^{55}\gg2^{42}$. The fix is to write $2^{42}$ for $2^{20}$, or $1+2^{-37}$ for $1+2^{-80}$. Nothing below depends on the exact form of $\gamma'(\kappa)$, only on Lemma~\ref{lem:sdsmudge} holding for it.
+\end{remark}
+
+% ==============================================================
+\section{Adaptive processes: a R\'enyi filter and two hybrid lemmas}
+\label{sec:adaptive}
+
+\begin{definition}[Adaptive process]\label{def:process}
+Let $\mathcal Y$ be countable and $M\in\mathbb N$. An \emph{adaptive process} $P$ of horizon $M$ on $\mathcal Y$ is a family of kernels: for each $t\le M$ and each history $h\in\mathcal Y^{t-1}$, a pmf $P_t(\cdot\mid h)$ on $\mathcal Y$. Its law is $P(y)=\prod_{t\le M}P_t(y_t\mid y_{<t})$, also written $P$. A process that stops early outputs a fixed symbol $\bot$ with probability one from then on. A family $c=(c_t)$ of functions $c_t:\mathcal Y^{t-1}\to[0,\infty)$ is \emph{predictable}: the value at step $t$ depends only on the history before $t$.
+\end{definition}
+
+\begin{theorem}[R\'enyi filter for zCDP]\label{thm:filter}
+Let $P$ and $Q$ be adaptive processes of horizon $M$ on $\mathcal Y$, and let $c$ be predictable. Suppose
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item $D_a\bigl(P_t(\cdot\mid h)\Vert Q_t(\cdot\mid h)\bigr)\le a\,c_t(h)$ for all $t\le M$, all $h\in\mathcal Y^{t-1}$ and all $a>1$;
+  \item $\sum_{t\le M}c_t(y_{<t})\le\rho^*$ for every $y\in\mathcal Y^M$.
+\end{enumerate}
+Then $D_a(P\Vert Q)\le a\rho^*$ for every $a>1$.
+\end{theorem}
+\begin{proof}
+Fix $a>1$ and abbreviate $P_t(y_t\mid y_{<t})$ to $P_t$, and similarly $Q_t$ and $c_t$. By (i), $P_t(\cdot\mid h)\ll Q_t(\cdot\mid h)$ for every $h$, so the products below contain no term $\phi_a(p,0)$ with $p>0$. For $0\le t\le M$ put
+\[
+  S_t=\sum_{y_{\le t}\in\mathcal Y^t}\ \prod_{j\le t}\phi_a(P_j,Q_j)\,e^{-a(a-1)c_j},\qquad S_0=1 .
+\]
+Sum first over $y_t$, with $y_{<t}$ fixed. Since $c_t$ depends only on $y_{<t}$,
+\[
+  S_t=\sum_{y_{<t}}\Bigl(\prod_{j<t}\phi_a(P_j,Q_j)e^{-a(a-1)c_j}\Bigr)\,e^{-a(a-1)c_t}\,\Ma_a\bigl(P_t(\cdot\mid y_{<t})\Vert Q_t(\cdot\mid y_{<t})\bigr)\le S_{t-1},
+\]
+because $\Ma_a(P_t\Vert Q_t)=e^{(a-1)D_a(P_t\Vert Q_t)}\le e^{a(a-1)c_t}$ by (i). Hence $S_M\le1$. The function $\phi_a$ is multiplicative, so $\phi_a(P(y),Q(y))=\prod_t\phi_a(P_t,Q_t)$, and by (ii)
+\[
+  \Ma_a(P\Vert Q)=\sum_y\prod_t\phi_a(P_t,Q_t)\le e^{a(a-1)\rho^*}\sum_y\prod_t\phi_a(P_t,Q_t)e^{-a(a-1)c_t}=e^{a(a-1)\rho^*}S_M\le e^{a(a-1)\rho^*} .
+\]
+Take $\frac1{a-1}\ln$.
+\end{proof}
+
+\begin{remark}[What the proof is, and attribution]\label{rem:filterattr}
+$S_t$ is $\Ex_Q[Z_t]$ for $Z_t=\prod_{j\le t}(P_j/Q_j)^ae^{-a(a-1)c_j}$, and the inequality $S_t\le S_{t-1}$ is the $Q$-supermartingale property of $Z_t$. This is the standard argument for R\'enyi filters. Condition~(ii) holds for every history, which is exactly what a filter guarantees. A filter stops the process, or makes it output $\bot$ at cost $0$, as soon as the next cost would exceed the remaining budget. That decision depends only on the accumulated public costs, so it is a stopping time.
+
+The horizon is finite because the coalition is PPT (Assumption~\ref{as:all}(A8)), so no optional-stopping theorem is needed. An unbounded horizon would need a passage to the limit $M\to\infty$, which is not needed here.
+
+The cost $a\,c_t$ is linear in $a$ with one predictable $c_t$ for all orders, so one stopping rule serves every order and the conclusion is zCDP. Privacy filters were introduced by Rogers, Roth, Ullman and Vadhan~\cite{RRUV16}. The R\'enyi version, with adaptively chosen per-step R\'enyi costs and a fixed total, is due to Feldman and Zrnic~\cite{FZ21}, who prove a more general individual form \unsure{their main theorem is quoted as Theorem~1.1 in the arXiv version; numbering in the NeurIPS version not checked}. Whitehouse et al.~\cite{WRRW23} give fully adaptive filters for approximate DP and approximate zCDP. Nothing below depends on the exact statements of these papers.
+\end{remark}
+
+\begin{corollary}[Steps of the protocol]\label{cor:steps}
+The following steps satisfy condition~(i) of Theorem~\ref{thm:filter} for the processes $P$ (dataset $\bD$) and $Q$ (dataset $\bD'$).
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item A \emph{public step}, whose kernel is the same under $\bD$ and $\bD'$, with $c_t=0$. This includes deterministic steps (a function of $h$), refusals, and draws of coins that do not depend on $(\bx_j,y_j)_j$.
+  \item A \emph{lattice Gaussian step}, $P_t(\cdot\mid h)=\mathrm{law}(F(h)+\eta)$ and $Q_t(\cdot\mid h)=\mathrm{law}(F'(h)+\eta)$, with $\eta\sim D_{\Z^{n(h)},\sigma(h)}$, $F(h)-F'(h)\in\Z^{n(h)}$ and $\nrm{F(h)-F'(h)}_2\le\Delta(h)$, with $c_t(h)=\Delta(h)^2/(2\sigma(h)^2)$. The dimension, the centre, the bound and $\sigma$ may all depend on the history.
+\end{enumerate}
+Deterministic post-processing of the transcript preserves the conclusion of Theorem~\ref{thm:filter} (Lemma~\ref{lem:post}).
+\end{corollary}
+\begin{proof}
+(a) is immediate. For (b), $D_a$ is invariant under the bijection $y\mapsto y-F'(h)$ of $\Z^{n(h)}$; apply Lemma~\ref{lem:shift} with $\mathbf e=F(h)-F'(h)$.
+\end{proof}
+
+\begin{lemma}[Statistical hybrid lemma with predictable distances]\label{lem:sdhyb}
+Let $P$ and $Q$ be adaptive processes of horizon $M$ on $\mathcal Y$, and let $\beta$ be predictable with $\SD(P_t(\cdot\mid h),Q_t(\cdot\mid h))\le\beta_t(h)$ for all $t$ and $h$. Then
+\[
+  \SD(P,Q)\le\Ex_{Y\sim P}\Bigl[\sum_{t\le M}\beta_t(Y_{<t})\Bigr].
+\]
+\end{lemma}
+\begin{proof}
+For $0\le t\le M$, let $H^{(t)}$ be the process with kernels $P_j$ for $j\le t$ and $Q_j$ for $j>t$, so that $H^{(M)}=P$ and $H^{(0)}=Q$. The processes $H^{(t)}$ and $H^{(t-1)}$ have the same law of $Y_{<t}$, namely $P$'s, and the same kernels after step $t$; they differ only in the kernel at step $t$. By Lemma~\ref{lem:post} (a mixture over $y_{<t}$ with common weights, followed by the common continuation kernel),
+\[
+  \SD(H^{(t)},H^{(t-1)})\le\sum_{y_{<t}}P(y_{<t})\,\SD\bigl(P_t(\cdot\mid y_{<t}),Q_t(\cdot\mid y_{<t})\bigr)\le\Ex_P[\beta_t(Y_{<t})] .
+\]
+Sum over $t$ and use the triangle inequality.
+\end{proof}
+
+The point of the lemma is that every term is an expectation under the \emph{same} law $P$, because each hybrid keeps $P$'s kernels on the prefix. Applied with $P$ the real experiment, it gives a slack that is one expectation under the real experiment.
+
+\begin{lemma}[Adaptive composition of hockey-stick closeness]\label{lem:hscomp}
+Let $P$ and $Q$ be adaptive processes of horizon $M$ on $\mathcal Y$. Let $\varepsilon_t\ge0$ and $\delta_t\ge0$ be predictable with $\HSd_{\varepsilon_t(h)}\bigl(P_t(\cdot\mid h)\Vert Q_t(\cdot\mid h)\bigr)\le\delta_t(h)$ for all $t$ and $h$, and suppose $\sum_t\varepsilon_t(y_{<t})\le E$ for every $y$. Then
+\[
+  \HSd_E(P\Vert Q)\le\Ex_{Y\sim P}\Bigl[\sum_{t\le M}\delta_t(Y_{<t})\Bigr].
+\]
+\end{lemma}
+\begin{proof}
+Put $P'_t(y_t\mid h)=\min\{P_t(y_t\mid h),e^{\varepsilon_t(h)}Q_t(y_t\mid h)\}$. Then $\sum_{y_t}(P_t-P'_t)(y_t\mid h)=\HSd_{\varepsilon_t(h)}(P_t\Vert Q_t)\le\delta_t(h)$. Let $P'(y)=\prod_tP'_t(y_t\mid y_{<t})$. Then $P'(y)\le e^{\sum_t\varepsilon_t}Q(y)\le e^EQ(y)$. Telescoping, with $0\le P'_j\le P_j$,
+\[
+  P(y)-P'(y)=\sum_{t\le M}\Bigl(\prod_{j<t}P'_j\Bigr)(P_t-P'_t)\Bigl(\prod_{j>t}P_j\Bigr)\ \ge0 .
+\]
+Summing over $y$, the factor $\prod_{j>t}P_j$ sums to $1$ over $y_{>t}$. Bounding $P'_j\le P_j$ for $j<t$ gives
+\[
+  \sum_y(P-P')(y)\le\sum_t\sum_{y_{<t}}P(y_{<t})\,\delta_t(y_{<t})=\Ex_P\Bigl[\sum_t\delta_t\Bigr].
+\]
+For any $\varphi:\mathcal Y\to[0,1]$, $\Ex_P\varphi\le\Ex_{P'}\varphi+\sum_y(P-P')(y)\le e^E\Ex_Q\varphi+\Ex_P[\sum_t\delta_t]$.
+\end{proof}
+
+The $\varepsilon_t$ must sum to at most $E$ pointwise, because they enter as a factor $e^E$. The $\delta_t$ enter only through their expectation under $P$.
+
+\begin{lemma}[Adaptively chosen parameter sets]\label{lem:adaptpar}
+For each $p$ in a finite set $\Pi$, let $G_p$ be a decision problem: a challenger draws $b\in\{0,1\}$ and hands out a challenge $X^b_p$. Let $\mathcal B$ be an adversary that first computes, possibly at random, a choice $p\in\Pi$, then receives $X_p^b$, and outputs a bit. Let $\mathcal B_p$ run $\mathcal B$ until it chooses some $p'$, output $0$ if $p'\ne p$, and otherwise forward its own challenge to $\mathcal B$ and output $\mathcal B$'s bit. Then $\Adv(\mathcal B)\le\sum_{p\in\Pi}\Adv_p(\mathcal B_p)$, and each $\mathcal B_p$ runs in the time of $\mathcal B$.
+\end{lemma}
+\begin{proof}
+$\mathcal B$'s choice is made before it sees the challenge, so it is independent of $b$. Hence $\Pr[\mathcal B=1\mid b]=\sum_p\Pr[\mathcal B\text{ chooses }p]\Pr[\mathcal B=1\mid p,b]=\sum_p\Pr[\mathcal B_p=1\mid b]$. Take the difference over $b$ and apply the triangle inequality.
+\end{proof}
+
+% ==============================================================
+\section{Composition across runs}
+\label{sec:main}
+
+\subsection{The ideal experiment}
+
+\begin{definition}[The ideal experiment $\Ideal_{\mathcal A}(\bD)$]\label{def:ideal}
+$\Ideal_{\mathcal A}(\bD)$ is $\Real_{\mathcal A}(\bD)$ with the same coalition, \Cal, ledger, refusals and honest machines $\Rp_k$, with one change: in every admitted run $k$, $\Op$ is replaced by the ideal party $\tilde\Op_k$. It sends its messages at the same points of the protocol as $\Op$.
+\begin{enumerate}[nosep,label=(I\arabic*)]
+  \item It sends the public parameters, as $\Op$ does.
+  \item It replaces $\Op$'s key-generation shares (the public-key share and the rotation-key shares) by independent uniform elements of the corresponding rings.
+  \item It runs $\Op$'s Link phase (OPRF, labeled PSI and \textsc{SanitizeBFV}) honestly on the identifiers of $D_{P_k}(\bD;\mathbf d_k)$, with fresh coins (OPRF key, $\tau_k$, $\mathbf d_k$, sanitization coins). This uses only $\fix(\bD)$ and $P_k$.
+  \item It receives $\Rp_k$'s uploads and ignores them; it performs no aggregation.
+  \item At each release $s$ that $\mathcal A$ requests, it draws $c^*\gets\mathrm U(\Rr_{q_0})$ and $\eta\sim D_{\Z^N,\sigma_{c,s}}$, sets
+  \[
+    w_{k,s}=\fs_{k,s}(\bD)+\eta,\qquad \fs_{k,s}(\bD)=\fs_s\bigl(D_{P_k}(\bD;\mathbf d_k);\pi_k,\chi_k\bigr)\in\Z^N,
+  \]
+  and sends $(c^*,\ w_{k,s}-c^*s_R\bmod q_0)$. Here $\fs_s$ is the centre of \CP, Definition~3.7 (\texttt{def:centre}), $\pi_k$ is the arrangement defined by $\tau_k$, and $s_R$ is read from $\omega_{R,k}$.
+\end{enumerate}
+\end{definition}
+
+$\tilde\Op_k$ uses $(\bx_j,y_j)_j$ only through the values $w_{k,s}$. Run by run, $\tilde\Op_k$ is the simulator of \CP, Theorem~4.11, applied to that theorem's mechanism $\mathcal M_k=(\omega_{R,k},\Lambda_k,(\fs_{k,s}+\eta_{k,s})_s)$.
+
+\begin{theorem}[Composition across runs; replaces Proposition~\texttt{prop:compose}]\label{thm:main}
+Assume Assumption~\ref{as:all}, and let $\mathcal A$ be a PPT coalition. Let $\nrel\le n_{\max}$ for every $P\in\mathcal P_\lambda$. Let $t_{\mathcal B}(\lambda)$ be the polynomial running time of the reductions in Step~3 of the proof. Put
+\[
+  \nu_{\mathcal A}(\lambda)=t_{\mathcal A}(\lambda)\sum_{p\in\Pi_\lambda}\bigl(n_{\max}\Adv_{1,p}(\lambda,t_{\mathcal B}(\lambda))+\Adv_{2,p}(\lambda,t_{\mathcal B}(\lambda))\bigr),
+\]
+which is negligible.
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Simulation.} For every $\bD$,
+  \[
+    \bigl|\Pr[\Real_{\mathcal A}(\bD)=1]-\Pr[\Ideal_{\mathcal A}(\bD)=1]\bigr|\le\Gamma_{\mathcal A}(\bD)+\nu_{\mathcal A}(\lambda),
+  \]
+  where $\Gamma_{\mathcal A}(\bD)=\Ex_{\Real_{\mathcal A}(\bD)}\bigl[\sum_{k\ \mathrm{admitted}}\gamma_k\bigr]$.
+  \item \emph{Ideal composition.} Suppose that in every execution the admitted runs satisfy $\sum_k\rho_k\le\rho^*$, for a constant $\rho^*$. Then $D_a\bigl(\view^{\Ideal}_{\mathcal A}(\bD)\Vert\view^{\Ideal}_{\mathcal A}(\bD')\bigr)\le a\rho^*$ for all $a>1$ and $\bD\simb\bD'$. Hence, for every $\varepsilon\ge0$,
+  \[
+    \Pr[\Ideal_{\mathcal A}(\bD)=1]\le e^\varepsilon\Pr[\Ideal_{\mathcal A}(\bD')=1]+\delta(\rho^*,\varepsilon).
+  \]
+  \item \emph{Accounting.} Suppose in addition that $\sum_k\gamma_k\le\Gamma^*$ over the admitted runs in every execution. Then for every $\varepsilon\ge0$ and $\bD\simb\bD'$,
+  \[
+    \Pr[\Real_{\mathcal A}(\bD)=1]\le e^\varepsilon\Pr[\Real_{\mathcal A}(\bD')=1]+\delta(\rho^*,\varepsilon)+(1+e^\varepsilon)\Gamma^*+(1+e^\varepsilon)\nu_{\mathcal A}(\lambda).
+  \]
+  \item \emph{Rule (F), any adaptive coalition.} Under the filter rule, (b) and (c) hold with $(\rho^*,\Gamma^*)=(\rho_L,\Gamma_L)$, and the protocol is $(\varepsilon_L,\delta_L)$-IND-CDP for $\simb$. The $\delta$ budget is used exactly: $\delta(\rho_L,\varepsilon_L)+(1+e^{\varepsilon_L})\Gamma_L=\delta_L$.
+  \item \emph{Rule (N), requests fixed in advance.} Suppose the ledger uses the non-adaptive rule and $\mathcal A$'s requests are a fixed list $(P_k,\chi_k)_{k\le K}$, submitted in this order and chosen independently of $\omega_{\mathcal A}$ and of every message. $\mathcal A$ may still schedule, abort and stop adaptively. Let $(\rho^{\mathrm{fin}},\Gamma^{\mathrm{fin}})$ be the ledger's final state when the whole list is submitted. Then (b) and (c) hold with $(\rho^*,\Gamma^*)=(\rho^{\mathrm{fin}},\Gamma^{\mathrm{fin}})$, $\delta(\rho^{\mathrm{fin}},\varepsilon_L)+(1+e^{\varepsilon_L})\Gamma^{\mathrm{fin}}\le\delta_L$, and the protocol is $(\varepsilon_L,\delta_L)$-IND-CDP for $\simb$ against such coalitions.
+\end{enumerate}
+\end{theorem}
+
+Parts (a) and (b) together say that the joint view is SIM-CDP with an \emph{interactive} mechanism: $\mathcal A$ interacting with the parties $\tilde\Op_k$ is a post-processing of an adaptive $\rho^*$-zCDP mechanism, with statistical slack $\Gamma_{\mathcal A}(\bD)\le\Gamma^*$.
+
+\subsection{Proof of Theorem~\ref{thm:main}}
+
+\paragraph{Step 0: the experiments as adaptive processes.}
+Make three changes of presentation, none of which changes the law of $\view_{\mathcal A}$.
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item \emph{Draw a run's coins at admission.} When run $k$ is admitted, draw $\omega_{R,k}$ and all of $\omega_{O,k}$ except the noises $\eta_{k,s}$. Each $\eta_{k,s}$ is drawn at release $s$. By (A3) these coins are independent of everything earlier, and drawing them earlier changes nothing.
+  \item \emph{Rewrite the share} as in hybrid H1 of \CP, Theorem~4.11. $\Op$'s share $h_{O}=c_0'+c_1's_O+\eta$ equals $v-c_1's_R$ with $v=c_0'+c_1's+\eta$, and by \CP, Proposition~3.8 (\texttt{prop:decomp}),
+  \[
+    v\equiv\fs_{k,s}(\bD)+e_{k,s}+\eta\pmod{q_0},\qquad e_{k,s}=e_{\mathrm{tot},s}\text{ of run }k\in\Z^N .
+  \]
+  \item \emph{Honest completions.} The honest machine $\Rp_k$ depends only on $(P_k,\chi_k,\omega_{R,k})$ and on $\Op$'s messages in run $k$, and those depend only on $(\bD,P_k,\omega_{O,k})$ and $\Rp_k$'s messages. So each admitted run has an \emph{honest completion}: the transcript it would have if $\mathcal A$ never aborted it. The honest completion is a function of $(\bD,P_k,\chi_k,\omega_{O,k},\omega_{R,k})$ and does not depend on other runs or on the scheduling. Let $e_{k,s}$ be the error of release $s$ in the honest completion, for every $s\le n_{\mathrm{rel},k}$. When release $s$ is made, it is the error of the actual release. It does not involve any $\eta$, because $M_1$, $M_2$ (and $M_y$) are computed before any release. By (A5) and (A3), for every history up to the admission of run $k$,
+  \begin{equation}\label{eq:badev}
+    \Pr\bigl[\nrm{e_{k,s}}_2>B_{\mathrm{tot},k,s}\bigm|\text{history up to the admission of run }k\bigr]\le\delta_{B,k}.
+  \end{equation}
+\end{enumerate}
+Every experiment below is then an adaptive process on a countable alphabet. Its steps are the draw of $\omega_{\mathcal A}$, the actions of $\mathcal A$ (deterministic given the history), $\Op$'s answers, the draws of coins at admission, and the messages of open runs. The horizon is $M\le\mathrm{poly}(\lambda)$, by (A8). $\mathcal A$'s output is a function of the process. The ledger's state is a function of the history, and every refusal is a deterministic function of the history.
+
+\paragraph{Step 1: one statistical hybrid for all runs.}
+Let $\Hyb^{\mathrm{st}}_{\mathcal A}(\bD)$ be $\Real_{\mathcal A}(\bD)$ with $v$ replaced by $\fs_{k,s}(\bD)+\eta$ in every release that is made. The share sent is then $\fs_{k,s}(\bD)+\eta-c_1's_R\bmod q_0$. This is H2 of \CP, Theorem~4.11, done in every run at once.
+
+The two processes have the same kernels at every step except the release steps. At a release step $(k,s)$ with history $h$, $c_1'$, $s_R$, $\fs_{k,s}(\bD)$ and $e_{k,s}$ are functions of $h$, and $\eta$ is fresh. The real kernel is the law of $(c_1',\ \fs_{k,s}+e_{k,s}+\eta-c_1's_R\bmod q_0)$, and the hybrid kernel is the same with $e_{k,s}$ removed. By Lemma~\ref{lem:post}, which covers the shift and the reduction modulo $q_0$, and Lemma~\ref{lem:sdsmudge}, their distance is at most
+\[
+  \beta_{(k,s)}(h)=\SD(e_{k,s}+\eta,\eta)\le\mathbf 1\{\nrm{e_{k,s}}>B_{\mathrm{tot},k,s}\}+\gamma'(\kappa_k) .
+\]
+By Lemma~\ref{lem:sdhyb}, with the real experiment as $P$,
+\begin{align*}
+  \SD\bigl(\Real_{\mathcal A}(\bD),\Hyb^{\mathrm{st}}_{\mathcal A}(\bD)\bigr)
+  &\le\Ex\Bigl[\sum_{(k,s)\ \made}\mathbf 1\{\nrm{e_{k,s}}>B_{\mathrm{tot},k,s}\}\Bigr]+\Ex\Bigl[\sum_{(k,s)\ \made}\gamma'(\kappa_k)\Bigr]\\
+  &\le\sum_k\sum_{s\le n_{\mathrm{rel},k}}\Ex\bigl[\mathbf 1\{k\ \adm\}\,\mathbf 1\{\nrm{e_{k,s}}>B_{\mathrm{tot},k,s}\}\bigr]+\Ex\Bigl[\sum_{k\ \adm}n_{\mathrm{rel},k}\gamma'(\kappa_k)\Bigr]\\
+  &\le\Ex\Bigl[\sum_{k\ \adm}n_{\mathrm{rel},k}\bigl(\delta_{B,k}+\gamma'(\kappa_k)\bigr)\Bigr]=\Gamma_{\mathcal A}(\bD).
+\end{align*}
+Expectations are under $\Real_{\mathcal A}(\bD)$. The second line uses $\{(k,s)\ \made\}\subseteq\{k\ \adm\}$. The third line conditions on the history up to the admission of run $k$, of which $\{k\ \adm\}$ is a function, and applies~\eqref{eq:badev}.
+
+\emph{Why every planned release is charged $\delta_B$.} The only usable bound on $\mathbf 1\{\made\}\mathbf 1\{\mathrm{bad}\}$ is $\mathbf 1\{\adm\}\mathbf 1\{\mathrm{bad}\}$. $\mathcal A$'s decision to request release $s$ may depend on its view, which contains $s_R$ and $\Rp$'s encryption errors. Both enter $e_{k,s}$, through $T_1$, $T_2$ and $T_6$ of \CP, Proposition~3.8. So $\Pr[\made\wedge\mathrm{bad}]$ need not be at most $\delta_B\Pr[\made]$. The term $\gamma'(\kappa_k)$, by contrast, bounds the distance for every value of $e_{k,s}$ of norm at most $B_{\mathrm{tot}}$, so it is charged only for releases made.
+
+\emph{Expectation versus pointwise bound.} Step~1 needs only the expectation $\Gamma_{\mathcal A}(\bD)$ under the real experiment, for $\bD$ and for $\bD'$. Lemma~\ref{lem:sdhyb} makes it a single expectation; doing the smudging steps one at a time, interleaved with computational steps, would give expectations under different hybrids. The pointwise bound $\sum_{\adm}\gamma_k\le\Gamma^*$ that the ledger enforces implies $\Gamma_{\mathcal A}(\bD)\le\Gamma^*$ for every $\bD$ and every $\mathcal A$. The ledger cannot compute expectations, which depend on $\bD$ and $\mathcal A$, so the pointwise rule is the implementable one. The zCDP part (Step~4) genuinely needs the pointwise bound on $\sum\rho_k$.
+
+\paragraph{Step 2: the order of hybrids.}
+Order the admitted runs by admission time, $k=1,2,\dots,T$ with $T\le t_{\mathcal A}(\lambda)$. For $1\le k\le t_{\mathcal A}(\lambda)$ and $0\le j\le n_{\max}+1$, let $\Hyb_{k,j}$ be the following experiment.
+\begin{itemize}[nosep]
+  \item Admitted runs $k'<k$ are played by the ideal parties $\tilde\Op_{k'}$.
+  \item Run $k$ is played as in $\Hyb^{\mathrm{st}}$, except that $c'_{1,k,s}$ is uniform in $\Rr_{q_0}$ for $s\le\min(j,n_{\mathrm{rel},k})$, and, if $j=n_{\max}+1$, $\Op$'s key-generation shares are uniform.
+  \item Runs $k'>k$ are played as in $\Hyb^{\mathrm{st}}$.
+\end{itemize}
+Then $\Hyb_{1,0}=\Hyb^{\mathrm{st}}$, $\Hyb_{k,n_{\max}+1}=\Hyb_{k+1,0}$, and $\Hyb_{t_{\mathcal A},n_{\max}+1}=\Ideal_{\mathcal A}(\bD)$.
+
+The middle identity holds because, in $\Hyb_{k,n_{\max}+1}$, run $k$ is already ideal. Every share sent is $\fs_{k,s}+\eta-c^*s_R$ with $c^*$ uniform, and the key shares are uniform. The Link phase is $\Op$'s honest code. The ciphertexts $M_s$ no longer enter the view, so neither do the conversion, the aggregation and the key switching that produce them. This is exactly $\tilde\Op_k$. If fewer than $k$ runs are admitted, $\Hyb_{k,j}$ does not depend on $j$.
+
+\paragraph{Step 3: the computational steps.}
+\emph{Re-randomizer steps, $1\le j\le n_{\max}$.} The reduction $\mathcal B_{k,j}$ plays the adaptive-parameter game of Lemma~\ref{lem:adaptpar} for \CP, Assumption~4.9. It has $\bD$ as non-uniform advice. It draws $\omega_{\mathcal A}$ and runs $\mathcal A$, playing every other party and the ledger itself, exactly as in $\Hyb_{k,j-1}$.
+\begin{itemize}[nosep]
+  \item \emph{Runs admitted before run $k$} are played by $\tilde\Op_{k'}$. $\mathcal B_{k,j}$ can do this: the Link phase needs $\fix(\bD)$; a release needs $\fs_{k',s}(\bD)+\eta$, computable in polynomial time by (A7); the key shares and $c^*$ are uniform.
+  \item \emph{Run $k$.} When run $k$ is admitted with parameter set $p_k$, $\mathcal B_{k,j}$ announces $p_k$ and receives a challenge $(a^*,b^*)$ over $\Rr_{q_0}$. It draws all of run $k$'s coins itself, with two exceptions. First, the public-key CRS $a$ is a uniform lift of $a^*$: $a\equiv a^*\pmod{q_0}$, uniform modulo the full modulus. Second, $(u_{k,j},e_{1,k,j})$ is not drawn.
+  \begin{itemize}[nosep]
+    \item It sets $c'_{1,k,s}$ uniform for $s<j$.
+    \item It sets $c'_{1,k,j}=c_{1,k,j}+b^*\bmod q_0$. Here $c_{1,k,j}$ is computable from the public randomness and the data, by \CP, Lemma~3.6 (\texttt{lem:c1indep}).
+    \item It sets $c'_{1,k,s}=c_{1,k,s}+au_{k,s}+e_{1,k,s}$ for $s>j$, which it can compute since it knows $a$.
+  \end{itemize}
+  Each release that is made sends $(c'_{1,k,s},\ \fs_{k,s}(\bD)+\eta-c'_{1,k,s}s_R\bmod q_0)$. In $\Hyb^{\mathrm{st}}$ nothing else in run $k$ uses $(u_{k,j},e_{1,k,j})$: $c'_0$ is never sent, and it is no longer used, because $v$ no longer contains $e_{k,j}$, whose term $T_6$ was the only other occurrence. If $j>n_{\mathrm{rel},k}$, $\mathcal B_{k,j}$ ignores the challenge.
+  \item \emph{Runs admitted after run $k$} are played as in $\Hyb^{\mathrm{st}}$. $\mathcal B_{k,j}$ draws their keys and coins and computes everything from $\bD$.
+  \item \emph{Public computations.} $\mathcal B_{k,j}$ computes \Cal, the ledger and every refusal from public data (A7). It obtains the adaptively chosen requests by running $\mathcal A$ on the view it has generated, which has exactly the law of $\mathcal A$'s view in the hybrid. This is why the adaptively chosen parameters are efficiently computable by the reduction: they are the outputs of a PPT machine on an input the reduction has produced.
+  \item $\mathcal B_{k,j}$ outputs $\mathcal A$'s output.
+\end{itemize}
+If $b^*=a^*u+e_1$ with fresh $u\gets\chikey$ and $e_1\gets\chierr$, the simulation has the law of $\Hyb_{k,j-1}$. If $b^*$ is uniform, $c'_{1,k,j}$ is uniform and the simulation has the law of $\Hyb_{k,j}$. If run $k$ is never admitted, or its release $j$ is never made, the two hybrids coincide, and $\mathcal B_{k,j}$'s output does not depend on the challenge.
+
+$\mathcal B_{k,j}$ runs in time $t_{\mathcal B}(\lambda)=O(t_{\mathcal A}(\lambda))+t_{\mathcal A}(\lambda)\cdot\mathrm{poly}(\lambda)$, because it plays at most $t_{\mathcal A}$ runs of polynomial cost. By Lemma~\ref{lem:adaptpar},
+\[
+  \bigl|\Pr[\Hyb_{k,j-1}=1]-\Pr[\Hyb_{k,j}=1]\bigr|\le\sum_{p\in\Pi_\lambda}\Adv_{1,p}(\lambda,t_{\mathcal B}(\lambda)) .
+\]
+
+\emph{Key-share step, $j=n_{\max}+1$.} $\mathcal B_{k,n_{\max}+1}$ plays the game for \CP, Assumption~4.10, in the same way. It embeds the challenge as $\Op$'s key-generation shares in run $k$, uses the challenge's $a$ and $a_{g,j}$ as run $k$'s common random strings, and computes the joint keys from the challenge and $\Rp_k$'s shares; it knows $\omega_{R,k}$. In $\Hyb_{k,n_{\max}}$ the view depends on run $k$'s $(s_O,e^{\mathrm{pk}}_O,e^{\mathrm{rk}}_O)$ only through these shares:
+\begin{itemize}[nosep]
+  \item every release share is $\fs+\eta-c_1's_R$ with $c_1'$ uniform;
+  \item $c_0'$ is unused;
+  \item the conversion $c_0-as_O$, the aggregation and the key switching produce only the ciphertexts $M_s$, which no longer enter the view.
+\end{itemize}
+So $\mathcal B_{k,n_{\max}+1}$ never needs $s_O$. A real challenge gives $\Hyb_{k,n_{\max}}$, and a uniform one gives $\Hyb_{k,n_{\max}+1}$. The loss is at most $\sum_p\Adv_{2,p}(\lambda,t_{\mathcal B}(\lambda))$.
+
+\emph{Number of runs and total loss.} There are at most $t_{\mathcal A}(\lambda)(n_{\max}+1)$ steps, by (A8), so
+\[
+  \bigl|\Pr[\Hyb^{\mathrm{st}}=1]-\Pr[\Ideal_{\mathcal A}(\bD)=1]\bigr|\le\nu_{\mathcal A}(\lambda) .
+\]
+$\nu_{\mathcal A}$ is negligible by (A6), since $t_{\mathcal A}$, $n_{\max}$ and $|\Pi_\lambda|$ are polynomial and $t_{\mathcal B}$ is polynomial. Together with Step~1 this proves (a).
+
+\paragraph{Step 4: the ideal experiment is $\rho^*$-zCDP.}
+Write $\Ideal_{\mathcal A}(\bD)$ as an adaptive process $Y$ with three kinds of random step.
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item The draw of $\omega_{\mathcal A}$.
+  \item For each admitted run $k$, one step that draws $r_k$. It consists of $\omega_{R,k}$, $\tilde\Op_k$'s Link coins (OPRF key, $\tau_k$, $\mathbf d_k$, sanitization coins), its uniform key shares and $(c^*_{k,s})_{s\le n_{\mathrm{rel},k}}$.
+  \item For each release $(k,s)$ that $\mathcal A$ requests, one step that outputs $w_{k,s}\in\Z^N$.
+\end{enumerate}
+Everything else is a deterministic function of the history: $\mathcal A$'s actions, the refusals, the ledger state, the PSI messages, and the release messages $(c^*,w-c^*s_R\bmod q_0)$. The transcript $Y$ contains $\tau_k$ even though $\mathcal A$ does not see it. $\mathcal A$'s view is a deterministic function of $Y$.
+
+Compare $Y$ under $\bD$ and $\bD'$, with $\bD\simb\bD'$. Steps (a) and (b) have kernels that do not depend on $(\bx_j,y_j)_j$, so they are public steps with cost $0$. A step (c) with history $h$ is a lattice Gaussian step in the sense of Corollary~\ref{cor:steps}(b), with $F(h)=\fs_{k,s}(\bD)$ and $F'(h)=\fs_{k,s}(\bD')$. Its dimension $N$ and $\sigma_{c,k,s}$ are given by $P_k$, and $\pi_k$ and $\chi_k$ are coordinates of $h$. By Lemma~\ref{lem:scopeadj}, the two scope registers coincide or are adjacent, so by (A5) $\nrm{F(h)-F'(h)}_2\le\widehat\Delta_{\mathrm{enc},k,s}$ for every arrangement and every researcher input. Both centres are integral, so the step's cost is $c(h)=\widehat\Delta_{\mathrm{enc},k,s}^2/(2\sigma_{c,k,s}^2)\le\rho_{k,s}$.
+
+For every history, $\sum_tc_t\le\sum_{k\ \adm}\sum_s\rho_{k,s}=\sum_{k\ \adm}\rho_k\le\rho^*$. This holds for every history, not only almost surely, because the ledger state is a function of the history and enforces the bound. Theorem~\ref{thm:filter} gives $D_a(Y(\bD)\Vert Y(\bD'))\le a\rho^*$, and Lemma~\ref{lem:post} transfers this to $\mathcal A$'s view and output. Lemma~\ref{lem:conv} gives the hockey-stick bound. The roles of $\bD$ and $\bD'$ are symmetric. This proves (b).
+
+\emph{Refusals and the gate.} The refusals are deterministic functions of the history, that is, public steps of cost $0$. The stage-2 gate is part of $\mathcal A$'s computation. The theorem bounds the unconditional joint law of the view, of which the refusal pattern and the gate's outcome are coordinates. We never condition on them. A guarantee conditional on an event such as ``run $k$ was admitted'' or ``the gate passed'' does not follow and is not claimed.
+
+\paragraph{Step 5: conversion and the budget.}
+Write $\Gamma=\Gamma_{\mathcal A}(\bD)$, $\Gamma'=\Gamma_{\mathcal A}(\bD')$ and $\nu=\nu_{\mathcal A}(\lambda)$. By (a) for $\bD$, then (b), then (a) for $\bD'$,
+\[
+  \begin{aligned}
+  \Pr[\Real(\bD)=1]&\le\Pr[\Ideal(\bD)=1]+\Gamma+\nu\le e^\varepsilon\Pr[\Ideal(\bD')=1]+\delta(\rho^*,\varepsilon)+\Gamma+\nu\\
+  &\le e^\varepsilon\bigl(\Pr[\Real(\bD')=1]+\Gamma'+\nu\bigr)+\delta(\rho^*,\varepsilon)+\Gamma+\nu .
+  \end{aligned}
+\]
+With $\Gamma,\Gamma'\le\Gamma^*$ this is (c). This is \Pp, Lemma~\texttt{lem:sim2ind}, with the factor $1+e^{\varepsilon}$ at the final $\varepsilon$.
+
+(d) Under rule~(F), every admission keeps both sums within their caps, and the sums are the ledger's state. So in every execution $\sum_{\adm}\rho_k\le\rho_L$ and $\sum_{\adm}\gamma_k\le\Gamma_L$. Take $\varepsilon=\varepsilon_L$. By the definition of $\rho_L$ and the continuity and strict monotonicity of $\delta(\cdot,\varepsilon_L)$ (Lemma~\ref{lem:conv}), $\delta(\rho_L,\varepsilon_L)=(1-\zeta_L)\delta_L$. Also $(1+e^{\varepsilon_L})\Gamma_L=\zeta_L\delta_L$, so the sum is $\delta_L$ exactly. The term $(1+e^{\varepsilon_L})\nu$ is negligible because $\varepsilon_L$ is a constant. At $(10,10^{-6},0.1)$ the sum evaluates to $9.99999999999\cdot10^{-7}$ (script \texttt{scripts/kappa\_numbers.py}).
+
+(e) The requests are fixed, so their costs are fixed. The full cost is charged at admission, so the ledger's decisions depend only on the cost sequence. The set $\mathcal K$ of runs admitted when the whole list is submitted is therefore deterministic. In every execution the admitted runs form a subset of $\mathcal K$, since $\mathcal A$ may stop early, so the sums are at most $(\rho^{\mathrm{fin}},\Gamma^{\mathrm{fin}})$. If $\mathcal K\neq\emptyset$, the test at the last admission in $\mathcal K$ reads exactly $\delta(\rho^{\mathrm{fin}},\varepsilon_L)+(1+e^{\varepsilon_L})\Gamma^{\mathrm{fin}}\le\delta_L$. If $\mathcal K=\emptyset$, no run is admitted and the view does not depend on $(\bx_j,y_j)_j$ at all.\hfill$\square$
+
+\subsection{Corner cases}
+\label{sec:corner}
+
+\paragraph{Refused runs.} A run refused by \Cal{} or by the ledger produces one message, $\bot_{\mathrm{cal}}$ or $\bot_{\mathrm{led}}$. That message is a function of $P_k$ and the ledger state, both public. No key is generated and no share is sent. In the proof such a run is a public step of cost $0$ (Step~4). The refusal pattern can depend on earlier outputs, through $\mathcal A$'s requests, but it is part of the view, which the theorem covers unconditionally.
+
+\paragraph{The stage-2 gate.} A refused gate means that $\Rp$ withholds its estimate after the stage-2 release has been made and charged. This is post-processing of $\mathcal A$'s view and changes nothing. The paper's sentence ``a refused stage-2 gate still spends the budget'' is therefore correct and necessary.
+
+\paragraph{Aborted runs.} $\mathcal A$ may abort any open run at any time, adaptively. The proof handles this through the honest completion (Step~0(iii)): the ideal experiment releases only the prefix that $\mathcal A$ requests, and the costs of unmade releases are simply not used in Step~4. An abort by $\Op$ is covered by (A1). Such an abort depends only on public and data-independent quantities, such as a PSI table overflow, which depends on the identifiers and the OPRF key. The accounting must keep the $\delta_B$ part of every planned release of an admitted run (Step~1 and Remark~\ref{rem:refunds}).
+
+\paragraph{The PSI transcript.} The identifiers are part of $\fix(\bD)$, so the Link phase of every run is identical under $\bD$ and $\bD'$. The ideal experiment runs $\Op$'s real Link code (I3), so no PSI security is used for this theorem. What the Link phase discloses ($I$, $\pi|_I$, $n$) is outside the DP guarantee, and over many runs this disclosure accumulates: \Pp, Remark~\texttt{rem:revealed}, and G4. The OPRF quota limits it as a matter of policy, not as part of this theorem.
+
+\paragraph{Different researchers' cohorts.} The cohorts are inputs $\chi_k$ of the coalition, chosen adaptively, possibly overlapping, and not protected. Step~4 compares the two datasets for a \emph{fixed} history, which fixes $\chi_k$. The sensitivity bound holds for every cohort in the clipped domain. So the cohorts may depend on earlier outputs in arbitrary ways. A row matched in many runs is charged in every run, through $\sum\rho_k$.
+
+\paragraph{One base register, several scopes and models.} By Lemma~\ref{lem:scopeadj}, base adjacency induces adjacency or equality of every run's scope register. This holds for every scope, model, column subset and public row-wise preprocessing. The ledger must therefore be shared across all scopes and models of a base register, as the paper specifies; a ledger per scope would not give Theorem~\ref{thm:main}. The guarantee is per base register and per row. If $\Op$ holds several base registers that contain the same people, protecting a person across them needs one ledger over their union, which is outside this theorem.
+
+\paragraph{Concurrency.} Several runs may be open at once and interleaved arbitrarily (Definition~\ref{def:exp}(b)). The proof indexes hybrids by admission order and orders the statistical and filter steps by global time. Both are insensitive to interleaving, provided admission is atomic and charges the full cost.
+
+\paragraph{The number of runs.} By (A8) the coalition makes at most $t_{\mathcal A}(\lambda)$ requests, which bounds the number of computational hybrids. Under rule~(F) the ledger gives a concrete bound as well. Every admitted run has $\gamma_k\ge n_{\mathrm{rel},k}(\delta_{B,k}+2^{-97})$, so at most $\Gamma_L/\min_k\gamma_k$ runs are admitted. At $(10,10^{-6},0.1)$ with $\nrel=2$ and $\delta_B=2^{-50}$ this is $2555$. In $\nu_{\mathcal A}$ one may therefore replace $t_{\mathcal A}$ by this constant, which makes the computational loss independent of the coalition's running time. Refused requests involve no key and add nothing.
+
+\paragraph{Not covered.} The following are outside Theorem~\ref{thm:main}:
+\begin{itemize}[nosep]
+  \item a register that changes between runs;
+  \item researchers who deviate within a run, for example by uploading noisier ciphertexts, which would void $\Btot$;
+  \item a dishonest or non-atomic ledger;
+  \item side channels such as the time $\Op$ takes to refuse.
+\end{itemize}
+
+\begin{remark}[Which refunds are sound]\label{rem:refunds}
+Suppose the ledger reserves the full cost at admission and refunds part of it when a run ends early. The proof uses only two bounds. Step~4 uses $\sum_{\made}\rho_{k,s}\le\rho^*$. Step~1 uses $\sum_{\made}\gamma'(\kappa_k)+\sum_{\adm}n_{\mathrm{rel},k}\delta_{B,k}\le\Gamma^*$ in expectation. Refunding $\rho_{k,s}$ and $\gamma'(\kappa_k)$ of the releases not made is therefore sound. Refunding their $\delta_{B,k}$ is not covered. The paper's state, ``the sum of the costs of every release made'', refunds all three. The simplest correct rule charges the whole run at admission. Since $\delta_B\le\gamma_s$, the difference is a fraction $\delta_B/\gamma_s\approx\delta_B2^{\kappa}$ of the slack of unmade releases: about $1.5\%$ at $\kappa=44$.
+\end{remark}
+
+\begin{remark}[Rule (N) with adaptive requests]\label{rem:Nadaptive}
+With adaptively chosen requests, the final state $(\rho_\Sigma,\Gamma_\Sigma)$ of rule~(N) is random. Each trajectory satisfies the rule's inequality, but the trade-off between $\rho$ and $\Gamma$ varies from one trajectory to another. Theorem~\ref{thm:main}(c) then applies only with $\rho^*=\sup\rho_\Sigma$ and $\Gamma^*=\sup\Gamma_\Sigma$ over executions. If some trajectories spend almost all of $\delta_L$ on $\rho$ and others on $\Gamma$, this can approach $2\delta_L$. We do not claim that rule~(N) fails adaptively, only that the proof does not cover it. The paper's prescription is consistent with this: use the filter unless every run is fixed in advance.
+\end{remark}
+
+\begin{remark}[Comparison with the paper's proof sketch]\label{rem:sketch}
+The sketch's three parts (simulation run by run, ideal composition by a R\'enyi filter, conversion at $\varepsilon_L$) are those of the proof above, with four differences:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item the smudging steps of all runs are done together, first, so that the slack is a single expectation under $\Real$ (Lemma~\ref{lem:sdhyb});
+  \item the slack counts $\delta_B$ for all planned releases of admitted runs;
+  \item the reductions need RLWE for adaptively chosen parameter sets and against non-uniform adversaries;
+  \item the R\'enyi filter is proved here (Theorem~\ref{thm:filter}), so the citation of~\cite{FZ21} becomes an attribution.
+\end{enumerate}
+\end{remark}
+
+% ==============================================================
+\section{Part 2: the smudging step in hockey-stick divergence}
+\label{sec:hs}
+
+\subsection{The shifted lattice Gaussian}
+
+\begin{lemma}[Hockey-stick smudging, explicit constants]\label{lem:hssmudge}
+Let $\eta\sim D_{\Z^N,\sigma}$ and $\mathbf e\in\Z^N$ with $\nrm{\mathbf e}_2\le B$ and $\sigma\ge2^\kappa B/\sqrt{2\pi}$. For $\delta'\in(0,1)$ let
+\[
+  \varepsilon'(\kappa,\delta')=\min\{\varepsilon\ge0:\delta(\pi4^{-\kappa},\varepsilon)\le\delta'\}\le\pi4^{-\kappa}+2\sqrt{\pi\ln(1/\delta')}\;2^{-\kappa}.
+\]
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item $\mathbf e+\eta$ and $\eta$ are $(\varepsilon'(\kappa,\delta'),\delta')$-indistinguishable.
+  \item \emph{Side information.} Let $(Z,\mathbf e)$ have any joint law with $\mathbf e\in\Z^N$, and let $\eta$ be independent of $(Z,\mathbf e)$. Then both $\HSd_{\varepsilon'}\bigl((Z,\mathbf e+\eta)\Vert(Z,\eta)\bigr)$ and $\HSd_{\varepsilon'}\bigl((Z,\eta)\Vert(Z,\mathbf e+\eta)\bigr)$ are at most $\delta'+\Pr[\nrm{\mathbf e}>B]$.
+\end{enumerate}
+No smoothing condition and no floor on $\sigma$ are needed, and $N$ is arbitrary. For $\delta'=2^{-100}$, $\varepsilon'\le29.52\cdot2^{-\kappa}+\pi4^{-\kappa}$; at $\kappa=40$ this is $2.7\cdot10^{-11}$, and the tight value is $2.0\cdot10^{-11}$.
+\end{lemma}
+\begin{proof}
+(a) Let $\rho'=\nrm{\mathbf e}^2/(2\sigma^2)\le B^2\cdot2\pi/(2\cdot4^\kappa B^2)=\pi4^{-\kappa}$. By Lemma~\ref{lem:shift}, and the remark after it, $D_a(\mathbf e+\eta\Vert\eta)\le a\rho'$ and $D_a(\eta\Vert\mathbf e+\eta)\le a\rho'$ for all $a>1$. By Lemma~\ref{lem:conv} and the monotonicity of $\delta(\cdot,\varepsilon)$, both hockey-stick divergences at $\varepsilon'(\kappa,\delta')$ are at most $\delta(\rho',\varepsilon')\le\delta(\pi4^{-\kappa},\varepsilon')\le\delta'$. The closed-form bound on $\varepsilon'$ is the simple form in Lemma~\ref{lem:conv}.
+
+(b) Let $\mu$ be the law of $(Z,\mathbf e)$. Both laws are mixtures over $(z,\mathbf e)$ with the common weights $\mu(z,\mathbf e)$: $(Z,\mathbf e+\eta)$ mixes $\delta_z\otimes\mathrm{law}(\mathbf e+\eta)$, and $(Z,\eta)$ mixes $\delta_z\otimes\mathrm{law}(\eta)$. By Lemma~\ref{lem:post}, each divergence is at most $\sum\mu(z,\mathbf e)\HSd_{\varepsilon'}(\cdot\Vert\cdot)$. Each term is at most $\delta'$ when $\nrm{\mathbf e}\le B$, by (a), and at most $1$ otherwise.
+\end{proof}
+
+\begin{table}[ht]
+\centering\small
+\caption{Exact check of Lemma~\ref{lem:hssmudge} in one dimension, worst case $e=B$, $\sigma=2^\kappa B/\sqrt{2\pi}$. ``Exact $\varepsilon$'' is the smallest $\varepsilon$ whose exact hockey-stick divergence is at most $\delta'$, summed over $\pm40\sigma$. The last column is the exact divergence at the tight bound, in both directions. The R\'enyi bound of Lemma~\ref{lem:shift} was also checked exactly ($\sigma\in\{3,10,50\}$, $a\in\{1.5,2,8\}$). Script \texttt{scripts/kappa\_numbers.py}.}
+\label{tab:hscheck}
+\begin{tabular}{@{}rrrrrrrr@{}}
+\toprule
+$\kappa$ & $B$ & $\sigma$ & $\delta'$ & $\varepsilon'$ tight & $\varepsilon'$ simple & exact $\varepsilon$ & $\HSd$ at tight bound \\
+\midrule
+6 & 50 & 1276.6 & $10^{-6}$ & 0.15886 & 0.20664 & 0.14574 & $2.36\cdot10^{-7}$ \\
+6 & 50 & 1276.6 & $10^{-9}$ & 0.21364 & 0.25291 & 0.20188 & $1.85\cdot10^{-10}$ \\
+8 & 40 & 4085.2 & $10^{-6}$ & 0.036278 & 0.051517 & 0.032917 & $2.53\cdot10^{-7}$ \\
+8 & 40 & 4085.2 & $10^{-9}$ & 0.050799 & 0.063085 & 0.047807 & $1.93\cdot10^{-10}$ \\
+10 & 30 & 12255.5 & $10^{-6}$ & 0.0081637 & 0.012870 & 0.0072998 & $2.74\cdot10^{-7}$ \\
+10 & 30 & 12255.5 & $10^{-9}$ & 0.012044 & 0.015762 & 0.011281 & $2.02\cdot10^{-10}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{\texorpdfstring{Composition with an $(\varepsilon',\delta')$ smudging step}{Composition with an (eps', delta') smudging step}}
+
+For an admitted run $k$, let $\delta'_k\in(0,1)$ be a public constant (a protocol constant such as $2^{-100}$, or part of $P_k$), and put
+\[
+  \varepsilon'_k=n_{\mathrm{rel},k}\,\varepsilon'(\kappa_k,\delta'_k),\qquad\hat\gamma_k=n_{\mathrm{rel},k}(\delta_{B,k}+\delta'_k).
+\]
+
+\begin{theorem}[Composition with the hockey-stick slack]\label{thm:hs}
+Assume Assumption~\ref{as:all}; the floor $2^{42}$ in (A5) is not needed here. Let $\mathcal A$ be a PPT coalition, and suppose that in every execution the admitted runs satisfy $\sum_k\rho_k\le\rho^*$, $\sum_k\varepsilon'_k\le E^*$ and $\sum_k\hat\gamma_k\le\Gamma^*$. Then for every $\varepsilon\ge0$ and $\bD\simb\bD'$,
+\[
+  \Pr[\Real_{\mathcal A}(\bD)=1]\le e^{\varepsilon+2E^*}\Pr[\Real_{\mathcal A}(\bD')=1]+e^{E^*}\delta(\rho^*,\varepsilon)+\bigl(1+e^{\varepsilon+E^*}\bigr)\Gamma^*+\negl(\lambda).
+\]
+\end{theorem}
+\begin{proof}
+\emph{Step 1$'$, replacing Step~1.} Apply Lemma~\ref{lem:hscomp} twice: once to $(P,Q)=(\Real,\Hyb^{\mathrm{st}})$ and once to $(\Hyb^{\mathrm{st}},\Real)$, both under $\bD$. At a release step $(k,s)$ with history $h$, take $\varepsilon_t(h)=\varepsilon'(\kappa_k,\delta'_k)$ and $\delta_t(h)=\delta'_k+\mathbf 1\{\nrm{e_{k,s}(h)}>B_{\mathrm{tot},k,s}\}$; at every other step take $(0,0)$. The two kernels at a release step differ by the shift $e_{k,s}(h)$ of $\fs+\eta-c_1's_R$. By Lemma~\ref{lem:post} and Lemma~\ref{lem:hssmudge}(a), their hockey-stick divergence at $\varepsilon'$ is at most $\delta'_k$ in both directions when $\nrm{e_{k,s}(h)}\le B_{\mathrm{tot},k,s}$, and at most $1$ trivially otherwise.
+
+In every execution $\sum_t\varepsilon_t\le\sum_{\adm}\varepsilon'_k\le E^*$. As in Step~1, $\Ex_P[\sum_t\delta_t]\le\Ex[\sum_{\adm}\hat\gamma_k]\le\Gamma^*$. This holds for $P=\Real$, and also for $P=\Hyb^{\mathrm{st}}$, because there the coins of each run are drawn as in $\Real$ and~\eqref{eq:badev} holds unchanged. Hence for every test $\varphi$, in particular $\mathcal A$'s output,
+\[
+  \Ex_{\Real(\bD)}\varphi\le e^{E^*}\Ex_{\Hyb^{\mathrm{st}}(\bD)}\varphi+\Gamma^*,\qquad
+  \Ex_{\Hyb^{\mathrm{st}}(\bD)}\varphi\le e^{E^*}\Ex_{\Real(\bD)}\varphi+\Gamma^* ,
+\]
+and likewise for $\bD'$.
+
+\emph{Steps 2--4} are unchanged: $|\Pr[\Hyb^{\mathrm{st}}(\bD)=1]-\Pr[\Ideal(\bD)=1]|\le\nu$, and the ideal experiment is $\rho^*$-zCDP.
+
+\emph{Chain.} Write $p_X(\bD)=\Pr[X(\bD)=1]$. Then
+\[
+  \begin{aligned}
+  p_{\Real}(\bD)&\le e^{E^*}p_{\Hyb^{\mathrm{st}}}(\bD)+\Gamma^*\le e^{E^*}\bigl(p_{\Ideal}(\bD)+\nu\bigr)+\Gamma^*\\
+  &\le e^{E^*}\bigl(e^\varepsilon p_{\Ideal}(\bD')+\delta(\rho^*,\varepsilon)+\nu\bigr)+\Gamma^*\\
+  &\le e^{E^*}\bigl(e^\varepsilon(p_{\Hyb^{\mathrm{st}}}(\bD')+\nu)+\delta(\rho^*,\varepsilon)+\nu\bigr)+\Gamma^*\\
+  &\le e^{E^*}\bigl(e^\varepsilon(e^{E^*}p_{\Real}(\bD')+\Gamma^*+\nu)+\delta(\rho^*,\varepsilon)+\nu\bigr)+\Gamma^*,
+  \end{aligned}
+\]
+which is the claim, with $\negl=(e^{E^*}+e^{\varepsilon+E^*})\nu$.
+\end{proof}
+
+\paragraph{How computational and $(\varepsilon',\delta')$ steps are mixed.} The hockey-stick step is information-theoretic and holds for every $[0,1]$-valued test, so in particular for the event that a PPT distinguisher outputs $1$. It is applied only between $\Real$ and $\Hyb^{\mathrm{st}}$, before any computational replacement, where $e_{k,s}$ is defined and Lemma~\ref{lem:hssmudge} applies. The computational steps are applied between $\Hyb^{\mathrm{st}}$ and $\Ideal$, and they are additive. In the chain the multiplicative factors $e^{E^*}$ and $e^\varepsilon$ multiply the negligible $\nu$, which stays negligible because $\varepsilon$ and $E^*$ are constants. No hockey-stick bound is ever applied across a computational step. That would need a separate argument, and it is not needed here.
+
+\subsection{\texorpdfstring{A ledger with a hockey-stick slack, and the new $\kappa_L$}{A ledger with a hockey-stick slack, and the new kappa-L}}
+
+\begin{definition}[Ledger with an $\varepsilon$-share for smudging]\label{def:ledgerhs}
+The parameters are $(\varepsilon_L,\delta_L,\zeta_L)$, a share $\xi_L\in(0,1)$ of $\varepsilon_L$ reserved for smudging, and a per-release $\delta'$, a protocol constant such as $2^{-100}$. Put
+\[
+  E'_L=\frac{\xi_L\varepsilon_L}2,\qquad
+  \rho_L=\max\bigl\{\rho:\delta\bigl(\rho,(1-\xi_L)\varepsilon_L\bigr)\le e^{-E'_L}(1-\zeta_L)\delta_L\bigr\},\qquad
+  \Gamma'_L=\frac{\zeta_L\delta_L}{1+e^{\varepsilon_L-E'_L}} .
+\]
+The state is $(\rho_\Sigma,E_\Sigma,\Gamma_\Sigma)$. Rule~(F$'$) admits a run iff $\rho_\Sigma+\rho_k\le\rho_L$, $E_\Sigma+\varepsilon'_k\le E'_L$ and $\Gamma_\Sigma+\hat\gamma_k\le\Gamma'_L$, and charges all three in full at admission.
+\end{definition}
+
+\begin{corollary}\label{cor:ledgerhs}
+Under rule~(F$'$) the protocol is $(\varepsilon_L,\delta_L)$-IND-CDP for $\simb$, against every PPT coalition.
+\end{corollary}
+\begin{proof}
+Apply Theorem~\ref{thm:hs} with $\varepsilon=(1-\xi_L)\varepsilon_L$, $(\rho^*,E^*,\Gamma^*)=(\rho_L,E'_L,\Gamma'_L)$. Then:
+\begin{itemize}[nosep]
+  \item $\varepsilon+2E'_L=\varepsilon_L$;
+  \item $e^{E'_L}\delta(\rho_L,\varepsilon)\le(1-\zeta_L)\delta_L$;
+  \item $\varepsilon+E'_L=\varepsilon_L-E'_L$, so $(1+e^{\varepsilon+E'_L})\Gamma'_L=\zeta_L\delta_L$.
+\end{itemize}
+\end{proof}
+
+For runs fixed in advance, the analogue of rule~(N) admits a run iff
+\[
+  e^{E_\Sigma}\delta(\rho_\Sigma,\varepsilon_L-2E_\Sigma)+(1+e^{\varepsilon_L-E_\Sigma})\Gamma_\Sigma\le\delta_L ,
+\]
+with the sums taken after adding the run. Correctness follows from Theorem~\ref{thm:hs} as in Theorem~\ref{thm:main}(e).
+
+\begin{proposition}[The new $\kappa_L$ rule]\label{prop:kappaL}
+Let $\tilde\rho_{\mathrm{run}}$ be as in \Pp, equation~\texttt{eq:kappa}: the budget at $\delta_{\mathrm{DP}}=(1-\zeta)\delta_{\mathrm{run}}$, a lower bound on $\rho_{\mathrm{run}}$ once $\kappa\ge\kappa_{\mathrm{run}}$. Let $\rho_L$ and $E'_L$ be as in Definition~\ref{def:ledgerhs}. Define
+\[
+  \kappa_L=\min\Bigl\{\kappa\in\Z:\ \nrel\,\varepsilon'(\kappa,\delta')\le\frac{\tilde\rho_{\mathrm{run}}}{\rho_L}\,E'_L\Bigr\}.
+\]
+Suppose every run on the register uses $\kappa_k\ge\kappa_L$. Then the condition $E_\Sigma+\varepsilon'_k\le E'_L$ holds whenever $\rho_\Sigma+\rho_k\le\rho_L$. The slack condition of rule~(F$'$) holds whenever the zCDP condition does, provided $\delta_B$ satisfies the admissibility constraint $\nrel(\delta_B+\delta')\le(\tilde\rho_{\mathrm{run}}/\rho_L)\Gamma'_L$, which involves $\delta_B$ alone and not $\kappa$.
+\end{proposition}
+\begin{proof}
+$\varepsilon'_k\le(\tilde\rho_{\mathrm{run},k}/\rho_L)E'_L\le(\rho_k/\rho_L)E'_L$, so $\sum_k\varepsilon'_k\le(\sum_k\rho_k/\rho_L)E'_L\le E'_L$. The same argument gives the bound on $\sum_k\hat\gamma_k$.
+\end{proof}
+
+\begin{table}[ht]
+\centering\small
+\caption{The ledger's flooding requirement $\kappa_L$ at $(\varepsilon_L,\delta_L,\zeta_L)=(10,10^{-6},0.1)$, with $\nrel=2$, $\delta_B=2^{-50}$, $\delta_{\mathrm{run}}=10^{-9}$ and $\zeta=0.1$. ``SD'' is the paper's rule: the smallest $\kappa$ with $\gamma\le(\tilde\rho_{\mathrm{run}}/\rho_L)\Gamma_L$. The hockey-stick columns use Proposition~\ref{prop:kappaL} with $\delta'=2^{-100}$ and the tight $\varepsilon'$; the simple closed form gives the same values except $23$ instead of $22$ at $\xi_L=10^{-3}$, $\varepsilon_{\mathrm{run}}=0.5$, and $14$ instead of $13$ at $\xi_L=10^{-2}$, $\varepsilon_{\mathrm{run}}=4$. ``Loss in $\rho_L$'' is the relative decrease of $\rho_L$ from reserving $\xi_L$. The $\delta_B$ admissibility constraint of Proposition~\ref{prop:kappaL} holds in every cell, with a margin of $6.6\times$ at $\varepsilon_{\mathrm{run}}=0.5$ up to $1300\times$ at $\varepsilon_{\mathrm{run}}=8$.}
+\label{tab:kappaL}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & & \multicolumn{5}{c}{$\kappa_L$ for $\varepsilon_{\mathrm{run}}=$} \\
+\cmidrule(l){3-7}
+rule & loss in $\rho_L$ & $0.5$ & $1$ & $2$ & $4$ & $8$ \\
+\midrule
+SD (paper), $\rho_L=1.52971$ & -- & 48 & 46 & 44 & 42 & 40 \\
+hockey-stick, $\xi_L=10^{-2}$ ($E'_L=0.05$) & $1.98\%$ & 19 & 17 & 15 & 13 & 12 \\
+hockey-stick, $\xi_L=10^{-3}$ ($E'_L=0.005$) & $0.198\%$ & 22 & 21 & 19 & 17 & 15 \\
+hockey-stick, $\xi_L=10^{-4}$ ($E'_L=0.0005$) & $0.020\%$ & 26 & 24 & 22 & 20 & 18 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Effect on $\kappa$.} With $\kappa=\max\{\kappa_{\min},\kappa_{\mathrm{run}},\kappa_L\}$, $\kappa_{\min}=40$ and the paper's $\kappa_{\mathrm{run}}=36,37,38,41,46$, the ledger cap $(10,10^{-6})$ now gives $\kappa=40,40,40,41,46$, compared with $48,46,44,42,46$ under the statistical-distance rule. This is the $\kappa$ of a single-run ledger, so the right-hand columns of \Pp, Table~\texttt{tab:kappa}, become equal to its single-run columns. The run budget is unchanged, so $\log_2\Omega_f$ at $\bar n_O=10^6$ becomes $61.78$, $62.75$, $63.69$, $65.66$ and $71.94$, compared with $69.88$, $68.78$, $67.72$, $66.66$ and $71.94$. That saves $8.1$, $6.0$, $4.0$, $1.0$ and $0$ bits of scale and of $q_0$. The cost is a relative decrease of $0.2\%$ in $\rho_L$ at $\xi_L=10^{-3}$, and one more ledger counter.
+
+\begin{remark}[The per-run statement]\label{rem:runhs}
+The same lemma applies to a single run (\CP, Theorem~4.11), with the share $\xi$ taken from $\varepsilon_{\mathrm{run}}$. At $\xi=10^{-3}$ and $\delta'=2^{-100}$ the per-run requirement becomes $\kappa_{\mathrm{run}}=18,17,16,15,14$, and the slack is at most $0.53\%$ of $\delta_{\mathrm{run}}$. Then $\kappa=\kappa_{\min}=40$ for every row. This changes Theorem~\texttt{thm:output}'s statement, so it is not part of the proposed paper text.
+\end{remark}
+
+\begin{remark}[A R\'enyi-aggregated variant]\label{rem:aggregated}
+One can also account the smudging steps in R\'enyi divergence. Truncate the error to the event $\nrm{e_{k,s}}\le B$, which costs $\sum_{\adm}\nrel\delta_B$ in statistical distance. The truncated real process is then R\'enyi-close to $\Hyb^{\mathrm{st}}$ with cost $\pi4^{-\kappa_k}$ per release, and these costs compose by Theorem~\ref{thm:filter}. Converting once at $(E'_L,\delta'')$ makes the smudging $\varepsilon$ grow like the square root of the number of releases rather than linearly. At $\xi_L=10^{-3}$ and $\delta''=2^{-100}$ this gives $\kappa_L=18,17,16,15,14$. Since $\kappa_{\min}$ binds either way, the simpler per-release form is proposed.
+\end{remark}
+
+\begin{remark}[$\delta_B$ is not helped]\label{rem:deltaB}
+$\delta_B$ remains multiplied by $1+e^{\varepsilon_L-E'_L}$. At $\varepsilon_L=20$, $\nrel(1+e^{20})\delta_B\approx8.6\cdot10^{-7}$ exceeds $\zeta_L\delta_L=10^{-7}$ for $\delta_L=10^{-6}$, so the paper's remark that $\delta_B$ must then be lowered stands.
+\end{remark}
+
+% ==============================================================
+\section{Issues found in the paper's current text}
+\label{sec:issues}
+
+\begin{enumerate}[label=(I\arabic*)]
+  \item \emph{The sketch's slack.} ``Step $k$ costs the expectation of $\gamma_k$ \dots\ slack $\Gamma=\Ex\sum_k\gamma_k$.'' When the smudging steps are interleaved with the computational steps run by run, each expectation is taken under a different hybrid, so the sum is not a single expectation. The fix is to do all smudging first (Lemma~\ref{lem:sdhyb}); the conclusion stands.
+  \item \emph{Aborts and the $\delta_B$ part.} The ledger state ``of every release made'', together with admission against the full cost, refunds unmade releases. The $\delta_B$ part of an admitted run must stay charged for every planned release (Step~1; Remark~\ref{rem:refunds}). The fix is to charge a run's full cost at admission. The numerical effect is tiny, but the statement as written is not covered by the proof.
+  \item \emph{Atomicity.} The implementation checks a run's full cost at setup but charges at each release, so two concurrently admitted runs can together exceed the cap. Admission must reserve the full cost atomically.
+  \item \emph{Adjacency of the joint statement.} G3 and Proposition~\texttt{prop:compose} speak of the joint view over a base register, but \Pp, Definition~\texttt{def:adj}, defines adjacency on one scope register with the cohort fixed. A base-register adjacency is needed (Definition~\ref{def:base}). So are the facts that it induces scope adjacency (Lemma~\ref{lem:scopeadj}, which needs public scopes and row-wise public preprocessing) and that cohorts may be chosen adaptively.
+  \item \emph{RLWE for adaptively chosen parameters.} The run's HE parameter set may depend on earlier outputs. The reduction needs the assumption for a finite menu of parameter sets, or an adaptive-parameter form; it loses a factor $|\Pi_\lambda|$ (Lemma~\ref{lem:adaptpar}). It also needs security against non-uniform adversaries, because the reduction knows the data.
+  \item \emph{The smudging constant.} The factor $1+2^{-80}$ in $\gamma_s$ needs $\sigma_c\ge2^{41.1}$, not $2^{20}$ (Remark~\ref{rem:floor}). With $2^{20}$ the factor is $1+2^{-37.9}$, and \CP, Corollary~2.4's last inequality fails for $\kappa<60$. This affects \Pp, Lemma~\texttt{lem:smudge} and Theorem~\texttt{thm:output}(i), and \CP, Corollary~2.4. It has no numerical effect at any admissible setting.
+  \item \emph{Wording of the $\kappa_L$ guarantee.} ``$\kappa_L$ makes the ledger run out of zCDP budget before it runs out of slack, whatever the order and the sizes of the runs.'' This holds only if every run on the register uses $\kappa\ge\kappa_L$ computed with the same $(\rho_L,\Gamma_L)$. A run with a fixed, smaller $\kappa$ can exhaust the slack first. Privacy is unaffected, because the filter checks both conditions.
+  \item \emph{Rule (N).} ``Runs fixed in advance'' should say that the requests (parameters and inputs) are fixed before the first run and do not depend on any output. Rule~(N) is not shown to be valid for adaptive requests (Remark~\ref{rem:Nadaptive}).
+  \item \emph{Implementation details.} The filter test in \texttt{Ledger.admits} allows a relative excess of $10^{-12}$ over the caps. \texttt{rho\_tight} returns the root of a bracket, which may lie slightly above the true $\rho_L$. A rigorous ledger should round $\rho_L$ and $\Gamma_L$ down and test without tolerance. The effect on $\delta$ is a relative $10^{-11}$.
+\end{enumerate}
+No inequality in the budget is reversed. The definitions of $\rho_L$ and $\Gamma_L$ make the $\delta$ budget add up exactly (Theorem~\ref{thm:main}(d)). The paper's $\kappa_L$ values $48,46,44,42,40$ and $\kappa_{\mathrm{run}}$ values $36,37,38,41,46$ are reproduced exactly.
+
+% ==============================================================
+\section{What is used and what is proved here}
+\label{sec:used}
+
+\paragraph{Proved here, self-contained.}
+\begin{itemize}[nosep]
+  \item Lemmas~\ref{lem:post} (post-processing, common mixtures) and~\ref{lem:conv} (conversion), with proofs.
+  \item Theorem~\ref{thm:filter} (R\'enyi filter for zCDP) and Corollary~\ref{cor:steps}.
+  \item Lemma~\ref{lem:sdhyb} (statistical hybrid lemma), Lemma~\ref{lem:hscomp} (adaptive composition of hockey-stick closeness) and Lemma~\ref{lem:adaptpar} (adaptive parameter choice).
+  \item Lemma~\ref{lem:scopeadj}, Theorem~\ref{thm:main}, Lemma~\ref{lem:hssmudge}, Theorem~\ref{thm:hs}, Corollary~\ref{cor:ledgerhs} and Proposition~\ref{prop:kappaL}.
+  \item All numbers, in \texttt{scripts/kappa\_numbers.py}, with output in \texttt{scripts/kappa\_numbers.out}. The script also computes exactly a two-step adaptive composition of one-dimensional lattice Gaussians, in which the second step's $\sigma$ depends on the first output. With the filter, $D_a\le a\rho^*$ holds at every tested order; a rule that overspends on some branches violates it.
+\end{itemize}
+
+\paragraph{Used from \CP{} (proved there, not re-verified here).}
+\begin{itemize}[nosep]
+  \item Lemma~2.1 (Gaussian sums maximal at the lattice) and Lemma~2.2 (integer shifts), restated with proof as Lemma~\ref{lem:shift}.
+  \item Lemma~2.3(b) (smudging), with the constant corrected in Remark~\ref{rem:floor}.
+  \item Lemma~3.6 ($c_1$ independent of secrets), Proposition~3.8 (error decomposition), Theorem~3.12 (O1) and Corollary~3.13 (sensitivity of the centre).
+  \item The per-run hybrids H1--H4 of Theorem~4.11, which are re-run here inside the multi-run experiment.
+\end{itemize}
+
+\paragraph{External results.}
+\begin{itemize}[nosep]
+  \item \cite[Lemma~3.3]{MR07}, the bound on the smoothing parameter of $\Z^N$, through Lemma~\ref{lem:sdsmudge}.
+  \item Decision-RLWE (Assumption~4.9) and RLWE with circular security for $\Op$'s key shares (Assumption~4.10), as assumptions.
+  \item The definitions of zCDP~\cite{BS16} and of SIM-/IND-CDP~\cite{MPRV09}.
+  \item \cite{RRUV16,FZ21,WRRW23} are cited for attribution only. No step depends on their exact statements, which were not checked against the full texts.
+  \item The CKS conversion~\cite{CKS20} is reproved in Lemma~\ref{lem:conv}.
+\end{itemize}
+
+\begin{thebibliography}{99}\small
+\bibitem{BS16}
+M.~Bun and T.~Steinke.
+\newblock Concentrated differential privacy: Simplifications, extensions, and lower bounds.
+\newblock In \emph{Theory of Cryptography (TCC 2016-B)}, LNCS 9985, pages 635--658. Springer, 2016.
+
+\bibitem{CKS20}
+C.~L.~Canonne, G.~Kamath, and T.~Steinke.
+\newblock The discrete Gaussian for differential privacy.
+\newblock In \emph{Advances in Neural Information Processing Systems 33 (NeurIPS 2020)}, 2020.
+
+\bibitem{FZ21}
+V.~Feldman and T.~Zrnic.
+\newblock Individual privacy accounting via a R\'enyi filter.
+\newblock In \emph{Advances in Neural Information Processing Systems 34 (NeurIPS 2021)}, 2021. arXiv:2008.11193.
+
+\bibitem{MR07}
+D.~Micciancio and O.~Regev.
+\newblock Worst-case to average-case reductions based on Gaussian measures.
+\newblock \emph{SIAM Journal on Computing}, 37(1):267--302, 2007.
+
+\bibitem{MPRV09}
+I.~Mironov, O.~Pandey, O.~Reingold, and S.~Vadhan.
+\newblock Computational differential privacy.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2009}, LNCS 5677, pages 126--142. Springer, 2009.
+
+\bibitem{RRUV16}
+R.~Rogers, A.~Roth, J.~Ullman, and S.~Vadhan.
+\newblock Privacy odometers and filters: Pay-as-you-go composition.
+\newblock In \emph{Advances in Neural Information Processing Systems 29 (NIPS 2016)}, 2016.
+
+\bibitem{WRRW23}
+J.~Whitehouse, A.~Ramdas, R.~Rogers, and Z.~S.~Wu.
+\newblock Fully-adaptive composition in differential privacy.
+\newblock In \emph{Proceedings of ICML}, PMLR vol.~202, 2023.
+\end{thebibliography}
+
+\end{document}

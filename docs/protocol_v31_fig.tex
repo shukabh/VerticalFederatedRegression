@@ -1,0 +1,117 @@
+\documentclass[border=8pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz-cd}
+\usepackage{xcolor}
+\definecolor{rcol}{HTML}{2A78D6}   % researcher R
+\definecolor{ocol}{HTML}{C45A0C}   % organization O
+\definecolor{jcol}{HTML}{5B6576}   % public / joint
+\definecolor{ink}{HTML}{14213D}
+
+\tikzset{
+  cellbase/.style={rounded corners=3pt, align=left, inner sep=5pt, font=\footnotesize, line width=0.6pt},
+  rbox/.style={cellbase, draw=rcol, fill=rcol!7, text width=5.6cm},
+  obox/.style={cellbase, draw=ocol, fill=ocol!7, text width=6.0cm},
+  jbox/.style={cellbase, draw=jcol, fill=jcol!8, text width=5.7cm},
+  hdr/.style={font=\bfseries\small, text=ink, align=center, text width=5.3cm},
+  lbl/.style={font=\bfseries\footnotesize, text=white, fill=ink, rounded corners=2pt, align=center,
+              text width=1.75cm, inner sep=4pt},
+  toO/.style={-latex, rcol, line width=0.8pt},
+  toR/.style={-latex, ocol, line width=0.8pt},
+  msg/.style={font=\scriptsize, text=ink},
+}
+
+\begin{document}
+\begin{tikzcd}[math mode=false, column sep=0.55cm, row sep=0.32cm, cells={nodes={anchor=center}}]
+|[lbl]| {Phase}
+  & |[hdr]| \textcolor{rcol}{Researcher $\mathsf{R}$}\newline {\normalfont\scriptsize cohort $\mathbf{X}_R$; key share $s_R$}
+  & |[hdr]| Public / joint
+  & |[hdr]| \textcolor{ocol}{Organization $\mathsf{O}$}\newline {\normalfont\scriptsize register $(\mathbf{X}_O,\mathbf{y})$; key share $s_O$; ledger}
+\\[4pt]
+% ---------------------------------------------------------------- Phase 0
+|[lbl]| {0\\ Setup}
+  &
+  & |[jbox]| \textbf{Public parameters}\newline
+     scope $\Phi$ (public attributes)\newline caps $n_R^{\max}$ and $\bar n_O$\newline
+     bounds $(B_R,B_O,B_y)$; $B_R$ covers the intercept\newline
+     $\Delta,\ \Delta_{\neg yy},\ \Delta_G,\ \Delta_y$ from \textsc{DeltaRep}\newline
+     $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, shares $f_1, f_y$, target $\vartheta^\star$
+  & |[obox]| $D_\Phi$ padded to $\bar n_O$ with dummy rows;\newline
+     fresh permutation $\tau$ and OPRF key $k$\newline
+     \textsc{Calibrate}: $\Omega$, $\sigma_{c,s}$, $\rho_s$ (flooding built in)\newline
+     \textbf{ledger check} per base register
+\\
+  &
+  & |[jbox]| \textbf{Threshold key generation}\newline
+     $s=s_R+s_O$; joint $pk$; rotation keys only\newline
+     (no relinearization or conjugation key)
+  &
+\\[10pt]
+% ---------------------------------------------------------------- Phase 1
+|[lbl]| {1\\ Link}
+  & |[rbox]| Cohort ids, padded to $n_R^{\max}$
+      \arrow[rr, toO, shift left=1.3ex, "{\scriptsize blinded ids (OPRF)}" {msg}]
+  &
+  & |[obox]| Evaluates exactly $n_R^{\max}$ OPRF calls;\newline logs them against the project quota
+      \arrow[ll, toR, shift left=1.3ex, "{\scriptsize $F_k(\mathrm{id})$}" {msg}]
+\\
+  & |[rbox]| Cuckoo-hash; BFV-encrypt powers\newline (own BFV key)
+      \arrow[rr, toO, shift left=1.3ex, "{\scriptsize $\mathsf{Enc}_R(\text{powers})$}" {msg}]
+  &
+  & |[obox]| Membership and label polynomials\newline (labels $\tau(j)$ encrypted under $F'_k$); mod-switch
+      \arrow[ll, toR, shift left=1.3ex, "{\scriptsize replies}" {msg}]
+\\
+  & |[rbox]| Match set $I$, positions $\pi(i)=\tau(j)$\newline
+      $\mathbf{A}=\sum_{i\in I}\dot{\mathbf{x}}_i\dot{\mathbf{x}}_i^\top$ exact and local
+  &
+  & |[obox]| Learns only $n_R^{\max}$ and $\bar n_O$
+\\[10pt]
+% ---------------------------------------------------------------- Phase 2
+|[lbl]| {2\\ Upload}
+  & |[rbox]| $\mathbf{b}$ and $\dot{\mathbf{X}}_R$ over the $\bar n_O$ positions,\newline
+      clipped as specified (honest-but-curious);\newline
+      symmetric encryption under $s_R$, seeded $a$
+      \arrow[rr, toO, "{\scriptsize $(c_0,\ \mathrm{seed})$ per chunk}" {msg}]
+  &
+  & |[obox]| Convert to the joint key:\newline
+      $c_0\leftarrow c_0-a\,s_O$ with $a=\mathrm{PRG}(\mathrm{seed})$
+\\[10pt]
+% ---------------------------------------------------------------- Phase 3
+|[lbl]| {3\\ Aggregate}
+  &
+  &
+  & |[obox]| $T_e=\textsc{EvalSum}\bigl(\sum_{\text{chunks}}U_e\odot V_e\bigr)$\newline $P_e=T_e\odot u_e$ (entry $e$ in slot $e$)\newline
+      $M_1=\sum_{e\in\mathcal{E}_G}P_e$ (only $\mathbf{B},\mathbf{C}$; no masking)\newline
+      $M_2=\sum_{e\in\mathcal{E}_2}P_e$; $M_y$ if $\mathbf{y}^\top\mathbf{y}$ is not free
+\\[10pt]
+% ---------------------------------------------------------------- Phase 4a
+|[lbl]| {4a\\ Release 1}
+  & |[rbox]| $v=h_O+c_1's_R$; decode $\to\hat{\mathbf{G}}_1$\newline
+      choose $(\lambda,\Psi)$ from $\hat{\mathbf{G}}_1$ and $\mathbf{A}$ only
+  &
+  & |[obox]| Fresh $(u,e_0,e_1)$: re-randomize $M_1$\newline
+      fresh exact $\eta\sim\mathcal{N}_{\mathbb{Z}}(0,\sigma_{c,1}^2)^N$\newline
+      $h_O=c_0'+c_1's_O+\eta$; ledger $\mathrel{+}=\rho_1$\newline
+      \textbf{$c_0'$ is never sent}
+      \arrow[ll, toR, "{\scriptsize $(c_1',\ h_O)$}" {msg}]
+\\
+% ---------------------------------------------------------------- Phase 4b
+|[lbl]| {4b\\ Release 2}
+  & |[rbox]| Decode $\to(\hat{\mathbf{G}}_2,\hat{\mathbf{c}}_2,\widehat{yy})$; gate $\hat\vartheta\ge1$\newline
+      $\tilde{\boldsymbol\theta}=(\hat{\mathbf{G}}_2+\lambda\Psi)^{-1}\hat{\mathbf{c}}_2$
+  &
+  & |[obox]| Same, with fresh $(u,e_0,e_1,\eta)$ on $M_2$\newline
+      (and on $M_y$); ledger $\mathrel{+}=\rho_2\,(+\rho_y)$
+      \arrow[ll, toR, "{\scriptsize $(c_1',\ h_O)$}" {msg}]
+\\[10pt]
+% ---------------------------------------------------------------- Phase 5
+|[lbl]| {5\\ Infer}
+  & |[rbox]| Parametric bootstrap: $\mathbf{V}_{\mathrm{mech}}$ and\newline the RSS correction\newline
+      Wald CI for $\boldsymbol\theta_\lambda$; bias-aware CI for $\boldsymbol\beta$\newline
+      with $\hat B_\beta=\min\{B_\beta^{\mathrm{pub}},\sqrt{U_{yy}/\hat L}\}$
+  &
+  & |[jbox]| \textbf{Guarantees (honest-but-curious)}\newline
+      $\mathsf{O}$'s view: simulable from $(n_R^{\max},\bar n_O)$\newline
+      $\mathsf{R}$'s view: $(\varepsilon,\delta)$-SIM-CDP, any one $\mathsf{O}$ record\newline
+      Disclosed: $\mathsf{R}$ learns membership $I$ in $D_\Phi$
+\end{tikzcd}
+\end{document}

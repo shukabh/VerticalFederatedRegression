@@ -1,0 +1,82 @@
+% ==============================================================
+\section{Disclosure (G4), the cuckoo-hashing slack and the reply noise}
+\label{sec:G4}
+
+This section proves the first layer of G4 (what $\Rp$ learns from the Link phase) in the random-oracle model under CDH, bounds the cuckoo-hashing failure probability that enters the slack of G1 and G2, and bounds the BFV evaluation noise of the PSI replies in an explicit model of BFV. The first result was first written in the companion book (Chapter~8, Lemma \texttt{aln.keyed} and Theorem \texttt{aln.R}) and was checked here; the other two are new. They replace Correction~\ref{cor:psi} as far as the first layer is concerned.
+
+\paragraph{The Link phase.} $\Op$ draws a fresh OPRF key $k\gets\Z_{q_{\mathbb G}}^\ast$ and a uniform permutation $\tau$ of its $\bar n_O$ padded rows. Row $j$ gets $y_j=F_k(\mathrm{id}_j)=H_2(\mathrm{id}_j,H_1(\mathrm{id}_j)^k)$; its item, bins and label key are domain-separated hashes of the two halves of $y_j$, and its label is $\tau(j)$ padded with the label key modulo $t$. $\Rp$ pads its identifiers to a list $\bar X$ of exactly $n_R^{\max}$, obtains $F_k$ on $\bar X$ through the blinded protocol ($\alpha=H_1(x)^r$, $\beta=\alpha^k$), cuckoo-hashes its items, and sends BFV encryptions of the windowed powers under its own key. $\Op$ evaluates the masked membership and label polynomials of each partition and replies with \textsc{SanitizeBFV} of the results. $\Rp$'s output is $(I,\pi|_I)$, or an abort.
+
+\begin{assumption}[CDH in the OPRF group]\label{as:cdh}
+Given $(g,g^k,h)$ with $k$ and $h$ uniform, no PPT algorithm (with non-uniform advice) outputs $h^k$ with probability above $\mathrm{Adv}_{\mathrm{CDH}}$.
+\end{assumption}
+
+\begin{lemma}[OPRF-keyed items and labels are pseudorandom outside the match]\label{lem:keyed}
+Model $H_1$, $H_2$ and the derived hash functions as random oracles, let $\Rp$ be semi-honest, and let the distinguisher make at most $q_{H_2}$ queries to $H_2$. Let $J$ be the set of $\Op$'s rows whose identifiers are not in $\bar X$. Then $\Rp$'s view of the OPRF phase together with $(F_k(\mathrm{id}_j))_{j\in J}$ changes by at most $q_{H_2}\mathrm{Adv}_{\mathrm{CDH}}+\epsilon_{\mathrm{coll}}$ in distinguishing advantage when these outputs are replaced by independent uniform strings, for every input; $\epsilon_{\mathrm{coll}}\le\bar n_On_R^{\max}2^{-\ell_{\mathrm{id}}}+(q_{H_1}+\bar n_O)/q_{\mathbb G}$ accounts for a collision of a fresh dummy identifier of length $\ell_{\mathrm{id}}$ with the other list and for $H_1$ hitting the identity.
+\end{lemma}
+\begin{proof}
+\emph{Identical until a bad event.} In the real experiment $F_k(\mathrm{id}_j)=H_2(\mathrm{id}_j,H_1(\mathrm{id}_j)^k)$; in the modified one it is a fresh uniform string, and $H_2$ is answered uniformly elsewhere. An honest $\Rp$ queries $H_2$ only at points $(x,H_1(x)^k)$ with $x\in\bar X$, so the two experiments are identical unless the distinguisher queries $H_2$ at $(\mathrm{id}_j,H_1(\mathrm{id}_j)^k)$ for some $j\in J$ (event $\mathsf{Bad}$), which has the same probability in both.
+
+\emph{A CDH solver.} Given $(g,g^k,h)$, run the modified experiment with $\Op$'s input fixed (non-uniform advice), programming $H_1(x)=g^{a_x}$ at every queried point other than $\Op$'s identifiers in $J$, and $H_1(\mathrm{id}_j)=h\,g^{b_j}$ for $j\in J$, with fresh uniform exponents. Answer a blinded query $\alpha=g^{a_xr}$ with $(g^k)^{a_xr}=\alpha^k$; compute the outputs of the matched rows as $H_2(x,(g^k)^{a_x})$ and those of the rows in $J$ as fresh strings. Preprocessing, evaluation and sanitization use no other secret, and $\Rp$'s own coins are sampled by the solver. At the end, pick a uniformly random $H_2$ query $(\mathrm{id}_j,Z)$ with $j\in J$ and output $Z\,(g^k)^{-b_j}$. On $\mathsf{Bad}$ some query has $Z=h^k(g^k)^{b_j}$, picked with probability at least $1/q_{H_2}$. So $\Pr[\mathsf{Bad}]\le q_{H_2}\mathrm{Adv}_{\mathrm{CDH}}$; the programmed values are uniform except on the events counted in $\epsilon_{\mathrm{coll}}$.
+\end{proof}
+
+\begin{theorem}[G4, first layer: $\Rp$ learns only the match and its positions]\label{thm:G4}
+Under the hypotheses of Lemma~\ref{lem:keyed} there is a PPT simulator $\mathcal S_\Lambda$ that, given $\Rp$'s input, its output $(I,\pi|_I)$ and the public sizes, outputs $\Rp$'s view of the Link phase up to distinguishing advantage $q_{H_2}\mathrm{Adv}_{\mathrm{CDH}}+\epsilon_{\mathrm{coll}}$, for every input. Jointly with the output, the distance grows by the probability of the correctness failures on which $\Rp$'s output differs from $(I,\pi|_I)$ (overflow of a bin, a cuckoo failure, a false match; Lemma~\ref{lem:cuckoo} and the paper's Remark on collisions). The statement needs neither circuit privacy of the BFV evaluation nor \textsc{SanitizeBFV}, nor a bound on the reply noise.
+\end{theorem}
+\begin{proof}
+$\mathcal S_\Lambda$ samples $\Rp$'s tape, runs $\Rp$'s code to produce the padded list, the blinded elements, the BFV keys and the encrypted windowed powers; draws a key $k^\ast$ and answers the blinded elements with it; creates one row per $i\in I$ with output $F_{k^\ast}(i)$ (computed by $\Rp$'s code) and position $\pi(i)$, and $\bar n_O-|I|$ rows with uniform outputs and positions forming a uniform bijection onto $[\bar n_O]\setminus\pi(I)$; and runs $\Op$'s preprocessing (partition placement included), evaluation, masking and sanitization with fresh coins. By Lemma~\ref{lem:keyed} the real view is within the stated distance of the experiment in which $\Op$'s rows outside the match carry uniform outputs. In that experiment the key enters only through $\Rp$'s own OPRF answers, so $k^\ast$ may replace $k$; positions outside the match are a uniform bijection onto the complement of $\pi(I)$ because $\tau$ is uniform; the labels outside the match are padded by uniform keys. Every reply, its noise included, is a fixed randomized function of $\Rp$'s ciphertexts and of these inputs, so the two experiments coincide. Overflow aborts, cuckoo failures, false matches and the partition index of a match arise from identically distributed items and bins and are reproduced exactly.
+\end{proof}
+
+\begin{remark}[Second reading; what remains of Correction~\ref{cor:psi}]
+The book's lemma omits the collision term $\epsilon_{\mathrm{coll}}$, which is negligible; otherwise its proof is correct as written. The reduction is non-uniform (it embeds $\Op$'s input), so $\mathrm{Adv}_{\mathrm{CDH}}$ is against non-uniform adversaries. Circuit privacy is not needed for the first layer: whatever the noise of a reply reveals is a function of pseudorandom items and labels. The second layer, \textsc{SanitizeBFV}, makes the reply noise independent of $\Op$'s data up to a statistical distance, given a worst-case bound $B_\psi$ (Proposition~\ref{prop:bpsi} below bounds its evaluation part in a model of BFV).
+\end{remark}
+
+\begin{lemma}[The cuckoo-hashing slack]\label{lem:cuckoo}
+Let $n$ items each have $h$ candidate bins drawn independently and uniformly from $m$ bins (in the random-oracle model for the bin hashes; with $m=2^{14}$ dividing $2^{256}$ the reduction modulo $m$ of a uniform hash is exactly uniform). The probability that no assignment of the items to distinct candidate bins exists is at most
+\[
+  p_{\mathrm{noassign}}(n,m,h)\le\sum_{s=2}^{n}\binom ns\binom m{s-1}\Bigl(\frac{s-1}m\Bigr)^{hs}.
+\]
+An insertion procedure that finds an assignment whenever one exists (augmenting paths, or the implementation's random walk followed, on failure, by an augmenting-path search) fails with exactly this probability, so $p_{\mathrm{cuckoo}}\le p_{\mathrm{noassign}}$. At $m=2^{14}$ and $h=3$ the bound is $1.7\cdot10^{-15}=2^{-49.1}$ for $n=2{,}000$ (the evaluation's $n_R^{\max}$, one table), $2^{-47.0}$ for $n=4{,}096$, $2^{-45.0}$ for $n=8{,}192$, and at most $2^{-40}$ for every $n\le10{,}472$ (load $0.639$).
+\end{lemma}
+\begin{proof}
+By Hall's theorem an assignment exists unless some set $S$ of $s\ge2$ items has fewer than $s$ candidate bins in total (a single item always has a bin). Fix $S$ and a set $T$ of $s-1$ bins; all $hs$ candidates of $S$ lie in $T$ with probability $((s-1)/m)^{hs}$. A union bound over $S$ and $T$ gives the sum (a set with fewer than $s-1$ bins is contained in some $T$). The numbers are from \texttt{experiments/proofs\_check/tv1\_cuckoo.py}, which sums every term.
+\end{proof}
+
+\begin{remark}[What is not covered]
+The implementation's insertion is a random walk with at most $2{,}000$ evictions per item. Until 2026-10-25 it had no fallback, and its failure probability when an assignment exists was not bounded. It now completes the walk's partial assignment by augmenting paths when the walk exceeds its step limit (\texttt{implementation/vfr/psi.py}, \texttt{cuckoo} and \texttt{\_augment}), so it finds an assignment whenever one exists and $p_{\mathrm{cuckoo}}=p_{\mathrm{noassign}}$. The union bound is useless above load about $0.64$ at $m=2^{14}$ (the implementation allows tables up to load $0.9$, used only when $n_R^{\max}>10{,}472$).
+\end{remark}
+
+\subsection{The BFV evaluation noise of the replies}
+
+We bound the evaluation part $w_{\mathrm{eval}}=(q'/q_B)v$ of the switched reply error in the following model of BFV (with $\Rp$'s ternary key $s_B$, plaintext modulus $t$, $\Omega_{\mathrm B}=\lfloor q_B/t\rfloor$, $r_t=q_B-t\Omega_{\mathrm B}\in[0,t)$, ring dimension $N=N_B$, and every integer polynomial represented with centred coefficients).
+\begin{enumerate}[nosep,label=(B\arabic*)]
+  \item A ciphertext $(c_0,c_1)$ with plaintext $m$, $\nrm m_\infty\le t/2$, satisfies $c_0+c_1s_B=\Omega_{\mathrm B}m+v+q_Bk$ as integer polynomials; $\nrm{c_i}_\infty\le q_B/2$ and $\nrm v_\infty\le q_B/2$ give $\nrm k_\infty\le\kappa_k:=(N+3)/2$.
+  \item Every error coefficient has absolute value at most $B_e$ (OpenFHE's table sampler at $\sigma=3.19$ saturates at $B_e=27$), so $\Rp$'s fresh encryptions have $\nrm v_\infty\le E_0:=(2N+1)B_e$: $v=e^{\mathrm{pk}}_Bu'+e_0+e_1s_B$ for a public-key encryption, and $v=e$, with $\nrm v_\infty\le B_e$, for the secret-key encryption that the implementation uses.
+  \item A ciphertext product computes $\tilde d_i=\lfloor t\,d_i/q_B\rceil$ from the tensor $(d_0,d_1,d_2)=(c_0c_0',\,c_0c_1'+c_1c_0',\,c_1c_1')$, with rounding errors of sup-norm at most $\tfrac12$ up to an additive error of sup-norm at most $E_{\mathrm{rns}}$ (an allowance for an RNS implementation), and relinearizes $\tilde d_2$, adding an error of sup-norm at most $E_{\mathrm{rl}}$.
+  \item A plaintext multiplication multiplies both components by a plaintext polynomial $a$ with $\nrm a_\infty\le t/2$; a plaintext addition adds $\Omega_{\mathrm B}a$ to $c_0$.
+\end{enumerate}
+
+\begin{proposition}[The reply's evaluation noise in the BFV model]\label{prop:bpsi}
+Under (B1)--(B4), let $F(E,E')=\tfrac{Nt^2}4+t(\tfrac{Nt}4+\tfrac12)+\tfrac{Nt}2(E+E')+\tfrac{tN}{q_B}EE'+Nt^2\kappa_k+tN\kappa_k(E+E')+\tfrac{1+N+N^2}2+E_{\mathrm{rl}}+E_{\mathrm{rns}}$. A product of two ciphertexts with noise sup-norms at most $E$ and $E'$ (both below $q_B/(2t)$) has noise sup-norm at most $F(E,E')$. Hence, if every power $\mathbf w^d$, $d\le D$, is a product tree of depth at most $L_\times$ over the fresh windows, its noise is at most $E_{L_\times}$ with $E_{l+1}=F(E_l,E_l)$, and a reply $\sum_{d=0}^Da_d\odot\mathrm{ct}(\mathbf w^d)$ (with $\mathrm{ct}(\mathbf w^0)$ the plaintext $1$) has noise at most
+\[
+  E_{\mathrm{eval}}=D\Bigl(\tfrac{Nt}2E_{L_\times}+t\bigl(\tfrac{Nt}4+\tfrac12\bigr)\Bigr)+\tfrac{t(D+1)}2 ,
+\]
+so that $\nrm{w_{\mathrm{eval}}}_2\le\sqrt N\,(q'/q_B)\,E_{\mathrm{eval}}$, provided $E_{\mathrm{eval}}<q_B/(2t)$ (which also gives correct decryption before the switch).
+\end{proposition}
+\begin{proof}
+\emph{Product.} Multiply the two invariants of (B1) and scale by $t/q_B$. With $t\Omega_{\mathrm B}=q_B-r_t$ and $mm'=[mm']_t+t\mu$, $\nrm\mu_\infty\le Nt/4+\tfrac12$, the identity
+\begin{multline*}
+  \tfrac t{q_B}(\Omega_{\mathrm B}m+v+q_Bk)(\Omega_{\mathrm B}m'+v'+q_Bk')\equiv\Omega_{\mathrm B}[mm']_t-\tfrac{r_t}{q_B}\Omega_{\mathrm B}mm'-r_t\mu\\
+  +\tfrac{t\Omega_{\mathrm B}}{q_B}(mv'+m'v)+\tfrac t{q_B}vv'-r_t(mk'+m'k)+t(vk'+v'k)
+\end{multline*}
+holds modulo $q_B$ (the terms $t\Omega_{\mathrm B}(mk'+m'k)$ and $tq_Bkk'$ reduce to $-r_t(mk'+m'k)$ and $0$). The rounded tensor adds $r_0+r_1s_B+r_2s_B^2$, of sup-norm at most $\tfrac12(1+\nrm{s_B}_1+\nrm{s_B^2}_1)\le\tfrac12(1+N+N^2)$, plus $E_{\mathrm{rns}}$; relinearization adds $E_{\mathrm{rl}}$. Bound each term with $\nrm{ab}_\infty\le N\nrm a_\infty\nrm b_\infty$: $\tfrac{r_t\Omega_{\mathrm B}}{q_B}\le1$ and $\nrm{mm'}_\infty\le Nt^2/4$; $r_t<t$; $\nrm{mv'+m'v}_\infty\le\tfrac{Nt}2(E+E')$; $\nrm{vv'}_\infty\le NEE'$; $\nrm{mk'+m'k}_\infty\le Nt\kappa_k$; $\nrm{vk'+v'k}_\infty\le N\kappa_k(E+E')$. The sum is $F(E,E')$. The bound is increasing in $E$ and $E'$, so a tree of depth $l$ has noise at most $E_l$.
+
+\emph{Evaluation.} $a\odot(c_0,c_1)$ has invariant $a(\Omega_{\mathrm B}m+v+q_Bk)\equiv\Omega_{\mathrm B}[am]_t-r_t\mu_a+av$, with $\nrm{\mu_a}_\infty\le Nt/4+\tfrac12$ and $\nrm{av}_\infty\le\tfrac{Nt}2\nrm v_\infty$. Summing $D$ such terms and the plaintext term $a_0$, the messages add up to at most $(D+1)t/2$ in sup-norm; reducing the sum modulo $t$ changes the noise by $r_t\nu$ with $\nrm\nu_\infty\le(D+1)/2$, at most $t(D+1)/2$. The switch multiplies the evaluation part of the noise by $q'/q_B$, and $\nrm\cdot_2\le\sqrt N\nrm\cdot_\infty$.
+\end{proof}
+
+\begin{corollary}[A proved $B_\psi$ in the model]\label{cor:bpsi}
+At the evaluation's PSI parameters ($N_B=2^{14}$, $t=4{,}293{,}918{,}721$, $D=64$, $W=7$ windows and product trees of depth $L_\times=3$, as in the implementation's balanced split of $d$ by popcount, $q_B$ of seven $60$-bit limbs and $q'$ of two), Proposition~\ref{prop:bpsi} gives $E_0=2^{19.8}$, $E_3=2^{211}$, $E_{\mathrm{eval}}=2^{262}<q_B/(2t)\approx2^{387}$ and $\nrm{w_{\mathrm{eval}}}_2\le2^{-31}$ for any $E_{\mathrm{rl}},E_{\mathrm{rns}}\le2^{26}$, and $2^{-30}$ for any $E_{\mathrm{rl}},E_{\mathrm{rns}}\le2^{90}$ (script \texttt{experiments/proofs\_check/bpsi\_model.py}). So, in the model, the evaluation part is covered by the ``$+1$'' of the implementation's $B_{\mathrm{err}}=2(\sqrt{N_B}/2+N_B^{3/2}/2)+1$, and $B_\psi:=\sqrt{2\pi}B_{\mathrm{err}}$ bounds $\nrm w_2$ with the rounding part (exact) and the fresh-encryption part (whose high-probability bound $(q'/q_B)\beta_{\mathrm{fresh}}$ is below $2^{-250}$).
+\end{corollary}
+
+\begin{remark}[Status of $B_\psi$]
+Proposition~\ref{prop:bpsi} is a theorem about the textbook BFV model (B1)--(B4); it is worst case over $\Op$'s inputs and needs only the honest sampling of $\Rp$'s errors. That OpenFHE~1.5.1's BFVrns (its RNS multiplication and scaling, and its relinearization) satisfies (B3) with small $E_{\mathrm{rns}}$ and $E_{\mathrm{rl}}$ was not checked; the measured evaluation noise after the switch is $2^{-72}$, far below the model's $2^{-31}$. G4's second layer is therefore proved for the model and remains conditional on this conformance for the implementation.
+\end{remark}

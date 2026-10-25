@@ -1,0 +1,101 @@
+% ==============================================================
+\section{Lemma 2 (smudging with the exact discrete Gaussian)}
+\label{sec:smudge}
+
+\paragraph{Conventions.}
+For $\sigma>0$ and $x\in\R^N$, let $\rho_\sigma(x)=\exp(-\nrm x^2/(2\sigma^2))$. For a countable set $S$, write $\rho_\sigma(S)=\sum_{x\in S}\rho_\sigma(x)$. For $c\in\R^N$, $D_{\Z^N+c,\sigma}$ is the distribution on $\Z^N+c$ with probability mass function $\rho_\sigma(x)/\rho_\sigma(\Z^N+c)$. The specification's $\DG(0,\sigma^2)^N$ is $D_{\Z^N,\sigma}$, the product of $N$ independent copies of the one-dimensional discrete Gaussian $\DG(0,\sigma^2)$ of Canonne, Kamath and Steinke~\cite{CKS20}. $\SD$ is statistical (total-variation) distance.
+
+Smoothing parameters are usually stated with the Gaussian width $s=\sqrt{2\pi}\sigma$, where $\rho_\sigma(x)=e^{-\pi\nrm x^2/s^2}$. For a lattice $\Lambda$ and $\epsilon>0$, $\eta_\epsilon(\Lambda)$ is the least $s$ such that $\sum_{y\in\Lambda^*\setminus\{0\}}e^{-\pi s^2\nrm y^2}\le\epsilon$~\cite{MR07}.
+
+\begin{lemma}[Gaussian sums are maximal at the lattice]\label{lem:gsum}
+For all $\sigma>0$ and $c\in\R^N$, $\rho_\sigma(\Z^N+c)\le\rho_\sigma(\Z^N)$. Equality holds if $c\in\Z^N$.
+\end{lemma}
+\begin{proof}
+The sum factorizes over coordinates, so it suffices to take $N=1$. By Poisson summation for the Gaussian,
+\[
+  \sum_{z\in\Z}e^{-(z+c)^2/(2\sigma^2)}=\sqrt{2\pi}\,\sigma\sum_{k\in\Z}e^{-2\pi^2\sigma^2k^2}\cos(2\pi kc)\le\sqrt{2\pi}\,\sigma\sum_{k\in\Z}e^{-2\pi^2\sigma^2k^2}=\rho_\sigma(\Z).
+\]
+For integer $c$ the sum is a re-indexing of $\rho_\sigma(\Z)$.
+\end{proof}
+
+\begin{lemma}[Divergences of an integer shift]\label{lem:renyi}
+Let $\eta\sim D_{\Z^N,\sigma}$, $\mathbf e\in\Z^N$, and let $P_{\mathbf e}$ be the law of $\eta+\mathbf e$. For every $\alpha>1$,
+\[
+  D_\alpha(P_{\mathbf e}\Vert P_{\mathbf 0})\le\frac{\alpha\nrm{\mathbf e}^2}{2\sigma^2}
+  \qquad\text{and}\qquad
+  \KL(P_{\mathbf e}\Vert P_{\mathbf 0})=\frac{\nrm{\mathbf e}^2}{2\sigma^2}.
+\]
+\end{lemma}
+\begin{proof}
+\emph{Normalizers.} Since $\mathbf e$ is integral, $P_{\mathbf e}(y)=\rho_\sigma(y-\mathbf e)/Z$ and $P_{\mathbf 0}(y)=\rho_\sigma(y)/Z$ with the same $Z=\rho_\sigma(\Z^N)$.
+
+\emph{R\'enyi divergence.} Use the identity $\alpha\nrm{y-\mathbf e}^2+(1-\alpha)\nrm y^2=\nrm{y-\alpha\mathbf e}^2+\alpha(1-\alpha)\nrm{\mathbf e}^2$. With Lemma~\ref{lem:gsum},
+\[
+  \sum_y P_{\mathbf e}(y)^\alpha P_{\mathbf 0}(y)^{1-\alpha}=\frac{\rho_\sigma(\Z^N-\alpha\mathbf e)}{Z}\,e^{\alpha(\alpha-1)\nrm{\mathbf e}^2/(2\sigma^2)}\le e^{\alpha(\alpha-1)\nrm{\mathbf e}^2/(2\sigma^2)} .
+\]
+Take $\frac1{\alpha-1}\ln$ of both sides.
+
+\emph{Kullback--Leibler divergence.} By symmetry $\Ex\eta=\mathbf 0$, so
+\[
+  \KL(P_{\mathbf e}\Vert P_{\mathbf 0})=\Ex\bigl[\nrm{\eta+\mathbf e}^2-\nrm\eta^2\bigr]/(2\sigma^2)=\bigl(2\Ex\langle\eta,\mathbf e\rangle+\nrm{\mathbf e}^2\bigr)/(2\sigma^2)=\nrm{\mathbf e}^2/(2\sigma^2).
+\]
+\end{proof}
+
+\begin{lemma}[Smudging; Lemma~2 of the specification, with explicit constants]\label{lem:smudge}
+Let $\eta\sim D_{\Z^N,\sigma}$ and $\mathbf e\in\Z^N$.
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item \emph{Elementary bound, valid for all $\sigma>0$:} $\SD(\eta+\mathbf e,\eta)\le\nrm{\mathbf e}_2/(2\sigma)$.
+  \item \emph{Sharp constant:} let $\epsilon\in(0,1)$, $\sigma_2\ge\eta_\epsilon(\Z^N)/\sqrt{2\pi}$, $\sigma>\sigma_2$ and $\sigma_1=\sqrt{\sigma^2-\sigma_2^2}$. Then
+  \[
+    \SD(\eta+\mathbf e,\eta)\le\frac{\nrm{\mathbf e}_2}{\sqrt{2\pi}\,\sigma_1}+\frac{4\epsilon}{1-\epsilon}.
+  \]
+\end{enumerate}
+By~\cite[Lemma~3.3]{MR07}, $\eta_\epsilon(\Z^N)\le\sqrt{\ln(2N(1+1/\epsilon))/\pi}$. For $N=2^{14}$ and $\epsilon=2^{-100}$ this gives $\eta_\epsilon(\Z^N)/\sqrt{2\pi}\le2.01$, so $\sigma_2=2.1$ is admissible.
+\end{lemma}
+\begin{proof}
+(a) Apply Pinsker's inequality, $\SD\le\sqrt{\KL/2}$, to Lemma~\ref{lem:renyi}.
+
+(b) The proof constructs a shift-equivariant post-processing $F$ of a continuous Gaussian whose output is close to $\eta$.
+
+\emph{The post-processing.} Let $x\sim\mathcal N(0,\sigma_1^2\bI_N)$ be continuous. Let $F(x)=x+z'$, where $z'\sim D_{\Z^N-x,\sigma_2}$ is sampled given $x$. Then $F(x)\in\Z^N$. For $\mathbf e\in\Z^N$ we have $\Z^N-x-\mathbf e=\Z^N-x$, so $F(x+\mathbf e)$ and $F(x)+\mathbf e$ have the same law.
+
+\emph{$F(x)$ is close to $\eta$.} The law of $F(x)$ is
+\[
+  P(y)=\int\phi_{\sigma_1}(x)\,\frac{\rho_{\sigma_2}(y-x)}{\rho_{\sigma_2}(\Z^N-x)}\,dx ,\qquad y\in\Z^N .
+\]
+Since $\sqrt{2\pi}\sigma_2\ge\eta_\epsilon(\Z^N)$, the smoothing lemma~\cite[Lemma~4.4]{MR07} gives $\rho_{\sigma_2}(\Z^N-x)\in[\frac{1-\epsilon}{1+\epsilon},1]\,\rho_{\sigma_2}(\Z^N)$ for every $x$. The Gaussian convolution identity gives $\int\phi_{\sigma_1}(x)\rho_{\sigma_2}(y-x)\,dx=(\sigma_2/\sigma)^N\rho_\sigma(y)$. Hence $P(y)=C\,\kappa(y)\rho_\sigma(y)$, with $\kappa(y)\in[1,r]$ and $r=\frac{1+\epsilon}{1-\epsilon}$. Normalizing, $P(y)/D_{\Z^N,\sigma}(y)\in[1/r,r]$, and therefore $\SD(F(x),\eta)\le r-1=2\epsilon/(1-\epsilon)$.
+
+\emph{The shift.} By the triangle inequality and the data-processing inequality,
+\[
+  \SD(\eta+\mathbf e,\eta)\le\SD(F(x+\mathbf e),F(x))+\frac{4\epsilon}{1-\epsilon}\le\SD(x+\mathbf e,x)+\frac{4\epsilon}{1-\epsilon}.
+\]
+By rotation invariance, $\SD(x+\mathbf e,x)=2\Phi(\nrm{\mathbf e}/(2\sigma_1))-1\le\nrm{\mathbf e}/(\sqrt{2\pi}\sigma_1)$, since $\Phi'\le1/\sqrt{2\pi}$.
+\end{proof}
+
+\begin{corollary}[Flooding with side information]\label{cor:flood}
+Let $(Z,\mathbf e)$ have any joint law, with $\mathbf e\in\Z^N$. Let $\eta\sim D_{\Z^N,\sigma}$ be independent of $(Z,\mathbf e)$, and let $B>0$. Then
+\[
+  \SD\bigl((Z,\mathbf e+\eta),(Z,\eta)\bigr)\le\Pr[\nrm{\mathbf e}_2>B]+\sup_{\nrm{\mathbf e'}_2\le B}\SD(\mathbf e'+\eta,\eta).
+\]
+The same bound holds after reducing $\mathbf e+\eta$ and $\eta$ modulo $q_0$, by data processing. In particular, suppose $\sigma\ge\max\{2^{\kappa}B/\sqrt{2\pi},\,2^{42}\}$, with $\epsilon=2^{-100}$ and $\sigma_2=2.1$ as above. Then the right-hand side is at most
+\[
+  \Pr[\nrm{\mathbf e}>B]+2^{-\kappa}\sigma/\sigma_1+2^{-97.9}\le\Pr[\nrm{\mathbf e}>B]+2^{-\kappa}(1+2^{-80})+2^{-97}.
+\]
+\end{corollary}
+\begin{proof}
+Condition on $(Z,\mathbf e)=(z,\mathbf e')$. Because $\eta$ is independent of $(Z,\mathbf e)$, the conditional distance is $\SD(\mathbf e'+\eta,\eta)$. This is at most the supremum when $\nrm{\mathbf e'}\le B$, and at most $1$ otherwise. Averaging over $(z,\mathbf e')$ gives the bound. For the numerical form, Lemma~\ref{lem:smudge}(b) gives $\SD(\mathbf e'+\eta,\eta)\le\nrm{\mathbf e'}/(\sqrt{2\pi}\sigma_1)+4\epsilon/(1-\epsilon)\le2^{-\kappa}\sigma/\sigma_1+2^{-97.9}$. Moreover $\sigma/\sigma_1=(1-\sigma_2^2/\sigma^2)^{-1/2}\le1+\sigma_2^2/\sigma^2$ whenever $\sigma\ge2\sigma_2$, and for $\sigma\ge2^{42}$ this is at most $1+4.41\cdot2^{-84}<1+2^{-81}$. Hence $2^{-\kappa}\sigma/\sigma_1+2^{-97.9}\le2^{-\kappa}(1+2^{-80})+2^{-97}$.
+\end{proof}
+
+\begin{remark}[The floor $2^{42}$; corrected]\label{rem:floor42}
+An earlier version of this corollary stated the final inequality, in the form $\le\Pr[\nrm{\mathbf e}>B]+2^{-\kappa}+2^{-97}$, ``for every $\sigma\ge2^{20}$''. That is false for $\kappa<60$: at $\sigma=2^{20}$ the factor $\sigma/\sigma_1$ is $1+2^{-38.9}$, and the proof's bound $1+\sigma_2^2/\sigma^2$ is $1+2^{-37.9}$, so the excess $2^{-\kappa}\cdot2^{-37.9}$ exceeds the room $2^{-97}-2^{-97.9}$ unless $\kappa\ge60$. The factor $1+2^{-80}$ needs $\sigma\ge2.1\cdot2^{40}\approx2^{41.1}$; the floor is now $2^{42}$ (composition appendix, Remark~2.6). Nothing numerical changes: at every evaluation setting $\sigma_c\ge2^{\kappa}\Btot/\sqrt{2\pi}\ge2^{55}$. The hockey-stick form of this step (composition appendix, Lemma~5.1) needs no floor at all.
+\end{remark}
+
+\begin{remark}[Comparison with the specification]\label{rem:smudge}
+The specification states Lemma~2 with ``$\sigma_c\gg1$'' and ``$+\mathrm{negl}$''. Lemma~\ref{lem:smudge}(b) makes both precise:
+\begin{itemize}[nosep]
+  \item the condition is $\sigma_c>\sigma_2\approx2.1$;
+  \item the negligible term is $4\epsilon/(1-\epsilon)\le2^{-97}$;
+  \item the per-release distance is $2^{-\kappa}(1+2^{-80})+2^{-97}$ rather than exactly $2^{-\kappa}$.
+\end{itemize}
+The difference is immaterial, but the $\delta$ accounting should use the corrected value (Correction~\ref{cor:delta}). An implementation may prefer the elementary bound (a), which needs no smoothing argument. The condition then becomes $\sigma_c\ge2^{\kappa}\Btot/2$, which costs $\log_2(\sqrt{2\pi}/2)\approx0.33$ bits of $\Omega$.
+\end{remark}

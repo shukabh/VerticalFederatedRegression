@@ -1,0 +1,93 @@
+% ==============================================================
+\section{Output privacy (Theorem 1)}
+\label{sec:out}
+
+\subsection{Differential-privacy tools}
+
+\begin{definition}[zCDP, Bun and Steinke~\cite{BS16}]
+A randomized mechanism $\mathcal M$ is $\rho$-zCDP with respect to $\sim$ if $D_\alpha(\mathcal M(D)\Vert\mathcal M(D'))\le\rho\alpha$ for all $D\sim D'$ and all $\alpha>1$. Here $D_\alpha$ is the R\'enyi divergence of order $\alpha$.
+\end{definition}
+
+\begin{lemma}[\cite{BS16}, composition and post-processing]\label{lem:zcomp}
+\begin{itemize}[nosep]
+  \item \emph{Composition.} Suppose $\mathcal M_1$ is $\rho_1$-zCDP, and $\mathcal M_2(\cdot,y)$ is $\rho_2$-zCDP for every $y$. Then $D\mapsto(y,\mathcal M_2(D,y))$ with $y\gets\mathcal M_1(D)$ is $(\rho_1+\rho_2)$-zCDP.
+  \item \emph{Post-processing.} $g\circ\mathcal M$ is $\rho$-zCDP for every randomized $g$ that does not depend on $D$.
+\end{itemize}
+\end{lemma}
+
+\begin{proposition}[The ideal mechanism; multivariate discrete Gaussian]\label{prop:ideal}
+Let $\fs:\mathcal D\to\Z^N$ satisfy $\sup_{D\sim D'}\nrm{\fs(D)-\fs(D')}_2\le\widehat\Delta$, and let $\mathcal M(D)=\fs(D)+\eta$ with $\eta\sim D_{\Z^N,\sigma}$. Then $\mathcal M$ is $\widehat\Delta^2/(2\sigma^2)$-zCDP.
+
+Hence $\mathcal M^{\mathrm{id}}(D)=(\fs_s(D)+\eta_s)_s$, with independent $\eta_s\sim D_{\Z^N,\sigma_{c,s}}$ and $\fs_s$ from Definition~\ref{def:centre}, is $\sum_s\rho_s$-zCDP, with $\rho_s=\widehat\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)$.
+\end{proposition}
+\begin{proof}
+\emph{Single release.} $\mathcal M(D)$ and $\mathcal M(D')$ are integer shifts of one another, by $\mathbf e=\fs(D)-\fs(D')\in\Z^N$. Lemma~\ref{lem:renyi} gives $D_\alpha\le\alpha\nrm{\mathbf e}^2/(2\sigma^2)$. This is the multivariate statement of~\cite{CKS20} \unsure{numbered Theorem~14 in the arXiv version}, proved here in a self-contained way.
+
+\emph{Several releases.} The releases are computed from fixed ciphertexts $M_1$, $M_2$, $M_y$. $\Rp$'s choices between releases do not change what $\Op$ releases, so non-adaptive composition (Lemma~\ref{lem:zcomp}) applies.
+
+\emph{The centre.} Corollary~\ref{cor:sensZ} bounds the sensitivity of $\fs_s$. The specification's $\Delta_{\mathrm{enc},s}$ is the sensitivity of $\Ecd_\Omega(\mathbf z_s)$ (Lemma~\ref{lem:enc}); it must be replaced by $\widehat\Delta_{\mathrm{enc},s}$, a relative change of $2^{-33}$.
+\end{proof}
+
+\begin{proposition}[Conversion from zCDP, Canonne, Kamath and Steinke~\cite{CKS20}]\label{prop:conv}
+If $\mathcal M$ is $\rho$-zCDP, then it is $(\varepsilon,\delta(\rho,\varepsilon))$-DP for every $\varepsilon\ge0$, where
+\[
+  \delta(\rho,\varepsilon)=\inf_{\alpha>1}\frac{e^{(\alpha-1)(\alpha\rho-\varepsilon)}}{\alpha-1}\Bigl(1-\frac1\alpha\Bigr)^{\alpha}.
+\]
+The map $\rho\mapsto\delta(\rho,\varepsilon)$ is continuous and nondecreasing, and $\delta(\rho,\varepsilon)\to0$ as $\rho\to0$. Hence $\rho_{\mathrm{run}}=\max\{\rho:\delta(\rho,\varepsilon_{\mathrm{run}})\le\delta_{\mathrm{DP}}\}$ in \textsc{Calibrate} is well defined, and the $\rho_{\mathrm{run}}$-zCDP mechanism is $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}})$-DP.
+\end{proposition}
+\begin{proof}
+Let $P=\mathcal M(D)$ and $Q=\mathcal M(D')$, with $D\sim D'$.
+
+\emph{Hockey-stick form.} $(\varepsilon,\delta)$-indistinguishability is equivalent to $\Ex_Q[(P/Q-e^\varepsilon)_+]\le\delta$ (with the usual convention when $P\not\ll Q$; here both have full support on $\Z^N$).
+
+\emph{A pointwise bound.} For $x>0$ and $\alpha>1$, $(x-e^\varepsilon)_+\le x^\alpha c_\alpha$, where
+\[
+  c_\alpha=\sup_{y>0}\frac{(y-e^\varepsilon)_+}{y^\alpha}=\frac{e^{-(\alpha-1)\varepsilon}}{\alpha-1}\Bigl(1-\frac1\alpha\Bigr)^\alpha .
+\]
+The supremum is attained at $y=\alpha e^\varepsilon/(\alpha-1)$.
+
+\emph{Conclusion.} Hence $\Ex_Q[(P/Q-e^\varepsilon)_+]\le c_\alpha\Ex_Q[(P/Q)^\alpha]=c_\alpha e^{(\alpha-1)D_\alpha(P\Vert Q)}\le c_\alpha e^{(\alpha-1)\alpha\rho}$. Take the infimum over $\alpha$. Each term is continuous and increasing in $\rho$, so the infimum is nondecreasing and upper semicontinuous. It is also continuous here, because the infimum may be restricted to a compact set of $\alpha$ for $\rho$ in a compact range. As $\rho\to0$, taking $\alpha=1+\sqrt{\varepsilon/\rho}$ shows $\delta\to0$ for $\varepsilon>0$.
+\end{proof}
+
+\begin{remark}
+The conversion is valid for every $\rho$-zCDP mechanism, but it is not the tightest possible for the Gaussian mechanism. For the example, $\varepsilon=1$ and $\delta_{\mathrm{DP}}\approx10^{-9}$ give $\rho_{\mathrm{run}}=0.01496$. This agrees with the specification.
+\end{remark}
+
+\subsection{SIM-CDP}
+
+Let $\lambda$ be the computational security parameter. $\view_{\Rp}(D)$ comprises three things: $\Rp$'s input (cohort identifiers and $\bX_R$), its random tape, and every message it receives in one run on dataset $D$.
+
+\begin{definition}[SIM-CDP for $\Rp$, after Mironov et al.~\cite{MPRV09}]\label{def:simcdp}
+The protocol is \emph{$(\varepsilon,\delta)$-SIM-CDP for $\Rp$ with statistical slack $\gamma$} if two objects exist:
+\begin{itemize}[nosep]
+  \item a randomized mechanism $\mathcal M$ that is $(\varepsilon,\delta)$-DP with respect to $\sim$;
+  \item a probabilistic polynomial-time simulator $\mathcal S$.
+\end{itemize}
+They must satisfy, for every dataset $D$ and every PPT distinguisher $\mathcal A$,
+\[
+  \bigl|\Pr[\mathcal A(\view_{\Rp}(D))=1]-\Pr[\mathcal A(\mathcal S(\mathcal M(D)))=1]\bigr|\le\gamma+\negl(\lambda).
+\]
+With $\gamma=0$ this is the simulation-based notion of~\cite{MPRV09}, which those authors state for pure $\varepsilon$ \unsure{whether MPRV09 also define the $(\varepsilon,\delta)$ variant}. The extension to $(\varepsilon,\delta)$ is the standard one. The slack $\gamma$ makes explicit the statistical terms that are not negligible in $\lambda$ at concrete $\kappa$.
+\end{definition}
+
+\begin{lemma}[From SIM-CDP to indistinguishability]\label{lem:sim2ind}
+Suppose the protocol is $(\varepsilon,\delta)$-SIM-CDP with slack $\gamma$. Then for all $D\sim D'$ and every PPT $\mathcal A$,
+\[
+  \Pr[\mathcal A(\view(D))=1]\le e^\varepsilon\Pr[\mathcal A(\view(D'))=1]+\delta+(1+e^\varepsilon)\gamma+\negl(\lambda).
+\]
+That is, the protocol is $(\varepsilon,\delta+(1+e^\varepsilon)\gamma)$-IND-CDP in the sense of~\cite{MPRV09}.
+\end{lemma}
+\begin{proof}
+Chain three steps: $\view(D)\approx\mathcal S(\mathcal M(D))$; then DP of $\mathcal S\circ\mathcal M$, which is post-processing; then $\mathcal S(\mathcal M(D'))\approx\view(D')$.
+\end{proof}
+
+\begin{lemma}[Post-processing and composition of SIM-CDP]\label{lem:simcomp}
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item If the protocol is $(\varepsilon,\delta)$-SIM-CDP with slack $\gamma$, then so is $g(\view_{\Rp}(D))$ for every PPT $g$, with simulator $g\circ\mathcal S$.
+  \item Consider $K$ runs on the same dataset, with independent keys and randomness and with $\Rp$'s inputs fixed. Suppose run $k$ is simulated by $\mathcal S_k$ from a $\rho_k$-zCDP mechanism $\mathcal M_k$ with slack $\gamma_k$. Then the joint view is simulated by $(\mathcal S_k)_k$ from $(\mathcal M_k)_k$, which is $\sum_k\rho_k$-zCDP, with slack $\sum_k\gamma_k$.
+\end{enumerate}
+In particular, the per-base-register ledger of the specification bounds the privacy loss of all runs, even if researchers collude. This holds when runs use fresh keys, which Algorithm~1 provides.
+\end{lemma}
+\begin{proof}
+(a) is immediate. For (b), use a hybrid over runs: replace run $k$ by $\mathcal S_k(\mathcal M_k(D))$ one run at a time. This is possible because run $k$ uses keys and randomness independent of the other runs, so the reduction can simulate those runs itself. Then apply Lemma~\ref{lem:zcomp}. If the researchers' inputs and the runs' parameters depend adaptively on earlier outputs, the hybrid is written out in Part~C, the composition appendix (Theorem~4.2 there, \texttt{thm:main}): all smudging steps are done first in one statistical hybrid, the computational steps follow run by run, and a R\'enyi filter replaces Lemma~\ref{lem:zcomp}. Part~C also requires the ledger to charge a run's full cost at admission, since the $\delta_B$ part of an aborted run's unmade releases must stay charged, and gives the ledger with a hockey-stick slack (Corollary~5.4 there).
+\end{proof}

@@ -1,0 +1,164 @@
+\subsection{Term-by-term bounds, worst case over data}
+\label{sec:bounds}
+
+Let $|\mathcal E|$ be the number of entries in the release and $m=\lceil\bar n_O/N_s\rceil$. Fix $\delta_B$ and split it into $n_{\mathrm{ev}}=12$ equal parts. Put
+\[
+  t=\ln(n_{\mathrm{ev}}/\delta_B),\qquad \tau_t=1+\sqrt{2t},\qquad \ell_N=\ln(2Nn_{\mathrm{ev}}/\delta_B),\qquad v_s=\tfrac43,\quad v_u=\tfrac23 .
+\]
+
+\begin{lemma}[Data bounds]\label{lem:data}
+Every dataset in the clipped domain satisfies $\sum_{e\in\mathcal E}V_{e,t}^2\le\Gamma_{\mathcal E}$ for every row $t$, where
+\[
+  \Gamma_{\mathcal E_G}=o^2+(d_R+1)o,\qquad
+  \Gamma_{\mathcal E_2}=o^2+(d_R+1)(o+w)+ow+w^2 .
+\]
+Consequently $\sum_e\sum_h\nrm{m_{V_e,h}}_2^2\le M_V^2$, with $M_V:=\Omega_V\sqrt{2/N}\,(\bar n_O\Gamma_{\mathcal E})^{1/2}+\tfrac12(|\mathcal E|mN)^{1/2}$.
+\end{lemma}
+\begin{proof}
+Bound the entries one block at a time:
+\begin{itemize}[nosep]
+  \item for $\triu\bB$: $\sum_{j\le k}(x_jx_k)^2=\tfrac12(\nrm\bx^4+\sum_jx_j^4)\le\nrm\bx^4\le o^2$;
+  \item for $\bC_{jk}$, where $V=x_{O,k}$ for $d_R+1$ values of $j$: $(d_R+1)\nrm\bx^2$;
+  \item for $\bc_R$: $(d_R+1)y^2$;
+  \item for $\bc_O$: $\nrm\bx^2y^2$;
+  \item for $\by^\top\by$: $y^4$.
+\end{itemize}
+Dummy and unmatched rows have $V=0$, or are bounded in the same way. For the second claim, $\nrm{m_{V,h}}\le\Omega_V\sqrt{2/N}\nrm{V_h}+\sqrt N/2$ by Lemma~\ref{lem:enc}. Then apply Minkowski's inequality over the family $(e,h)$, and use $\sum_{e,h}\nrm{V_{e,h}}^2\le\bar n_O\Gamma_{\mathcal E}$.
+\end{proof}
+
+\begin{proposition}[Bounds on the terms]\label{prop:terms}
+Assume (M1)--(M5), and let $\tilde Q_{\max}=\max_j\tilde Q_j$. Fix all public randomness: the expansions $a_h$, the common random strings $a,a_j$, and the dataset $D$ in the clipped domain. Then each of the following bounds fails with probability at most $\delta_B/n_{\mathrm{ev}}$ over $(s_R,s_O,u,\text{all errors})$; the bound on $T_6$ uses five of these events.
+\begin{align*}
+  \nrm{T_1}&\le B_1=\sqrt{\tfrac2N}\,\tfrac{\Omega_u}{q_1}\,\tfrac{N}{2q_2}\,\sqrt2\,\sigma_e\,M_V\,\tau_t ,\\
+  \nrm{T_2}&\le B_2=\sqrt{\tfrac2N}\,\tfrac{\Omega_u}{q_1}\,\tfrac N2\Bigl(\sqrt{|\mathcal E|/2}+\sqrt{v_s}\sqrt{2|\mathcal E|}\,\tfrac{\sqrt N}{2}\,\tau_t\Bigr),\\
+  \nrm{T_3}&\le B_3=\sqrt{\tfrac2N}\,\tfrac{\Omega_u}{q_1}\,\sqrt2\,\sigma_e\,\bigl(|\mathcal E|\,L\,d_{\mathrm{num}}\bigr)^{1/2}\,\frac{\varsigma_\uparrow N^{3/2}\tilde Q_{\max}}{2P}\,\tau_t ,\\
+  \nrm{T_4}&\le B_4=\sqrt{\tfrac2N}\,\tfrac{\Omega_u}{q_1}\,\sqrt{|\mathcal E|}\Bigl(\tfrac N2\sum_{i<L}2^{(L-1-i)/2}+\sqrt{v_s}\,L\,\tfrac{N^{3/2}}{2}\,\tau_t\Bigr),\\
+  \nrm{T_5}&\le B_5=|\mathcal E|\tfrac{\sqrt N}{2}+\sqrt{v_s}\,|\mathcal E|\,\tfrac N2\,\tau_t ,\\
+  \nrm{T_6}&\le B_6=\bigl(N(v_u\beta_{\mathrm{pk}}^2+\sigma_e^2+\sigma_e^2\beta_s^2)\bigr)^{1/2}+\bigl(2t(v_u\gamma_{\mathrm{pk}}^2+\sigma_e^2+\sigma_e^2\gamma_s^2)\bigr)^{1/2},\\
+  \nrm{T_7}&\le B_7=\sqrt N/2,\qquad \nrm{T_8}\le B_8\ \ (\text{defined in the proof}).
+\end{align*}
+Here $\beta_{\mathrm{pk}}=\sqrt2\sigma_e(\sqrt N+\sqrt{2t})$, $\gamma_{\mathrm{pk}}=(4\sigma_e^2N\ell_N)^{1/2}$, $\beta_s=\sqrt{v_s}(\sqrt N+\sqrt{2t})$ and $\gamma_s=(2v_sN\ell_N)^{1/2}$.
+\end{proposition}
+\begin{proof}
+Three facts are used throughout.
+\begin{itemize}[nosep]
+  \item By Lemma~\ref{lem:mask}, the main part of $\sum_e\Pi_e(y_e)$ has norm $\sqrt{2/N}(\Omega_u/q_1)(\sum_e|\tau(y_e)_{k_e}|^2)^{1/2}$, because the entries occupy distinct slots.
+  \item By Lemma~\ref{lem:c1indep}, the polynomials $\tilde D$, $\mathrm{rd}_1$, $\varepsilon_1$ and $\varepsilon'_1$ are independent of the random variables they multiply. Corollary~\ref{cor:polyhkz} therefore applies with them treated as fixed, and with no assumption on their distribution. This is the worst case over data required by the review.
+  \item The deterministic roundings $\varepsilon_0$, $\varepsilon'_0$ and $\mathrm{rd}_0$ are bounded only through $\nrm\cdot_\infty\le\frac12$.
+\end{itemize}
+
+\emph{$T_1$.} By Lemma~\ref{lem:trace}, $\tau(\Tr x)_k=\tfrac N2(x_0+ix_{N/2})$. The coefficients $(fg)_0$ and $(fg)_{N/2}$ are inner products of $f$ with signed permutations of $g$. So $e_R\mapsto(\tfrac N2x^R_{e,0},\tfrac N2x^R_{e,N/2})_e$ is linear with Frobenius norm $\tfrac N{2q_2}\sqrt2(\sum_{e,h}\nrm{m_{V_e,h}}^2)^{1/2}\le\tfrac N{2q_2}\sqrt2M_V$, by Lemma~\ref{lem:data}. Entries that share $\Rp$'s ciphertext share $e_R$; the general form of Corollary~\ref{cor:polyhkz} allows this. The coordinates of $e_R$ are $\sigma_e^2$-subgaussian (Lemma~\ref{lem:proxy}).
+
+\emph{$T_2$.} The deterministic part satisfies $\tfrac N2|\varepsilon_{0,0}+i\varepsilon_{0,N/2}|\le\tfrac N2\cdot\tfrac1{\sqrt2}$ per entry. The random part is linear in $s$. Its $2|\mathcal E|$ rows have norm at most $\tfrac N2\nrm{\varepsilon_{1,e}}\le\tfrac N2\cdot\tfrac{\sqrt N}2$.
+
+\emph{$T_3$.} Apply Lemma~\ref{lem:slotfun} with $f=P^{-1}\tilde D_{e,i,j}$ and $\Hg'=\Hg_{i+1}$. This gives coefficient vectors with $\nrm\beta\le N\nrm f_2\le N\cdot\sqrt N\varsigma_\uparrow\tilde Q_j/(2P)$. The coordinates of $e^{\mathrm{rk}}=e^{\mathrm{rk}}_R+e^{\mathrm{rk}}_O$ are $2\sigma_e^2$-subgaussian, and different $(i,j)$ have independent errors. Sum the squared norms over $(e,i,j)$.
+
+\emph{$T_4$.} For $\mathrm{rd}_0$, Lemma~\ref{lem:slotfun} with $f=1$ gives $|\sum_{g\in\Hg'}\sigma(\mathrm{rd}_0)_{hg}|\le\nrm{\mathrm{rd}_0}_2\sqrt{N|\Hg'|}\le\tfrac N2\sqrt{|\Hg_{i+1}|}$. For $\mathrm{rd}_1s$, take $f=\mathrm{rd}_1$: then $\nrm\beta\le N\nrm{\mathrm{rd}_1}\le N^{3/2}/2$ for each $i$, and at most $LN^{3/2}/2$ after summing over $i$ for a fixed entry.
+
+\emph{$T_5$.} The deterministic part has $\nrm{\sum_e\varepsilon'_{0,e}}\le|\mathcal E|\sqrt N/2$. For the random part, $F=\sum_e\varepsilon'_{1,e}$ is independent of $s$, with $\nrm F_2\le|\mathcal E|\sqrt N/2$ and $\cann F\le\nrm F_1\le|\mathcal E|N/2$. Apply Corollary~\ref{cor:polyhkz}.
+
+\emph{$T_6$.} Condition on $(e^{\mathrm{pk}},s)$, which is independent of the fresh $(u,e_0,e_1)$. Apply Corollary~\ref{cor:polyhkz} with $(f_j)=(e^{\mathrm{pk}},1,s)$. Then bound $\nrm{e^{\mathrm{pk}}},\cann{e^{\mathrm{pk}}},\nrm s,\cann s$ by Lemma~\ref{lem:randnorm}, which costs four further events.
+
+\emph{$T_8$.} By Lemma~\ref{lem:mask}, $\nrm{T_8}\le\frac N{2q_1}\sum_e\nrm{Y_e}$. We have $\nrm{\Tr y}_2=\tfrac N2(y_0^2+y_{N/2}^2)^{1/2}$, which is at most $\sqrt{N/2}(q_1/\Omega_u)(B_1+B_2)$ for each entry, and $\nrm{T_{i+1}w}\le|\Hg_{i+1}|\nrm w$. A union bound over the $|\mathcal E|L$ key switchings with $t'=t+\ln(|\mathcal E|L)$ bounds each $\nrm{e_{\mathrm{ks}}}$ by $\epsilon_{\mathrm{ks}}=\sqrt2\sigma_ed_{\mathrm{num}}\tfrac{N\tilde Q_{\max}}{2P}\tau_{t'}+\tfrac{\sqrt N}2+\sqrt{v_s}\tfrac N2\tau_{t'}$. This gives
+\[
+  B_8=\tfrac N{2q_1}\bigl(|\mathcal E|\sqrt{N/2}\,(q_1/\Omega_u)(B_1+B_2)+|\mathcal E|\tfrac N2\epsilon_{\mathrm{ks}}\bigr).
+\]
+\end{proof}
+
+\begin{theorem}[Obligation O1 discharged]\label{thm:O1}
+Under (M1)--(M5), for every dataset $D$ in the clipped domain and every value of the public randomness,
+\[
+  \Pr\bigl[\nrm{e_{\mathrm{tot},s}}_2\le B_{\mathrm{tot},s}:=B_1+\dots+B_8\bigr]\ge1-\delta_B ,
+\]
+with the probability taken over the key shares, all errors and the fresh randomness only. The centre is $\fs_s(D)$ of Definition~\ref{def:centre}. The bound covers the whole ring element, in the coefficient $\ell_2$ norm.
+\end{theorem}
+\begin{proof}
+Combine Proposition~\ref{prop:decomp}, Proposition~\ref{prop:terms}, the triangle inequality and a union bound over the $n_{\mathrm{ev}}$ events.
+\end{proof}
+
+\begin{corollary}[Sensitivity of the centre]\label{cor:sensZ}
+Let $U_{\max,e}$ bound $|U_e|$: $1$ for $\bb$, and $B_R$ for $\bxd_j$. Put $\nu_U=(\sum_eU_{\max,e}^2)^{1/2}$ and $\nu_V=\sup_{D\sim D'}(\sum_e(V_e-V'_e)_t^2)^{1/2}\le2\Gamma_{\mathcal E}^{1/2}$. Then, with $\Omega_U=\Omega_V=\Omega_u=q_1=q_2$,
+\[
+  \sup_{D\sim D'}\nrm{\fs_s(D)-\fs_s(D')}_2\le\widehat\Delta_{\mathrm{enc},s}:=\sqrt{2/N}\,\Omf\Delta_s+\Delta_{x,s}+\sqrt N,
+\]
+\[
+  \Delta_{x,s}=\sqrt{N/2}\,(\nu_V+\sqrt N\nu_U)+\tfrac{\sqrt N}2\sqrt{|\mathcal E|}\,\Delta_s+\tfrac{N^{3/2}}{4q_1}\sqrt{|\mathcal E|}(\nu_V+\sqrt N\nu_U).
+\]
+Terms of order $N^{3/2}\sqrt{|\mathcal E|}/\Omega$, which come from the $\sqrt N/2$ parts of $\nrm{m_U}$, are omitted; they are below $2^{-20}$ for the example and are covered by adding $1$ to $\Delta_{x,s}$. For the example, $\Delta_{x,2}\approx2^{18.8}$ against $\sqrt{2/N}\,\Omf\Delta_2\approx2^{52.4}$. So $\widehat\Delta_{\mathrm{enc}}$ exceeds the specification's $\Delta_{\mathrm{enc}}$ by a relative $2^{-33.7}$, and $\rho_s$ by a relative $2^{-32.7}$.
+\end{corollary}
+\begin{proof}
+Neighbours differ in one row, which sits in chunk $h^*$ and slot $l^*$. Let $\Delta m_e=\Ecd(V_e[h^*])-\Ecd(V'_e[h^*])=\Omega_V\tau^{-1}(\Delta V_e\mathbf u_{l^*})+\delta r_e$, with $\nrm{\delta r_e}_\infty\le1$.
+
+\emph{The slot value.} By Lemma~\ref{lem:trace}, $\Tr(m_{U_e,h^*}\Delta m_e)$ has all slots equal to
+\[
+  c_e=\sum_l\tau(m_U)_l\tau(\Delta m_e)_l=\Omega_U\Omega_VU_{e,l^*}\Delta V_e+\Omega_V\tau(r_U)_{l^*}\Delta V_e+\sum_l\tau(m_U)_l\tau(\delta r_e)_l .
+\]
+The first term is $\Omega_U\Omega_V$ times the change of entry $e$, and these changes have $\ell_2$ norm at most $\Delta_s$. Bound $|\tau(r_U)_{l^*}|\le\nrm{r_U}_1\le N/2$. By Cauchy--Schwarz and Lemma~\ref{lem:parseval}, the last sum is at most $\tfrac N2\nrm{m_U}\nrm{\delta r}\le\tfrac N2(\Omega_UU_{\max}+\tfrac{\sqrt N}2)\sqrt N$.
+
+\emph{Masking.} Apply Lemma~\ref{lem:mask}. The main part contributes $\sqrt{2/N}\,(\Omega_u/(q_1q_2))\nrm{(c_e)_e}$, and the spill contributes $\tfrac{\sqrt N}{2q_1q_2}\sum_e|c_e|$.
+
+\emph{Rounding.} Finally, $\nrm{\lfloor x\rceil-\lfloor x'\rceil}\le\nrm{x-x'}+\sqrt N$.
+\end{proof}
+
+\subsection{Numerical evaluation}
+\label{sec:numeric}
+
+Take the example parameters: $N=2^{14}$, $L=13$, $d_R=4$, $d_O=6$, $\bar n_O=10^6$ (so $m=123$), $B_R=5.59$, $B_O=6.24$, $B_y=2.89$, $\sigma_e=3.2$, ternary $s_R,s_O,u$, $\delta_B=2^{-50}$ (so $t=37.1$ and $\tau_t=9.62$), $d_{\mathrm{num}}=2$ and $\varsigma_\uparrow=1$. Then $|\mathcal E_G|=51$, $|\mathcal E_2|=63$ (joint mode), $\Gamma_{\mathcal E_G}=1711$ and $\Gamma_{\mathcal E_2}=2147$.
+
+The budget is $\varepsilon=1$ and $\delta_{\mathrm{run}}=10^{-9}$, with three releases, $\kappa=40$ and $f_1=0.1$. The conversion of Proposition~\ref{prop:conv} gives $\rho_{\mathrm{run}}=0.01496$ and a stage-2 slot s.d.\ of $525$.
+
+The column $\log_2\Omega$ is the least scale meeting \textsc{Calibrate}'s condition $\sigma_{c,s}\ge2^{\kappa}B_{\mathrm{tot},s}/\sqrt{2\pi}$, with $\sigma_{c,s}=\Delta_{\mathrm{enc},s}/\sqrt{2\rho_s}$. The condition is binding for stage~2. Script: \texttt{scratch/btot.py}.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X cccccc cc@{}}
+\toprule
+Configuration (stage~2) & $B_1$ & $B_2$ & $B_3$ & $B_4$ & $B_5$ & $B_6$ & $\log_2\Btot$ & $\log_2\Omega$ \\
+\midrule
+(A) Algorithm~4 as specified, $\tilde Q_{\max}/P=1$ & 20.9 & 19.5 & 24.3 & 23.7 & 22.5 & 17.2 & 25.34 & 61.5 \\
+(A$'$) as (A), $P\ge2^{20}\tilde Q_{\max}$ & 20.9 & 19.5 & 4.3 & 23.7 & 22.5 & 17.2 & 24.39 & 60.5 \\
+(C) \textsc{EvalSum} before the first rescale; stochastic rounding; one final rescale; $P\ge2^{10}\tilde Q_{\max}$ & 20.9 & 14.1 & $<0$ & $<0$ & 14.0 & 17.2 & 21.07 & 57.2 \\
+(C$'$) as (C), with $\Omega_U=q_2=2^{60}$ & 13.4 & 14.1 & $<0$ & $<0$ & 14.0 & 17.2 & 17.56 & 53.7 \\
+Fresh-encryption error only (what v3.1 assumed) & -- & -- & -- & -- & -- & 17.2 & 17.17 & 53.3 \\
+\bottomrule
+\end{tabularx}
+\caption{$\log_2$ of the bounds of Proposition~\ref{prop:terms} for stage~2 of the example. In all rows $B_7=2^{6}$ and $B_8<1$. For stage~1 the required scale is $1.4$ to $1.6$ bits lower; for (A) it is $59.9$. Using Lemma~\ref{lem:smudge}(a) instead of (b) adds $0.33$ bits.}
+\label{tab:btot}
+\end{table}
+
+\paragraph{Reading the table.}
+\begin{itemize}[nosep]
+  \item The specification's $\log_2\Omega\approx52.5$ floods only the fresh-encryption error, measured by its \emph{mean} $\ell_2$ norm of about $2^{16.4}$. A high-probability bound on that term alone already needs $53.3$.
+  \item For the circuit exactly as specified, the worst-case analysis is dominated by three terms:
+    \begin{itemize}[nosep]
+      \item the gadget term $B_3$, unless $P\gg\tilde Q_{\max}$;
+      \item the ModDown roundings $B_4$;
+      \item the $|\mathcal E|$ separate second rescales $B_5$.
+    \end{itemize}
+  The latter two are large because roundings are treated as adversarially aligned with a slot. That is the price of a bound with no randomness assumption on rounding errors.
+  \item Variant (C) removes these terms in three ways:
+    \begin{itemize}[nosep]
+      \item \textsc{EvalSum} at level~2, so that key-switching errors are divided by $q_2$ and the first-rescale rounding is not traced;
+      \item stochastic rounding, so that rounding errors are mean-zero and $\frac14$-subgaussian given the ciphertext, by Lemma~\ref{lem:proxy}(c);
+      \item a single rescale after summing the masked products.
+    \end{itemize}
+  (C$'$) also shrinks $T_1$ by encoding $\Rp$'s vectors at a larger scale.
+\end{itemize}
+The bounds for (C) and (C$'$) use the same lemmas. We give the formulas in the script rather than repeating the proofs. \gap{The proofs for variants (C) and (C$'$) are only sketched. The $T_2$ and $T_5$ formulas for (C) apply Corollary~\ref{cor:polyhkz} conditionally on $s$, to the independent stochastic-rounding coins.}
+
+\subsection{Empirical sanity check with OpenFHE}
+\label{sec:empirical}
+
+\paragraph{Setup.} We ran the circuit shape of Algorithm~4 in OpenFHE~\cite{OpenFHE22}, through its Python bindings, (\texttt{scratch/ofhe\_check.py}). The run used:
+\begin{itemize}[nosep]
+  \item a single key, FIXEDMANUAL, $N=2^{14}$, scale $2^{50}$, depth~2;
+  \item one entry, with $m\in\{4,16\}$ chunks;
+  \item 0/1 vectors $U$ and $|V|\le o/2$.
+\end{itemize}
+Two runs on the same data with independent keys and randomness isolate the randomness-dependent error, because the deterministic part cancels in the difference.
+
+\paragraph{Results.}
+\begin{itemize}[nosep]
+  \item The measured coefficient $\ell_2$ norm of the random error was $2^{14.0}$ for $m=4$ and $2^{15.7}$ for $m=16$. Theorem~\ref{thm:O1} at the same setting gives $2^{21.8}$ and $2^{21.9}$. The bound holds, with a margin of 6 to 8 bits, as expected for a worst-case, high-probability bound.
+  \item The deviation of the decryption from $\Ecd(\mathbf z)$ was $2^{23.0}$. It is dominated by a deterministic relative error of $8.7\cdot10^{-10}\approx2^{-30}$ at the target slot, from decoding with the nominal scale $2^{50}$ rather than the exact $\Omf$. This confirms Remark~\ref{rem:centre} and Correction~\ref{cor:scale}.
+\end{itemize}

@@ -1,0 +1,107 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs, array, tabularx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black, urlcolor=blue!60!black]{hyperref}
+\setlength{\emergencystretch}{3em}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{obligation}[definition]{Obligation}
+\newtheorem{correction}{Correction}
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{corollary}[definition]{Corollary}
+
+% ---------- macros of protocol_v31.tex ----------
+\newcommand{\Rp}{\mathsf{R}}
+\newcommand{\Op}{\mathsf{O}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Rq}{\mathcal{R}_q}
+\newcommand{\Ecd}{\mathsf{Ecd}}
+\newcommand{\Dcd}{\mathsf{Dcd}}
+\newcommand{\Enc}{\mathsf{Enc}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bG}{\mathbf{G}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bP}{\mathbf{P}}
+\newcommand{\bV}{\mathbf{V}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bxd}{\dot{\mathbf{x}}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\DG}{\mathcal{N}_{\Z}}
+\newcommand{\PiO}{\Pi_O}
+\DeclareMathOperator{\triu}{triu}
+\DeclareMathOperator{\tr}{tr}
+% ---------- additional macros ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Rr}{\mathcal{R}}
+\newcommand{\Hg}{\mathcal{H}}
+\newcommand{\Ex}{\mathbb{E}}
+\newcommand{\nrm}[1]{\lVert #1\rVert}
+\newcommand{\cann}[1]{\lVert #1\rVert^{\mathrm{can}}_{\infty}}
+\newcommand{\SD}{\mathrm{SD}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\negl}{\mathrm{negl}}
+\newcommand{\view}{\mathrm{view}}
+\newcommand{\Btot}{B_{\mathrm{tot}}}
+\newcommand{\etot}{e_{\mathrm{tot}}}
+\newcommand{\etots}{e_{\mathrm{tot},s}}
+\newcommand{\Omf}{\Omega_{\mathrm{fin}}}
+\newcommand{\Zh}{\widehat Z}
+\newcommand{\fs}{f}
+\newcommand{\chikey}{\chi_{\mathrm{key}}}
+\newcommand{\chierr}{\chi_{\mathrm{err}}}
+\newcommand{\Tr}{\mathrm{A}}
+\newcommand{\sgn}{\operatorname{sgn}}
+\newcommand{\gap}[1]{\textcolor{red!65!black}{\textbf{[Not fully rigorous:} #1\textbf{]}}}
+\newcommand{\unsure}[1]{\textcolor{orange!75!black}{[\emph{citation detail unverified:} #1]}}
+
+\title{\textbf{Protocol v3.1: proofs of the cryptographic and\\ differential-privacy claims}\\[4pt]
+\large Technical appendix: encoding sensitivity, smudging, a worst-case error bound,\\ output privacy (SIM-CDP), input and cohort privacy, correctness}
+\date{Draft for review}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+This appendix proves, corrects, or marks as open each cryptographic and differential-privacy claim of the specification \emph{Protocol v3.1} (\texttt{protocol\_v31.tex}). We work in the honest-but-curious model of that specification and reuse its notation. Section~\ref{sec:enc} proves the encoding-sensitivity lemma. Section~\ref{sec:smudge} proves the smudging lemma for the exact discrete Gaussian, with explicit constants. Section~\ref{sec:err} discharges Obligation~O1: an explicit bound $\Btot$ on the $\ell_2$ norm of the whole error ring element, worst case over the clipped data domain, with probability only over keys and fresh randomness. Section~\ref{sec:general} extends O1 to decoupled encoding scales and to OpenFHE's uncentred key switching, proves the sensitivity of the centre with decoupled scales, and bounds the decoding offset. Section~\ref{sec:out} proves output privacy (Theorem~1) by hybrids. Section~\ref{sec:in} proves input and cohort privacy (G1, G2). Section~\ref{sec:G4} proves the first layer of the disclosure claim G4 (random-oracle model, CDH), bounds the cuckoo-hashing slack, and bounds the reply noise of the PSI in a model of BFV. Section~\ref{sec:corr} treats correctness, at every level of the circuit. Section~\ref{sec:calib} proves that \textsc{Calibrate} meets the hypotheses of Theorem~1, that the run computes its DP functionality against $\Rp$ in the standard sense, and that $\Op$'s work is linear in its scope. Section~\ref{sec:fix} lists the corrections to the specification.
+\end{abstract}
+
+\paragraph{Summary of results.}
+\begin{itemize}[nosep]
+  \item \textbf{Lemma 1} holds with the constant $\sqrt{2/N}$ for the stated convention. One precision: $\Omega$ must be the \emph{exact} final scale $\Omf$ of the circuit, not the nominal scale (Correction~\ref{cor:scale}).
+  \item \textbf{Lemma 2} holds with the constant $1/\sqrt{2\pi}$ up to an explicit additive smoothing term ($\le2^{-98}$ here). An elementary proof gives the constant $1/2$ with no side condition.
+  \item \textbf{O1.} The mechanism must be centred at the noiseless circuit output rather than at $\Ecd(\mathbf z)$ (Correction~\ref{cor:centre}). With that centre, and with every rounding treated adversarially, the circuit exactly as specified gives $\Btot\approx2^{25.3}$ for stage~2 of the example, with $\delta_B=2^{-50}$. This needs $\log_2\Omega\approx61.5$, not $52.5$. The specification's $52.5$ floods only the fresh-encryption error, in mean. With the specification's centre, the deterministic plaintext-arithmetic terms alone reach $2^{30.7}$ to $2^{34.5}$, which would need $\log_2\Omega\approx67$ to $71$. Changes to the circuit bring $\Btot$ down to $2^{17.6}$, so that $\log_2\Omega\approx53.7$ suffices (Section~\ref{sec:err}, Table~\ref{tab:btot}):
+    \begin{itemize}[nosep]
+      \item evaluate \textsc{EvalSum} before the first rescale;
+      \item use stochastic rounding and a single final rescale;
+      \item make the special modulus larger;
+      \item give $\Rp$'s encoding a larger scale.
+    \end{itemize}
+  \item \textbf{Theorem 1} holds under decision-RLWE for two secret distributions, a circular-security assumption for $\Op$'s rotation-key shares, and O1, with the corrected centring. It holds up to an explicit statistical slack $\gamma$. PSI security is \emph{not} needed for G3 under the specification's adjacency. The $(\varepsilon,\delta)$ accounting needs the factor $(1+e^{\varepsilon})$ on $\gamma$ when it is read as indistinguishability-based CDP (Correction~\ref{cor:delta}).
+  \item \textbf{G1 and G2} hold under RLWE in $s_R$ (with circular security for $\Rp$'s key material), the random-oracle model for the seed expansion, IND-CPA of the PSI's BFV, and obliviousness of the OPRF. G2 holds up to the cuckoo-hashing failure probability.
+  \item \textbf{Correctness.} The $q_0$ condition in \textsc{Calibrate} is sufficient, with a correctness-failure probability of at most $\delta_B+2Ne^{-50}$ per release, which the specification should state. The exact condition is derived below; no condition is needed at the earlier levels.
+  \item \textbf{Added after a second reading of the companion book} (Sections~\ref{sec:general}, \ref{sec:G4} and~\ref{sec:calib}): O1 for OpenFHE's uncentred gadget under model (M3$'$), with $\varsigma_\uparrow=2\max_jk_j$ and $\varsigma_\downarrow=2k_P$ (Lemma~\ref{lem:gadget}; the match of OpenFHE~1.5.1 with (M3$'$) is a code reading); the centre sensitivity with decoupled scales (Lemma~\ref{lem:sensZdec}); a public bound on the decoding offset (Proposition~\ref{prop:offset}); G4's first layer under CDH in the random-oracle model, without circuit privacy (Theorem~\ref{thm:G4}); the soundness of \textsc{Calibrate} (Proposition~\ref{prop:calib}); standard simulation of $\Rp$'s view jointly with its output (Corollary~\ref{cor:secureDP}); and $\Op$'s $\Omega(n_{\mathrm{Sc}})$ work (Proposition~\ref{prop:lower}). New here: a proved bound on the cuckoo-hashing slack (Lemma~\ref{lem:cuckoo}) and a worst-case bound on the PSI's evaluation noise in the textbook BFV model (Proposition~\ref{prop:bpsi}), which covers it by the ``$+1$'' of the implementation's $B_{\mathrm{err}}$ in that model.
+\end{itemize}
+Steps that are not fully rigorous are marked \gap{\dots}. Citation details we could not verify are marked \unsure{\dots}.
+
+\tableofcontents

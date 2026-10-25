@@ -1,0 +1,53 @@
+% ==============================================================
+\section{\textsc{Calibrate}, the run as a secure computation, and $\Op$'s work}
+\label{sec:calib}
+
+The three results of this section were first written in the companion book (Chapter~19, Proposition \texttt{par.calibrate}; Chapter~4, Proposition \texttt{sc.secureDP} with Chapter~17, Theorem \texttt{run.secure}; Chapter~20, Proposition \texttt{cost.lower}). They were checked here, with one correction to the second.
+
+\subsection{Soundness of \textsc{Calibrate}}
+
+\textsc{Calibrate} (the paper's Section on calibration) takes the parameter vector $\mathcal P$ and the public ledger parameters and runs seven steps: the security test $\log_2(QP)\le L_{\max}(N,\lambda_{\mathrm{sec}})$; the sensitivities and the mode; $\kappa=\max\{\kappa_{\min},\kappa_{\mathrm{run}},\kappa_L\}$ (unless $\mathcal P$ fixes $\kappa$), with the test of the run's share of the ledger's slack capacity; $\gamma$ and $\delta_{\mathrm{DP}}$; $\rho_{\mathrm{run}}$ and its split, the stage-2 share rounded down; the smallest grid scale at which $\sigma_{c,s}=(\lceil\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)\rceil)^{1/2}\ge\max\{2^\kappa B_{\mathrm{tot},s}/\sqrt{2\pi},2^{42}\}$ for every release; and the test on $q_0$. It refuses when a step has no solution.
+
+\begin{proposition}[\textsc{Calibrate} is sound]\label{prop:calib}
+Suppose \textsc{Calibrate} does not refuse, and that it evaluates $B_{\mathrm{tot},s}$ and $\Delta_{x,s}$ by the formulas of Theorem~\ref{thm:O1} with Lemma~\ref{lem:gadget}, and of Lemma~\ref{lem:sensZdec}, for the circuit model in use. Then:
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item every output is a deterministic function of $\mathcal P$ and the public ledger parameters;
+  \item for every release, $\sigma_{c,s}\ge\max\{2^\kappa B_{\mathrm{tot},s}/\sqrt{2\pi},2^{42}\}$, $\widehat\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)\le\rho_s$ with $\sigma_{c,s}^2$ an integer, $\sum_s\rho_s\le\rho_{\mathrm{run}}$, $\rho_{\mathrm{run}}=\max\{\rho:\delta(\rho,\varepsilon_{\mathrm{run}})\le\delta_{\mathrm{DP}}\}$ with $\delta_{\mathrm{DP}}=\delta_{\mathrm{run}}-(1+e^{\varepsilon_{\mathrm{run}}})\gamma>0$; these are the hypotheses of Theorem~\ref{thm:output};
+  \item condition (Q) of Proposition~\ref{prop:wrap} holds for every release, with $d_{\max}$ of Proposition~\ref{prop:offset}, and the chain meets the security bound;
+  \item if $\kappa$ is derived, $(1+e^{\varepsilon_{\mathrm{run}}})\gamma\le\zeta\delta_{\mathrm{run}}$ and $\rho_{\mathrm{run}}\ge\tilde\rho_{\mathrm{run}}$; with a ledger cap, $n_{\mathrm{rel}}\varepsilon'(\kappa)\le(\rho_{\mathrm{run}}/\rho_L)E'_L$ and $n_{\mathrm{rel}}(\delta_B+\delta')\le(\rho_{\mathrm{run}}/\rho_L)\Gamma_L$, and the costs it returns are the per-run costs of the composition appendix (Part~C, Section~5).
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) No step reads data, keys, errors or coins: $B_{\mathrm{tot},s}$ and $\Delta_{x,s}$ are functions of public parameters only (Theorem~\ref{thm:O1}, Lemmas~\ref{lem:gadget} and~\ref{lem:sensZdec}), the grid and its order are fixed, and every step is deterministic. (b) The scale loop stops only where the flooding condition holds for every release. $\sigma_{c,s}^2=\lceil\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)\rceil\ge\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)$. The split sums to at most $\rho_{\mathrm{run}}$ because the stage-2 share is rounded down. $\delta_{\mathrm{DP}}>0$ by the test, and $\rho_{\mathrm{run}}$ exists and is positive because $\delta(\cdot,\varepsilon)$ is continuous, increasing and $0$ at $0$. (c) The $q_0$ test is $q_0>2(\Omf S_{\max}+2^\kappa B_{\mathrm{tot},\max}+t_\eta\sigma_{c,\max})$ with $S_{\max}=\bar n_O\max(r,o,w,\sqrt{ro},\sqrt{rw},\sqrt{ow})$. Since $\Omf S_{\max}=\Omf\tfrac{2|\mathcal E_s|}NS_{\max}+(1-\tfrac{2|\mathcal E_s|}N)\Omf S_{\max}$ and the second part exceeds $d_{\max}+\tfrac12$ whenever $d_{\max}+\tfrac12\le(1-2|\mathcal E_s|/N)\Omf S_{\max}$ (at the evaluation setting $2^{38.6}$ against more than $2^{74}$), and $2^\kappa B_{\mathrm{tot},\max}\ge B_{\mathrm{tot},s}$, $\sigma_{c,\max}\ge\sigma_{c,s}$, the test implies (Q). (d) $\gamma(k)$ is strictly decreasing, so $\kappa\ge\kappa_{\mathrm{run}}$ gives the share and $\delta_{\mathrm{DP}}\ge(1-\zeta)\delta_{\mathrm{run}}$, hence $\rho_{\mathrm{run}}\ge\tilde\rho_{\mathrm{run}}$ by monotonicity; $\varepsilon'(k)$ is decreasing in $k$, so $\kappa\ge\kappa_L$ and $\tilde\rho_{\mathrm{run}}\le\rho_{\mathrm{run}}$ give the smudging inequality, and the share test gives the slack inequality.
+\end{proof}
+
+\begin{remark}[Second reading]
+The proof is in exact arithmetic. The implementation computes $\sigma_{c,s}^2$ as an exact fraction, rounds the split and the ledger's capacities in the safe direction, and stores the ledger's sums exactly; it evaluates $B_{\mathrm{tot},s}$ in double precision (relative error about $10^{-15}$) and, since 2026-10-25, makes the flooding test conservative: $B_{\mathrm{tot},s}$ and the needed $\sigma_{c,s}$ are rounded up by a relative $2^{-40}$, and the integer $\sigma_{c,s}^2$ is compared with the square of the rounded value in exact rational arithmetic, so floating-point error cannot pass a case that exact arithmetic would refuse. Its formula for the term $T_8$ uses $d_{\mathrm{num}}$ where $\sqrt{d_{\mathrm{num}}}$ suffices, which is conservative. Its diagnostic value \texttt{q0\_need\_Q} used $d_{\max}=2^{35}$ until 2026-10-25, which Proposition~\ref{prop:offset} proves when at most $n_R^{\max}=2{,}000$ rows match ($2^{30.3}$) but not when every row of a register of $10^6$ may match ($2^{38.6}$). It now uses the $d_{\max}$ of Proposition~\ref{prop:offset} for $n_{\max}=\min(n_R^{\max},\bar n_O)$; the condition (Q) still needs $74.1$ bits at $\bar n_O=4{,}096$ and $81.9$ bits at $10^6$ ($\varepsilon=1$), because its dominant term is about $2^{81}$. The refusal test itself uses the condition of (c), which needs no $d_{\max}$.
+\end{remark}
+
+\subsection{The run computes the DP functionality against $\Rp$}
+
+Let $\mathcal M(D)=(\omega_{\Rp},\Lambda,([\fs_s(D;\pi)+\eta_s]_{q_0})_s)$ be the mechanism of Theorem~\ref{thm:output}, where $[\cdot]_{q_0}$ is the centred residue modulo $q_0$ (a post-processing, so $\mathcal M$ is still $\rho_{\mathrm{run}}$-zCDP), and let $\mathrm{Out}$ be $\Rp$'s output map: its decryption of the Link replies and the centred residues $v_s=h_{O,s}+c'_{1,s}s_R\bmod q_0$.
+
+\begin{corollary}[Standard simulation for $\Rp$, jointly with its output]\label{cor:secureDP}
+Under the hypotheses of Theorem~\ref{thm:output}, the pair ($\Rp$'s view, $\Rp$'s output) is within statistical distance $\gamma$ plus computational loss $n_{\mathrm{rel}}\mathrm{Adv}_1+\mathrm{Adv}_2$ of $(\mathcal S(\mathcal M(D)),\mathcal M(D))$: the run computes the functionality that hands $\mathcal M(D)$ to $\Rp$, against a semi-honest $\Rp$, in the standard (not the liberal) sense. With Theorem~\ref{thm:G4} in place of the transcript $\Lambda$, the functionality may output $(I,\pi|_I)$ instead of $\Lambda$, at the additional cost of that theorem.
+\end{corollary}
+\begin{proof}
+$\mathrm{Out}$ is an efficient deterministic function of the view, and the simulator of Theorem~\ref{thm:output} is output-consistent: on input $w_s$ it outputs $(c^\ast_{1,s},w_s-c^\ast_{1,s}s_R\bmod q_0)$, whose reconstruction $h^\ast+c^\ast s_R\bmod q_0$, taken as a centred residue, is $w_s$ exactly because $w_s=[\fs_s+\eta_s]_{q_0}$ is already reduced. Applying $v\mapsto(v,\mathrm{Out}(v))$ to the two views of Theorem~\ref{thm:output} preserves both the statistical and the computational distance, and maps the simulated pair to $(\mathcal S(\mathcal M(D)),\mathcal M(D))$.
+\end{proof}
+
+\begin{remark}[Correction to the book]
+The book's mechanism outputs $\fs_s+\eta_s$ unreduced, and its claim that the reconstruction returns it ``exactly'' fails on the wraparound event $\nrm{\fs_s+\eta_s}_\infty\ge q_0/2$, of probability at most $2Ne^{-t_\eta^2/2}$ per release under (Q). Either the functionality outputs the centred residue, as above (nothing changes for privacy), or that probability is added to the slack. The book's general statement (SIM-CDP with an output-consistent simulator implies security jointly with the outputs, and the converse fails without output-consistency) is correct as written.
+\end{remark}
+
+\subsection{$\Op$'s work is linear in its scope}
+
+Model $\Op$'s computation as reading cells of its register (one cell per row), its final state as a function of its coins and the cells read, and the decrypted statistic as a function of the final states; the protocol is $(\tau_{\mathrm{dec}},p_{\mathrm{err}})$-correct if, for every input in the clipped domain, the decrypted $\mathbf z$ is within $\tau_{\mathrm{dec}}$ of the true one in every entry except with probability $p_{\mathrm{err}}$.
+
+\begin{proposition}[Work linear in the scope]\label{prop:lower}
+Let the protocol be $(\tau_{\mathrm{dec}},p_{\mathrm{err}})$-correct with $B_O^2>2\tau_{\mathrm{dec}}$, and let every efficient distinguisher of $\Op$'s views for two cohorts of the same size have advantage at most $\mathrm{adv}$. If $n_{\mathrm{Sc}}$ rows of the scope register are non-dummy, each matchable by some cohort, then $\Op$ reads at least $(1-2p_{\mathrm{err}}-\mathrm{adv})\,n_{\mathrm{Sc}}$ rows in expectation, for every input.
+\end{proposition}
+\begin{proof}
+Fix a non-dummy row $t$ and let $E_t$ be the event that cell $t$ is never read; it is a function of $\Op$'s view. If $t$ is matched, couple two executions with the same coins and inputs except $\bx_{O,t}=\mathbf 0$ in one and $B_O\mathbf e_1$ in the other. They coincide until cell $t$ is read, so $E_t$ has the same probability in both, and on $E_t$ the decrypted statistics coincide while the true entries $\bB_{11}$ differ by $B_O^2>2\tau_{\mathrm{dec}}$; so on $E_t$ at least one execution errs, and $\Pr[E_t]\le2p_{\mathrm{err}}$, for every content of the other cells. If $t$ is unmatched, replace one identifier of the cohort by that of row $t$; the indicator of $E_t$ is an efficient function of $\Op$'s view, so its probability changes by at most $\mathrm{adv}$. Summing $\Pr[t\text{ read}]\ge1-2p_{\mathrm{err}}-\mathrm{adv}$ over the $n_{\mathrm{Sc}}$ rows gives the bound.
+\end{proof}
+In v3.1, $\mathrm{adv}$ is the slack of G2 (Corollary~\ref{cor:G2}), so $\Op$'s work is $\Omega(n_{\mathrm{Sc}})$; $\Op$ may skip its dummy rows, which it knows, so the bound is in $n_{\mathrm{Sc}}$, not $\bar n_O$. The argument is that of the classical lower bound on the server's work in single-server private information retrieval.

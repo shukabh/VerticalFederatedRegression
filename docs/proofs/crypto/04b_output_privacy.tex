@@ -1,0 +1,95 @@
+\subsection{Assumptions}
+
+\begin{assumption}[RLWE for the re-randomizer]\label{as:rlweu}
+Let $a\gets\Rr_{q_0}$ be uniform, $u\gets\chikey$ (uniform ternary) and $e_1\gets\chierr=\DG(0,\sigma_e^2)^N$. Then $(a,au+e_1)\approx_c(a,\mathrm{U}(\Rr_{q_0}))$. This is decision-RLWE with one sample, a ternary secret and discrete Gaussian error with $\sigma_e=3.2$. Let $\mathrm{Adv}_1$ denote the best advantage.
+\end{assumption}
+
+\begin{assumption}[RLWE with circular security for $\Op$'s key shares]\label{as:rlweO}
+Let $s_O\gets\chikey$, let every error be drawn from $\chierr$, and let all $a$'s be uniform common random strings. The tuple
+\[
+  \bigl(a,\ -as_O+e^{\mathrm{pk}}_O;\ \{a_{g,j},\ -a_{g,j}s_O+P\mathsf g_j\psi_g(s_O)+e^{\mathrm{rk}}_{O,g,j}\}_{g\in\{g_0,\dots,g_{L-1}\},\,j\le d_{\mathrm{num}}}\bigr)
+\]
+is computationally indistinguishable from uniform over $\Rr_{Q_2}\times\Rr_{PQ_2}^{Ld_{\mathrm{num}}}$; let $\mathrm{Adv}_2$ be the advantage. The first component is plain RLWE in $s_O$. The rotation-key components encrypt key-dependent messages $P\mathsf g_j\psi_g(s_O)$, so they need a circular (key-dependent-message) security assumption, as do all CKKS and BFV rotation keys.
+
+These shares are exactly what $\Rp$ receives from $\Op$ in the one-round public-key and rotation-key generation protocols of Mouchet et al.~\cite{MTBH21}. Under this assumption a semi-honest $\Rp$'s view of key generation is simulated by uniform elements; this is the ``security of threshold key generation'' used in the specification. \unsure{Mouchet et al.\ state that the rotation-key protocol relies on the same circular-security assumption as single-key RLWE schemes; we did not locate the exact statement number.}
+\end{assumption}
+
+The proof also uses three things proved above: Theorem~\ref{thm:O1} (Obligation O1), Lemma~\ref{lem:smudge} with Corollary~\ref{cor:flood}, and Proposition~\ref{prop:ideal} with Proposition~\ref{prop:conv}. It also uses $\Op$'s honest behaviour in Algorithm~5:
+\begin{itemize}[nosep]
+  \item $(u,e_0,e_1,\eta)$ are fresh and independent for each release;
+  \item $\eta$ is \emph{exactly} $D_{\Z^N,\sigma_{c,s}}$;
+  \item $c_0'$ is neither sent nor reused.
+\end{itemize}
+The proof does \emph{not} use PSI security, the random-oracle model, or any assumption on the distribution of rounding errors.
+
+\subsection{The theorem}
+
+\begin{theorem}[Output privacy against an honest-but-curious $\Rp$; Theorem~1 of the specification, corrected]\label{thm:output}
+Assume (M1)--(M5), Assumptions~\ref{as:rlweu} and~\ref{as:rlweO}, and that for every release $s$:
+\begin{itemize}[nosep]
+  \item $\sigma_{c,s}\ge\max\{2^{\kappa}B_{\mathrm{tot},s}/\sqrt{2\pi},\,2^{42}\}$, with $B_{\mathrm{tot},s}$ from Theorem~\ref{thm:O1}, or from Lemma~\ref{lem:gadget} for OpenFHE's key switching (M3$'$) (the floor was $2^{20}$ in earlier versions; Remark~\ref{rem:floor42});
+  \item $\rho_s=\widehat\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)$, with $\widehat\Delta_{\mathrm{enc},s}$ from Corollary~\ref{cor:sensZ} (equal scales) or Lemma~\ref{lem:sensZdec} (decoupled scales, as in the evaluation);
+  \item $\sum_s\rho_s\le\rho_{\mathrm{run}}$, with $\rho_{\mathrm{run}}$ from Proposition~\ref{prop:conv} at $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}})$.
+\end{itemize}
+Then $\Rp$'s view of one run is $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}})$-SIM-CDP for $\sim$, with statistical slack
+\[
+  \gamma=n_{\mathrm{rel}}\bigl(\delta_B+2^{-\kappa}(1+2^{-80})+2^{-97}\bigr)
+\]
+and computational loss $n_{\mathrm{rel}}\mathrm{Adv}_1+\mathrm{Adv}_2$. The mechanism is
+\[
+  \mathcal M(D)=\bigl(\omega_{\Rp},\ \Lambda,\ (\fs_s(D;\pi)+\eta_s)_s\bigr),
+\]
+where $\omega_{\Rp}$ is a fresh random tape for $\Rp$, and $\Lambda$ is $\Rp$'s view of the Link phase (Algorithm~2) generated with fresh coins for $\Op$. Those coins include the OPRF key, the dummy identifiers' labels and the permutation $\tau$, hence $\pi$; the same $\tau$ fixes the arrangement used in $\fs_s(\cdot;\pi)$. By Lemma~\ref{lem:sim2ind}, the view is $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}}+(1+e^{\varepsilon_{\mathrm{run}}})\gamma)$-IND-CDP.
+\end{theorem}
+
+\begin{proof}
+\emph{$\mathcal M$ is $\rho_{\mathrm{run}}$-zCDP, and hence $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}})$-DP.} The pair $(\omega_{\Rp},\Lambda)$ has the same law under $D$ and $D'$. Neighbours differ only in $(\bx_O,y)$ of one row, and neither the Link phase nor $\Rp$'s coins depend on $(\bx_O,y)$: the labels are positions $\tau(j)$, and the identifiers, including the dummy ones, are part of the fixed part of the dataset. Conditionally on $(\omega_{\Rp},\Lambda)$, the last component is the composition of the mechanisms $\fs_s(\cdot;\pi)+\eta_s$. Their sensitivity is at most $\widehat\Delta_{\mathrm{enc},s}$ for every arrangement $\pi$, by Corollary~\ref{cor:sensZ} or Lemma~\ref{lem:sensZdec}. Apply Proposition~\ref{prop:ideal}, Lemma~\ref{lem:zcomp} and Proposition~\ref{prop:conv}.
+
+\emph{The simulator.} On input $(\omega_{\Rp},\Lambda,(w_s)_s)$, $\mathcal S$ proceeds as follows:
+\begin{enumerate}[nosep]
+  \item output $\omega_{\Rp}$ and $\Lambda$;
+  \item replace $\Op$'s key-generation shares by uniform elements of the right rings;
+  \item for each release, sample $c^*_{1,s}\gets\mathrm{U}(\Rr_{q_0})$ and output $(c^*_{1,s},\ w_s-c^*_{1,s}s_R\bmod q_0)$, reading $s_R$ from $\omega_{\Rp}$;
+  \item output the public parameters, including the outputs of \textsc{Calibrate}. These depend on public inputs only, because $B_{\mathrm{tot},s}$ is a worst-case bound.
+\end{enumerate}
+
+\emph{Hybrids.}
+\begin{itemize}[nosep]
+  \item[\textbf{H0}] The real view.
+  \item[\textbf{H1}] Compute $h_{O,s}$ as $v_s-c'_{1,s}s_R$, with $v_s=c'_{0,s}+c'_{1,s}s+\eta_s\bmod q_0$. This is identical to H0, since $h_{O,s}=c'_{0,s}+c'_{1,s}s_O+\eta_s$.
+  \item[\textbf{H2}$^{(s)}$] For $s=1,\dots,n_{\mathrm{rel}}$ in turn, replace $v_s$ by $\fs_s(D;\pi)+\eta_s\bmod q_0$. By Proposition~\ref{prop:decomp}, $v_s\equiv\fs_s+\etots+\eta_s$. Let $Z$ be everything else in the hybrid. Then $\eta_s$ is independent of $(Z,\etots)$, because it is fresh and used only in $v_s$. Corollary~\ref{cor:flood} with $B=B_{\mathrm{tot},s}$ and Theorem~\ref{thm:O1}, which holds for every $D$ and every value of the public randomness, bound the statistical distance between consecutive hybrids by $\delta_B+2^{-\kappa}(1+2^{-80})+2^{-97}$. Summing over $s$ gives $\gamma$. Three precisions:
+  \begin{itemize}[nosep]
+    \item \emph{The side information includes $\Rp$'s random tape.} $Z$ contains $\omega_{\Rp}$, hence $s_R$, $\Rp$'s encryption errors and its key-share errors, all of which enter $\etots$ (through the term of $\Rp$'s errors times $\Op$'s data, the shares of $e^{\mathrm{pk}}$ and $e^{\mathrm{rk}}$, and the $s$-dependent terms). Corollary~\ref{cor:flood} allows any joint law of $(Z,\etots)$, so the simulator needs only $\mathcal M(D)$, not the exact $\fs_s(D)$: this is simulation in the standard sense, not the relaxed sense of Hwang et al.~\cite{HHKLS25} in which the simulator also receives the exact output.
+    \item \emph{$\Rp$'s errors must be honestly sampled.} Theorem~\ref{thm:O1} bounds $\etots$ under (M5), with every error drawn from $\chierr$. A researcher who inflated its encryption errors would push the term of $\Rp$'s errors times $\Op$'s data beyond $B_{\mathrm{tot},s}$, and that term is correlated with $\Op$'s data. This is part of the honest-but-curious model, and it must be stated as such.
+    \item \emph{$\gamma$ is statistical.} The slack $\gamma$ is a concrete statistical distance at the chosen $\kappa$ and $\delta_B$, not a quantity negligible in $\lambda$; it is accounted for explicitly in $\delta$ (Lemma~\ref{lem:sim2ind}).
+  \end{itemize}
+  \item[\textbf{H3}$^{(s)}$] Replace $c'_{1,s}$ by a uniform element of $\Rr_{q_0}$. After H2, $u_s$ and $e_{1,s}$ enter the view only through $c'_{1,s}=c_{1,s}+au_s+e_{1,s}$. The reason is that $c'_{0,s}$ is not sent, and neither $v_s$ nor anything else uses $c'_{0,s}$, $e_{0,s}$, $u_s$ or $e_{1,s}$; in particular the hint $e^{\mathrm{pk}}u_s+e_{1,s}s$ was removed with $\etots$.
+
+  The reduction to Assumption~\ref{as:rlweu} works as follows. On a challenge $(a^*,b^*)$, it sets $a$ to a uniform CRT lift of $a^*$, so that $a$ is uniform at the full modulus. It samples $s_O$, all keys, all errors and all other releases itself; it knows $D$. It sets $c'_{1,s}=c_{1,s}+b^*$. Releases $s'<s$ are already uniform and releases $s'>s$ are real, and both are computable because the reduction knows $a$. The loss per release is $\mathrm{Adv}_1$. Fresh $u_s$ per release is essential here. If $u$ were reused, then $c'_{1,s}-c'_{1,s'}$ would equal $c_{1,s}-c_{1,s'}+e_{1,s}-e_{1,s'}$. That is a short perturbation of a deterministic function of the data and the public randomness, and the hybrid would fail.
+  \item[\textbf{H4}] Replace $\Op$'s key-generation shares by uniform elements. After H3, the view depends on $(s_O,e^{\mathrm{pk}}_O,e^{\mathrm{rk}}_O)$ only through these shares:
+    \begin{itemize}[nosep]
+      \item $h_{O,s}$ no longer contains $s_O$;
+      \item the ciphertexts $M_s$, and therefore the key-switching and conversion steps, no longer influence the view;
+      \item $\etots$ has been removed.
+    \end{itemize}
+  The reduction to Assumption~\ref{as:rlweO} embeds its challenge as $\Op$'s shares. It computes the joint public key and $\Rp$'s own shares from the challenge and $\omega_{\Rp}$, and runs the rest honestly. The loss is $\mathrm{Adv}_2$.
+
+  \emph{Only $p_{0,O}$ is sent.} In the protocol as implemented and as stated in the paper, $\Op$ sends $\Rp$ only its public-key share $p_{0,O}=-as_O+e^{\mathrm{pk}}_O$; $\Op$ sums the rotation-key shares itself and never sends its own. After H3 the rotation keys enter $\Rp$'s view only through the ciphertexts $M_s$, which no longer enter it. So H4 needs only the first component of Assumption~\ref{as:rlweO}: plain decision-RLWE with one sample in $s_O$, with no circular-security assumption. The rotation-key components are needed only if $\Op$'s rotation-key shares are sent.
+\end{itemize}
+H4 is distributed exactly as $\mathcal S(\mathcal M(D))$, with the coins of $\mathcal M$ coupled to those of the hybrid: the Link part of H4 is generated exactly as $\Lambda$, and every other component matches the simulator.
+\end{proof}
+
+\begin{remark}[Comparison with the specification's proof sketch]
+The sketch's hybrids H0--H3 match ours, with these differences:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item the centre is $\fs_s(D)$, not $\Ecd(\mathbf z_s(D))$, which changes $\Delta_{\mathrm{enc}}$ to $\widehat\Delta_{\mathrm{enc}}$;
+  \item the per-release distance is $\delta_B+2^{-\kappa}(1+2^{-80})+2^{-97}$;
+  \item the statistical slack is kept separate from $\delta$, and it enters $\delta$ with the factor $1+e^\varepsilon$ under the indistinguishability reading;
+  \item the sketch's H4 invokes PSI security, which is unnecessary under the specification's adjacency.
+\end{enumerate}
+If one wants the simulator to use only the leakage G4, that is, $(I,\pi|_I)$, rather than a transcript generated from the identifiers, then one needs the semi-honest receiver security of the labeled PSI~\cite{CHLR18}. That in turn needs circuit privacy of $\Op$'s BFV replies (Correction~\ref{cor:psi}).
+\end{remark}
+
+\begin{remark}[Why exactness of the sampler matters]
+Proposition~\ref{prop:ideal} needs $\eta_s$ to be exactly $D_{\Z^N,\sigma}$, through Lemmas~\ref{lem:gsum} and~\ref{lem:renyi}. A sampler at statistical distance $\nu$ from it adds $\nu$ per coordinate, so $N\nu$ per release, to $\gamma$. That is acceptable only if $N\nu\ll2^{-\kappa}$. A floating-point sampler at $\sigma\approx2^{52}$ is not of this kind. Float64 values of magnitude at least $2^{53}$ are spaced at least $2$ apart, so the rounded output misses odd integers in that range. More generally, the low-order bits of its output are not smoothed. So $\nu$ is not small, and the R\'enyi divergence between neighbouring outputs can be infinite. This is the review's point, and it is why \textsc{SampleDG} must be exact (Section~\ref{sec:corr}).
+\end{remark}

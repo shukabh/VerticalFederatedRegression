@@ -1,0 +1,127 @@
+% ==============================================================
+\section{Conventions and Lemma 1 (encoding sensitivity)}
+\label{sec:enc}
+
+\paragraph{Ring and embeddings.}
+Let $N\ge8$ be a power of two, $\Rr=\Z[X]/(X^N+1)$, $\Rr_q=\Rr/q\Rr$, and $\zeta=e^{i\pi/N}$, a primitive $2N$-th root of unity. The roots of $X^N+1$ are $\zeta^j$ for $j\in\Z_{2N}^*$, the odd residues. Let $\Hg=\langle5\rangle\le\Z_{2N}^*$. Then:
+\begin{itemize}[nosep]
+  \item $\Hg$ has order $N/2$ and $\Hg=\{g\in\Z_{2N}: g\equiv1\bmod4\}$;
+  \item $\Z_{2N}^*=\Hg\sqcup(-\Hg)$;
+  \item the slots are ordered by $h_k=5^k\bmod2N$, for $k=0,\dots,N/2-1$.
+\end{itemize}
+For $f\in\R[X]/(X^N+1)$, the \emph{canonical embedding} is $\sigma(f)=(f(\zeta^j))_{j\in\Z_{2N}^*}\in\C^N$, and the \emph{slot map} is $\tau(f)=(f(\zeta^{h_k}))_{k<N/2}\in\C^{N/2}$. Since $f$ is real, $f(\zeta^{-h})=\overline{f(\zeta^h)}$. So $\sigma(f)$ consists of $\tau(f)$ and its complex conjugate. The decoding of the specification is $\Dcd(v)=\tau(v)/\Omega$.
+
+We write $\nrm f=\nrm f_2$, $\nrm f_\infty$ and $\nrm f_1$ for the norms of the coefficient vector, and $\cann f=\nrm{\sigma(f)}_\infty$. Norms of vectors in $\C^{N/2}$ are complex $\ell_2$ norms. For $g\in\Z_{2N}^*$, $\psi_g$ is the automorphism $X\mapsto X^g$.
+
+\begin{lemma}[Parseval for the canonical embedding]\label{lem:parseval}
+For every $f\in\R[X]/(X^N+1)$, $\nrm{\sigma(f)}_2^2=N\nrm f_2^2$ and $\nrm{\tau(f)}_2^2=\tfrac N2\nrm f_2^2$. The map $\tau$ is an $\R$-linear bijection onto $\C^{N/2}$.
+\end{lemma}
+\begin{proof}
+We have $\sigma(f)=Wf$ with $W_{j,k}=\zeta^{jk}$, for $j\in\Z_{2N}^*$ and $0\le k<N$.
+
+\emph{Orthogonality.} For $k\ne l$, put $d=l-k$, so that $0<|d|<N$. Then
+\[
+  (W^*W)_{k,l}=\sum_{j\text{ odd}}\zeta^{jd}=\zeta^{d}\sum_{t=0}^{N-1}\zeta^{2td}=\zeta^d\,\frac{1-\zeta^{2Nd}}{1-\zeta^{2d}}=0,
+\]
+because $\zeta^{2Nd}=1\ne\zeta^{2d}$. Also $(W^*W)_{k,k}=N$, so $W^*W=N\bI$.
+
+\emph{Norms.} The first identity follows from $W^*W=N\bI$. The second follows because $\sigma(f)$ is $\tau(f)$ together with its conjugate.
+
+\emph{Bijectivity.} Let $y\in\C^N$ satisfy $y_{-j}=\overline{y_j}$. Then $f=N^{-1}W^*y$ has coefficients
+\[
+  f_k=N^{-1}\sum_j\zeta^{-jk}y_j,\qquad \overline{f_k}=N^{-1}\sum_j\zeta^{jk}\,\overline{y_j}=N^{-1}\sum_j\zeta^{jk}y_{-j}=f_k,
+\]
+so $f$ is real. Given $z\in\C^{N/2}$, take $y=(z,\bar z)$ arranged by $\Hg\sqcup(-\Hg)$. This $f$ satisfies $\tau(f)=z$, and it is unique because $W$ is injective.
+\end{proof}
+
+\begin{lemma}[Encoding sensitivity; Lemma~1 of the specification]\label{lem:enc}
+Let $\tau^{-1}:\C^{N/2}\to\R[X]/(X^N+1)$ be the inverse of the slot map.
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item $\nrm{\tau^{-1}(\mathbf z)}_2=\sqrt{2/N}\,\nrm{\mathbf z}_2$ for every $\mathbf z\in\C^{N/2}$.
+  \item Let $\Ecd_\Omega(\mathbf z)=\lfloor\Omega\,\tau^{-1}(\mathbf z)\rceil$, rounded coefficient-wise with any fixed tie rule. For all $\mathbf z,\mathbf z'$,
+  \[
+    \nrm{\Ecd_\Omega(\mathbf z)-\Ecd_\Omega(\mathbf z')}_2\le\sqrt{2/N}\,\Omega\,\nrm{\mathbf z-\mathbf z'}_2+\sqrt N .
+  \]
+  \item Let $\Delta_s=\sup_{D\sim D'}\nrm{\mathbf z_s(D)-\mathbf z_s(D')}_2$, where each released entry occupies exactly one slot and all other slots are zero. Then $\sup_{D\sim D'}\nrm{\Ecd_\Omega(\mathbf z_s(D))-\Ecd_\Omega(\mathbf z_s(D'))}_2\le\Delta_{\mathrm{enc},s}=\sqrt{2/N}\,\Omega\,\Delta_s+\sqrt N$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Apply Lemma~\ref{lem:parseval} to $f=\tau^{-1}(\mathbf z)$.
+
+(b) Write $\Ecd_\Omega(\mathbf z)=\Omega\tau^{-1}(\mathbf z)+\mathbf r$ and $\Ecd_\Omega(\mathbf z')=\Omega\tau^{-1}(\mathbf z')+\mathbf r'$, with $\mathbf r,\mathbf r'\in[-\tfrac12,\tfrac12]^N$. Then $\nrm{\mathbf r-\mathbf r'}_\infty\le1$, so $\nrm{\mathbf r-\mathbf r'}_2\le\sqrt N$. Apply (a) to $\mathbf z-\mathbf z'$, using the $\R$-linearity of $\tau^{-1}$, and the triangle inequality.
+
+(c) Follows from (b).
+\end{proof}
+
+\begin{remark}[Scope of Lemma~\ref{lem:enc}]\label{rem:enc}
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item The constant $\sqrt{2/N}$ belongs to the convention of $N/2$ complex slots measured in complex $\ell_2$. Under the full $N$-dimensional embedding the constant would be $1/\sqrt N$. With real data the imaginary parts are zero, so the specification's $\Delta_s$, a real $\ell_2$ sensitivity, is the right input.
+  \item The rounding term $\sqrt N$ cannot be improved in the worst case. At $N=2^{14}$ it is $2^7$, against $\sqrt{2/N}\,\Omega\Delta_s\approx2^{52}$.
+  \item The lemma is about $\Ecd_\Omega(\mathbf z_s)$. The protocol's decrypted value is centred instead at the output of a noiseless evaluation of the circuit. Section~\ref{sec:err} shows that the two differ by a deterministic term of size up to about $2^{30}$, and Corollary~\ref{cor:sensZ} gives the sensitivity of the correct centre. Here $\Omega$ must be the \emph{exact} final scale $\Omf$ (Correction~\ref{cor:scale}).
+\end{enumerate}
+\end{remark}
+
+\paragraph{Facts used in Section~\ref{sec:err}.}
+
+\begin{lemma}[Norms and automorphisms]\label{lem:norms}
+For all $f,g\in\R[X]/(X^N+1)$:
+\begin{itemize}[nosep]
+  \item $\nrm{fg}_2\le\cann f\,\nrm g_2$ and $\nrm{fg}_2\le\nrm f_1\nrm g_2$;
+  \item $\nrm f_2\le\cann f\le\nrm f_1\le\sqrt N\nrm f_2$.
+\end{itemize}
+Every $\psi_g$ acts as a signed permutation on coefficients and as a permutation on $\sigma$. It therefore preserves $\nrm\cdot_2$, $\nrm\cdot_\infty$, $\nrm\cdot_1$ and $\cann\cdot$.
+\end{lemma}
+\begin{proof}
+\emph{Products.} We have $\sigma(fg)=\sigma(f)\odot\sigma(g)$. By Lemma~\ref{lem:parseval},
+\[
+  \nrm{fg}_2=N^{-1/2}\nrm{\sigma(f)\odot\sigma(g)}_2\le\cann f\,N^{-1/2}\nrm{\sigma(g)}_2=\cann f\,\nrm g_2 .
+\]
+The bound $\cann f\le\nrm f_1$ holds because $|f(\zeta^j)|\le\sum_k|f_k|$. Also $\nrm f_2=N^{-1/2}\nrm{\sigma(f)}_2\le\cann f$, and $\nrm f_1\le\sqrt N\nrm f_2$ by Cauchy--Schwarz.
+
+\emph{Automorphisms.} Take $g$ odd. Then $X^{k}\mapsto X^{gk\bmod2N}=\pm X^{gk\bmod N}$, and $k\mapsto gk\bmod N$ is a bijection of $\Z_N$. Moreover $\sigma(\psi_gf)_j=f(\zeta^{jg})=\sigma(f)_{jg}$.
+\end{proof}
+
+\begin{lemma}[The slot sum is a trace]\label{lem:trace}
+Let $L=\log_2(N/2)$ and $g_i=5^{2^i}$. For $0\le i\le L$, let $T_i=\prod_{l=i}^{L-1}(1+\psi_{g_l})$, so that $T_i=\sum_{g\in\Hg_i}\psi_g$ with $\Hg_i=\langle5^{2^i}\rangle$ and $|\Hg_i|=2^{L-i}$. The log-step \textsc{EvalSum} evaluates $\Tr:=T_0=\sum_{g\in\Hg}\psi_g$, and
+\[
+  \Tr(f)=\tfrac N2\bigl(f_0+f_{N/2}X^{N/2}\bigr),\qquad \tau(\Tr f)=\tfrac N2\bigl(f_0+i f_{N/2}\bigr)\mathbf 1=\Bigl(\sum_{h\in\Hg}\sigma(f)_h\Bigr)\mathbf 1 .
+\]
+\end{lemma}
+\begin{proof}
+\emph{The product formula.} Every $g\in\Hg$ has a unique representation $5^{\sum_ib_i2^i}$ with $b_i\in\{0,1\}$. This gives the formula for $T_i$.
+
+\emph{The trace of a monomial.} By linearity it suffices to treat $f=X^k$. For $j\in\Hg$ we have $j\Hg=\Hg$, so
+\[
+  \sigma_j(\Tr X^k)=S_k:=\sum_{g\in\Hg}\zeta^{gk}=\zeta^k\sum_{t=0}^{N/2-1}\zeta^{4kt}.
+\]
+If $\zeta^{4k}\ne1$, the geometric sum equals $(1-\zeta^{2Nk})/(1-\zeta^{4k})=0$. Now $\zeta^{4k}=1$ if and only if $k\equiv0\pmod{N/2}$. Hence $S_0=N/2$, $S_{N/2}=\tfrac N2\zeta^{N/2}=\tfrac N2 i$, and $S_k=0$ otherwise. For $j\in-\Hg$ the values are the conjugates.
+
+\emph{Identification.} The polynomial $\tfrac N2([k{=}0]+[k{=}N/2]X^{N/2})$ has the same embedding, because $\zeta^{jN/2}=i^j$ equals $i$ on $\Hg$ and $-i$ on $-\Hg$. The claim follows from the injectivity of $\sigma$. The last expression is $\sigma_j(\Tr f)=\sum_{g\in\Hg}\sigma(f)_{jg}$ evaluated at $j=1$.
+\end{proof}
+
+\begin{lemma}[Masked slot functionals]\label{lem:slotfun}
+Let $f\in\R[X]/(X^N+1)$, $h\in\Hg$ and $\Hg'\subseteq\Hg$. The real-linear map $\xi\mapsto\sigma_h\bigl(\sum_{g\in\Hg'}\psi_g(f\xi)\bigr)$, for $\xi\in\R^N$, equals $\sum_k\xi_k\beta_k$, with
+\[
+  \nrm\beta_2^2=N\sum_{g\in\Hg'}|\sigma(f)_{hg}|^2\le N\min\bigl\{N\nrm f_2^2,\ |\Hg'|\,(\cann f)^2\bigr\}.
+\]
+In particular $\nrm\beta_2^2=N|\Hg'|$ when $f=1$. The real and imaginary parts have coefficient vectors $\Re\beta$ and $\Im\beta$, with $\nrm{\Re\beta}^2+\nrm{\Im\beta}^2=\nrm\beta^2$.
+\end{lemma}
+\begin{proof}
+We have $\sigma_h(\psi_g(f\xi))=\sigma(f)_{hg}\sum_k\xi_k\zeta^{hgk}$, so $\beta_k=\sum_{g\in\Hg'}\sigma(f)_{hg}\zeta^{hgk}$. Expanding,
+\[
+  \nrm\beta^2=\sum_{g,g'\in\Hg'}\sigma(f)_{hg}\overline{\sigma(f)_{hg'}}\sum_{k<N}\zeta^{hk(g-g')}.
+\]
+If $g\ne g'$, then $m=h(g-g')$ is even and $m\not\equiv0\pmod{2N}$, so $\zeta^m$ is an $N$-th root of unity other than $1$ and the inner sum vanishes. If $g=g'$, the inner sum is $N$. The bounds follow from Lemma~\ref{lem:parseval} and from $|\sigma(f)_{hg}|\le\cann f$.
+\end{proof}
+
+\begin{lemma}[Masking]\label{lem:mask}
+Let $\mathbf u_k$ be the one-hot slot vector and $m_{u_k}=\Ecd_{\Omega_u}(\mathbf u_k)=\Omega_u\tau^{-1}(\mathbf u_k)+r_{u_k}$, with $\nrm{r_{u_k}}_\infty\le\frac12$. For polynomials $y_e$ and distinct slots $k_e$:
+\[
+  \Bigl\|\sum_e y_e\,\Omega_u\tau^{-1}(\mathbf u_{k_e})\Bigr\|_2=\Omega_u\sqrt{2/N}\Bigl(\sum_e|\tau(y_e)_{k_e}|^2\Bigr)^{1/2},
+  \qquad
+  \nrm{y_e\,r_{u_k}}_2\le\tfrac N2\nrm{y_e}_2 .
+\]
+\end{lemma}
+\begin{proof}
+The slot map is multiplicative, so $\tau(y_e\tau^{-1}(\mathbf u_{k_e}))=\tau(y_e)_{k_e}\mathbf u_{k_e}$. Apply Lemma~\ref{lem:enc}(a) to the sum, whose slots are disjoint. The second bound is Lemma~\ref{lem:norms} with $\nrm{r_{u_k}}_1\le N/2$.
+\end{proof}

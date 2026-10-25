@@ -1,0 +1,123 @@
+% ==============================================================
+\section{Decoupled scales, OpenFHE's key switching and the decoding offset}
+\label{sec:general}
+
+The evaluation runs circuit~(A) with \emph{decoupled} encoding scales ($\Omega_U=2^{68}$, $\Omega_u=q_1$, $\Omega_V$ chosen by \textsc{Calibrate}) and with the hybrid key switching of OpenFHE~1.5.1. Proposition~\ref{prop:terms} and Theorem~\ref{thm:O1} are already stated for general $\Omega_U,\Omega_V,\Omega_u,q_1,q_2$: no step of their proofs uses $\Omega_U=q_2$ or $\Omega_V=\Omega_u=q_1$. Three things are not covered by Sections~\ref{sec:model}--\ref{sec:numeric}: OpenFHE's uncentred gadget (Lemma~\ref{lem:gadget}), the sensitivity of the centre with decoupled scales (Lemma~\ref{lem:sensZdec}; Corollary~\ref{cor:sensZ} assumes equal scales), and a public bound on the decoding offset (Proposition~\ref{prop:offset}), which the statistical part needs. This section proves them. The proofs were first written in the companion book on the protocol (its Appendix~B, Lemmas \texttt{btot.gadget} and \texttt{btot.sensZ}, Proposition \texttt{btot.offset}, and Chapter~9, Corollary \texttt{agg.sensZ} and Lemma \texttt{agg.offset}); they were checked here step by step, with the corrections noted, and the numbers recomputed (script \texttt{experiments/proofs\_check/check\_btot\_offset.py} of the repository).
+
+\subsection{OpenFHE's uncentred key switching}
+
+\begin{enumerate}[nosep,label=(M3$'$)]
+  \item As (M3), with three differences. (i) The digit $\tilde D_j(c)$ is the integer polynomial $\sum_{i\in j}[c_i(\tilde Q_j/q_i)^{-1}]_{q_i}(\tilde Q_j/q_i)$, with residues $[\cdot]_{q_i}\in[0,q_i)$; so $\tilde D_j(c)\equiv c\pmod{\tilde Q_j}$ and $\tilde D_j(c)\in[0,k_j\tilde Q_j)^N$ (fast base extension without centring). (ii) ModDown is $\mathrm{MD}(x)=(x-y_P)/P$, with $y_P=\sum_{i}[x_i(P/p_i)^{-1}]_{p_i}(P/p_i)\in[0,k_PP)^N$ and $y_P\equiv x\pmod P$, where $p_1,\dots,p_{k_P}$ are the special primes; so $\mathrm{MD}(x)=x/P+\mathrm{rd}$ with $\mathrm{rd}=-y_P/P\in(-k_P,0]^N$, the division being exact. (iii) The key switch from $s$ to $\psi_g^{-1}(s)$ is applied \emph{before} the automorphism: the key is $b_j=-a_j\psi_g^{-1}(s)+P\mathsf g_js+e^{\mathrm{rk}}_j$, and the rotation outputs $(\psi_g(c_0+\mathrm{MD}(\sum_j\tilde D_j(c_1)b_j)),\ \psi_g(\mathrm{MD}(\sum_j\tilde D_j(c_1)a_j)))$.
+\end{enumerate}
+In the notation of Proposition~\ref{prop:terms}, (M3$'$) gives $\nrm{\tilde D_j}_\infty<k_j\tilde Q_j\le\varsigma_\uparrow\tilde Q_{\max}/2$ with $\varsigma_\uparrow=2\max_jk_j$, and $\nrm{\mathrm{rd}}_\infty<k_P=\varsigma_\downarrow/2$ with $\varsigma_\downarrow=2k_P$, against $\varsigma_\uparrow\le\max_jk_j$ and $\varsigma_\downarrow=1$ for the centred gadget of (M3).
+
+\begin{lemma}[Uncentred digits and ModDown rounding]\label{lem:gadget}
+Assume (M1), (M2), (M3$'$), (M4), (M5). Then Proposition~\ref{prop:decomp} holds verbatim with every $\tilde D_{e,i,j}$, $e^{\mathrm{rk},(i)}_j$, $\mathrm{rd}_{0,e,i}$, $\mathrm{rd}_{1,e,i}$ replaced by its image under the automorphism $\psi_{g_i}$ of rotation $i$. Proposition~\ref{prop:terms} and Theorem~\ref{thm:O1} hold with $\varsigma_\uparrow=2\max_jk_j$ in $B_3$ and $\epsilon_{\mathrm{ks}}$, and with the ModDown terms (all of $B_4$, and the terms $\sqrt N/2$ and $\sqrt{v_s}\tfrac N2\tau_{t'}$ of $\epsilon_{\mathrm{ks}}$) multiplied by $\varsigma_\downarrow=2k_P$. $B_1$, $B_2$, $B_5$, $B_6$, $B_7$ are unchanged. No mean-zero or symmetry property of the digits or of the roundings is used.
+\end{lemma}
+\begin{proof}
+\emph{The switch.} Let $c_0+c_1s\equiv\mu\pmod{Q_1}$. Modulo $PQ_1$, $\sum_j\tilde D_j(c_1)(b_j+a_j\psi_g^{-1}(s))=P\sum_j\tilde D_j(c_1)\mathsf g_js+\sum_j\tilde D_j(c_1)e^{\mathrm{rk}}_j$, and $\sum_j\tilde D_j(c_1)\mathsf g_j\equiv c_1\pmod{Q_1}$ by the CRT, because $\tilde D_j(c_1)\equiv c_1\pmod{\tilde Q_j}$ holds for uncentred digits as well. $\mathrm{MD}(x)\bmod Q_1$ depends only on $x\bmod PQ_1$ (adding $PQ_1K$ to $x$ adds $Q_1K$ to $\mathrm{MD}(x)$). Dividing by $P$ and adding the roundings, the switched pair $(c_0',c_1')$ satisfies
+\[
+  c_0'+c_1'\psi_g^{-1}(s)\equiv\mu+e'_{\mathrm{ks}}\pmod{Q_1},\qquad e'_{\mathrm{ks}}=P^{-1}\sum_j\tilde D_j(c_1)e^{\mathrm{rk}}_j+\mathrm{rd}_0+\mathrm{rd}_1\psi_g^{-1}(s).
+\]
+\emph{The automorphism afterwards.} $\psi_g(c_0')+\psi_g(c_1')s=\psi_g(c_0'+c_1'\psi_g^{-1}(s))$, so the rotated pair decrypts to $\psi_g(\mu)+\psi_g(e'_{\mathrm{ks}})$ under $s$, and
+\[
+  \psi_g(e'_{\mathrm{ks}})=P^{-1}\sum_j\tilde D^\star_j e^\star_j+\mathrm{rd}^\star_0+\mathrm{rd}^\star_1s,\qquad \tilde D^\star_j=\psi_g(\tilde D_j(c_1)),\ e^\star_j=\psi_g(e^{\mathrm{rk}}_j),\ \mathrm{rd}^\star_b=\psi_g(\mathrm{rd}_b).
+\]
+This is the form of Lemma~\ref{lem:ks}. The proof of Proposition~\ref{prop:decomp} only adds such errors and applies the traces $T_{i+1}$ to them, so the decomposition holds with the starred quantities.
+
+\emph{The hypotheses of the bounds.} (a) $\psi_g$ is a signed permutation of coefficients (Lemma~\ref{lem:norms}), so the starred digits and roundings have the same $\ell_\infty$, $\ell_2$ and $\ell_1$ norms as the unstarred ones. (b) The coordinates of $e^\star_j$ are those of $e^{\mathrm{rk}}_j$ up to order and sign; a sign flip preserves $v$-subgaussianity, so $e^\star_j$ has independent $2\sigma_e^2$-subgaussian coordinates, independent across $(i,j)$. (c) $\tilde D^\star_j$ and $\mathrm{rd}^\star_1$ are functions of the $c_1$-component, which by the induction of Lemma~\ref{lem:c1indep} (the new step outputs $\psi_g(\mathrm{MD}(\sum_j\tilde D_j(c_1)a_j))$ and uses neither $c_0$, nor a secret, nor an error) is a function of the public randomness and the data only. (d) The rescales are those of (M1). The proofs of $B_3$, $B_4$ and $B_8$ use only $\nrm{\tilde D}_\infty$, $\nrm{\mathrm{rd}}_\infty$, the proxy of the key errors, (c), and Lemma~\ref{lem:slotfun}, which holds for every polynomial $f$; so they hold with the stated factors.
+\end{proof}
+
+\begin{remark}[Conformance of OpenFHE~1.5.1 to (M3$'$); a code reading, not a proof]\label{rem:ofhecode}
+We re-read the relevant code at tag \texttt{v1.5.1} (the headers installed with the implementation are identical to the tagged ones):
+\begin{itemize}[nosep]
+  \item \texttt{core/include/lattice/hal/default/dcrtpoly-impl.h}, \texttt{ApproxSwitchCRTBasis}: residues are stored in $[0,q_i)$; both code paths compute $\sum_{i}[x_i\hat Q_i^{-1}]_{q_i}\,[\hat Q_i]_{p}\bmod p$, the residue of the integer $\sum_i[x_i\hat Q_i^{-1}]_{q_i}\hat Q_i\in[0,k\tilde Q)$. \texttt{ApproxModDown}: \texttt{ans} $=(x-\mathrm{partPSwitchedToQ})\cdot P^{-1}$, with no centring; the $t$-multiplications are skipped for CKKS, whose noise scale is $1$ (\texttt{gen-cryptocontext-ckksrns-internal.h}).
+  \item \texttt{pke/lib/keyswitch/keyswitch-hybrid.cpp}: \texttt{KeySwitchGenInternal} sets $b=-a\,s_{\mathrm{new}}+e+[P]_{q_i}s_{\mathrm{old}}$ on the primes of digit $j$ and $-a\,s_{\mathrm{new}}+e$ elsewhere, which is $P\mathsf g_js_{\mathrm{old}}$; \texttt{EvalKeySwitchPrecomputeCore} keeps the digit's own residues and extends them by \texttt{ApproxSwitchCRTBasis}; \texttt{EvalFastKeySwitchCore} applies \texttt{ApproxModDown} to both components; \texttt{KeySwitchInPlace} adds the first to $c_0$ and replaces $c_1$ by the second.
+  \item \texttt{pke/lib/schemebase/base-leveledshe.cpp}, \texttt{EvalAutomorphism}: \texttt{KeySwitchInPlace}, then \texttt{AutomorphismTransform} of both components; CKKS does not override it. \texttt{base-multiparty.cpp}, \texttt{MultiEvalAutomorphismKeyGen}: the new key is $\psi_{g^{-1}}(s_P)$.
+  \item The implementation (\texttt{implementation/native/vfr\_native.cpp}) builds the rotation-key shares in this layout itself (\texttt{rotkey\_share}: $b_j=-a_j\psi_g^{-1}(s)+e+P\mathsf g_js$), sums them, calls the scheme's \texttt{EvalAutomorphism} inside its own \textsc{EvalSum}, and uses its own centred deterministic rescale (\texttt{rescale\_poly}, remainder in $(-q/2,q/2]$), its own encodings and its own release. So (M1) holds as stated and only key switching is OpenFHE's.
+\end{itemize}
+These are statements about a program and are not proved. (M5) for OpenFHE's table sampler, which draws the errors, remains a numerical check (Section~\ref{sec:empirical}; the paper's Check~(T4)).
+\end{remark}
+
+\subsection{The sensitivity of the centre with decoupled scales}
+
+For release $s$ let $\nu_U=(\sum_{e\in\mathcal E}U_{\max,e}^2)^{1/2}$, with $U_{\max,e}=1$ for $\bb$ and $B_R$ for a column of $\bxd$, and $\nu_V=\sup_{D\sim D'}\max_t(\sum_{e\in\mathcal E}(V_{e,t}-V'_{e,t})^2)^{1/2}\le2\Gamma_{\mathcal E}^{1/2}$ (Lemma~\ref{lem:data}).
+
+\begin{lemma}[Sensitivity of the centre, decoupled scales]\label{lem:sensZdec}
+Assume (M1), (M2) with arbitrary $\Omega_U,\Omega_V,\Omega_u,q_1,q_2$, and that $\Ecd$ rounds to the nearest integer coefficient-wise. Put
+\begin{align*}
+  \epsilon_x&=\frac{\Omega_u}{q_1q_2}\,\frac{N^{3/2}\sqrt{|\mathcal E|}}{2\sqrt2}+\frac{N^{5/2}|\mathcal E|}{8q_1q_2},\\
+  \Delta_{x,s}&=\sqrt{\tfrac N2}\,\frac{\Omega_u}{q_1q_2}\bigl(\Omega_V\nu_V+\sqrt N\,\Omega_U\nu_U\bigr)
+  +\frac{\sqrt N}{2}\,\frac{\Omega_U\Omega_V}{q_1q_2}\sqrt{|\mathcal E|}\,\Delta_s\\
+  &\quad+\frac{N^{3/2}}{4q_1q_2}\sqrt{|\mathcal E|}\bigl(\Omega_V\nu_V+\sqrt N\,\Omega_U\nu_U\bigr)+1 .
+\end{align*}
+For every pair of neighbours $D\sim D'$ (differing in one row of $\Op$, matched or not) and every input and alignment of $\Rp$, $\nrm{\Zh_s(D)-\Zh_s(D')}_2\le\sqrt{2/N}\,\Omf\Delta_s+\Delta_{x,s}-1+\epsilon_x$; hence, if $\epsilon_x\le1$,
+\[
+  \nrm{\fs_s(D)-\fs_s(D')}_2\le\widehat\Delta_{\mathrm{enc},s}:=\sqrt{2/N}\,\Omf\Delta_s+\Delta_{x,s}+\sqrt N .
+\]
+With equal scales this reduces to Corollary~\ref{cor:sensZ}.
+\end{lemma}
+\begin{proof}
+The changed row sits in chunk $h^*$ and slot $l^*$; only the encodings $m_{V_e,h^*}$ change. Write $\Delta V_e=V_{e,l^*}-V'_{e,l^*}$ and $\Delta m_e=m_{V_e,h^*}-m'_{V_e,h^*}=\Omega_V\tau^{-1}(\Delta V_e\mathbf u_{l^*})+\delta r_e$ with $\nrm{\delta r_e}_\infty\le1$. Then $\Zh_s(D)-\Zh_s(D')=\sum_e(q_1q_2)^{-1}y_em_{u_e}$ with $y_e=\Tr(m_{U_e,h^*}\Delta m_e)$.
+
+\emph{Slot value.} By Lemma~\ref{lem:trace} and multiplicativity of $\tau$, every slot of $y_e$ equals $c_e=\sum_l\tau(m_{U_e,h^*})_l\tau(\Delta m_e)_l$. With $m_{U_e,h^*}=\Omega_U\tau^{-1}(U_e[h^*])+r_{U_e}$,
+\[
+  c_e=\Omega_U\Omega_V\,U_{e,l^*}\Delta V_e+\Omega_V\,\tau(r_{U_e})_{l^*}\Delta V_e+\sum_l\tau(m_{U_e,h^*})_l\tau(\delta r_e)_l .
+\]
+The vector $(U_{e,l^*}\Delta V_e)_e$ is the change of the statistic, of norm at most $\Delta_s$; it is zero if the row is unmatched, because $\Rp$'s vectors vanish there. $|\tau(r_{U_e})_{l^*}|\le\nrm{r_{U_e}}_1\le N/2$, so the second terms have norm at most $\Omega_V\tfrac N2\nu_V$. By Cauchy--Schwarz and Lemma~\ref{lem:parseval} the third term is at most $\tfrac N2\nrm{m_{U_e,h^*}}\nrm{\delta r_e}\le\tfrac N2(\Omega_UU_{\max,e}+\tfrac{\sqrt N}2)\sqrt N$, using $\nrm{m_U}\le\Omega_U\sqrt{2/N}\nrm{U_e[h^*]}+\sqrt N/2$ and $\nrm{U_e[h^*]}\le\sqrt{N/2}\,U_{\max,e}$. So
+\[
+  \nrm{(c_e)_e}\le\Omega_U\Omega_V\Delta_s+\tfrac N2\bigl(\Omega_V\nu_V+\sqrt N\,\Omega_U\nu_U\bigr)+\tfrac{N^2}4\sqrt{|\mathcal E|}.
+\]
+\emph{Masking.} Split $m_{u_e}=\Omega_u\tau^{-1}(\mathbf u_{k_e})+r_{u_e}$. The main part has norm $\sqrt{2/N}\,(\Omega_u/(q_1q_2))\nrm{(c_e)_e}$ (Lemma~\ref{lem:mask}). For the spill, $y_e$ has only the coefficients of $1$ and $X^{N/2}$ (Lemma~\ref{lem:trace}): $y_e=a+bX^{N/2}$ with $a^2+b^2=|c_e|^2$. Multiplication by $X^{N/2}$ is an orthogonal map $J$ with $J^\top=-J$, so $\langle r,Jr\rangle=0$ and $\nrm{y_er_{u_e}}^2=|c_e|^2\nrm{r_{u_e}}^2\le|c_e|^2N/4$. Hence the spill is at most $\tfrac{\sqrt N}{2q_1q_2}\sum_e|c_e|\le\tfrac{\sqrt N}{2q_1q_2}\sqrt{|\mathcal E|}\nrm{(c_e)_e}$.
+
+\emph{Collecting.} With $\Omega_U\Omega_V\Omega_u/(q_1q_2)=\Omf$, the main part gives $\sqrt{2/N}\,\Omf\Delta_s$, the first term of $\Delta_{x,s}$, and $\sqrt{2/N}(\Omega_u/(q_1q_2))\tfrac{N^2}4\sqrt{|\mathcal E|}$; the spill gives the second and third terms and $\tfrac{\sqrt N}{2q_1q_2}\tfrac{N^2}4|\mathcal E|$. The two leftovers sum to $\epsilon_x$. Finally $\nrm{\lfloor x\rceil-\lfloor x'\rceil}\le\nrm{x-x'}+\sqrt N$.
+\end{proof}
+
+\begin{remark}[Second reading]\label{rem:sensZdecread}
+The book states the lemma for a changed row that is matched; the proof covers any row, as shown (an unmatched row contributes $\Delta V_e$ only through the rounding cross terms), and the paper's adjacency (Definition \texttt{def:adj}) changes a row ``matched or not''. A brute-force check at $N=16$ with decoupled scales $(\Omega_U,\Omega_V,\Omega_u,q_1,q_2)=(2^{10},2^9,2^{10},2^{10},2^9)$ and exact rational arithmetic gives a largest ratio $0.93$ of the change of $\fs_s$ to the bound over $30$ random instances. If the encoder's output differs from exact rounding by at most $\delta$ per coefficient, every rounding bound $\tfrac12$ becomes $\tfrac12+\delta$ and the lemma holds with the first three terms of $\Delta_{x,s}$ multiplied by $(1+2\delta)^2$; the implementation's double-double encoder is not analysed here.
+\end{remark}
+
+\subsection{The decoding offset}
+
+Let $\zeta_{\mathcal E}^2=\sup_{\text{rows}}\sum_e(U_{e,t}V_{e,t})^2$, the largest squared contribution of one row to the statistic: with $r=B_R^2$, $\zeta_{\mathcal E_G}^2\le o^2+ro$ and $\zeta_{\mathcal E_2}^2\le o^2+r(o+w)+ow+w^2$ (joint mode), by the block computation of Lemma~\ref{lem:data}. Let $n_{\max}$ bound the number of matched rows ($n_R^{\max}$ in the protocol).
+
+\begin{proposition}[A public bound on the decoding offset]\label{prop:offset}
+Assume (M1), (M2) and exact rounding in $\Ecd$. Put
+\[
+  A_s=\frac{N\sqrt m}{2\sqrt2}\Bigl(\frac{\sqrt{n_{\max}}\,\nu_U}{\Omega_V}+\frac{(\bar n_O\Gamma_{\mathcal E})^{1/2}}{\Omega_U}\Bigr)+\frac{\sqrt{|\mathcal E|}\,mN^2}{8\,\Omega_U\Omega_V}.
+\]
+For every dataset in the clipped domain with at most $n_{\max}$ matched rows, the decoded centre satisfies, on the slots of the entries,
+\[
+  \Bigl\|\bigl(\Dcd(\fs_s(D))_{k_e}-\mathbf z_e(D)\bigr)_{e\in\mathcal E}\Bigr\|_2\le\bar d_s,\qquad
+  \bar d_s:=A_s+\frac{N\sqrt{|\mathcal E|}}{2\sqrt2\,\Omega_u}\bigl(n_{\max}\zeta_{\mathcal E}+A_s\bigr)+\frac{N}{2\sqrt2\,\Omf},
+\]
+with $\Dcd(v)=\tau(v)/\Omf$, and, in the coefficient domain,
+\begin{gather*}
+  \nrm{\Zh_s(D)-\Omf\tau^{-1}(\mathbf z_s(D))}_2\le d_{\max},\\
+  d_{\max}:=\sqrt{\tfrac2N}\,\frac{\Omega_u}{q_1q_2}\,\bar r_s+\frac{\sqrt N}{2q_1q_2}\sqrt{|\mathcal E|}\bigl(\Omega_U\Omega_Vn_{\max}\zeta_{\mathcal E}+\bar r_s\bigr),\qquad \bar r_s=\Omega_U\Omega_VA_s .
+\end{gather*}
+\end{proposition}
+\begin{proof}
+Write $m_{U_e,h}=\Omega_U\tau^{-1}(U_e[h])+r_{U,e,h}$ and $m_{V_e,h}=\Omega_V\tau^{-1}(V_e[h])+r_{V,e,h}$, with roundings of sup-norm at most $\tfrac12$, so $\nrm{\tau(r)}=\sqrt{N/2}\nrm r\le N/(2\sqrt2)$. As in the previous proof, every slot of $y_e=\Tr(\sum_hm_{U_e,h}m_{V_e,h})$ equals
+\[
+  c_e=\Omega_U\Omega_V\mathbf z_e+\bar r_e,\qquad \bar r_e=\Omega_Ua_e+\Omega_Vb_e+d_e,
+\]
+with $a_e=\sum_h\langle U_e[h],\tau(r_{V,e,h})\rangle$, $b_e=\sum_h\langle\tau(r_{U,e,h}),V_e[h]\rangle$, $d_e=\sum_h\langle\tau(r_{U,e,h}),\tau(r_{V,e,h})\rangle$ (bilinear sums over the slots). By Cauchy--Schwarz over slots and chunks, $|a_e|\le\tfrac N{2\sqrt2}\sqrt m\nrm{U_e}$, $|b_e|\le\tfrac N{2\sqrt2}\sqrt m\nrm{V_e}$, $|d_e|\le mN^2/8$. $\Rp$'s vectors vanish off the matched rows, so $\sum_e\nrm{U_e}^2\le n_{\max}\nu_U^2$, and $\sum_e\nrm{V_e}^2\le\bar n_O\Gamma_{\mathcal E}$ (Lemma~\ref{lem:data}); hence $\nrm{(\bar r_e)_e}\le\Omega_U\Omega_VA_s=\bar r_s$.
+
+\emph{Slots.} Since $\tau(y_{e'}r_{u_{e'}})=c_{e'}\tau(r_{u_{e'}})$, $\tau(\Zh_s)_k=(q_1q_2)^{-1}\sum_{e'}c_{e'}(\Omega_u[k=k_{e'}]+\tau(r_{u_{e'}})_k)$. Dividing by $\Omf$,
+\[
+  \Dcd(\Zh_s)_{k_e}-\mathbf z_e=\frac{\bar r_e}{\Omega_U\Omega_V}+\sum_{e'}\frac{c_{e'}\,\tau(r_{u_{e'}})_{k_e}}{\Omega_U\Omega_V\Omega_u}.
+\]
+The first term has norm at most $A_s$ over the entries. For the second, $\nrm{(\tau(r_{u_{e'}})_{k_e})_e}\le\nrm{\tau(r_{u_{e'}})}\le N/(2\sqrt2)$, so it is at most\[\tfrac N{2\sqrt2\Omega_u}\textstyle\sum_{e'}|c_{e'}|/(\Omega_U\Omega_V)\le\tfrac{N\sqrt{|\mathcal E|}}{2\sqrt2\Omega_u}(\nrm{\mathbf z}+A_s),\] and $\nrm{\mathbf z}\le n_{\max}\zeta_{\mathcal E}$ by the triangle inequality over the matched rows. Finally $\fs_s-\Zh_s$ has sup-norm at most $\tfrac12$, so its slot vector has norm at most $N/(2\sqrt2)$, which contributes $N/(2\sqrt2\,\Omf)$. Taking real parts does not increase norms.
+
+\emph{Coefficients.} The main part of $\Zh_s$ is\[\textstyle\sum_e(\Omega_u/(q_1q_2))y_e\tau^{-1}(\mathbf u_{k_e})=\Omf\tau^{-1}(\mathbf z_s)+(\Omega_u/(q_1q_2))\tau^{-1}(\sum_e\bar r_e\mathbf u_{k_e}),\]whose second piece has norm $\sqrt{2/N}(\Omega_u/(q_1q_2))\nrm{(\bar r_e)}$ (Lemma~\ref{lem:enc}(a)). The spill is at most $\tfrac{\sqrt N}{2q_1q_2}\sum_e|c_e|$, as in the previous proof.
+\end{proof}
+
+\paragraph{The numbers at the evaluation setting.} Chain $[60,59,59,59]$ with $q_0=p_0p_1\approx2^{119}$, $q_1,q_2\approx2^{59}$, two special primes of $60$ bits, $d_{\mathrm{num}}=2$ digits at the \textsc{EvalSum} level ($\max_jk_j=2$, $\tilde Q_{\max}/P\approx2^{-1}$), $\Omega_U=2^{68}$, $\Omega_u=q_1$, simulation population ($d_R=4$, $d_O=6$, $(B_R,B_O,B_y)=(5.59,6.24,2.89)$), $\varepsilon=1$, $\delta=10^{-9}$, $\kappa=40$, previous setting ($f_1=0.1$), recomputed with the implementation's \textsc{Calibrate}:
+\begin{itemize}[nosep]
+  \item $\log_2\Omf=62.75$; $B_{\mathrm{tot},1}=2^{26.43}$ and $B_{\mathrm{tot},2}=2^{26.59}$ by Lemma~\ref{lem:gadget} ($\varsigma_\uparrow=4$, $\varsigma_\downarrow=4$), the same at $\bar n_O=4{,}096$, $16{,}384$ and $10^6$;
+  \item $\Delta_{x,2}=2^{27.57}$ and $\Delta_{x,1}=2^{27.46}$; $\epsilon_x=2^{-36.5}$ and $2^{-36.7}$, so the ``$+1$'' of $\Delta_{x,s}$ covers it;
+  \item $\bar d_2=9.9\cdot10^{-9}$ at $\bar n_O=4{,}096$ with $n_{\max}=n_R^{\max}=2{,}000$; $2.0\cdot10^{-8}$ with $n_{\max}=\bar n_O=4{,}096$; $1.6\cdot10^{-8}$ and $4.8\cdot10^{-6}$ at $\bar n_O=10^6$ with $n_{\max}=2{,}000$ and $10^6$; against $\sigma_2=525$;
+  \item $d_{\max}=2^{30.3}$ at $\bar n_O=10^6$ with $n_{\max}=2{,}000$, and $2^{38.6}$ with $n_{\max}=10^6$.
+\end{itemize}
+A brute-force check at $N=16$ with decoupled scales gives a largest ratio $0.07$ of the offset to $\bar d_s$.

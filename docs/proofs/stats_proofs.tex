@@ -1,0 +1,793 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs, array, tabularx}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black, urlcolor=blue!60!black]{hyperref}
+\setlength{\emergencystretch}{3em}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{correction}{Correction}
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{corollary}[definition]{Corollary}
+
+% ---------- macros of protocol_v31.tex ----------
+\newcommand{\Rp}{\mathsf{R}}
+\newcommand{\Op}{\mathsf{O}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Ecd}{\mathsf{Ecd}}
+\newcommand{\Dcd}{\mathsf{Dcd}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bG}{\mathbf{G}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bP}{\mathbf{P}}
+\newcommand{\bV}{\mathbf{V}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bxd}{\dot{\mathbf{x}}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\DG}{\mathcal{N}_{\Z}}
+\newcommand{\PiO}{\Pi_O}
+\newcommand{\PiR}{\Pi_R}
+\newcommand{\bH}{\mathbf{H}}
+\newcommand{\bS}{\mathbf{S}}
+\DeclareMathOperator{\triu}{triu}
+\DeclareMathOperator{\tr}{tr}
+% ---------- additional macros ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Ex}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\bE}{\mathbf{E}}
+\newcommand{\bD}{\mathbf{D}}
+\newcommand{\bK}{\mathbf{K}}
+\newcommand{\bM}{\mathbf{M}}
+\newcommand{\bN}{\mathbf{N}}
+\newcommand{\bQ}{\mathbf{Q}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\bff}{\mathbf{f}}
+\newcommand{\bg}{\mathbf{g}}
+\newcommand{\bh}{\mathbf{h}}
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bphi}{\boldsymbol{\phi}}
+\newcommand{\bzeta}{\boldsymbol{\zeta}}
+\newcommand{\bvarepsilon}{\boldsymbol{\varepsilon}}
+\newcommand{\bnu}{\boldsymbol{\nu}}
+\newcommand{\bZ}{\mathbf{Z}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bw}{\mathbf{w}}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\clip}{clip}
+\DeclareMathOperator{\cv}{cv}
+\newcommand{\lmin}{\lambda_{\min}}
+\newcommand{\lmax}{\lambda_{\max}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\RSS}{\mathrm{RSS}}
+\newcommand{\Corr}{\mathrm{Corr}}
+\newcommand{\status}[1]{\textsf{\small[#1]}}
+
+\title{\textbf{Protocol v3.1 --- statistical appendix}\\[4pt]
+\large Proofs of the sensitivity, concentration and inference claims (S0--S6)}
+\date{Technical appendix to \texttt{protocol\_v31.tex}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+We prove the statistical claims of Protocol v3.1. Proposition~S1 gives the exact replace-one $\ell_2$ sensitivity of the released vector $(\triu\bB,\bC,\bc_R,\bc_O,\by^\top\by)$ in all three regimes, including a proof that the norms sit at their bounds (and where they do not), the $\triu$-versus-Frobenius question, the case $d_O=1$, the sensitivities $\Delta_{\neg yy}$, $\Delta_G$, $\Delta_y$, and the set of bounds on which $\by^\top\by$ is free. Lemma~S2 bounds the operator norm of the masked symmetric noise matrix; Lemma~S3 analyses the two-stage choice of the ridge; Lemma~S4 bounds $\|\bbeta\|$; Proposition~S5 states the coverage of both intervals of Algorithm~6, separating exact, first-order and asymptotic parts; Lemma~S6 analyses the parametric-bootstrap RSS correction. Sections~S7--S10, added after a second reading of the companion book on the protocol, prove the exact stage-1 radius and its transfer to the lattice noise, a bracket for the switch-off of the ridge and a bound on the downward bias of $\lmin$, the mechanism bias with explicit constants, the bias of the plug-in residual variance used in the FWS comparison, a valid bias-aware interval under binding clipping, and a closed form for the full-record sensitivity. Section~\ref{sec:corrections} lists every place where the specification is false, imprecise or needs an extra condition, with corrected statements. Every step that is not fully rigorous is marked \status{first order}, \status{asymptotic}, \status{numerical} or \status{open}.
+\end{abstract}
+
+\tableofcontents
+
+% ======================================================================
+\section{Summary}
+\label{sec:summary}
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.6cm}@{}}
+\toprule
+Item & What is proved & Status \\
+\midrule
+S0 & The slot noise is the image of the lattice discrete Gaussian under a scaled orthogonal map: exactly uncorrelated, $\sigma_s^2$-subgaussian, and within total variation $N(0.0202\,\sigma_c^{-2}+0.0315\,\sigma_c^{-3}+e^{-2\pi^2\sigma_c^2})$ of i.i.d.\ $\mathcal N(0,\sigma_s^2)$ plus a perturbation of norm $\le N/(2\sqrt2\,\Omega)$. & exact (TV constant now proved) \\
+S1 & Exact $\Delta$ in regimes 1--2 (closed form), exact finite algorithm in regime 3; norms at bounds; $\triu$ = Frobenius supremum for $d_O\ge2$; $d_O=1$ exact reduction and closed-form $\Delta_G$; $\Delta_{\neg yy}$ in closed form in all regimes; $\by^\top\by$ free if $w\le2(r+o)$, costly if $w>3(r+o)$. & exact; boundary of the free set \status{numerical} \\
+S2 & $\Ex\lmax(\bE)\le2\sigma\sqrt p$; $\sqrt2\sigma$-Lipschitz concentration; $\Pr[\lmax(\bE)\ge r_1/\sigma_1\cdot\sigma]\le\alpha_L$. & exact (one-sided); $\Ex\|\bE\|_\op\le2\sigma\sqrt p$ \status{open} \\
+S3 & Measurability and independence; on $\Omega_L$: $\lmin(\bG+\lambda\Psi)\ge2\vartheta^\star\sigma_2\sqrt p$, $\hat L\le\lmin(\bG)$; closed-form $\lambda_O$; gate-failure bound. & exact \\
+S4 & $\|\bbeta\|^2\le\Ex[\by^\top\by\mid\bX]/\lmin(\bG)$, also for the projection estimand; $U_{yy}$ valid at level $2\alpha_U$ as written, $\alpha_U$ after correction. & exact (needs conditional independence) \\
+S5 & Exact Gaussian first-order term, exact resolvent remainder identity, rigorous finite-sample coverage inequality for the oracle Wald interval; AKK inequality and union bound for the $\beta_j$ interval. & plug-in \status{first order}; normality of sampling term \status{asymptotic} \\
+S6 & Second-order RSS bias in closed form; $\Corr$ removes it up to a relative $O(\vartheta_0^{-2})$ remainder; bootstrap covariance consistent to relative $O_p(\vartheta_0^{-1})$. & \status{first order}; constants not explicit \\
+S7 & Exact stage-1 radius: exact level $(M-j)/(M+1)$ with fresh Monte Carlo draws, confidence $c$ over the draws; transfer to the protocol with the proved TV constant and offset bound. & exact \\
+S8 & Bracket for the switch-off, tight among Gram matrices with a given $\lmin$; spectral lower bound on $\Ex\lmin(\bG+\bE)$ by Sudakov--Fernique. & exact; a spectrum-sharp tail bound \status{open} \\
+S9 & Leading-order mechanism bias, ridge version and decay in $\lambda$, with explicit remainder constants. & exact remainder bounds \\
+S10 & Bias of FWS's plug-in RSS with explicit remainder; a valid bias-aware interval under binding clipping with a public variance bound; closed form of the full-record sensitivity for blocks of dimension $\ge2$. & exact; data-driven variance under clipping \status{open} \\
+\bottomrule
+\end{tabularx}
+\caption{What is proved. Corrections to the specification are collected in Section~\ref{sec:corrections}; open steps in Section~\ref{sec:open}.}
+\label{tab:summary}
+\end{table}
+
+% ======================================================================
+\section{Setting, notation and the noise model}
+\label{sec:setting}
+
+\paragraph{Notation.} We follow \texttt{protocol\_v31.tex}. $\Rp$'s block has $d_A:=d_R+1$ coordinates (intercept included) and $\Op$'s block $d_O$, so $p=d_A+d_O$. For a matched record, $\ba:=\bxd\in\R^{d_A}$ is $\Rp$'s full row ($\|\ba\|\le B_R$, $a_1=1$), $\bx:=\bx_O\in\R^{d_O}$ ($\|\bx\|\le B_O$) and $y$ ($|y|\le B_y$). We write
+\[
+  r=B_R^2,\quad o=B_O^2,\quad w=B_y^2,\quad b=B_y .
+\]
+$\PiO$ is the coordinate projection on $\Op$'s block. The mask $\chi\in\{0,1\}^{p\times p}$ has $\chi_{ij}=0$ iff $i,j\le d_A$. For the ridge chosen by Algorithm~6 we write
+\[
+  \bG_\lambda=\bG+\lambda\Psi,\qquad \bP_\lambda=\bG_\lambda^{-1},\qquad \btheta_\lambda=\bP_\lambda\bc,\qquad
+  \vartheta_0=\frac{\lmin(\bG_\lambda)}{2\sigma_2\sqrt p},\qquad
+  \hat\vartheta=\frac{\lmin(\hat\bG_2+\lambda\Psi)}{2\sigma_2\sqrt p}.
+\]
+$\vartheta_0$ is the (unobservable) validity ratio of the ridge at the true Gram matrix; $\hat\vartheta$ is the gate statistic of Algorithm~6, line~7. The notation table of the specification calls $\hat\vartheta$ ``the validity ratio''; the guarantee of Lemma~S3 is about $\vartheta_0$. $\sigma_{yy}$ is the noise s.d.\ of $\widehat{yy}$ ($\sigma_2$ in joint mode, $\sigma_y$ in separate mode). $z_a=\Phi^{-1}(a)$, $\phi$ and $\Phi$ are the standard normal density and distribution function, and $Q=1-\Phi$.
+
+\paragraph{The masked noise model.} A \emph{masked symmetric noise matrix} with scale $\sigma$ is $\bE=\bE^\top\in\R^{p\times p}$ with $E_{ij}=0$ when $\chi_{ij}=0$ and $\{E_{ij}:i\le j,\ \chi_{ij}=1\}$ independent, each $\mathcal N(0,\sigma^2)$ (the diagonal of the $\Op$ block included, since $\triu\bB$ is released entry by entry). Its covariance is
+\begin{equation}
+  \Cov(E_{ij},E_{kl})=\sigma^2\chi_{ij}\bigl(\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk}-\delta_{ij}\delta_{ik}\delta_{il}\bigr).
+  \label{eq:noisecov}
+\end{equation}
+Stage~$s$ releases $\hat\bG_s=\bG+\bE_s$ and (stage~2) $\hat\bc_2=\bc+\bff_2$ with $\bff_2\sim\mathcal N(0,\sigma_2^2\bI_p)$ (every entry of $\bc_R$ and $\bc_O$ depends on $\by$), and $\widehat{yy}=\by^\top\by+g$ with $g\sim\mathcal N(0,\sigma_{yy}^2)$; the noises of different releases are independent and independent of the data. For $\btheta\in\R^p$ we use
+\begin{equation}
+  \bK(\btheta):=\sigma^{-2}\Cov(\bE\btheta),\qquad
+  K(\btheta)_{ik}=\delta_{ik}\Bigl(\sum_j\chi_{ij}\theta_j^2-\chi_{ii}\theta_i^2\Bigr)+\chi_{ik}\theta_i\theta_k,
+  \label{eq:K}
+\end{equation}
+and $\bM_\chi(\bP):=\sigma^{-2}\Ex[\bE\bP\bE]=\chi\circ\bP+\diag_i\bigl(\sum_j\chi_{ij}P_{jj}-\chi_{ii}P_{ii}\bigr)$, both direct consequences of~\eqref{eq:noisecov}. $0\preceq\bK(\btheta)$ and $\|\bK(\btheta)\|\le2\|\btheta\|^2$.
+
+\begin{assumption}[Gaussian slot model, N]\label{ass:N}
+Every released entry equals its exact value plus an independent $\mathcal N(0,\sigma_s^2)$ variable, independently across releases and of the data.
+\end{assumption}
+
+All statistical statements below are proved under Assumption~\ref{ass:N}. Lemma~S0 shows how they transfer to the actual mechanism, whose noise is the linear image of a lattice discrete Gaussian.
+
+\begin{lemma}[S0: the slot noise]\label{lem:S0}
+Let $\eta\sim\DG(0,\sigma_c^2)^N$ and let $\bxi^{\mathrm{raw}}\in\R^{m}$ be the noise in $m$ released slot values (real parts of distinct slots, or any $m$ distinct coordinates of $(\mathrm{Re}\,\tau(\eta),\mathrm{Im}\,\tau(\eta))/\Omega$). Write $\sigma_s=\sigma_c\sqrt{N/2}/\Omega$.
+\begin{enumerate}[label=(\alph*),nosep]
+  \item $\bxi^{\mathrm{raw}}=(\sigma_s/\sigma_c)\,\bU\eta$ for a matrix $\bU\in\R^{m\times N}$ with orthonormal rows. Hence the coordinates of $\bxi^{\mathrm{raw}}$ are \emph{exactly} uncorrelated, with common variance $\sigma_s^2\,v(\sigma_c)/\sigma_c^2$, where $v(\sigma)=\Var\DG(0,\sigma^2)$ satisfies $\sigma^2\bigl(1-O(\sigma^2e^{-2\pi^2\sigma^2})\bigr)\le v(\sigma)\le\sigma^2$; and $\bxi^{\mathrm{raw}}$ is $\sigma_s^2$-subgaussian: $\Ex e^{\langle\bu,\bxi^{\mathrm{raw}}\rangle}\le e^{\sigma_s^2\|\bu\|^2/2}$ for all $\bu$.
+  \item There is a coupling of $\eta$ with $\bZ\sim\mathcal N(0,\sigma_c^2\bI_N)$ such that $\Pr[\eta\ne\lfloor\bZ\rceil]\le N\,\mathrm{TV}_1(\sigma_c)$, where $\mathrm{TV}_1(\sigma)=d_{\mathrm{TV}}\bigl(\DG(0,\sigma^2),\lfloor\mathcal N(0,\sigma^2)\rceil\bigr)$ satisfies, for every $\sigma>0$,
+  \[
+    \mathrm{TV}_1(\sigma)\le\frac{\phi(1)}{12\,\sigma^2}+\frac{V}{48\,\sigma^3}+\sum_{j\ge1}e^{-2\pi^2\sigma^2j^2},\qquad V=2\phi(0)+8\phi(\sqrt3)=1.5100,
+  \]
+  that is, $\mathrm{TV}_1(\sigma)\le0.020165\,\sigma^{-2}+0.031459\,\sigma^{-3}+1.0001\,e^{-2\pi^2\sigma^2}$ for $\sigma\ge1$. On that event $\bxi^{\mathrm{raw}}=\bxi^G+\bnu$ with $\bxi^G=(\sigma_s/\sigma_c)\bU\bZ\sim\mathcal N(0,\sigma_s^2\bI_m)$ exactly and $\|\bnu\|\le N/(2\sqrt2\,\Omega)$.
+  \item The decrypted value also carries the flooded error $e_{\mathrm{tot},s}$ and the encoding rounding. On $\{\|e_{\mathrm{tot},s}\|\le B_{\mathrm{tot},s}\}$ (probability $\ge1-\delta_B$) their slot-domain contribution has $\ell_2$ norm at most $N/(2\sqrt2\,\Omega)+\sqrt{2\pi}\,2^{-\kappa}\sigma_s$, using $\sigma_c\ge2^\kappa B_{\mathrm{tot}}/\sqrt{2\pi}$.
+\end{enumerate}
+Consequently every statement proved under Assumption~\ref{ass:N} holds for Protocol v3.1 after adding $\delta_B+N\,\mathrm{TV}_1(\sigma_{c,s})$ (and the wraparound probability excluded by \textup{\textsc{Calibrate}}) per release to the failure probabilities, and enlarging every radius, in operator or Frobenius norm, by $\sqrt2\,\bar\nu$ with $\bar\nu:=N/(\sqrt2\,\Omega)+\sqrt{2\pi}\,2^{-\kappa}\sigma_s$ (the factor $\sqrt2$ accounts for the mirrored off-diagonal entries of $\hat\bB$). With the indicative parameters ($N=2^{14}$, $\log_2\Omega\approx52.5$, $\kappa=40$, $\sigma_c\approx2^{50}$) both additions are below $10^{-11}$ in relative terms.
+\end{lemma}
+
+\begin{proof}
+(a) For $m(X)=\sum_k\eta_kX^k$, slot $j$ is $\tau(m)_j=\sum_k\eta_k\zeta^{e_jk}$ with $\zeta=e^{i\pi/N}$ and $e_j=5^j\bmod 2N$ odd. For $j\ne l$, $\sum_{k=0}^{N-1}\cos(\pi ke_j/N)\cos(\pi ke_l/N)=\tfrac12\sum_k[\cos(\pi k(e_j-e_l)/N)+\cos(\pi k(e_j+e_l)/N)]=0$, because $e_j\pm e_l$ is even and non-zero modulo $2N$ (the subgroup generated by $5$ does not contain $-1$), and $\sum_{k<N}e^{i\pi km/N}=(1-e^{i\pi m})/(1-e^{i\pi m/N})=0$ for even $m\not\equiv0$. The same computation gives $\sum_k\cos^2=\sum_k\sin^2=N/2$ and $\sum_k\cos\cdot\sin=0$. Hence the $N$ real numbers $(\mathrm{Re}\,\tau(m),\mathrm{Im}\,\tau(m))$ equal $\sqrt{N/2}\,\bU_0\eta$ for an orthogonal $\bU_0$ (this is the identity $\|\tau^{-1}(\mathbf z)\|=\sqrt{2/N}\|\mathbf z\|$ of Lemma~1 of the specification), and $\bU$ is a set of $m$ rows of $\bU_0$. The variance and subgaussian bounds for $\DG(0,\sigma^2)$ are in Canonne, Kamath and Steinke~\cite{CKS20} (Section~2); the lower bound on $v$ follows from Poisson summation, $v(\sigma)=\sigma^2\frac{1+\sum_{m\ne0}(1-4\pi^2\sigma^2m^2)e^{-2\pi^2\sigma^2m^2}}{1+\sum_{m\ne0}e^{-2\pi^2\sigma^2m^2}}$. Subgaussianity of $\bxi^{\mathrm{raw}}$ follows because $\langle\bu,\bxi^{\mathrm{raw}}\rangle=(\sigma_s/\sigma_c)\langle\bU^\top\bu,\eta\rangle$ with $\|\bU^\top\bu\|=\|\bu\|$ and independent coordinates.
+
+(b) Couple coordinatewise with a maximal coupling; a union bound gives $N\,\mathrm{TV}_1$. Write $p_k\propto e^{-k^2/2\sigma^2}$ and $q_k=\int_{k-1/2}^{k+1/2}\phi_\sigma$, so $\mathrm{TV}_1=\tfrac12\sum_k|p_k-q_k|$. First, $p_k=\phi_\sigma(k)/\sum_l\phi_\sigma(l)$ and, by Poisson summation, $\sum_l\phi_\sigma(l)=1+2\epsilon$ with $\epsilon=\sum_{j\ge1}e^{-2\pi^2\sigma^2j^2}$; so $\sum_k|p_k-\phi_\sigma(k)|=|1-\sum_l\phi_\sigma(l)|=2\epsilon$. Second, $q_k-\phi_\sigma(k)=\int_{-1/2}^{1/2}(\phi_\sigma(k+u)-\phi_\sigma(k)-u\phi_\sigma'(k))\,du$ (the linear term integrates to zero), so $|q_k-\phi_\sigma(k)|\le\tfrac1{24}\sup_{I_k}|\phi_\sigma''|$ with $I_k=[k-\tfrac12,k+\tfrac12]$. For any function $f$ of bounded variation, $\sup_{I_k}|f|\le\int_{I_k}|f|+\mathrm{TV}_{I_k}(|f|)$, so $\sum_k\sup_{I_k}|\phi_\sigma''|\le\int|\phi_\sigma''|+\mathrm{TV}(|\phi_\sigma''|)=4\phi(1)\sigma^{-2}+V\sigma^{-3}$: $|\phi''(x)|=\phi(x)|x^2-1|$ for the standard density has zeros at $\pm1$ and local maxima $\phi(0)$ at $0$ and $2\phi(\sqrt3)$ at $\pm\sqrt3$, so its total variation is $2\phi(0)+8\phi(\sqrt3)$, and $\int|\phi''|=4\phi(1)$. Halving the sum of the two parts gives the bound. It is within a factor $1.02$ of the exact value at $\sigma=100$ and within a factor $3.2$ at $\sigma=1$ (exact high-precision evaluation, \texttt{experiments/proofs\_check/tv1\_cuckoo.py}); at the evaluation setting ($N=2^{14}$, $\sigma_c\approx2^{65.3}$) $N\,\mathrm{TV}_1(\sigma_c)\le2^{-122.2}$. (An earlier version gave only the leading constant, with the $O(\sigma^{-3})$ term checked numerically; so does the companion book's Lemma \texttt{rel.slot}.) Finally $\|\lfloor\bZ\rceil-\bZ\|\le\sqrt N/2$ and $\|(\sigma_s/\sigma_c)\bU\|_\op=\sqrt{N/2}/\Omega$.
+
+(c) The rounding of $\Ecd$ has sup-norm $\le1/2$; the slot image of a ring element $e$ has norm $\sqrt{N/2}\|e\|/\Omega$, and $\sqrt{N/2}B_{\mathrm{tot}}/\Omega\le\sqrt{N/2}\sqrt{2\pi}\sigma_c2^{-\kappa}/\Omega=\sqrt{2\pi}2^{-\kappa}\sigma_s$.
+\end{proof}
+
+% ======================================================================
+\section{Proposition S1: replace-one sensitivity}
+\label{sec:S1}
+
+\subsection{The change vector}
+Replacing $(\bx,y)$ by $(\bx',y')$ in a matched record with $\Rp$-row $\ba$ changes $(\triu\bB,\bC,\bc_R,\bc_O,\by^\top\by)$ by
+\[
+  \bigl(\triu\bD,\ \ba(\bx-\bx')^\top,\ \ba(y-y'),\ \bx y-\bx'y',\ y^2-y'^2\bigr),\qquad \bD:=\bx\bx^\top-\bx'\bx'^\top .
+\]
+A change in an unmatched (or dummy) row changes nothing, because its $\Op$-side entries are multiplied by $b_t=0$ or by $\bxd_t=\mathbf0$ (Algorithm~4). Hence $\Delta^2=\max_{\mathcal D}\Phi_{\triu}$ with
+\begin{align*}
+  \Phi_{\triu}(\ba,\bx,\bx',y,y')&=\|\triu\bD\|^2+\|\ba\|^2\bigl(\|\bx-\bx'\|^2+(y-y')^2\bigr)+\|\bx y-\bx'y'\|^2+(y^2-y'^2)^2,\\
+  \mathcal D&=\{\|\ba\|\le B_R,\ \|\bx\|,\|\bx'\|\le B_O,\ |y|,|y'|\le B_y\}
+\end{align*}
+(compact, so the supremum is a maximum). $\Phi_F$ denotes the same expression with $\|\triu\bD\|^2$ replaced by $\|\bD\|_F^2$, and $\Phi_{\triu}^{\neg yy}$, $\Phi_F^{\neg yy}$ the expressions without the last term. The intercept constraint $a_1=1$ is irrelevant: the maximum has $\|\ba\|=B_R\ge1$, which is attained by $\ba=(1,\bz)$ with $\|\bz\|^2=r-1$ whenever $d_R\ge1$ (if $d_R=0$ then $B_R=1$). $\Delta$ is the supremum over all cohorts; for a given cohort the sensitivity can only be smaller.
+
+Define on $[-o,o]\times[-b,b]$
+\begin{align}
+  F(s,t)&=2o^2-2s^2+2r(o-s)+r(b-t)^2+o(w+t^2)-2bts+(w-t^2)^2, \label{eq:F}\\
+  F^{\neg yy}(s,t)&=F(s,t)-(w-t^2)^2,\qquad s^*(t)=\clip\bigl(-(r+bt)/2;\,-o,\,o\bigr),\qquad G(t)=F(s^*(t),t). \notag
+\end{align}
+$F$ is the function of the previous paper (with $s=oc$), so the reduction below is the missing justification of its use.
+
+\subsection{Statement}
+
+\begin{theorem}[S1]\label{thm:S1}
+Let $d_O\ge2$ and $b>0$ ($b=0$ is covered by setting $w=0$).
+\begin{enumerate}[label=(\roman*),nosep]
+  \item \textbf{Reduction.} $\Delta^2=\max_{|s|\le o,|t|\le b}F(s,t)=\max_{|t|\le b}G(t)$.
+  \item \textbf{Regime 1}, $|r-w|\le2o$: $\Delta^2=\tfrac12(2o+r+w)^2+2rw$, attained exactly at $t=-b$, $s=(w-r)/2$.
+  \item \textbf{Regime 2}, $r-w\ge2o$: $\Delta^2=4r(o+w)$, attained exactly at $t=-b$, $s=-o$.
+  \item \textbf{Regime 3}, $w-r>2o$: with $t_1=-(r+2o)/b$ and $t_2=(2o-r)/b$ one has $-b<t_1<t_2<b$ and $G$ is $C^1$ and piecewise quartic:
+  \begin{align*}
+    G_A(t)&=t^4+(r+o-2w)t^2-2b(r+o)t+(r+o)w+w^2 && t\in[-b,t_1]\ (s^*=o),\\
+    G_B(t)&=t^4+(r+o-\tfrac32w)t^2-rbt+2o^2+2ro+(r+o)w+w^2+\tfrac12r^2 && t\in[t_1,t_2]\ (|s^*|<o),\\
+    G_C(t)&=t^4+(r+o-2w)t^2+2b(o-r)t+4ro+(r+o)w+w^2 && t\in[t_2,b]\ (s^*=-o).
+  \end{align*}
+  $\Delta^2=\max_{t\in\mathcal T}G(t)$ for the finite set $\mathcal T=\{-b,t_1,t_2,b\}\cup\{$real roots of $G_A',G_B',G_C'$ in their intervals$\}$; this is exact (three cubics). $t=-b$ is a strict local maximizer with $G(-b)=4w(r+o)$; if $\Delta^2>4w(r+o)$, every maximizer has $|t^*|<b$.
+  \item \textbf{Norms.} At every maximizer $\|\ba\|=B_R$, $\|\bx\|=\|\bx'\|=B_O$ and $\max(|y|,|y'|)=B_y$. Both $|y|=|y'|=B_y$ in regimes 1--2; in regime 3 this fails whenever $\by^\top\by$ is not free ($|y'|=|t^*|<B_y$).
+  \item \textbf{$\triu$ versus Frobenius.} $\max_{\mathcal D}\Phi_{\triu}=\max_{\mathcal D}\Phi_F$ (and the same without $\by^\top\by$); a configuration attains the $\triu$ maximum iff it attains the Frobenius maximum and $\bD$ is diagonal.
+  \item \textbf{Worst case.} Let $s^\dagger$, $t^\dagger$ be a maximizer of $F$ and $c=s^\dagger/o$, $\alpha_\pm=\tfrac12(\sqrt{1+c}\pm\sqrt{1-c})$. A worst-case pair is $\|\ba\|=B_R$, $y=B_y$, $y'=t^\dagger$,
+  \[
+     \bx=B_O(\alpha_+\be_1+\alpha_-\be_2),\qquad \bx'=B_O(\alpha_-\be_1+\alpha_+\be_2),
+  \]
+  for which $\bD=o\sqrt{1-c^2}\,(\be_1\be_1^\top-\be_2\be_2^\top)$. In regime 1: $y'=-y$, $\cos\angle(\bx,\bx')=-(r-w)/(2o)$; in regime 2: $y'=-y$, $\bx'=-\bx$ ($\bD=0$).
+  \item \textbf{Other sensitivities.} $\Delta_{\neg yy}^2=\tfrac12(2o+r+w)^2+2rw$ if $|r-w|\le2o$ and $\Delta_{\neg yy}^2=4M(o+m)$ otherwise, with $M=\max(r,w)$ and $m=\min(r,w)$. $\Delta_G=\Delta(B_R,B_O,0)$ equals $(2o+r)/\sqrt2$ if $r\le2o$ and $2\sqrt{ro}$ otherwise. $\Delta_y=w$.
+  \item \textbf{When $\by^\top\by$ is free.} $\Delta=\Delta_{\neg yy}$ iff $\max_{|t|\le b}G(t)\le4w(r+o)$ or $w\le r+2o$. In particular it is free whenever $w\le2(r+o)$ (this covers regimes 1, 2 and part of regime 3), and costly whenever $w>3(r+o)$. For $o=0$ the exact threshold is $w\le\frac{11+5\sqrt5}{8}\,r\approx2.7725\,r$.
+\end{enumerate}
+\end{theorem}
+
+The specification's \textsc{DeltaRep} (``exact for $d_O\ge2$'') is therefore correct in regimes 1--2 and, after the reduction~(i), in regime 3, where (iv) replaces the grid search by an exact finite computation. For $d_O=1$ see Proposition~\ref{prop:dO1}.
+
+\subsection{Two lemmas}
+
+\begin{lemma}[$\triu$ versus Frobenius]\label{lem:triu}
+For all $\bx,\bx'$: $\|\triu\bD\|^2=\tfrac12\bigl(\|\bD\|_F^2+\sum_jD_{jj}^2\bigr)\le\|\bD\|_F^2$, with equality iff $\bD$ is diagonal. If $d_O\ge2$, there is an orthogonal $\bQ$ such that $\bQ\bD\bQ^\top$ is diagonal; replacing $(\bx,\bx')$ by $(\bQ\bx,\bQ\bx')$ changes $\bD$ into $\bQ\bD\bQ^\top$ and leaves every other term of $\Phi$ and the constraints unchanged. Hence $\max\Phi_{\triu}=\max\Phi_F$. For $d_O=1$, $\triu\bD=\bD$.
+\end{lemma}
+\begin{proof}
+The identity holds because $\bD$ is symmetric. $\bD$ has rank $\le2$ and range in $\mathrm{span}\{\bx,\bx'\}$, so $\bD=\mu_1\mathbf q_1\mathbf q_1^\top+\mu_2\mathbf q_2\mathbf q_2^\top$ with orthonormal $\mathbf q_1,\mathbf q_2$; any orthogonal $\bQ$ with $\bQ\mathbf q_i=\be_i$ diagonalizes $\bD$ (this needs $d_O\ge2$). The other terms depend on $(\bx,\bx')$ only through $\|\bx\|,\|\bx'\|,\bx^\top\bx'$, which are invariant. Thus $\Phi_{\triu}(\cdot,\bQ\bx,\bQ\bx',\cdot)=\Phi_F(\cdot,\bx,\bx',\cdot)\ge\Phi_{\triu}(\cdot,\bx,\bx',\cdot)$.
+\end{proof}
+
+\begin{lemma}[Reduction]\label{lem:red}
+Let $d_O\ge2$. With $\rho=\|\ba\|^2$, $u=\|\bx\|^2$, $v=\|\bx'\|^2$, $s=\bx^\top\bx'$,
+\[
+  \Phi_F=\Upsilon:=u^2+v^2-2s^2+\rho\bigl(u+v-2s+(y-y')^2\bigr)+y^2u+y'^2v-2yy's+(y^2-y'^2)^2,
+\]
+and the image of $\mathcal D$ is $\{0\le\rho\le r,\ 0\le u,v\le o,\ s^2\le uv,\ |y|,|y'|\le b\}$.
+\begin{enumerate}[label=(\alph*),nosep]
+  \item $\Upsilon$ is non-decreasing in $\rho$, strictly unless $(\bx,y)=(\bx',y')$.
+  \item For fixed $(\rho,v,s,y,y')$, $\Upsilon$ is strictly increasing in $u$ on the feasible set $\{u\in[0,o]:s^2\le uv\}$, which is an interval with right end $o$. Hence every maximizer has $u=o$, and likewise $v=o$.
+  \item For fixed $(\rho,u,v,s)$, $\Upsilon=\mathcal Q(y,y')+(y^2-y'^2)^2+\mathrm{const}$ with $\mathcal Q$ positive semidefinite; hence $\Upsilon(\kappa y,\kappa y')\ge\Upsilon(y,y')$ for $\kappa\ge1$, and every maximizer has $\max(|y|,|y'|)=b$.
+  \item $\Upsilon$ is invariant under $(u,y)\leftrightarrow(v,y')$ and under $(y,y')\mapsto(-y,-y')$.
+\end{enumerate}
+Consequently $\Delta^2=\max F$ over $[-o,o]\times[-b,b]$: set $\rho=r$, $u=v=o$, $y=b$, $y'=t$.
+\end{lemma}
+\begin{proof}
+For $d_O\ge2$, every $(u,v,s)$ with $s^2\le uv$ is realized by some $(\bx,\bx')$. (a) The coefficient of $\rho$ is $\|\bx-\bx'\|^2+(y-y')^2$. (b) $\partial_u\Upsilon=2u+\rho+y^2>0$ (as $\rho\ge1$ on $\mathcal D$); the feasible set in $u$ is $[s^2/v,o]$ (or $[0,o]$ if $v=0$), which is upward closed. This is the step the earlier proof sketch asserted without proof: monotonicity holds at fixed inner product $s$, \emph{not} at fixed cosine (at fixed cosine $c$, $\partial_u(-2s^2)=-2vc^2$ can dominate). (c) $\mathcal Q(y,y')=\rho(y-y')^2+uy^2+vy'^2-2syy'$ has matrix $\begin{psmallmatrix}\rho+u&-(\rho+s)\\-(\rho+s)&\rho+v\end{psmallmatrix}$ with non-negative diagonal and determinant $\rho(u+v-2s)+uv-s^2\ge0$. So $\Upsilon(\kappa y,\kappa y')-\Upsilon(y,y')=(\kappa^2-1)\mathcal Q+(\kappa^4-1)(y^2-y'^2)^2\ge0$. If a maximizer had $\max(|y|,|y'|)<b$, scaling would not increase $\Upsilon$ only if $\mathcal Q(y,y')=0$ and $y^2=y'^2$. Either $y=y'=0$, and then moving to $(b,-b)$ increases $\Upsilon$ by $\mathcal Q(b,-b)=w(4\rho+u+v+2s)>0$; or $\det=0$, which with $\rho>0$ forces $u=v=s$, i.e.\ $\bx=\bx'$, and then $\mathcal Q=(\rho+u)(y-y')^2=0$ forces $y=y'$ and $\Upsilon=0$, not a maximum. (d) is immediate. By (d) we may take $|y|=b$ and then $y=b$.
+\end{proof}
+
+\subsection{Proof of Theorem~\ref{thm:S1}}
+
+\emph{(i)} Lemmas~\ref{lem:triu} and~\ref{lem:red}. For fixed $t$, $F$ is a strictly concave quadratic in $s$, $F(s,t)=-2s^2-2s(r+bt)+H(t)$ with $H(t)=2o^2+2ro+r(b-t)^2+o(w+t^2)+(w-t^2)^2$, maximized over $[-o,o]$ at $s^*(t)$.
+
+\emph{(ii)} Relax $s\in\R$: $G_u(t):=\max_{s\in\R}F=H(t)+\tfrac12(r+bt)^2=t^4+(r+o-\tfrac32w)t^2-rbt+K$, with $K$ the constant term of $G_B$. Using $w-t^2=(b-t)(b+t)$ and $w^2-t^4=(w-t^2)(w+t^2)$,
+\begin{equation}
+  G_u(-b)-G_u(t)=(b+t)\bigl[rb+(b-t)\bigl(r+o-\tfrac w2+t^2\bigr)\bigr].
+  \label{eq:Gu}
+\end{equation}
+If $w\le r+2o$ then $r+o-w/2\ge r/2>0$, so~\eqref{eq:Gu} is $>0$ for $t>-b$. If also $r-w\le2o$, the relaxed maximizer at $t=-b$, $s=-(r-w)/2$, is feasible. Hence $\Delta^2=G_u(-b)=2o^2+2o(r+w)+4rw+\tfrac12(r-w)^2=\tfrac12(2o+r+w)^2+2rw$, with a unique maximizer (strict concavity in $s$).
+
+\emph{(iii)} If $r-w\ge2o$ then $-(r+bt)/2\le-(r-w)/2\le-o$ for all $|t|\le b$, so $s^*\equiv-o$ and $G(t)=F(-o,t)=4ro+r(b-t)^2+o(b+t)^2+(w-t^2)^2$. Then
+\[
+  G(-b)-G(t)=(b+t)\bigl[r(3b-t)-o(b+t)-(b-t)^2(b+t)\bigr].
+\]
+With $r\ge2o+w$ and $t=b\tau$, the bracket is at least $o(5b-3t)+b^3\bigl[(3-\tau)-(1-\tau)^2(1+\tau)\bigr]=o(5b-3t)+b^3(2+\tau^2-\tau^3)\ge2ob+2b^3>0$. So the maximum is $G(-b)=4r(o+w)$, attained only at $t=-b$.
+
+\emph{(iv)} $s^*(t)=o$ iff $r+bt\le-2o$ iff $t\le t_1$, and $s^*(t)=-o$ iff $t\ge t_2$; in regime~3, $t_1>-b$ and $t_2<b$. Substituting $s=\pm o$ or $s=-(r+bt)/2$ in~\eqref{eq:F} gives $G_A,G_B,G_C$. By Danskin's theorem~\cite{Danskin66} (unique maximizer $s^*(t)$, continuous in $t$), $G'(t)=\partial_tF(s^*(t),t)$ is continuous, so a maximizer of $G$ on $[-b,b]$ is an endpoint or a zero of $G'$, i.e.\ a root of the cubic $G_k'$ of the piece that contains it. Further $G_A(-b)=4w(r+o)$, $G_A'(-b)=-4b(r+o)<0$, and $G(b)=G_C(b)=4o(r+w)<4w(r+o)$ because $w>r$ in regime 3. So if $\max G>4w(r+o)$ every maximizer lies in $(-b,b)$.
+
+\emph{(v)} From Lemma~\ref{lem:red} and the uniqueness statements in (ii)--(iv).
+
+\emph{(vi)} Lemma~\ref{lem:triu}. If $\bD$ is not diagonal at a Frobenius maximizer, the $\triu$ value is strictly smaller.
+
+\emph{(vii)} With $\|\bx\|=\|\bx'\|=B_O$ and $\bx^\top\bx'=oc$, $\bD$ has eigenvalues $\pm o\sqrt{1-c^2}$ and $\triu$ attains $\|\bD\|_F$ iff the eigenvectors are coordinate vectors; the stated pair has $\alpha_+^2+\alpha_-^2=1$, $2\alpha_+\alpha_-=c$ and $\alpha_+^2-\alpha_-^2=\sqrt{1-c^2}$, which gives the displayed diagonal $\bD$. A pair with the right norms and angle but non-diagonal $\bD$ is \emph{not} worst case: for $\bx=B_O\be_1$, $\bx'=B_O(c\be_1+\sqrt{1-c^2}\be_2)$ one loses $o^2c^2(1-c^2)$ in $\|\triu\bD\|^2$.
+
+\emph{(viii)} Lemma~\ref{lem:red}(a),(b) hold verbatim for $\Phi^{\neg yy}$. Without the quartic term, $\Upsilon^{\neg yy}$ is a positive semidefinite quadratic form in $(y,y')$ plus a constant, hence convex, and its maximum over the square is at a vertex; by (d), $y=b$, $t=y'\in\{b,-b\}$. Now $F^{\neg yy}(s,-b)=2o^2+2ro+2ow+4rw-2s^2-2(r-w)s$ and $F^{\neg yy}(s,b)=2o^2-2s^2+2(r+w)(o-s)$. Maximizing each over $|s|\le o$:
+\begin{itemize}[nosep]
+  \item $t=-b$: $\tfrac12(2o+r+w)^2+2rw$ if $|r-w|\le2o$; $4r(o+w)$ if $r-w>2o$; $4w(o+r)$ if $w-r>2o$.
+  \item $t=b$: $\tfrac12(2o+r+w)^2$ if $r+w\le2o$, otherwise $4o(r+w)$.
+\end{itemize}
+Since $\tfrac12(2o+r+w)^2\ge4o(r+w)$ (AM--GM), $4r(o+w)-4o(r+w)=4w(r-o)\ge0$ in regime 2, and $4w(o+r)-4o(r+w)=4r(w-o)>0$ in regime 3, the $t=-b$ values win, which gives the stated $\Delta_{\neg yy}$. $\Delta_G$ is the case $w=0$: regime 1 if $r\le2o$, regime 2 otherwise. $\Delta_y=\sup|y^2-y'^2|=w$, attained at $(y,y')=(b,0)$.
+
+\emph{(ix)} In regimes 1--2 the maximizer has $y'=-y$, so the $\by^\top\by$ term vanishes there and $\Delta=\Delta_{\neg yy}$ by the explicit formulas. In regime 3, $\Delta_{\neg yy}^2=4w(r+o)=G(-b)\le\Delta^2$, so freeness is equivalent to $\max G\le4w(r+o)$. By homogeneity, $F(s,t;r,o,w)=w^2F(s/w,t/b;r/w,o/w,1)$, so take $w=b=1$. Put $s=o-\varsigma$ with $\varsigma\in[0,2o]$, $t=u-1$ with $u\in[0,2]$, $S=r+o$ and $\delta=1-r-2o>0$ (regime 3). A direct expansion (verified exactly in rational arithmetic by \texttt{s1\_symbolic.py}, as are the other polynomial identities of this proof) gives
+\begin{equation}
+  F(s,t)-4S=2\varsigma(u-\delta)-2\varsigma^2-S\,u(4-u)+u^2(2-u)^2 .
+  \label{eq:freeid}
+\end{equation}
+Maximizing over $\varsigma\ge0$ gives at most $\tfrac12(u-\delta)_+^2\le\tfrac12u^2$. If $w\le2(r+o)$, i.e.\ $S\ge\tfrac12$, then $-Su(4-u)\le-\tfrac12u(4-u)$, and
+\[
+  F(s,t)-4S\le\tfrac12u^2-\tfrac12u(4-u)+u^2(2-u)^2=u(u-2)(u-1)^2\le0 \qquad(0\le u\le2).
+\]
+Hence $\Delta^2\le4w(r+o)=\Delta^2_{\neg yy}$. If $w>3(r+o)$, then $G(0)\ge F(o,0)=w(r+o+w)>4w(r+o)$. For $o=0$, $G(t)=r(b-t)^2+(w-t^2)^2$, which is the function $h$ of Proposition~\ref{prop:dO1}(d) with $o$ replaced by $w$; the threshold follows from that computation. \qed
+
+\begin{remark}[The free set, numerically]\label{rem:freeset}
+For fixed $(r,o)$ the free set in regime 3 is an interval $r+2o<w\le w^*(r,o)$ \status{numerical: checked on a fine grid in $w$ for $o/r\in[0,100]$}; Theorem~\ref{thm:S1}(ix) proves $2(r+o)\le w^*\le3(r+o)$ and $w^*(r,0)=\frac{11+5\sqrt5}8r$. The ratio $w^*/(r+o)$ decreases from $2.7725$ at $o=0$ to $2$ as $o/r\to\infty$:
+\begin{center}\small
+\begin{tabular}{@{}lcccccccccc@{}}
+\toprule
+$o/r$ & 0 & 0.01 & 0.1 & 0.25 & 0.5 & 1 & 2 & 5 & 10 & 100\\
+$w^*/(r+o)$ & 2.773 & 2.767 & 2.725 & 2.677 & 2.623 & 2.534 & 2.414 & 2.250 & 2.153 & 2.019\\
+\bottomrule
+\end{tabular}
+\end{center}
+Example: $(B_R,B_O,B_y)=(1,1,5)$ has $w=25>3(r+o)=6$, so $\by^\top\by$ costs: $\Delta=26.0706$ (maximizer $t^*=-0.0704$, $s^*=-0.324$), against $\Delta_{\neg yy}=\sqrt{200}=14.142$. For $(\sqrt5,\sqrt5,5)$, $w=25\le w^*=25.33$, so $\by^\top\by$ is free ($\Delta=\Delta_{\neg yy}=31.62$), which is why the earlier paper saw no difference there. The indicative bounds $(5.59,6.24,2.89)$ are in regime 1 (free), with $\Delta=86.15$ and $\Delta_G=77.16$.\footnote{The specification prints $\Delta=86.18$ and $\Delta_G=77.20$, presumably computed from unrounded bounds; with the bounds as printed the formulas give $86.152$ and $77.162$.}
+\end{remark}
+
+\subsection{The case \texorpdfstring{$d_O=1$}{dO=1}}
+
+\begin{proposition}[$d_O=1$]\label{prop:dO1}
+Let $d_O=1$ and $\Phi_1(x,x',y,y')=(x^2-x'^2)^2+r(x-x')^2+r(y-y')^2+(xy-x'y')^2+(y^2-y'^2)^2$ (here $\triu\bD=\bD$, so there is no $\triu$ issue).
+\begin{enumerate}[label=(\alph*),nosep]
+  \item $\Delta^{(1)}\le\Delta$, $\Delta^{(1)}_{\neg yy}\le\Delta_{\neg yy}$ and $\Delta^{(1)}_G\le\Delta_G$; so the $d_O\ge2$ formulas are valid (conservative) for $d_O=1$.
+  \item $\Delta^{(1)2}=\max\bigl\{\max_{x',t}\Phi_1(B_O,x',b,t),\ \max_{x',t}\Phi_1(B_O,x',t,b)\bigr\}$ over $(x',t)\in[-B_O,B_O]\times[-b,b]$.
+  \item $\Delta^{(1)}=\Delta$ in regime 2 and whenever some maximizer of Theorem~\ref{thm:S1} has $|s^\dagger|=o$ (for instance in the free part of regime 3, where the maximizer is $\bx'=\bx$, $y'=-y$). $\Delta^{(1)}<\Delta$ in the interior of regime 1.
+  \item $\Delta_G^{(1)2}=4ro$ if $o\le\frac{11+5\sqrt5}{8}r$; otherwise $\Delta_G^{(1)2}=\frac{o^2}{16}(3-q)^3(1+q)$ with $q=\sqrt{1-2r/o}$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) A $d_O=1$ configuration embedded in $\R^2$ (second coordinates zero) has diagonal $\bD$ and the same value. (b) $\Phi_1$ is non-decreasing under $(x,x')\mapsto\kappa(x,x')$, $\kappa\ge1$ (each $x$-dependent term is a non-negative form of degree 4 or 2 in $(x,x')$), and under $(y,y')\mapsto\kappa(y,y')$ (as in Lemma~\ref{lem:red}(c), with $\mathcal Q=r(y-y')^2+(xy-x'y')^2$, a sum of squares). So $\max(|x|,|x'|)=B_O$ and $\max(|y|,|y'|)=b$. Using the symmetries $(x,y)\leftrightarrow(x',y')$, $(x,x')\mapsto-(x,x')$ and $(y,y')\mapsto-(y,y')$, take $x=B_O$; then either $y=b$ or $y'=b$. (c) In regime 2 the maximizer $\bx'=-\bx$ is collinear. In the interior of regime 1 every maximizer of the $d_O\ge2$ problem has $u=v=o$ and $s=(w-r)/2\in(-o,o)$, so it is not collinear. The $d_O=1$ feasible set is a compact subset of the $d_O=2$ set that contains no maximizer, so its maximum is strictly smaller. (d) With $w=0$, $x=B_O$, $x'=B_O\tau$: $\Phi_1=o\,h(\tau)$ with $h(\tau)=o(1-\tau^2)^2+r(1-\tau)^2$, and $h'(\tau)=-2(1-\tau)\bigl[2o\tau(1+\tau)+r\bigr]$. If $o\le2r$ the bracket is $\ge r-o/2\ge0$, so $h$ decreases and the maximum is $h(-1)=4r$. If $o>2r$, $h$ has a local maximum at $\tau_+=(q-1)/2$, where $h(\tau_+)=(1-\tau_+)^2[o(1+\tau_+)^2+r]=\frac o{16}(3-q)^3(1+q)$, while $h(-1)=4r=2o(1-q^2)$. The interior value wins iff $(3-q)^3>32(1-q)$, i.e.\ $q>q_0=5-2\sqrt5$, i.e.\ $o/r>2/(1-q_0^2)=\frac{11+5\sqrt5}{8}$ (and $o\le2r$ falls in the first case).
+\end{proof}
+
+For $d_O=1$ we give no closed form for $\Delta^{(1)}$ in regimes 1 and 3. (b) is an exact two-variable polynomial maximization over a rectangle, solvable to machine precision; for calibration the $d_O\ge2$ formula is a valid upper bound. The losses are substantial in regime 1: $\Delta^{(1)}/\Delta=0.894$ at $(1,1,1)$, $0.784$ at $(1,2,1)$ and $0.912$ at the indicative bounds (Table~\ref{tab:S1num}).
+
+\subsection{Numerical verification}
+
+Script \texttt{scratch\_stats/s1\_check.py} (output \texttt{s1\_check.out}) compares, for 14 bound settings covering all regimes: the exact value of Theorem~\ref{thm:S1} (closed form, or candidate enumeration in regime 3); \texttt{sim\_core.delta\_rep} (read only); a brute-force multistart BFGS maximization of the \emph{$\triu$} objective $\Phi_{\triu}$ over raw configurations $(\bx,\bx',y,y')$ for $d_O=2$ and $d_O=3$; and the explicit worst-case configuration of (vii) evaluated with the $\triu$ norm. All agree to $10^{-6}$ (relative difference to \texttt{delta\_rep} is $\le10^{-9}$, which is its deliberate rounding up). $\Delta_{\neg yy}$ agrees with brute force, and the $d_O=1$ reduction (b) agrees with brute force over $d_O=1$ configurations. Script \texttt{s1\_freeset.py} produced the table of Remark~\ref{rem:freeset}, and \texttt{s1\_band.py} confirms $\max_tG-4(r+o)\le4.4\times10^{-16}$ over a $300\times120$ grid of the band $r+2o<w\le2(r+o)$.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rrrcrrrrrr@{}}
+\toprule
+$B_R$ & $B_O$ & $B_y$ & reg. & $\Delta$ exact & brute $d_O{=}2$ & $\Delta_{\neg yy}$ & $\Delta^{(1)}$ ($d_O{=}1$) & $\Delta_G$ & $\Delta_G^{(1)}$\\
+\midrule
+1 & 1 & 1 & 1 & 3.162278 & 3.162278 & 3.16228 & 2.82843 & 2.12132 & 2.00000\\
+1 & 1 & 5 & 3 & 26.070598 & 26.070598 & 14.14214 & 26.05763 & 2.12132 & 2.00000\\
+3 & 1 & 1 & 2 & 8.485281 & 8.485281 & 8.48528 & 8.48528 & 6.00000 & 6.00000\\
+2.236 & 2.236 & 5 & 3 & 31.621815 & 31.621815 & 31.62182 & 31.62182 & 10.60596 & 9.99939\\
+5.59 & 6.24 & 2.89 & 1 & 86.152245 & 86.152245 & 86.15224 & 78.53500 & 77.16183 & 69.76320\\
+1 & 2 & 1 & 1 & 7.211103 & 7.211103 & 7.21110 & 5.65685 & 6.36396 & 4.53635\\
+4 & 1 & 0.5 & 2 & 8.944272 & 8.944272 & 8.94427 & 8.94427 & 8.00000 & 8.00000\\
+1 & 0.5 & 3 & 3 & 9.672258 & 9.672258 & 6.70820 & 9.67226 & 1.00000 & 1.00000\\
+1.5 & 0.7 & 2.2 & 3 & 7.283296 & 7.283296 & 7.28330 & 7.28330 & 2.10000 & 2.10000\\
+1 & 1 & 1.8 & 3 & 5.091169 & 5.091169 & 5.09117 & 5.09117 & 2.12132 & 2.00000\\
+1 & 0.2 & 2 & 3 & 4.566806 & 4.566806 & 4.07922 & 4.56681 & 0.40000 & 0.40000\\
+1 & 3 & 4 & 1 & 25.387005 & 25.387005 & 25.38700 & 25.29822 & 13.43503 & 9.51475\\
+\bottomrule
+\end{tabular}
+\caption{Proposition S1: the exact value equals \texttt{delta\_rep}, the brute-force $\triu$ maximum for $d_O=2$ and $d_O=3$ (the $d_O=3$ column is identical and omitted), and the explicit configuration of Theorem~\ref{thm:S1}(vii), in every case.}
+\label{tab:S1num}
+\end{table}
+
+% ======================================================================
+\section{Lemma S2: operator norm of the masked noise}
+\label{sec:S2}
+
+\begin{lemma}[S2]\label{lem:S2}
+Let $\bE$ be a masked symmetric noise matrix with scale $\sigma$ (Section~\ref{sec:setting}); the proof allows any mask and any variances $\le\sigma^2$ off the diagonal and $\le2\sigma^2$ on it, so it covers the full GOE-type matrix too. Let $\bg\sim\mathcal N(0,\bI_p)$.
+\begin{enumerate}[label=(\alph*),nosep]
+  \item $\Ex\lmax(\bE)\le2\sigma\,\Ex\|\bg\|<2\sigma\sqrt p$, and $\lmax(-\bE)$ has the same law as $\lmax(\bE)$.
+  \item $\bE\mapsto\lmax(\bE)$ and $\bE\mapsto\|\bE\|_\op$ are $\sqrt2\sigma$-Lipschitz functions of the standard Gaussian vector of independent entries. Hence, for $t\ge0$,
+  \[
+    \Pr[\lmax(\bE)\ge\Ex\lmax(\bE)+t]\le e^{-t^2/(4\sigma^2)},\qquad
+    \Pr[\|\bE\|_\op\ge\Ex\|\bE\|_\op+t]\le e^{-t^2/(4\sigma^2)} .
+  \]
+  \item $\Pr\bigl[\lmax(\bE)\ge\sigma\bigl(2\sqrt p+2\sqrt{\ln(1/\alpha)}\bigr)\bigr]\le\alpha$ and $\Pr\bigl[\|\bE\|_\op\ge\sigma\bigl(2\sqrt p+2\sqrt{\ln(2/\alpha)}\bigr)\bigr]\le\alpha$.
+  \item $\Ex\|\bE\|_\op\le2\sigma\sqrt p+c_0\sigma$, with $c_0=2\sqrt{\ln2}+4\sqrt\pi\,Q(\sqrt{2\ln2})\approx2.512$, and $(\Ex\|\bE\|_\op^4)^{1/4}\le\sigma(2\sqrt p+c_0+2\sqrt2)$.
+\end{enumerate}
+In Algorithm~6, $r_1=\sigma_1(2\sqrt p+2\sqrt{\ln(1/\alpha_L)})$ therefore satisfies $\Pr[\lmax(\hat\bG_1-\bG)>r_1]\le\alpha_L$, and this one-sided event is all the algorithm uses (Lemma~S3).
+\end{lemma}
+
+\begin{proof}
+(a) For a unit vector $\bu$ let $X_\bu=\bu^\top\bE\bu=\sum_{i\le j,\chi_{ij}=1}E_{ij}\,w_{ij}(\bu)$, with $w_{ii}=u_i^2$ and $w_{ij}=2u_iu_j$. Then
+\begin{align*}
+  \Ex(X_\bu-X_\bv)^2&\le\sigma^2\Bigl[2\sum_i(u_i^2-v_i^2)^2+4\sum_{i<j}(u_iu_j-v_iv_j)^2\Bigr]=2\sigma^2\|\bu\bu^\top-\bv\bv^\top\|_F^2\\
+  &=4\sigma^2\bigl(1-(\bu^\top\bv)^2\bigr)\le4\sigma^2\|\bu-\bv\|^2,
+\end{align*}
+using $1-(\bu^\top\bv)^2=(1-\bu^\top\bv)(1+\bu^\top\bv)\le2(1-\bu^\top\bv)=\|\bu-\bv\|^2$. The process $Y_\bu=2\sigma\,\bg^\top\bu$ has $\Ex(Y_\bu-Y_\bv)^2=4\sigma^2\|\bu-\bv\|^2$. By the Sudakov--Fernique inequality~\cite{Sudakov71,Fernique75} (see~\cite[Thm.~7.2.11]{Vershynin18}; both processes are centred, Gaussian and continuous on the sphere), $\Ex\lmax(\bE)=\Ex\sup_\bu X_\bu\le\Ex\sup_\bu Y_\bu=2\sigma\Ex\|\bg\|\le2\sigma\sqrt p$. $\bE$ and $-\bE$ have the same law.
+
+(b) Write $E_{ij}=\sigma_{ij}\zeta_{ij}$ with independent standard $\zeta_{ij}$. For a unit $\bu$, $|\bu^\top(\bE(\zeta)-\bE(\zeta'))\bu|\le\|\zeta-\zeta'\|\bigl(\sum\sigma_{ij}^2w_{ij}(\bu)^2\bigr)^{1/2}\le\sqrt2\sigma\|\zeta-\zeta'\|$, since $\sum_iu_i^4\cdot2+\sum_{i<j}4u_i^2u_j^2=2$ (and with diagonal variance $\sigma^2$ the bound is $\sigma^2(2-\sum_iu_i^4)$). Both $\lmax$ and $\|\cdot\|_\op=\sup_\bu|\bu^\top\cdot\bu|$ are therefore $\sqrt2\sigma$-Lipschitz, and Gaussian concentration~\cite{TIS76} (see~\cite[Thm.~5.6]{BLM13}) gives $\Pr[f-\Ex f\ge t]\le e^{-t^2/(2L^2)}$ with $L=\sqrt2\sigma$.
+
+(c) Combine (a) and (b) with $t=2\sigma\sqrt{\ln(1/\alpha)}$. For the norm, $\|\bE\|_\op=\max(\lmax(\bE),\lmax(-\bE))$ and a union bound gives the factor 2.
+
+(d) With $m=2\sigma\sqrt p\ge\Ex\lmax(\pm\bE)$, $\|\bE\|_\op\le m+\max\bigl((\lmax(\bE)-m)_+,(\lmax(-\bE)-m)_+\bigr)$, and the last maximum exceeds $t$ with probability at most $\min(1,2e^{-t^2/4\sigma^2})$; integrating gives $c_0$. For the fourth moment, $\|\bE\|_\op=\Ex\|\bE\|_\op+X$ with $\Pr[|X|\ge t]\le2e^{-t^2/(4\sigma^2)}$ by (b), so $\Ex X^4\le8\int_0^\infty t^3e^{-t^2/(4\sigma^2)}dt=64\sigma^4$, and Minkowski's inequality gives the claim.
+\end{proof}
+
+\begin{remark}[What is not proved]\label{rem:S2open}
+The claim $\Ex\|\bE\|_\op\le2\sigma\sqrt p$, which would give the two-sided bound with $\ln(1/\alpha)$, is \status{open} here. Sudakov--Fernique applied to $\sup_{\bu,\pm}\pm\bu^\top\bE\bu$ fails, because the cross-sign increments $\Ex(\bu^\top\bE\bu+\bv^\top\bE\bv)^2$ reach $8\sigma^2$ at $\bu=\bv$. The suggested Gaussian comparison does reduce the masked case to the full one: if $\mathbf W=\bE+\bE'$ with $\bE'$ an independent centred Gaussian symmetric matrix supported on the masked entries (and, if desired, extra diagonal variance up to $2\sigma^2$), then $\Ex\|\mathbf W\|_\op=\Ex_{\bE}\Ex_{\bE'}\|\bE+\bE'\|_\op\ge\Ex\|\bE\|_\op$ by Jensen's inequality, since $\|\cdot\|_\op$ is convex and $\Ex\bE'=0$. So the mask can only help, and it would suffice to prove $\Ex\|\mathbf W\|_\op\le2\sigma\sqrt p$ for the full GOE-type matrix. For the GOE this holds asymptotically (the largest eigenvalue has mean $2\sigma\sqrt p-O(\sigma p^{-1/6})$ by Tracy--Widom asymptotics), but I know of no non-asymptotic proof with the constant exactly $2$. Known sharp non-asymptotic bounds, such as that of Bandeira and van Handel~\cite{BvH16}, carry an additional $O(\sigma\sqrt{\log p})$ term. Monte Carlo (\texttt{s2\_goe\_ratio.py}) gives $\Ex\|\mathbf W\|_\op/(2\sigma\sqrt p)=0.567,0.724,0.799,0.864,0.926,0.954,0.966$ for $p=1,2,3,5,11,20,30$ (GOE normalization), increasing towards~1 from below, and $0.81$ for the protocol's masked $p=11$ (Table~\ref{tab:S2num}). Algorithm~6 does not need the claim.
+\end{remark}
+
+\paragraph{Subgaussian (discrete-Gaussian) noise.} By Lemma~\ref{lem:S0}(b),(c), (c) holds for the protocol's noise with $\alpha$ replaced by $\alpha+N\,\mathrm{TV}_1(\sigma_{c,1})+\delta_B$ and $r_1$ by $r_1+\sqrt2\,\bar\nu$. Without the coupling, using only that the noise vector is $\sigma^2$-subgaussian (Lemma~\ref{lem:S0}(a)), a $\tfrac14$-net $\mathcal N$ of the sphere ($|\mathcal N|\le9^p$) and $\|\bE\|_\op\le2\max_{\bv\in\mathcal N}|\bv^\top\bE\bv|$ (see~\cite[Cor.~4.2.13, Ex.~4.4.3]{Vershynin18}), together with the fact that $\bv^\top\bE\bv=\langle\bw(\bv),\bxi\rangle$ with $\|\bw(\bv)\|^2\le2$ is $2\sigma^2$-subgaussian, give
+\[
+  \Pr\Bigl[\|\bE\|_\op\ge4\sigma\sqrt{p\ln9+\ln(2/\alpha)}\Bigr]\le\alpha .
+\]
+For $p=11$ and $\alpha=0.0025$ this is $22.2\sigma$, against $11.5\sigma$ for the Gaussian $r_1$. The coupling route is therefore the one to use.
+
+\paragraph{Monte Carlo} (\texttt{s2\_check.py}, $2\times10^5$ draws). For the protocol shape ($p=11$, $5\times5$ exact block): $\Ex\lmax=4.98\sigma$, $\Ex\|\bE\|_\op=5.38\sigma$, against $2\sigma\sqrt p=6.63\sigma$, a ratio of $0.81$. The $0.9975$-quantile of $\lmax$ is $7.43\sigma$ (of $\|\bE\|_\op$, $7.62\sigma$), while $r_1/\sigma_1=11.53$ at $\alpha_L=0.0025$, so $r_1$ is conservative by a factor of about $1.55$. Table~\ref{tab:S2num} gives other shapes. The discrete-Gaussian version (ring $N=128$, canonical embedding, $\sigma_c\in\{0.8,3\}$) has exactly uncorrelated slots and the same $\lmax$ distribution to Monte Carlo accuracy (mean $4.97$, $0.9975$-quantile $7.38$).
+
+\begin{table}[h]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+shape & $2\sqrt p$ & $\Ex\lmax$ & $\Ex\|\bE\|_\op$ & $q_{.9975}(\lmax)$ & $r_1/\sigma_1$ & $\Pr[\lmax\ge2\sqrt p+2]$ \\
+\midrule
+$p=11$, $d_A=5$ (protocol) & 6.633 & 4.976 & 5.383 & 7.43 & 11.53 & $2.5\times10^{-5}$ \\
+$p=11$, no mask, diag var 1 & 6.633 & 5.431 & 5.858 & 7.89 & 11.53 & $1.8\times10^{-4}$ \\
+$p=11$, GOE (diag var 2) & 6.633 & 5.645 & 6.148 & 8.29 & 11.53 & $9.0\times10^{-4}$ \\
+$p=2$, $d_A=1$ & 2.828 & 0.965 & 1.368 & 3.60 & 7.72 & $9\times10^{-5}$ \\
+$p=20$, $d_A=5$ & 8.944 & 7.702 & 8.096 & 10.00 & 13.84 & $4\times10^{-5}$ \\
+$p=50$, $d_A=10$ & 14.142 & 13.095 & 13.446 & 15.09 & 19.04 & $0$ \\
+\bottomrule
+\end{tabular}
+\caption{Lemma S2, Monte Carlo in units of $\sigma$; $r_1/\sigma_1$ at $\alpha_L=0.0025$. The bound $e^{-t^2/4}$ at $t=2$ is $0.37$; the observed tails are far lighter, because the Lipschitz constant $\sqrt2\sigma$ is attained only by spread-out eigenvectors (empirical s.d.\ of $\lmax$: $0.77\sigma$).}
+\label{tab:S2num}
+\end{table}
+
+% ======================================================================
+\section{Lemma S3: the two-stage choice of the ridge}
+\label{sec:S3}
+
+Let $\bE_1=\hat\bG_1-\bG$ (scale $\sigma_1$), $\gamma:=g^\star+r_1$ with $g^\star=2\vartheta^\star\sigma_2\sqrt p$, and
+\[
+  \Omega_L:=\{\lmax(\bE_1)\le r_1\}.
+\]
+
+\begin{lemma}[S3]\label{lem:S3}
+Under Assumption~\ref{ass:N}:
+\begin{enumerate}[label=(\alph*),nosep]
+  \item \textbf{Measurability and independence.} $(\lambda,\Psi)=\Lambda(\bA,\hat\bB_1,\hat\bC_1)$ for a Borel map $\Lambda$ that depends otherwise only on public constants $(\sigma_1,\sigma_2,p,\vartheta^\star,\alpha_L,\kappa_\Psi)$. Hence, conditionally on the data $(\bX,\by)$, $(\lambda,\Psi,\hat L)$ is independent of the stage-2 noise $(\bE_2,\bff_2,g)$ and of the separate $\by^\top\by$ noise.
+  \item \textbf{Radius event.} $\Pr[\Omega_L\mid\bX,\by]\ge1-\alpha_L$. On $\Omega_L$: $\lmin(\bG+\lambda\Psi)\ge g^\star$, i.e.\ $\vartheta_0\ge\vartheta^\star$; and $\hat L\le\lmin(\bG)$.
+  \item \textbf{The $\PiO$ ridge.} $\lmin(\hat\bG_1+\lambda\PiO)\le\lmin(\bA)$ for every $\lambda\ge0$ (Cauchy interlacing), and $\lmin(\hat\bG_1+\lambda\PiO)\uparrow\lmin(\bA)$ as $\lambda\to\infty$. If $\lmin(\bA)>\gamma$,
+  \[
+    \lambda_O=\max\bigl\{0,\ \gamma-\lmin\bigl(\hat\bB_1-\hat\bC_1^\top(\bA-\gamma\bI)^{-1}\hat\bC_1\bigr)\bigr\}<\infty ;
+  \]
+  if $\lmin(\bA)<\gamma$, $\lambda_O=\infty$; the case $\lmin(\bA)=\gamma$ has probability zero (set $\lambda_O=\infty$). No bisection is needed.
+  \item \textbf{Gate.} Conditionally on the data and stage 1, $\Pr[\hat\vartheta<1]\le\Pr\bigl[\lmax(\bE_2)>2(\vartheta_0-1)\sigma_2\sqrt p\bigr]\le\exp\bigl(-p(\vartheta_0-2)^2\bigr)$ for $\vartheta_0>2$. Hence $\Pr[\textsf{refused}\mid\bX,\by]\le\alpha_L+\exp(-p(\vartheta^\star-2)^2)$ when $\vartheta^\star>2$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) $\lmin$ is continuous; $\hat L$, $\lambda_I$ and the closed form in (c) are continuous on their domains, and the comparison $\lambda_O\le\kappa_\Psi\lambda_I$ is a Borel event. Equivalently, $\{\lambda_O\le a\}=\{\lmin(\hat\bG_1+a\PiO)\ge\gamma\}$ is closed, because $\lambda\mapsto\lmin(\hat\bG_1+\lambda\PiO)$ is continuous and non-decreasing; so $\lambda_O$ is lower semicontinuous. A bisection with a fixed number of steps is also Borel. The stage-2 noise is fresh: $\eta$ and $(u,e_0,e_1)$ are drawn anew in Algorithm~5, and $(\lambda,\Psi)$ is a function of the data and $\bE_1$ only. For the real protocol this independence holds exactly for the ideal mechanism $\mathcal M$ and up to the perturbation of norm $\le\sqrt2\,\bar\nu$ of Lemma~\ref{lem:S0}.
+
+(b) $\Pr[\Omega_L]\ge1-\alpha_L$ is Lemma~\ref{lem:S2}(c). For any symmetric $\bM$, $\lmin(\bG+\bM)=\lmin(\hat\bG_1+\bM-\bE_1)\ge\lmin(\hat\bG_1+\bM)-\lmax(\bE_1)$ (Weyl). With $\bM=\lambda\Psi$: if $\Psi=\bI$, $\lmin(\hat\bG_1+\lambda_I\bI)=\lmin(\hat\bG_1)+\lambda_I\ge\gamma$; if $\Psi=\PiO$ (then $\lambda_O<\infty$), $\lmin(\hat\bG_1+\lambda_O\PiO)\ge\gamma$ by definition. So on $\Omega_L$, $\lmin(\bG_\lambda)\ge\gamma-r_1=g^\star$. With $\bM=0$: $\lmin(\bG)\ge\lmin(\hat\bG_1)-r_1$, and $\lmin(\bG)\ge0$, so $\lmin(\bG)\ge\hat L$.
+
+(c) Interlacing: $\bA$ is a principal submatrix of $\hat\bG_1+\lambda\PiO$ (the $\bA$ block is exact and unaffected by $\lambda\PiO$). For $\gamma<\lmin(\bA)$, $\lmin(\hat\bG_1+\lambda\PiO)\ge\gamma$ iff $\begin{psmallmatrix}\bA-\gamma\bI&\hat\bC_1\\\hat\bC_1^\top&\hat\bB_1+(\lambda-\gamma)\bI\end{psmallmatrix}\succeq0$ iff (Schur complement, $\bA-\gamma\bI\succ0$) $\hat\bB_1-\hat\bC_1^\top(\bA-\gamma\bI)^{-1}\hat\bC_1+(\lambda-\gamma)\bI\succeq0$. The limit follows from the Schur complement as $\lambda\to\infty$. If $\gamma=\lmin(\bA)$, feasibility requires $\hat\bC_1^\top\mathbf v=0$ for an eigenvector $\mathbf v$ of $\bA$, a null event under continuous noise.
+
+(d) $\lmin(\hat\bG_2+\lambda\Psi)\ge\lmin(\bG_\lambda)-\lmax(-\bE_2)$, so $\hat\vartheta<1$ implies $\lmax(-\bE_2)>2(\vartheta_0-1)\sigma_2\sqrt p=2\sigma_2\sqrt p+2(\vartheta_0-2)\sigma_2\sqrt p$. Apply Lemma~\ref{lem:S2}(a),(b) with $t=2(\vartheta_0-2)\sigma_2\sqrt p$ and (b) of this lemma.
+\end{proof}
+
+\begin{remark}[Size of the guarantees]
+With $\vartheta^\star=2.5$ and $p=11$ the rigorous refusal bound is $\alpha_L+e^{-2.75}=\alpha_L+0.064$. Monte Carlo at the worst case $\vartheta_0=\vartheta^\star$ found no exceedance of $\lmax(\bE)>9.95\sigma$ in $2\times10^5$ draws, and Algorithm~6 never refused in our simulations (Table~\ref{tab:sim}). Because $r_1$ is conservative (Lemma~S2), the realized $\vartheta_0$ is typically far above $\vartheta^\star$: it was $7.1$--$8.2$ in the ridge scenarios of Table~\ref{tab:fixed}. The private bound $\sqrt{U_{yy}/\hat L}$ is finite only if $\lmin(\hat\bG_1)>r_1$; when the ridge is active this often fails, and the $\beta$ interval then rests on $B_\beta^{\mathrm{pub}}$ (Correction~\ref{corr:privbound}).
+\end{remark}
+
+% ======================================================================
+\section{Lemma S4: the bound on \texorpdfstring{$\|\bbeta\|$}{the norm of beta}}
+\label{sec:S4}
+
+\begin{lemma}[S4]\label{lem:S4}
+Let $\bX$ be the matched (clipped) design, $\bG=\bX^\top\bX$ with $\lmin(\bG)>0$, and $\by$ the clipped response, $|y_i|\le B_y$.
+\begin{enumerate}[label=(\alph*),nosep]
+  \item If $\Ex[\by\mid\bX]=\bX\bbeta$, then $\|\bbeta\|^2\le\bbeta^\top\bG\bbeta/\lmin(\bG)\le\Ex[\by^\top\by\mid\bX]/\lmin(\bG)$. Without any model, the projection coefficient $\bbeta^*:=\bG^{-1}\bX^\top\Ex[\by\mid\bX]$ satisfies the same bound.
+  \item If the $y_i$, $i\in I$, are conditionally independent given $\bX$, then for $s\ge0$
+  \[
+     \Pr\bigl[\widehat{yy}\le\Ex[\by^\top\by\mid\bX]-s\ \big|\ \bX\bigr]\le\exp\Bigl(-\frac{s^2}{2(nB_y^4/4+\sigma_{yy}^2)}\Bigr).
+  \]
+  Hence $U_{yy}^{\mathrm{c}}:=\widehat{yy}+\sqrt{2\ln(1/\alpha_U)\,(nB_y^4/4+\sigma_{yy}^2)}$ satisfies $\Pr[U^{\mathrm c}_{yy}\ge\Ex[\by^\top\by\mid\bX]\mid\bX]\ge1-\alpha_U$. The specification's $U_{yy}=\widehat{yy}+z_{1-\alpha_U}\sigma_{yy}+B_y^2\sqrt{n\ln(1/\alpha_U)/2}$ satisfies this with probability $\ge1-2\alpha_U$ only; with $\alpha_U/2$ in both terms it satisfies it with probability $\ge1-\alpha_U$. In all cases one may replace $U$ by $\min\{U,nB_y^2\}$, since $\Ex[\by^\top\by\mid\bX]\le nB_y^2$ deterministically.
+  \item Let $\Omega_U=\{U\ge\Ex[\by^\top\by\mid\bX]\}$. On $\Omega_L\cap\Omega_U$, and if $\|\bbeta\|\le B_\beta^{\mathrm{pub}}$, we have $\|\bbeta\|\le\hat B_\beta=\min\{B_\beta^{\mathrm{pub}},\sqrt{U/\hat L}\}$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) $\Ex[\by^\top\by\mid\bX]=\|\Ex[\by\mid\bX]\|^2+\sum_i\Var(y_i\mid\bX)\ge\|\Ex[\by\mid\bX]\|^2$. Under the model, $\|\Ex[\by\mid\bX]\|^2=\bbeta^\top\bG\bbeta\ge\lmin(\bG)\|\bbeta\|^2$. In general, $\bbeta^{*\top}\bG\bbeta^*=\|\mathbf H\Ex[\by\mid\bX]\|^2\le\|\Ex[\by\mid\bX]\|^2$ with $\mathbf H$ the hat matrix.
+
+(b) $y_i^2\in[0,w]=[0,B_y^2]$, so by Hoeffding's lemma~\cite{Hoeffding63} each centred $y_i^2$ is $(w^2/4)=(B_y^4/4)$-subgaussian given $\bX$; independence gives $nw^2/4$ for the sum, and adding the independent $\mathcal N(0,\sigma_{yy}^2)$ release noise gives $nw^2/4+\sigma_{yy}^2$. The Chernoff bound gives the display. For the specification's form, Hoeffding gives $\Pr[\by^\top\by\le\Ex[\by^\top\by\mid\bX]-w\sqrt{n\ln(1/\alpha)/2}]\le\alpha$ (this term is correct as stated) and $\Pr[\widehat{yy}\le\by^\top\by-z_{1-\alpha}\sigma_{yy}]=\alpha$; the union bound gives $2\alpha$, and $\alpha/2$ in each restores $\alpha$. Without conditional independence, Hoeffding does not apply; a martingale version controls $\sum_i(y_i^2-\Ex[y_i^2\mid\mathcal F_{i-1}])$, which is not the target, so only the deterministic bound $nB_y^2$ remains.
+
+(c) On $\Omega_L$, $\hat L\le\lmin(\bG)$ (Lemma~\ref{lem:S3}(b)); on $\Omega_U$, $U\ge\Ex[\by^\top\by\mid\bX]$; combine with (a). If $\hat L=0$ the private bound is $+\infty$ and the claim reduces to the public one.
+\end{proof}
+
+\paragraph{Clipping and the estimand.} $\Rp$ clips $\bx_R$, $\Op$ clips $\bx_O$ and $y$. The clipped data need not follow a linear model even if the raw data do. Clipping $y$ is a non-linear map of $\bx^\top\bbeta+\varepsilon$, and clipping $\bx$ breaks linearity in the original features. Clipping also makes the errors heteroskedastic: $\Var(\clip(y)\mid\bx)$ depends on $\bx$ through the probability of clipping. Precisely:
+\begin{itemize}[nosep]
+  \item The Wald interval targets $\btheta_\lambda=(\bG+\lambda\Psi)^{-1}\bc$ computed on the clipped matched data. It is well defined without any model; its randomness is the mechanism only, given the data and stage 1.
+  \item The bias-aware interval targets $\bbeta$ in the \emph{working model on the clipped scale}: $\Ex[\tilde y_i\mid\tilde\bX]=\tilde\bx_i^\top\bbeta$ with conditionally independent, homoskedastic errors, where tildes denote clipped values. Without that model the natural target is the conditional projection $\bbeta^*=\bG^{-1}\tilde\bX^\top\Ex[\tilde\by\mid\tilde\bX]$. For $\bbeta^*$ the bias identity $\Ex[\btheta_\lambda\mid\bX]-\bbeta^*=-\lambda\bP_\lambda\Psi\bbeta^*$ (because $\tilde\bX^\top\Ex[\tilde\by\mid\tilde\bX]=\bG\bbeta^*$) and Lemma~\ref{lem:S4}(a) still hold, but the homoskedastic variance formula does not. The interval is then approximate, and a sandwich variance (a further release) would be needed for validity.
+  \item The raw-scale coefficient equals the clipped-scale one only if clipping never binds on the support, i.e.\ if the bounds are true bounds. Exactly Gaussian errors are incompatible with $|y|\le B_y$, so normality of the sampling term can only be asymptotic (Section~\ref{sec:S5}).
+\end{itemize}
+
+% ======================================================================
+\section{Proposition S5: coverage}
+\label{sec:S5}
+
+Condition on the data and stage 1, $\mathcal F_1=\sigma(\bX,\by,\bE_1)$, so $\lambda,\Psi,\bG_\lambda,\bP_\lambda,\btheta_\lambda,\vartheta_0$ are fixed. Let
+\[
+  \bxi:=\bP_\lambda(\bff_2-\bE_2\btheta_\lambda),\qquad
+  \bV_0:=\Var(\bxi\mid\mathcal F_1)=\sigma_2^2\,\bP_\lambda\bigl(\bI+\bK(\btheta_\lambda)\bigr)\bP_\lambda,\qquad
+  q:=\|\bG_\lambda^{-1/2}\bE_2\bG_\lambda^{-1/2}\|_\op .
+\]
+
+\begin{theorem}[S5(a): Wald interval for $\btheta_\lambda$]\label{thm:S5a}
+Under Assumption~\ref{ass:N}:
+\begin{enumerate}[label=(\roman*),nosep]
+  \item \status{exact} $\bxi\mid\mathcal F_1\sim\mathcal N(0,\bV_0)$; and on $\{\bG_\lambda+\bE_2$ invertible$\}$, $\tilde\btheta-\btheta_\lambda=(\bI+\bP_\lambda\bE_2)^{-1}\bxi$.
+  \item \status{exact} If $q<1$, then $|\tilde\theta_j-\theta_{\lambda,j}-\xi_j|\le\frac q{1-q}\sqrt{(\bP_\lambda)_{jj}}\,\|\bG_\lambda^{1/2}\bxi\|$.
+  \item \status{exact, finite sample} Let $s_j^2=(\bV_0)_{jj}$, $z=z_{1-\alpha/2}$, $\varpi\in(0,z)$ and $\eta\in(0,1)$ with $\eta\vartheta_0\ge1$. The oracle interval $\tilde\theta_j\pm z\,s_j$ satisfies
+  \[
+    \Pr\bigl[|\tilde\theta_j-\theta_{\lambda,j}|>z s_j\ \big|\ \mathcal F_1\bigr]\le\alpha+2\varpi\,\phi(z-\varpi)+2e^{-p(\eta\vartheta_0-1)^2}+\Bigl(\frac{\eta}{1-\eta}\Bigr)^2\frac{\omega_j}{\varpi^2},
+  \]
+  with $\omega_j:=(\bP_\lambda)_{jj}\,\sigma_2^2\tr\bigl((\bI+\bK(\btheta_\lambda))\bP_\lambda\bigr)/s_j^2\le(1+2\|\btheta_\lambda\|^2)\,\tr(\bP_\lambda)/(\bP_\lambda)_{jj}$.
+  \item \status{first order} The reported interval uses $\bV_{\mathrm{mech}}$ in place of $\bV_0$. By Lemma~S6, $(\bV_{\mathrm{mech}})_{jj}=s_j^2(1+O_p(\vartheta_0^{-1})+O(\vartheta_0^{-2})+O_p(B^{-1/2}))$.
+  \item \status{asymptotic} Unconditionally, $\Pr[\theta_{\lambda,j}\notin\mathrm{CI}_j,\ \text{not refused}]\le\alpha_{\mathrm{CI}}+\alpha_L+\epsilon_j$, where $\epsilon_j\to0$ as $\vartheta^\star\to\infty$ and $B\to\infty$ with $p$, $\|\btheta_\lambda\|$ and $\tr(\bP_\lambda)/(\bP_\lambda)_{jj}$ bounded (choose $\eta=c/\vartheta_0$ and $\varpi\to0$ slowly in (iii)).
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) Given $\mathcal F_1$, $(\bE_2,\bff_2)$ is Gaussian, centred and independent of $(\lambda,\Psi)$ (Lemma~\ref{lem:S3}(a)), and $\bE_2\perp\bff_2$; so $\bxi$ is a centred Gaussian linear image with covariance $\bP_\lambda(\sigma_2^2\bI+\sigma_2^2\bK)\bP_\lambda$. From $(\bG_\lambda+\bE_2)\tilde\btheta=\bc+\bff_2$ and $\bG_\lambda\btheta_\lambda=\bc$ we get $(\bG_\lambda+\bE_2)(\tilde\btheta-\btheta_\lambda)=\bff_2-\bE_2\btheta_\lambda$.
+(ii) Let $\bM=\bG_\lambda^{-1/2}\bE_2\bG_\lambda^{-1/2}$. Then $\bI+\bP_\lambda\bE_2=\bG_\lambda^{-1/2}(\bI+\bM)\bG_\lambda^{1/2}$, so $\bG_\lambda^{1/2}(\tilde\btheta-\btheta_\lambda-\bxi)=-(\bI+\bM)^{-1}\bM\bG_\lambda^{1/2}\bxi$, whose norm is at most $\frac q{1-q}\|\bG_\lambda^{1/2}\bxi\|$. Finally $|\be_j^\top\mathbf v|\le\|\bG_\lambda^{-1/2}\be_j\|\|\bG_\lambda^{1/2}\mathbf v\|$.
+(iii) $\Pr[|\xi_j+R_j|>zs_j]\le\Pr[|\xi_j|>(z-\varpi)s_j]+\Pr[|R_j|>\varpi s_j]$. The first term is $2Q(z-\varpi)\le\alpha+2\varpi\phi(z-\varpi)$. For the second, $q\le\|\bE_2\|_\op/\lmin(\bG_\lambda)$ and Lemma~\ref{lem:S2}(c) give $\Pr[q>\eta]\le2e^{-p(\eta\vartheta_0-1)^2}$. On $\{q\le\eta\}$, (ii) and Markov's inequality with $\Ex\|\bG_\lambda^{1/2}\bxi\|^2=\tr(\bG_\lambda\bV_0)=\sigma_2^2\tr((\bI+\bK)\bP_\lambda)$ give the last term. The bound on $\omega_j$ uses $s_j^2\ge\sigma_2^2\|\bP_\lambda\be_j\|^2\ge\sigma_2^2(\bP_\lambda)_{jj}^2$ (as $\bK\succeq0$) and $\|\bK\|\le2\|\btheta\|^2$.
+(v) On $\Omega_L$, $\vartheta_0\ge\vartheta^\star$ (Lemma~\ref{lem:S3}(b)); integrate (iii)--(iv) over $\mathcal F_1$ and add $\Pr[\Omega_L^c]\le\alpha_L$.
+\end{proof}
+
+The bound in (iii) is a certificate that the error vanishes as $\vartheta_0\to\infty$, but it is loose (it uses the worst direction of $\bM$ and Markov's inequality). The \emph{typical} size of the remainder relative to $s_j$ is governed by
+\[
+  \sigma_2\tr(\bP_\lambda)\ \le\ \frac{p\,\sigma_2}{\lmin(\bG_\lambda)}=\frac{\sqrt p}{2\vartheta_0},
+\]
+the ratio of the $O(\sigma_2^2)$ mechanism bias $\sigma_2^2\bP_\lambda\bM_\chi(\bP_\lambda)\btheta_\lambda$ to the $O(\sigma_2)$ standard deviation. At $\vartheta_0=\vartheta^\star=2.5$ and $p=11$ this can reach $0.66$ when all eigenvalues of $\bG_\lambda$ sit at the floor. ``First order in $1/\vartheta$'' therefore hides a factor $\sqrt p$ (Correction~\ref{corr:firstorder}). In the simulations (Table~\ref{tab:fixed}) $\sigma_2\tr(\bP_\lambda)\le0.18$ in the realistic scenarios and $0.59$ in the stress scenario.
+
+\begin{theorem}[S5(b): bias-aware interval for $\beta_j$]\label{thm:S5b}
+Assume (M1) the working model on the clipped scale: $\by=\bX\bbeta+\bvarepsilon$ with $(\varepsilon_i)$ conditionally independent given $\bX$, $\Ex[\varepsilon_i\mid\bX]=0$ and $\Var(\varepsilon_i\mid\bX)=s^2$; (M2) $\|\bbeta\|\le B_\beta^{\mathrm{pub}}$ (possibly $+\infty$); (M3) $n>p$. Decompose
+\[
+  \tilde\theta_j-\beta_j=b_j+S_j+\xi_j+R_j,\qquad
+  b_j=-\lambda\,\be_j^\top\bP_\lambda\Psi\bbeta,\quad S_j=\be_j^\top\bP_\lambda\bX^\top\bvarepsilon,\quad R_j=\tilde\theta_j-\theta_{\lambda,j}-\xi_j .
+\]
+\begin{enumerate}[label=(\roman*),nosep]
+  \item \status{exact} $\Ex[\btheta_\lambda\mid\bX,\bE_1]=\bbeta-\lambda\bP_\lambda\Psi\bbeta$; $|b_j|\le\lambda\|\Psi\bP_\lambda\be_j\|\,\|\bbeta\|$, with equality for $\bbeta\parallel\Psi\bP_\lambda\be_j$. $\Var(S_j\mid\bX,\bE_1)=s^2(\bP_\lambda\bG\bP_\lambda)_{jj}$, and $\Cov(S_j,\xi_j)=0$.
+  \item \status{exact} If $T\sim\mathcal N(b,v^2)$ and $\bar B$ is a random variable with $|b|\le\bar B$ on an event $\Omega$, then $\Pr[|T|>v\cv_\alpha(\bar B/v)]\le\alpha+\Pr[\Omega^c]$, where $\cv_\alpha(t)$ is the $(1-\alpha)$-quantile of $|Z+t|$.
+  \item \status{exact on events} On $\Omega_L\cap\Omega_U$, $|b_j|\le\bar b_j^0:=\lambda\|\Psi\bP_\lambda\be_j\|\hat B_\beta$.
+  \item \status{exact for the oracle interval} Let $v_j^2=s^2(\bP_\lambda\bG\bP_\lambda)_{jj}+(\bV_0)_{jj}$. If $S_j+\xi_j\mid(\bX,\bE_1)\sim\mathcal N(0,v_j^2)$ and $R_j=0$, then $\tilde\theta_j\pm v_j\cv_{\alpha_{\mathrm{CI}}}(\bar b_j^0/v_j)$ misses $\beta_j$ with probability at most $\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U'$, where $\alpha_U'=\alpha_U$ for the corrected $U^{\mathrm c}_{yy}$ and $2\alpha_U$ for the specification's $U_{yy}$.
+  \item \status{first order} The reported interval replaces $\bP_\lambda$ by $\tilde\bP$ in $\bar b_j$ (relative error $\le\|\tilde\bP\|\|\bE_2\|=O_p(\vartheta_0^{-1})$, since $\bP_\lambda-\tilde\bP=\tilde\bP\bE_2\bP_\lambda$), and $v_j^2$ by $V_{jj}=(\bV_{\mathrm{mech}})_{jj}+\tilde s^2(\tilde\bP\hat\bG_2\tilde\bP)_{jj}$. It also drops $R_j$ (Theorem~\ref{thm:S5a}(ii)) and ignores the dependence of $\bV_0$ on $\btheta_\lambda$, hence on $\bvarepsilon$, which is a relative $O(\|\btheta_\lambda-\Ex\btheta_\lambda\|/\|\btheta_\lambda\|)$ effect.
+  \item \status{asymptotic} Under (M1) the errors are bounded (clipping), so $S_j$ is normal only asymptotically: by the Berry--Esseen bound for independent summands~\cite{Petrov75}, $\sup_x|\Pr[S_j\le x\,\mathrm{sd}(S_j)\mid\bX]-\Phi(x)|\le C_{\mathrm{BE}}\sum_i|a_{ij}|^3\Ex|\varepsilon_i|^3/(s^3\|\mathbf a_j\|^3)$ with $\mathbf a_j=\bX\bP_\lambda\be_j$. Together with (v): $\Pr[\beta_j\notin\mathrm{CI}_j,\ \text{not refused}]\le\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U'+\epsilon_j'$, with $\epsilon_j'\to0$ when the Lyapunov ratio $\to0$, $\vartheta^\star\to\infty$ and $B\to\infty$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) $\Ex[\bc\mid\bX]=\bG\bbeta$ and $\bP_\lambda\bG=\bI-\lambda\bP_\lambda\Psi$; $(\lambda,\Psi)$ is independent of $\bvarepsilon$ given $\bX$, because it depends on $\bG$ and $\bE_1$ only. Cauchy--Schwarz with $\Psi,\bP_\lambda$ symmetric. $\Ex[\bxi\mid\bX,\bvarepsilon,\bE_1]=0$ gives the zero covariance. (ii) $t\mapsto\Pr[|Z+t|\le c]$ is even and non-increasing in $|t|$ (Anderson's lemma~\cite{Anderson55}), so $\cv_\alpha$ is non-decreasing in $|t|$. On $\Omega$, $\cv_\alpha(\bar B/v)\ge\cv_\alpha(|b|/v)$, and $\Pr[|T|>v\cv_\alpha(|b|/v)]=\Pr[|Z+b/v|>\cv_\alpha(|b|/v)]=\alpha$. This is the construction of Armstrong and Kolesár~\cite{AK20}, as used for regularized regression by Armstrong, Kolesár and Kwon~\cite{AKK20}. (iii) Lemma~\ref{lem:S4}(c) and (i). (iv) Apply (ii) with $\Omega=\Omega_L\cap\Omega_U$ and $\bar B=\bar b_j^0$. The dependence between $\bar b_j^0$ and $T$ (through $\bvarepsilon$ in $U$, and through $\bE_1$) is harmless, because (ii) does not need $\bar B$ independent of $T$. (v), (vi) are as stated.
+\end{proof}
+
+\paragraph{Variance estimate.} $\tilde s^2$ targets $\RSS_\lambda/(n-p)$, and $\Ex[\RSS_\lambda\mid\bX]=s^2\sum_i(1-h_i)^2+\|\lambda\bX\bP_\lambda\Psi\bbeta\|^2\ge(n-p)s^2$, where $h_i\in[0,1)$ are the eigenvalues of $\bX\bP_\lambda\bX^\top$ (at most $p$ of them non-zero). So $\tilde s^2$ is conservative under the ridge (Table~\ref{tab:sim}: $1.05$, $1.48$ and $1.79$ against $s^2=1$ in three ridge scenarios). This conservativeness, and the worst-case nature of $\bar b_j$, explain the over-coverage of the $\beta$ intervals.
+
+\paragraph{Refusals and conditioning on the gate.} All statements are unconditional, with a refusal producing no interval (equivalently, the trivial interval $\R$). Conditionally on passing, $\Pr[\text{miss}\mid\text{pass}]\le\Pr[\text{miss},\text{pass}]/(1-\Pr[\textsf{refused}])$, with $\Pr[\textsf{refused}]$ bounded in Lemma~\ref{lem:S3}(d). The gate does not make the bootstrap moments finite (Lemma~S6).
+
+% ======================================================================
+\section{Lemma S6: the bootstrap RSS correction and covariance}
+\label{sec:S6}
+
+Fix $\mathcal F_1$. Write $\RSS(\bG',\bc',yy')=yy'-\bc'^\top\btheta'-\lambda\btheta'^\top\Psi\btheta'$ with $\btheta'=(\bG'+\lambda\Psi)^{-1}\bc'$; this equals $yy'-2\bc'^\top\btheta'+\btheta'^\top\bG'\btheta'$, so $\RSS_\lambda:=\RSS(\bG,\bc,\by^\top\by)=\|\by-\bX\btheta_\lambda\|^2$ and $\widetilde\RSS=\RSS(\hat\bG_2,\hat\bc_2,\widehat{yy})$. Define the normalized quantities
+\[
+  \bM=\bG_\lambda^{-1/2}\bE_2\bG_\lambda^{-1/2},\quad \bh=\bG_\lambda^{-1/2}\bff_2,\quad \bphi=\bG_\lambda^{1/2}\btheta_\lambda,\quad \bN=\lambda\bG_\lambda^{-1/2}\Psi\bG_\lambda^{-1/2}\ (0\preceq\bN\preceq\bI),
+\]
+so that, exactly, $\widetilde\RSS=\by^\top\by+g-(\bphi+\bh)^\top(\bI+\bM)^{-1}\bigl[\bI+\bN(\bI+\bM)^{-1}\bigr](\bphi+\bh)$. For a symmetric truncation level $\eta\in(0,1)$ let $T_\eta=\{\|\bM\|_\op\le\eta\}$. In the \emph{truncated bootstrap} a draw is kept iff $\|(\hat\bG_2+\lambda\Psi)^{-1/2}\bE^*(\hat\bG_2+\lambda\Psi)^{-1/2}\|_\op\le\eta$; this event is invariant under $\bE^*\mapsto-\bE^*$.
+
+\begin{lemma}[S6]\label{lem:S6}
+Under Assumption~\ref{ass:N}, conditionally on $\mathcal F_1$:
+\begin{enumerate}[label=(\alph*),nosep]
+  \item \textbf{Expansion.} $\widetilde\RSS=\RSS_\lambda+R_1+R_2+R_3+\dots$, converging on $T_\eta$, where $R_k$ is homogeneous of degree $k$ in $(\bM,\bh,g)$:
+  \[
+    R_1=g-2\btheta_\lambda^\top\bff_2+\btheta_\lambda^\top\bE_2\btheta_\lambda-2\lambda\btheta_\lambda^\top\Psi\bxi,\qquad
+    R_2=-\bxi^\top(\bG+2\lambda\Psi)\bxi+2\lambda\btheta_\lambda^\top\Psi\bP_\lambda\bE_2\bxi ,
+  \]
+  with $\bxi=\bP_\lambda(\bff_2-\bE_2\btheta_\lambda)$, and $|R_k|\le c_k\|\bM\|^{k-2}\bigl(\|\bM\bphi\|+\|\bh\|+\|\bN\bphi\|\bigr)\bigl(\|\bM\bphi\|+\|\bh\|\bigr)$ for $k\ge2$, with combinatorial constants $c_k\le4(k+1)$.
+  \item \textbf{Second-order bias.} $\Ex[R_1]=\Ex[R_3\mid T_\eta]=0$ (odd degree, symmetric event), and
+  \[
+    \Ex[R_2]=b_{\RSS}(\bG,\btheta_\lambda):=-\sigma_2^2\Bigl[\tr\bigl((\bG+2\lambda\Psi)\bP_\lambda(\bI+\bK(\btheta_\lambda))\bP_\lambda\bigr)+2\lambda\,\btheta_\lambda^\top\Psi\bP_\lambda\bM_\chi(\bP_\lambda)\btheta_\lambda\Bigr].
+  \]
+  Hence $\Ex[\widetilde\RSS\mid T_\eta]-\RSS_\lambda=b_{\RSS}(\bG,\btheta_\lambda)+\rho_1$, with $|\rho_1|\le C_\eta\,\vartheta_0^{-2}\,\mathcal S_2+O(e^{-p(\eta\vartheta_0-1)^2})$, where $\mathcal S_2$ is the scale of the second-order terms, $\mathcal S_2\asymp\sigma_2^2(1+\|\btheta_\lambda\|^2)\tr(\bP_\lambda)+\|\bN\bphi\|\,\sigma_2(1+\|\btheta_\lambda\|)\sqrt{\tr\bP_\lambda}/\vartheta_0$.
+  \item \textbf{RSS correction.} Let $\Corr_\infty=\Ex^*[\RSS^*\mid T^*_\eta]-\widetilde\RSS$ be the $B\to\infty$ limit of $\Corr$ for the truncated bootstrap. Then $\Corr_\infty=b_{\RSS}(\hat\bG_2,\tilde\btheta)+\hat\rho_1$, and
+  \[
+    \Ex\bigl[\widetilde\RSS-\Corr_\infty\ \big|\ T_\eta\bigr]-\RSS_\lambda=O\bigl(\vartheta_0^{-2}\mathcal S_2\bigr).
+  \]
+  The uncorrected bias $b_{\RSS}=O(\mathcal S_2)$ is removed up to a remainder smaller by a factor $\vartheta_0^{-2}$: $O(\sigma_2^2)$ becomes $O(\sigma_2^4)$. The Monte Carlo error of $\Corr$ with $B$ draws is $O_p(\mathcal S_1/\sqrt B)$ with $\mathcal S_1^2=\Var(R_1)=\sigma_{yy}^2+\sigma_2^2\,O\bigl((1+\|\btheta_\lambda\|^2)^2\bigr)$. Antithetic pairs $(\bE^*,\bff^*,g^*),(-\bE^*,-\bff^*,-g^*)$ cancel $R_1$ and $R_3$ exactly and reduce it to $O_p(\mathcal S_2/\sqrt B)$.
+  \item \textbf{Covariance.} $\Var(\tilde\btheta\mid T_\eta)=\bV_0\,(1+O(\vartheta_0^{-2}))$ and $\Cov^*(\btheta^*\mid T^*_\eta)=\bV_0(\hat\bG_2,\tilde\btheta)(1+O(\hat\vartheta^{-2}))$, with $\bV_0(\bG',\btheta')=\sigma_2^2(\bG'+\lambda\Psi)^{-1}(\bI+\bK(\btheta'))(\bG'+\lambda\Psi)^{-1}$; and $\bV_0(\hat\bG_2,\tilde\btheta)=\bV_0(\bG,\btheta_\lambda)(1+O_p(\vartheta_0^{-1}))$, in the sense of the diagonal entries relative to themselves. So $\bV_{\mathrm{mech}}$ estimates the mechanism covariance to first order, with relative error $O_p(\vartheta_0^{-1})+O(\vartheta_0^{-2})+O_p(B^{-1/2})$.
+  \item \textbf{Untruncated bootstrap.} Without truncation, $\Ex^*\|\btheta^*\|=\infty$ (already for $p=1$, $\Ex|1/(a+e)|=\infty$ for Gaussian $e$), so $\Cov_b(\btheta^*_b)$ and $\overline{\RSS^*}$ do not converge as $B\to\infty$. For fixed $B$ they coincide with the truncated versions except on an event of probability $\le B\cdot2e^{-p(\eta\hat\vartheta-1)^2}$; the gate $\hat\vartheta\ge1$ alone does not make this small.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}[Proof \status{first order: constants $c_k$, $C_\eta$ and the scale $\mathcal S_2$ are not made fully explicit}]
+(a) Expand $(\bI+\bM)^{-1}=\sum_k(-\bM)^k$, which converges on $T_\eta$. Every term of degree $k\ge2$ in $(\bM,\bh)$ is a bilinear form whose two outer vectors are $\bh$, $\bM\bphi$ or $\bN\bphi$, with at most one of them $\bN\bphi$ and at most $k-2$ further factors $\bM$ or $\bN$ between them ($\|\bN\|\le1$); the number of such terms is at most $4(k+1)$ (outer pairs $(\bphi,\bphi)$: $k+2$ terms; $(\bh,\bphi)$ and $(\bphi,\bh)$: $k+1$ each; $(\bh,\bh)$: $k$), each with coefficient $\pm1$. The explicit $R_1,R_2$ follow by differentiation: with $\btheta'=\btheta_\lambda+\bxi+\bzeta+\dots$, $\bzeta=-\bP_\lambda\bE_2\bxi$, use $\bc-\bG\btheta_\lambda=\lambda\Psi\btheta_\lambda$ and $\bff_2-\bE_2\btheta_\lambda=\bG_\lambda\bxi$.
+
+(b) Odd-degree terms have zero mean under the symmetric Gaussian law and on the symmetric event $T_\eta$. $\Ex[\bxi^\top\mathbf A\bxi]=\tr(\mathbf A\bV_0)$ and $\Ex[\bE_2\bP_\lambda\bE_2]=\sigma_2^2\bM_\chi(\bP_\lambda)$ give $b_{\RSS}$; $\Ex[\bE_2\bP_\lambda\bff_2]=0$. The degree-4 terms are bounded via (a) by $c_4\Ex[\|\bM\|^2(\cdot)(\cdot)]$, and $\Ex\|\bM\|^2\le(\Ex\|\bE_2\|^2)/\lmin(\bG_\lambda)^2=\vartheta_0^{-2}(1+O(p^{-1/2}))$ by Lemma~\ref{lem:S2}(d) and (b); also $\Ex\|\bh\|^2=\sigma_2^2\tr\bP_\lambda$ and $\Ex\|\bM\bphi\|^2=\sigma_2^2\tr(\bP_\lambda\bK(\btheta_\lambda))\le2\sigma_2^2\|\btheta_\lambda\|^2\tr\bP_\lambda$. Degrees $\ge5$ are summed geometrically on $T_\eta$. Removing the conditioning costs $\Pr[T_\eta^c]\le2e^{-p(\eta\vartheta_0-1)^2}$ (Lemma~\ref{lem:S2}(c)) times bounded conditional moments.
+
+(c) Apply (b) in the bootstrap world centred at $(\hat\bG_2,\hat\bc_2,\widehat{yy})$, where the bootstrap law is exactly the mechanism law. Then $b_{\RSS}(\hat\bG_2,\tilde\btheta)-b_{\RSS}(\bG,\btheta_\lambda)$ is a smooth function of $(\bE_2,\bff_2)$ whose linear part has zero mean; its quadratic part is $O(\vartheta_0^{-2}\mathcal S_2)$ in mean, since $b_{\RSS}$ is homogeneous of degree 2 in the noise scale and every derivative brings a factor of order $\vartheta_0^{-1}$. The Monte Carlo statements follow from $\Var(\RSS^*)=\Var(R_1^*)+O(\mathcal S_2^2)$, and the antithetic average is even in the noise.
+
+(d) $\Var(\tilde\btheta)=\Var(\bxi)+2\Cov(\bxi,\bzeta)+\dots$; $\Cov(\bxi,\bzeta)$ is an odd (third) moment and vanishes, and the remaining terms are $O(\vartheta_0^{-2})$ relative by (a). The plug-in error comes from $\tilde\bP-\bP_\lambda=-\tilde\bP\bE_2\bP_\lambda$ ($\|\cdot\|\le\|\tilde\bP\|\|\bE_2\|\|\bP_\lambda\|$, relative $O_p(\vartheta_0^{-1})$) and $\tilde\btheta-\btheta_\lambda=O_p(\|\bxi\|)$.
+
+(e) For $p=1$, $\int|a+e|^{-1}\phi_\sigma(e)\,de=\infty$ because the density is positive at $e=-a$. For general $p$, $\|(\hat\bG_2+\bE^*+\lambda\Psi)^{-1}\|\ge1/|\lmin(\cdot)|$, and the law of $\lmin$ has a positive density at $0$. Moreover $\hat\vartheta\ge1$ only gives $\lmin(\hat\bG_2+\lambda\Psi)\ge2\sigma_2\sqrt p$, which for $p=11$ is only $1.33\,\Ex\lmax(\bE^*)$, so near-singular draws are not rare when $\hat\vartheta$ is close to~1.
+\end{proof}
+
+\paragraph{Closed-form alternative.} Because $b_{\RSS}$ and $\bV_0$ are explicit, $\Rp$ may replace the Monte Carlo by $\Corr^{\mathrm{cf}}=b_{\RSS}(\hat\bG_2,\tilde\btheta)$ and $\bV^{\mathrm{cf}}_{\mathrm{mech}}=\bV_0(\hat\bG_2,\tilde\btheta)$. These have the same first-order guarantees as the truncated bootstrap, no Monte Carlo error, and no moment problem. They are post-processing, so they cost no privacy.
+
+\paragraph{Numerical checks} (\texttt{s3\_s6\_sim.py}, fixed design and data, $2\times10^4$ stage-2 releases for the ``truth'', 200 independent stage-2 releases each with $B=400$ bootstrap draws). Table~\ref{tab:fixed} shows that $b_{\RSS}$ matches the Monte Carlo bias within 2\% when $\sigma_2\tr\bP_\lambda\le0.18$ and within 5\% at $0.59$. $\bV_0$ and $\bV_{\mathrm{mech}}$ match the true mechanism standard deviations within 2\% in the realistic scenarios. The spread of the bootstrap standard errors across releases (3.5--4\%) is essentially the Monte Carlo error $1/\sqrt{2B}=3.5\%$. Antithetic pairs reduce the Monte Carlo s.d.\ of $\Corr$ by a factor of 5--100 at the same cost. In the stress scenario ($\vartheta_0=2.52$, outside the default design) $\bV_0$ is 2--6\% too small, the bootstrap is 3--10\% too large, and $\Corr$ overshoots the bias by 12\%. The corrected RSS still removes 87\% of the bias.
+
+\begin{table}[h]
+\centering\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+scenario & $\vartheta_0$ & $\sigma_2\tr\bP_\lambda$ & $\Ex[\widetilde\RSS]-\RSS_\lambda$ (MC) & $b_{\RSS}$ & $\Corr$ mean (sd) & antithetic (sd) & $\max_j|\mathrm{sd}_{\bV_{\mathrm{mech}}}/\mathrm{sd}-1|$\\
+\midrule
+off ($\lambda=0$) & 48.7 & 0.017 & $-0.106\pm0.062$ & $-0.107$ & $-0.08$ (0.44) & $-0.107$ (0.004) & 0.009\\
+ridge $\bI$ & 7.07 & 0.145 & $-5.19\pm0.27$ & $-5.29$ & $-5.42$ (1.90) & $-5.33$ (0.21) & 0.017\\
+ridge $\PiO$ & 8.05 & 0.111 & $-2.92\pm0.13$ & $-2.90$ & $-3.03$ (0.99) & $-2.94$ (0.12) & 0.015\\
+small $n$ & 8.17 & 0.183 & $-6.97\pm0.16$ & $-6.96$ & $-6.98$ (1.14) & $-7.04$ (0.23) & 0.018\\
+stress & 2.52 & 0.588 & $-23.61\pm0.17$ & $-22.49$ & $-26.48$ (1.98) & $-26.71$ (1.58) & 0.097\\
+\bottomrule
+\end{tabular}}
+\caption{Lemma S6 at fixed data and fixed $(\lambda,\Psi)$. ``$\pm$'' is the Monte Carlo standard error; ``sd'' is the s.d.\ across 200 independent releases.}
+\label{tab:fixed}
+\end{table}
+
+% ======================================================================
+\input{stats_s7_s10}
+
+% ======================================================================
+\section{Simulation of Algorithm~6 end to end}
+\label{sec:sim}
+
+\texttt{alg6.py} implements Algorithm~6 line by line (stage~1, $r_1$, $\hat L$, $\lambda_I$, closed-form $\lambda_O$ checked against bisection, the $\kappa_\Psi$ rule, stage~2, gate, ridge solve, bootstrap with $B=300$, $\Corr$, $\tilde s^2$, both intervals, $U_{yy}$ as specified and corrected). \texttt{s3\_s6\_sim.py} runs 2000 replications per scenario: fixed clipped design ($d_R=4$, $d_O=6$, $p=11$, correlated features clipped at the 99\% norm quantile), bounded uniform errors ($s=1$), $B_y$ a true bound so that the working model holds exactly, $\alpha=0.05$, $\alpha_L=\alpha_U=0.0025$, $\vartheta^\star=2.5$, $\kappa_\Psi=2$, $\sigma_1=2.5\sigma_2$, joint mode.
+
+\begin{table}[h]
+\centering\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrlcccc@{}}
+\toprule
+scenario & $n$ & $\sigma_2$ & med.\ $\lambda$ & $\Psi$ & refused & Wald cov.\ (range over $j$) & $\beta$ cov.\ & $\overline{\widetilde\RSS-\RSS_\lambda}$ / after $\Corr$\\
+\midrule
+off & 4000 & 4 & 0 & -- & 0 & 0.946--0.958 & 0.945--0.968 & $-0.14$ / $-0.05$ ($\pm0.20$)\\
+ridge $\bI$ & 1500 & 20 & 477 & $\bI$ & 0 & 0.948--0.960 & $\infty$ ($\hat L=0$) & $-6.83$ / $-1.68$ ($\pm0.86$)\\
+ridge $\bI$, $B^{\mathrm{pub}}=1.5\|\bbeta\|$ & 1500 & 20 & 477 & $\bI$ & 0 & 0.948--0.960 & 1.000 & as above\\
+ridge $\bI$, private $\hat B_\beta$ & 1500 & 14 & 167 & $\bI$ & 0 & 0.950--0.960 & 1.000$^\dagger$ & $-4.49$ / $-1.31$ ($\pm0.66$)\\
+ridge $\PiO$ & 3000 & 10 & 439 & $\PiO$ & 0 & 0.944--0.962 & $\infty$ ($\hat L=0$) & $-3.03$ / $-0.07$ ($\pm0.42$)\\
+small $n$, $B^{\mathrm{pub}}$ & 200 & 20 & 1021 & $\bI$ & 0 & 0.946--0.962 & 1.000 & $-7.43$ / $-0.41$ ($\pm0.50$)\\
+stress, $B^{\mathrm{pub}}$ & 60 & 20 & 319 & $\bI$ & 0 & 0.960--0.974 & 1.000 & $-23.35$ / $+3.05$ ($\pm0.57$)\\
+\bottomrule
+\end{tabular}}
+\caption{Algorithm 6, 2000 replications each; Wald target $1-\alpha_{\mathrm{CI}}=0.955$, $\beta$ target $\ge0.95$. In every scenario $\Pr[\Omega_L]$, $\Pr[\vartheta_0\ge\vartheta^\star]$, $\Pr[\hat L\le\lmin(\bG)]$, $\Pr[U_{yy}\ge\Ex\by^\top\by]$ (both versions) and the agreement of closed-form $\lambda_O$ with bisection were all $1.000$. ``Stress'' uses $\sigma_1=0.01\sigma_2$, so that $\vartheta_0\approx\vartheta^\star$; it is outside the default design. $^\dagger$The private bound was finite in 96.1\% of replications.}
+\label{tab:sim}
+\end{table}
+
+The Wald interval for $\btheta_\lambda$ attains its nominal level in every realistic scenario and over-covers slightly in the stress scenario, because the bootstrap variance there is too large. The $\beta$ interval over-covers whenever the ridge is active: $\bar b_j$ is a worst-case bound and $\tilde s^2$ is conservative. It is uninformative ($\hat L=0$) without a public bound in two of the three ridge scenarios.
+
+% ======================================================================
+\section{Corrections to the specification}
+\label{sec:corrections}
+
+Each item states what \texttt{protocol\_v31.tex} says, what is wrong or imprecise, and the corrected statement.
+
+\begin{correction}[Sensitivity: $d_O=1$, the regime-3 algorithm, and the $\by^\top\by$ mode]\label{corr:sens}
+\textsc{DeltaRep}'s comment ``for $d_O\ge2$ these are exact suprema'' is correct (Theorem~\ref{thm:S1}). For $d_O=1$ the same numbers are valid but conservative upper bounds; the exact values are in Proposition~\ref{prop:dO1}, e.g.\ $\Delta_G^{(1)}=2\sqrt{ro}$ for $o\le\frac{11+5\sqrt5}8r$. In regime 3, replace ``one-dimensional maximization, rounded up'' by the exact candidate enumeration of Theorem~\ref{thm:S1}(iv) (three cubics). Rounding up may be kept as a safeguard. The \textsf{joint}/\textsf{separate} rule of Algorithm~1, line~5, is consistent with Theorem~\ref{thm:S1}(ix): $\by^\top\by$ is free iff $\max_tG\le4w(r+o)$ in regime 3, always free if $w\le2(r+o)$, never free if $w>3(r+o)$.
+\end{correction}
+
+\begin{correction}[Statements inherited from the earlier paper]\label{corr:paper}
+(i) ``$\by^\top\by$ is free'' is false in general: $(1,1,5)$ gives $\Delta=26.07$ against $14.14$. (ii) ``Using the full Frobenius norm of $\Delta\bB$ would be conservative'' is false for $d_O\ge2$: the supremum is the same (Lemma~\ref{lem:triu}); the $\triu$ maximum is attained only when $\bD$ is diagonal. (iii) The worst case is not ``$(\bx,y)\mapsto(-\bx,-y)$'' in general; that is regime 2 only. In regime 1 it is $y'=-y$ with $\cos\angle(\bx,\bx')=-(r-w)/(2o)$ and $\bD$ diagonal, and in regime 3 $|y'|<B_y$ when $\by^\top\by$ costs. (iv) ``At the optimum the norms are at their bounds'' is true for $\|\bxd\|,\|\bx\|,\|\bx'\|$ (Lemma~\ref{lem:red}), false for $|y'|$ in costly regime 3, and false for $d_O=1$, where only $\max(|x|,|x'|)=B_O$.
+\end{correction}
+
+\begin{correction}[The radius $r_1$]\label{corr:r1}
+The comment ``$\Pr[\|\bG-\hat\bG_1\|_\op>r_1]\le\alpha_L$'' (Algorithm~6, line~2) is not proved and would need $\Ex\|\bE\|_\op\le2\sigma\sqrt p$ (Remark~\ref{rem:S2open}). Replace it by
+\[
+  \Pr\bigl[\lmax(\hat\bG_1-\bG)>r_1\bigr]\le\alpha_L,
+\]
+which is proved (Lemma~\ref{lem:S2}(c)) and is the only event Algorithm~6 uses. For a two-sided statement use $r_1=\sigma_1(2\sqrt p+2\sqrt{\ln(2/\alpha_L)})$. Optional improvement: since the law of $\lmax(\bE_1)/\sigma_1$ depends only on $(p,d_A)$, $r_1$ may be set to its exact $(1-\alpha_L)$-quantile, computed offline by Monte Carlo with a certified error. For $p=11$ this is $7.43\sigma_1$ instead of $11.53\sigma_1$, and it costs no privacy.
+\end{correction}
+
+\begin{correction}[$\lambda_O$ and the $\PiO$ ridge]\label{corr:lamO}
+Replace the bisection by the closed form of Lemma~\ref{lem:S3}(c). State explicitly that $\lambda_O<\infty$ iff $\lmin(\bA)>g^\star+r_1$ (almost surely), and that the $\PiO$ ridge can never certify $\vartheta_0>\lmin(\bA)/(2\sigma_2\sqrt p)$.
+\end{correction}
+
+\begin{correction}[$U_{yy}$]\label{corr:Uyy}
+As written, $U_{yy}$ bounds $\Ex[\by^\top\by\mid\bX]$ with probability $\ge1-2\alpha_U$, not $1-\alpha_U$ (two one-sided events at level $\alpha_U$ each). The Hoeffding term $B_y^2\sqrt{n\ln(1/\alpha_U)/2}$ is itself correct, but it requires the $y_i$ to be conditionally independent given $\bX$. Corrected:
+\begin{align*}
+  U_{yy}&=\min\Bigl\{\widehat{yy}+z_{1-\alpha_U/2}\,\sigma_{yy}+B_y^2\sqrt{n\ln(2/\alpha_U)/2},\ nB_y^2\Bigr\}\qquad\text{or}\\
+  U_{yy}&=\min\Bigl\{\widehat{yy}+\sqrt{2\ln(1/\alpha_U)(nB_y^4/4+\sigma_{yy}^2)},\ nB_y^2\Bigr\}.
+\end{align*}
+\end{correction}
+
+\begin{correction}[Estimand under clipping]\label{corr:estimand}
+``CI for $\beta_j$'' must name its target. Either (A) assume the working linear model, conditionally independent and homoskedastic, \emph{for the clipped data}; this holds if the bounds are true bounds, so that clipping never binds. Or (B) target the projection coefficient $\bbeta^*=\bG^{-1}\tilde\bX^\top\Ex[\tilde\by\mid\tilde\bX]$, for which the bias bound remains valid but the homoskedastic variance is not, because clipping induces heteroskedasticity, so coverage is not guaranteed. Exactly Gaussian errors cannot hold with $|y|\le B_y$; normality is asymptotic (Theorem~\ref{thm:S5b}(vi)).
+\end{correction}
+
+\begin{correction}[First-order accuracy is governed by $\sigma_2\tr\bP_\lambda$, not by $1/\vartheta$ alone]\label{corr:firstorder}
+The validity ratio $\vartheta_0$ controls convergence of the Neumann series. The relative size of the neglected mechanism bias in the Wald interval is of order $\sigma_2\tr(\bP_\lambda)\le\sqrt p/(2\vartheta_0)$, which at $\vartheta^\star=2.5$, $p=11$ may be $0.66$. Coverage claims are asymptotic as $\vartheta_0\to\infty$ at fixed $p$. Report $\sigma_2\tr(\tilde\bP)$ as a diagnostic, and consider centring at the bootstrap bias-corrected $2\tilde\btheta-\overline{\btheta^*}$.
+\end{correction}
+
+\begin{correction}[Bootstrap]\label{corr:boot}
+Without truncation the bootstrap mean and covariance of $\btheta^*$ do not exist (Lemma~\ref{lem:S6}(e)); the gate $\hat\vartheta\ge1$ does not fix this. Use the symmetric truncation of Lemma~\ref{lem:S6} (keep a draw iff $\|(\hat\bG_2+\lambda\Psi)^{-1/2}\bE^*(\hat\bG_2+\lambda\Psi)^{-1/2}\|_\op\le\eta$, e.g.\ $\eta=1/2$), or the closed forms $b_{\RSS}(\hat\bG_2,\tilde\btheta)$ and $\bV_0(\hat\bG_2,\tilde\btheta)$. Use antithetic pairs if Monte Carlo is kept. ``$\bV_{\mathrm{mech}}$ is the mechanism covariance'' holds to first order only (relative $O_p(\vartheta_0^{-1})$).
+\end{correction}
+
+\begin{correction}[The bias bound $\bar b_j$]\label{corr:bbar}
+$\bar b_j=\lambda\|\Psi\tilde\bP\be_j\|\hat B_\beta$ uses $\tilde\bP$; the rigorous bound uses $\bP_\lambda$. Either state the interval as first order, or inflate: on $\{\|\bE_2\|_\op\le r_2\}$ with $r_2=\sigma_2(2\sqrt p+2\sqrt{\ln(2/\alpha_2)})$ and $\|\tilde\bP\|r_2<1$, $\|\Psi\bP_\lambda\be_j\|\le\|\Psi\tilde\bP\be_j\|+\|\tilde\bP\|r_2\|\tilde\bP\be_j\|/(1-\|\tilde\bP\|r_2)$, at the price of a further $\alpha_2$ in the split.
+\end{correction}
+
+\begin{correction}[The private bound on $\|\bbeta\|$]\label{corr:privbound}
+$\sqrt{U_{yy}/\hat L}<\infty$ iff $\lmin(\hat\bG_1)>r_1$. When the ridge is active, $\lmin(\hat\bG_1)<g^\star+r_1$, and in our scenarios $\hat L=0$ in every replication of two of three ridge settings. Even when finite, the bound is of order $\sqrt{(s^2+\bbeta^\top\Sigma\bbeta)/\lmin(\Sigma)}$, far above $\|\bbeta\|$. The specification should say that the $\beta$ interval is informative essentially only with a public $B_\beta^{\mathrm{pub}}$ when the ridge binds.
+\end{correction}
+
+\begin{correction}[Gate and refusals]\label{corr:gate}
+State whether coverage is unconditional (refusal = no claim) or conditional on passing; the latter loses a factor $1/(1-\Pr[\textsf{refused}])$. The rigorous refusal bound at the defaults is weak, $\alpha_L+e^{-p(\vartheta^\star-2)^2}=\alpha_L+0.064$ for $p=11$, although Monte Carlo gives essentially zero. The notation table should distinguish $\vartheta_0$ (guaranteed $\ge\vartheta^\star$ on $\Omega_L$) from the gate statistic $\hat\vartheta$.
+\end{correction}
+
+\begin{correction}[Minor]\label{corr:minor}
+(i) The reported ``shrinkage $-\lambda\tilde\bP\Psi\tilde\btheta$'' is not $\btheta_\lambda-\hat\bbeta_{\mathrm{OLS}}$, which equals $-\lambda\bG^{-1}\Psi\btheta_\lambda$ exactly; it agrees with it only to first order in $\lambda\|\bP_\lambda\Psi\|$, which is not small when the ridge binds. Rename it or report the exact form when $\bG$ is well conditioned. (ii) $\tilde s^2$ is conservative under the ridge (Section~\ref{sec:S5}); this is a feature, but it should be stated. (iii) The printed $\Delta=86.18$, $\Delta_G=77.20$ correspond to unrounded bounds; with $(5.59,6.24,2.89)$ the values are $86.15$, $77.16$. (iv) $\sigma_{yy}$ is used in Algorithm~6 but not defined: it is $\sigma_2$ in joint mode and $\sigma_y$ in separate mode.
+\end{correction}
+
+% ======================================================================
+\section{Steps not made fully rigorous}
+\label{sec:open}
+
+\begin{enumerate}[nosep,label=(\arabic*)]
+  \item $\Ex\|\bE\|_\op\le2\sigma\sqrt p$ (two-sided) is not proved (Remark~\ref{rem:S2open}); it is not needed by the algorithm.
+  \item (Resolved.) The constant of $\mathrm{TV}_1$ is now proved, with an explicit $\sigma^{-3}$ term (Lemma~\ref{lem:S0}(b)).
+  \item The boundary $w^*(r,o)$ of the free set in regime 3 is characterized exactly as $\max_tG=4w(r+o)$, but its interval structure and the table of Remark~\ref{rem:freeset} are numerical. Only $2(r+o)\le w^*\le3(r+o)$ and $w^*(r,0)=\frac{11+5\sqrt5}8r$ are proved.
+  \item For $d_O=1$, $\Delta^{(1)}$ (with $\by$) has no closed form; it is an exact two-variable maximization.
+  \item Lemma~S6: the constants $c_k$, $C_\eta$ and the scale $\mathcal S_2$ are given in order of magnitude only; the remainder orders are rigorous in form but not in constants.
+  \item Proposition~S5: replacing the oracle quantities ($\bV_0$, $\bP_\lambda$ in $\bar b_j$, $v_j$) by plug-ins is first order. Normality of the sampling term is asymptotic. The variation of $\bV_0$ with $\btheta_\lambda$ is neglected.
+  \item The homoskedastic variance is not valid under binding clipping (Correction~\ref{corr:estimand}). A public variance bound gives a valid interval (Proposition~\ref{prop:S10b}); a guarantee with the data-driven $\tilde s^2$ is open.
+  \item The size of the downward bias of $\lmin(\hat\bG_1)$ is bounded only by the comparison of Lemma~\ref{lem:S8bias}, which is about a factor $1.9$ loose on the simulation population; the empirical switch-off factors $1.2$ and $1.4$ are not bounds (Remark~\ref{rem:S8open}).
+\end{enumerate}
+
+% ======================================================================
+\section*{Scripts}
+All in \texttt{v31/proofs/scratch\_stats/} (Python 3, NumPy, SciPy; \texttt{sim\_core.py} imported read-only):
+\texttt{s1\_common.py} (exact $\Delta$, pieces, worst-case configuration), \texttt{s1\_symbolic.py} (exact verification of the polynomial identities of the S1 proof), \texttt{s1\_check.py} (Table~\ref{tab:S1num}), \texttt{s1\_freeset.py} and \texttt{s1\_band.py} (free set), \texttt{s2\_check.py} (Table~\ref{tab:S2num}, discrete-Gaussian and TV checks), \texttt{s2\_goe\_ratio.py} (Remark~\ref{rem:S2open}), \texttt{alg6.py} (Algorithm~6), \texttt{s3\_s6\_sim.py} (Tables~\ref{tab:fixed}--\ref{tab:sim}); outputs in \texttt{*.out}.
+
+% ======================================================================
+\begin{thebibliography}{99}
+
+\bibitem{Anderson55}
+T.~W.~Anderson, ``The integral of a symmetric unimodal function over a symmetric convex set and some probability inequalities,'' \textit{Proceedings of the American Mathematical Society} 6(2):170--176, 1955.
+
+\bibitem{AK20}
+T.~B.~Armstrong and M.~Kolesár, ``Simple and honest confidence intervals in nonparametric regression,'' \textit{Quantitative Economics} 11(1):1--39, 2020.
+
+\bibitem{AKK20}
+T.~B.~Armstrong, M.~Kolesár and S.~Kwon, ``Bias-aware inference in regularized regression models,'' arXiv:2012.14823, 2020 (revised 2023). \emph{[arXiv number verified; published version not checked.]}
+
+\bibitem{BvH16}
+A.~S.~Bandeira and R.~van Handel, ``Sharp nonasymptotic bounds on the norm of random matrices with independent entries,'' \textit{Annals of Probability} 44(4):2479--2506, 2016.
+
+\bibitem{BLM13}
+S.~Boucheron, G.~Lugosi and P.~Massart, \textit{Concentration Inequalities: A Nonasymptotic Theory of Independence}, Oxford University Press, 2013. \emph{[Theorem 5.6 is the Gaussian concentration inequality; numbering from memory.]}
+
+\bibitem{CKS20}
+C.~L.~Canonne, G.~Kamath and T.~Steinke, ``The discrete Gaussian for differential privacy,'' in \textit{Advances in Neural Information Processing Systems 33 (NeurIPS)}, pp.~15676--15688, 2020. \emph{[The bounds $\Var\le\sigma^2$ and $\Ex e^{tX}\le e^{t^2\sigma^2/2}$ are proved there; a secondary source places the subgaussian bound at Corollary~17 of the arXiv version (arXiv:2004.00010); numbering not checked against the paper.]}
+
+\bibitem{Chatterjee05}
+S.~Chatterjee, ``An error bound in the Sudakov--Fernique inequality,'' arXiv:math/0510424, 2005. \emph{[The comparison is stated for Gaussian vectors with equal means; the theorem number was not checked.]}
+
+\bibitem{Danskin66}
+J.~M.~Danskin, ``The theory of max-min, with applications,'' \textit{SIAM Journal on Applied Mathematics} 14(4):641--664, 1966.
+
+\bibitem{Fernique75}
+X.~Fernique, ``Régularité des trajectoires des fonctions aléatoires gaussiennes,'' in \textit{École d'Été de Probabilités de Saint-Flour IV---1974}, Lecture Notes in Mathematics 480, Springer, 1975, pp.~1--96.
+
+\bibitem{Hoeffding63}
+W.~Hoeffding, ``Probability inequalities for sums of bounded random variables,'' \textit{Journal of the American Statistical Association} 58(301):13--30, 1963.
+
+\bibitem{Petrov75}
+V.~V.~Petrov, \textit{Sums of Independent Random Variables}, Springer, 1975. \emph{[Berry--Esseen for non-identically distributed summands, Ch.~V.]}
+
+\bibitem{Sudakov71}
+V.~N.~Sudakov, ``Gaussian random processes and measures of solid angles in Hilbert space,'' \textit{Soviet Mathematics Doklady} 12:412--415, 1971.
+
+\bibitem{TIS76}
+B.~S.~Tsirelson, I.~A.~Ibragimov and V.~N.~Sudakov, ``Norms of Gaussian sample functions,'' in \textit{Proceedings of the Third Japan--USSR Symposium on Probability Theory}, Lecture Notes in Mathematics 550, Springer, 1976, pp.~20--41.
+
+\bibitem{Vershynin18}
+R.~Vershynin, \textit{High-Dimensional Probability: An Introduction with Applications in Data Science}, Cambridge University Press, 2018. \emph{[Thm.~7.2.11 (Sudakov--Fernique), Cor.~4.2.13 (nets), Ex.~4.4.3 (quadratic forms on nets); numbering from memory.]}
+
+\end{thebibliography}
+
+\end{document}

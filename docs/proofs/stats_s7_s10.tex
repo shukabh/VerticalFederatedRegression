@@ -1,0 +1,143 @@
+% ======================================================================
+% Sections S7--S10, added after a second reading of the companion book (Chapters 13, 14; Appendix E) and new results.
+% Input from stats_proofs.tex.
+% ======================================================================
+\section{S7: the exact stage-1 radius and the transfer to the protocol}
+\label{sec:S7}
+
+The exact radius of settings I and P replaces the union bound of Lemma~S2(c) by a Monte Carlo quantile of $\lmax$ of the unit stage-1 noise matrix. Let $F_{d_A,d_O}$ be the distribution function of $\lmax(\bE)$ for a masked symmetric noise matrix of unit scale with blocks $(d_A,d_O)$, and $q_{1-\alpha}=F^{-1}_{d_A,d_O}(1-\alpha)$. Draw $M$ independent copies, sort their largest eigenvalues $L_{(1)}\le\dots\le L_{(M)}$, let $j$ be the smallest integer with $\Pr[\mathrm{Bin}(M,1-\alpha)\le j]\ge c$, and set $\hat q=L_{(j+1)}$, $r_1^{\mathrm{ex}}=\sigma_1\hat q$ (the implementation's rule, with $c=0.99$ and $M=\max\{2\cdot10^5,\lceil2500/\alpha\rceil\}$). For release $s$ let
+\[
+  \bar w_s=\frac{N}{2\sqrt2\,\Omega_f}+\sqrt{2\pi}\,2^{-\kappa}\sigma_s+\bar d_s,\qquad
+  \pi_s=\delta_B+N\,\mathrm{TV}_1(\sigma_{c,s})+2Ne^{-t_\eta^2/2},
+\]
+with $\bar d_s$ the proved bound on the decoding offset (crypto proofs, Part~A, Proposition on the decoding offset; it includes the rounding of the centre) and $\mathrm{TV}_1$ bounded by Lemma~S0(b).
+
+\begin{proposition}[S7: exact stage-1 radius]\label{prop:S7}
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item The law of $\lmax(\bE_1)/\sigma_1$ is $F_{d_A,d_O}$, which depends only on $(d_A,d_O)$ and is continuous.
+  \item Over the Monte Carlo draws, $\Pr[\hat q\ge q_{1-\alpha}]\ge c$.
+  \item If the draws are independent of the release, $\Pr[\lmax(\bE_1)>r_1^{\mathrm{ex}}]=(M-j)/(M+1)$, at most $\alpha$ whenever $j+1\ge(1-\alpha)(M+1)$.
+  \item Under the protocol, (c) holds with $r_1^{\mathrm{ex}}$ enlarged by $\sqrt2\,\bar w_1$ and the probability enlarged by $\pi_1$; so do Lemma~S2(c) and the radius event of Lemma~S3.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) $\bE_1=\sigma_1\bE$ with $\bE$ of unit scale, whose law is fixed by the mask. $\lmax(\bE)\ge0$ by interlacing (the $\Rp$ block is zero). If $\bC\ne0$, pick $\ba,\bv$ with $\ba^\top\bC\bv>0$; the vector $(\ba,t\bv)$ gives $2t\ba^\top\bC\bv+t^2\bv^\top\bB\bv>0$ for small $t>0$; so $\Pr[\lmax(\bE)=0]\le\Pr[\bC=0]=0$. For $t>0$, $\{\lmax\le t\}$ is a convex set of the Gaussian coordinates with non-empty interior (it contains a neighbourhood of $\bC=0$, $\bB=-\bI$), and $\{\lmax=t\}$ lies in its boundary, which has Lebesgue measure zero. (b) $F(q_{1-\alpha})=1-\alpha$ by continuity, the number $K$ of draws below $q_{1-\alpha}$ is $\mathrm{Bin}(M,1-\alpha)$, and $\hat q<q_{1-\alpha}$ iff $K\ge j+1$, of probability $1-\Pr[K\le j]\le1-c$. (c) $F(L_i)$ are independent uniforms, so $F(\hat q)$ is $\mathrm{Beta}(j+1,M-j)$ with mean $(j+1)/(M+1)$; conditionally on the draws the exceedance probability is $1-F(\hat q)$. (d) Lemma~S0(b),(c) couple each release with Gaussian slot noise; on the coupling event (probability $\ge1-\pi_s$: coupling, certificate, no wraparound) the decoded entries differ from $\mathbf z_s+\bxi^G_s$ by a vector of norm at most $\bar w_s$ (the rounding of $\bZ$, the flooded error, and the decoding offset), and the symmetric matrix assembled from it has operator norm at most $\sqrt2\,\bar w_s$; Weyl's inequality gives the enlargement.
+\end{proof}
+At $p=11$, $d_A=5$, $\alpha=0.0025$: $M=10^6$, $j=997{,}615$, $\hat q=7.415$ against $11.529$ for the union bound, and the exact level is $(M-j)/(M+1)=0.002385$. At the evaluation setting $N\,\mathrm{TV}_1(\sigma_{c,s})\le2^{-122.2}$ ($\approx10^{-37}$) and $\bar w_s$ is between $2\cdot10^{-8}$ ($\bar n_O=4{,}096$) and $5\cdot10^{-6}$ ($\bar n_O=10^6$, every row matchable), against $\sigma_1\ge128$. With the fixed public seed used in practice $\hat q$ is one number; (b) says that the procedure producing it errs with probability at most $1-c$, and (c) is a statement about the procedure with fresh draws. Parts (a)--(c) and the structure of (d) follow the companion book (Chapter~13, Proposition \texttt{inf.r1exact}); the book's caveat on (d), a numerically checked total-variation constant, is removed by Lemma~S0(b) below, and its offset bound is proved in Part~A.
+
+% ======================================================================
+\section{S8: where the ridge switches off}
+\label{sec:S8}
+
+Write $g_1^\star=g^\star+r_1$. The stage-1 rule returns $\lambda=0$ iff $\lmin(\hat\bG_1)\ge g^\star_1$: then $\lambda_I=\lambda_O=0$; conversely $\lambda_I>0$ forces $\lambda_O>0$, since $\lambda_O=0$ means $\lmin(\hat\bG_1)\ge g^\star_1$.
+
+\begin{proposition}[S8: a bracket for the switch-off]\label{prop:S8}
+Condition on the data, let $\alpha'\in(0,1)$, and let $q'_{1-\alpha'}$ be the $(1-\alpha')$ quantile of $\lmax$ of the unit stage-1 noise matrix (or its union bound $2\sqrt p+2\sqrt{\ln(1/\alpha')}$). Under Assumption~\ref{ass:N}:
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item if $\lmin(\bG)\ge g^\star_1+\sigma_1q'_{1-\alpha'}$, the rule returns $\lambda=0$ with probability at least $1-\alpha'$;
+  \item if $\lmin(\bG)\le g^\star_1-\sqrt2\,\sigma_1z_{1-\alpha'}$, it returns $\lambda>0$ with probability at least $1-\alpha'$;
+  \item the threshold in (a) cannot be lowered in terms of $\lmin(\bG)$ alone: for $\bG=\lmin(\bG)\bI$ the rule returns $\lambda=0$ with probability exactly $F_{d_A,d_O}((\lmin(\bG)-g^\star_1)/\sigma_1)$.
+\end{enumerate}
+Under the protocol the thresholds move by $\sqrt2\,\bar w_1$ and the probabilities by $\pi_1$ (Proposition~\ref{prop:S7}(d)).
+\end{proposition}
+\begin{proof}
+(a) Weyl: $\lmin(\hat\bG_1)\ge\lmin(\bG)-\lmax(-\bE_1)$, and $\lmax(-\bE_1)$ has the law of $\sigma_1\lmax(\bE)$. (b) For a unit bottom eigenvector $\bu$ of $\bG$, $\lmin(\hat\bG_1)\le\lmin(\bG)+\bu^\top\bE_1\bu$, a centred Gaussian with variance $\sigma_1^2(\sum_{i\in O}u_i^4+4\sum_{i<j,\chi_{ij}=1}u_i^2u_j^2)\le2\sigma_1^2$. (c) $\lmin(c\bI+\bE_1)=c-\lmax(-\bE_1)$.
+\end{proof}
+With $\lmin(\bG)\approx n\ell$ the switch-off lies between $(1-\sqrt2\sigma_1z_{1-\alpha'}/g^\star_1)n_{\mathrm{off}}$ and $(1+\sigma_1q'_{1-\alpha'}/g^\star_1)n_{\mathrm{off}}$; on the simulation population at $\alpha'=0.05$ ($q'_{0.95}=6.303$, $\sigma_2/\sigma_1=0.645$) this is $[0.87,1.35]\,n_{\mathrm{off}}$ under setting I and $[0.79,1.58]\,n_{\mathrm{off}}$ under setting P, at every $\varepsilon$.
+
+\begin{lemma}[S8$'$: the size of the downward bias of $\lmin$]\label{lem:S8bias}
+For fixed symmetric $\bG$ and a masked symmetric noise matrix $\bE$ of scale $\sigma$ (any variances $\le\sigma^2$ off the diagonal and $\le2\sigma^2$ on it), with $\bg\sim\mathcal N(0,\bI_p)$:
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item $\Ex\lmin(\bG+\bE)\le\lmin(\bG)$;
+  \item $\Ex\lmin(\bG+\bE)\ge m(\bG,\sigma):=\Ex\min_{\|\bu\|=1}\bigl(\bu^\top\bG\bu-2\sigma\bg^\top\bu\bigr)\ge\lmin(\bG)-2\sigma\Ex\|\bg\|$; $m(\bG,\sigma)$ depends only on the eigenvalues $\mu_1\le\dots\le\mu_p$ of $\bG$ and equals $\Ex[\theta-\sum_k\sigma^2g_k^2/(\mu_k-\theta)]$, with $\theta<\mu_1$ the root of $\sum_k\sigma^2g_k^2/(\mu_k-\theta)^2=1$;
+  \item $\Pr[\lmin(\bG+\bE)\le\Ex\lmin(\bG+\bE)-t]\le e^{-t^2/(4\sigma^2)}$ for $t\ge0$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\lmin(\bG+\bE)\le\bu^\top\bG\bu+\bu^\top\bE\bu$ for a bottom eigenvector $\bu$ of $\bG$, and $\Ex\bu^\top\bE\bu=0$. (b) $-\lmin(\bG+\bE)=\sup_{\bu}(-\bu^\top\bG\bu-X_\bu)$ with $X_\bu=\bu^\top\bE\bu$. The processes $(-\bu^\top\bG\bu-X_\bu)$ and $(-\bu^\top\bG\bu+Y_\bu)$, $Y_\bu=2\sigma\bg^\top\bu$, are Gaussian with equal means, and by the proof of Lemma~S2(a) $\Ex(X_\bu-X_\bv)^2\le\Ex(Y_\bu-Y_\bv)^2$. The Sudakov--Fernique inequality holds for Gaussian vectors with equal means (its interpolation proof uses only the covariances; Chatterjee~\cite{Chatterjee05}), and it extends to the sphere by continuity; so $\Ex[-\lmin(\bG+\bE)]\le\Ex\sup_\bu(-\bu^\top\bG\bu+2\sigma\bg^\top\bu)$, which is (b). The minimum over the sphere of $\bu^\top\bG\bu-2\mathbf h^\top\bu$ is a trust-region problem whose value is $\theta-\mathbf h^\top(\bG-\theta\bI)^{-1}\mathbf h$ at the root $\theta<\mu_1$ of $\|(\bG-\theta\bI)^{-1}\mathbf h\|=1$ (the hard case has probability zero), and $\bg$ is rotation invariant. The last inequality takes $\bu^\top\bG\bu\ge\lmin(\bG)$. (c) $\lmin(\bG+\bE)$ is an infimum of affine functions of the Gaussian coordinates with Lipschitz constants at most $\sqrt2\sigma$ (proof of Lemma~S2(b)); Gaussian concentration.
+\end{proof}
+
+\begin{remark}[What the lemma gives, and what remains open]\label{rem:S8open}
+On the simulation population ($\Sigma$ of the clipped, standardized design, eigenvalues $0.599,0.621,0.680,0.754,\dots$, $p=11$), at $n=n_{\mathrm{off}}$ under setting I and $\varepsilon=1$, (b) bounds the downward bias by $3.19\,\sigma_1$, against $1.70\,\sigma_1$ in simulation, and $2\sigma_1\Ex\|\bg\|\approx6.5\,\sigma_1$ for $\bG\propto\bI$ (script \texttt{experiments/proofs\_check/lmin\_bias\_bound.py}). Combined with (c), it guarantees the switch-off with probability $0.95$ from $1.4\,n_{\mathrm{off}}$ under setting I (above $1.5\,n_{\mathrm{off}}$ under P), which is weaker than the bracket's $1.35$ (and $1.58$). By Proposition~\ref{prop:S8}(c) no bound in terms of $\lmin(\bG)$ alone can do better than the bracket; the empirical factors $1.2$ (I) and $1.4$ (P) reflect the spread of the population's spectrum. Turning them into bounds needs a tail bound for $\lmin(\bG+\bE)$ that uses the spectrum and is sharp to within much less than the factor $1.9$ that the comparison of (b) loses: second-order perturbation, $\lmin(\bG+\bE)\approx\mu_1+\bu_1^\top\bE\bu_1-\sum_{k\ge2}(\bu_k^\top\bE\bu_1)^2/(\mu_k-\mu_1)$, needs gaps $\mu_k-\mu_1$ above about $2\|\bE\|$, and at $n_{\mathrm{off}}$ the three smallest eigenvalues of $n\Sigma$ lie within $0.1\,n\ell\approx2.4\,\sigma_1$ of each other. This remains \status{open}.
+\end{remark}
+
+% ======================================================================
+\section{S9: mechanism bias with explicit constants}
+\label{sec:S9}
+
+Fix $(\lambda,\Psi)$ independently of the stage-2 noise, write $\bG$ for $\bG_\lambda$, $\bP=\bG^{-1}$, $\sigma=\sigma_2$, $\vartheta=\lmin(\bG)/(2\sigma\sqrt p)$, $\bH=\bP\bE$, $\bM=\bG^{-1/2}\bE\bG^{-1/2}$, $q=\|\bM\|_\op$, and for $\bar\eta\in(0,1)$ let $T=\{q\le\bar\eta\}$; $T$ is invariant under $\bE\mapsto-\bE$. Let $\kappa_p=(2\sqrt p+c_0+2\sqrt2)/(2\sqrt p)$ ($\kappa_p=1.81$ at $p=11$), so that $(\Ex\|\bE\|_\op^4)^{1/4}\le2\sigma\sqrt p\,\kappa_p$ (Lemma~S2(d)) and $\Ex q^4\le\kappa_p^4\vartheta^{-4}$. The bias matrix of the paper is $\bP\bM_\chi(\bP)$, with $\bM_\chi$ the contraction of Section~\ref{sec:setting}.
+
+\begin{theorem}[S9: leading-order conditional bias, explicit remainder]\label{thm:S9}
+If $\bar\eta\vartheta>1$, then $\Ex[\tilde\btheta\mid T]$ exists and $\Ex[\tilde\btheta\mid T]-\btheta_\lambda=\sigma^2\bP\bM_\chi(\bP)\btheta_\lambda+\boldsymbol\rho$ with
+\[
+  \|\boldsymbol\rho\|_{\bG}\le\frac1{\Pr(T)}\Bigl[\frac{\kappa_p^4}{(1-\bar\eta)\vartheta^4}\bigl(\|\btheta_\lambda\|_{\bG}+\sigma\sqrt{\tr\bP}\bigr)+\frac{2\sqrt2\,\kappa_p^2}{\vartheta^2}e^{-p(\bar\eta\vartheta-1)^2/2}\|\btheta_\lambda\|_{\bG}\Bigr],
+\]
+where $\Pr(T^c)\le2e^{-p(\bar\eta\vartheta-1)^2}$,
+and $\|\sigma^2\bP\bM_\chi(\bP)\btheta_\lambda\|_{\bG}\le\kappa_p^2\vartheta^{-2}\|\btheta_\lambda\|_{\bG}$. The moment noise $\bff$ contributes nothing at order $\sigma^2$. For $\Psi=\bI$, $\|\sigma^2\bP\bM_\chi(\bP)\btheta_\lambda\|\le(3+p+d_O)\sigma^2\|\bc\|/(\lmin(\bG)+\lambda)^3$ with $\bG$ the unpenalized Gram; for $\Psi=\PiO$ and $\bA$ invertible it is $O(\sigma^2/\lambda)$.
+\end{theorem}
+\begin{proof}
+\emph{Expansion.} On $T$, $(\bI+\bH)^{-1}=\bI-\bH+\bH^2-\bH^3+\bH^4(\bI+\bH)^{-1}$, so $\tilde\btheta=(\bI-\bH+\bH^2-\bH^3)(\btheta_\lambda+\bP\bff)+\mathbf R_4$ with $\|\mathbf R_4\|_{\bG}\le\tfrac{q^4}{1-q}(\|\btheta_\lambda\|_{\bG}+\|\bG^{-1/2}\bff\|)$, because $\bG^{1/2}\bH^k\bG^{-1/2}=\bM^k$; and $\|\tilde\btheta\|_{\bG}\le(1-\bar\eta)^{-1}\|\bG^{-1/2}(\bc+\bff)\|$ on $T$, which is integrable. \emph{Odd terms.} $\Ex[\bH^m\mid T]=0$ for odd $m$ by symmetry, and every term containing $\bP\bff$ has zero conditional mean ($\bff$ is centred and independent of $\bE$). \emph{Remainder.} $\Ex[q^4\mathbf 1_T]\le\kappa_p^4\vartheta^{-4}$, and $\Ex\|\bG^{-1/2}\bff\|\le\sigma\sqrt{\tr\bP}$, independently of $q$. \emph{Conditioning.} $\Ex[\bH^2\mid T]-\Ex\bH^2=(\Ex[\bH^2]\Pr(T^c)-\Ex[\bH^2\mathbf 1_{T^c}])/\Pr(T)$, of $\bG$-operator norm at most $2(\Ex q^4)^{1/2}\Pr(T^c)^{1/2}/\Pr(T)$ by Cauchy--Schwarz; $\Pr(T^c)\le\Pr[\|\bE\|_\op>2\bar\eta\vartheta\sigma\sqrt p]\le2e^{-p(\bar\eta\vartheta-1)^2}$ by Lemma~S2(c). \emph{Contraction.} $\Ex\bH^2=\bP\Ex[\bE\bP\bE]=\sigma^2\bP\bM_\chi(\bP)$, of $\bG$-norm at most $\Ex q^2\le(\Ex q^4)^{1/2}$. \emph{Decay.} $\bM_\chi(\bP)=\PiO\bP+\PiR\bP\PiO+\tr(\bP)\PiO+\tr(\PiO\bP)\PiR-\PiO\diag(\bP)$, with term norms at most $\|\bP\|$, $\|\bP\|$, $p\|\bP\|$, $d_O\|\bP\|$, $\|\bP\|$; with $\|\bP_\lambda\|=1/(\lmin(\bG)+\lambda)$ and $\|\btheta_\lambda\|\le\|\bP_\lambda\|\|\bc\|$ for $\Psi=\bI$. For $\Psi=\PiO$ the $\Op$ rows of $\bP_\lambda$ are $(\bS+\lambda\bI)^{-1}[-\bC^\top\bA^{-1},\ \bI]$, of norm at most $(1+\|\bA^{-1}\bC\|)/(\lmin(\bS)+\lambda)$, and every term of $\bM_\chi(\bP_\lambda)\btheta_\lambda$ contains a factor $\PiO\bP_\lambda$ or $\bP_\lambda\PiO$.
+\end{proof}
+This is the paper's Theorem on the leading-order bias and its ridge version, with the constants made explicit; it follows the companion book (Chapter~14, Theorems \texttt{bias.main} and \texttt{bias.ridge}, Proposition \texttt{bias.shrink}), whose proofs were checked step by step, including $c_0=2.512$ and the fourth moment $64\sigma^4$ of the centred norm. At $p=11$, $\vartheta=5$ and $\bar\eta=\tfrac12$ the leading term is at most $0.13\|\btheta_\lambda\|_{\bG}$ and the remainder at most $0.034(\|\btheta_\lambda\|_{\bG}+\sigma\sqrt{\tr\bP})$ (worst direction); in simulation the leading term matches the bias to within $2\%$. The correction $\tilde\btheta-\sigma^2\tilde\bP\bM_\chi(\tilde\bP)\tilde\btheta$ leaves a bias $O(\vartheta^{-4})$ and a fluctuation $O_p(\vartheta^{-3})$ relative to $\|\btheta_\lambda\|_{\bG}$ (book, Proposition \texttt{bias.corr}; checked, with its constant not explicit).
+
+% ======================================================================
+\section{S10: the FWS residual variance, binding clipping, and the full-record sensitivity}
+\label{sec:S10}
+
+\subsection{The plug-in residual variance of the FWS comparison}
+
+The paper's FWS comparison uses $\hat s^2=\widehat\RSS/(n-p)$ with $\widehat\RSS=\widehat{yy}-\hat\bc_2^\top\hat\bG_2^{-1}\hat\bc_2$, the case $\lambda=0$ of Lemma~S6. Let $\vartheta,T,\kappa_p$ be as in Section~\ref{sec:S9} with $\lambda=0$, and $\hat\bbeta=\bP\bc$.
+
+\begin{proposition}[S10a: bias of the plug-in RSS]\label{prop:S10a}
+If $\bar\eta\vartheta>1$, then $\Ex[\widehat\RSS\mid T]-\RSS=-\sigma^2\bigl(\tr\bP+\hat\bbeta^\top\bM_\chi(\bP)\hat\bbeta\bigr)+\rho$ with
+\[
+  |\rho|\le\frac1{\Pr(T)}\Bigl[\frac{\kappa_p^4}{(1-\bar\eta)\vartheta^4}\bigl(\|\hat\bbeta\|_{\bG}^2+\sigma^2\tr\bP\bigr)+\frac{\kappa_p^2}{\vartheta^2}\sigma^2\tr\bP+\frac{2\sqrt2\,\kappa_p^2}{\vartheta^2}e^{-p(\bar\eta\vartheta-1)^2/2}\|\hat\bbeta\|_{\bG}^2\Bigr].
+\]
+The leading term is negative: $\hat s^2$ underestimates the residual variance at order $\sigma_2^2$.
+\end{proposition}
+\begin{proof}
+With $\bphi=\bG^{1/2}\hat\bbeta$ and $\bh=\bG^{-1/2}\bff$, $\widehat\RSS-\RSS=g-[(\bphi+\bh)^\top(\bI+\bM)^{-1}(\bphi+\bh)-\|\bphi\|^2]$. Expand $(\bI+\bM)^{-1}$ to $\bM^4(\bI+\bM)^{-1}$; on the symmetric event $T$ the terms odd in $\bM$ vanish, and so do the terms linear in $\bh$; $\Ex\|\bphi+\bh\|^2=\|\bphi\|^2+\sigma^2\tr\bP$; $\bphi^\top\Ex[\bM^2]\bphi=\sigma^2\hat\bbeta^\top\bM_\chi(\bP)\hat\bbeta$. The remainder collects $\bphi^\top(\Ex[\bM^2\mid T]-\Ex\bM^2)\bphi$ (bounded as in Theorem~\ref{thm:S9}), $\Ex[\bh^\top\bM^2\bh\mid T]\le\Ex[q^2]\sigma^2\tr\bP/\Pr(T)$, and the quartic term, at most $\Ex[q^4\mathbf 1_T](\|\bphi\|^2+\sigma^2\tr\bP)/((1-\bar\eta)\Pr(T))$. $\bM_\chi(\bP)\succeq0$ because it is $\sigma^{-2}\Ex[\bE\bP\bE]$ with $\bP\succ0$.
+\end{proof}
+A Monte Carlo check with antithetic pairs ($p=11$, $\vartheta=7.0$, $3.5$, $1.8$) matches the leading term to $0.05$--$0.65\%$ (\texttt{experiments/proofs\_check/fws\_s2\_bias.py}). Rerunning the paper's FWS comparison on the synthetic population (setting I, the same cohorts, releases and FWS random numbers, $200$ cohorts per cell) with $\widehat\RSS$ corrected by the leading term changes the coverage of the ten slopes by at most $0.0005$ in each of the $41$ ridge-on cells, and the median half-width by at most $3\%$: where the ridge is on, the mechanism noise dominates FWS's width, and $\hat s^2$ is floored at $0.1$ in up to $49\%$ of releases (\texttt{experiments/proofs\_check/fws\_s2\_corrected.py}).
+
+\subsection{Binding clipping and the bias-aware interval}
+
+When clipping binds, the clipped response is heteroskedastic and $\Ex[\tilde\by\mid\bX]$ need not be linear. Take as estimand the projection coefficient $\bbeta^\ast=\bG^{-1}\bX^\top\Ex[\tilde\by\mid\bX]$ of the clipped data (fixed design), with the $\tilde y_i$ conditionally independent given $\bX$, and let $\bar\sigma^2\ge\max_i\Var(\tilde y_i\mid\bX)$.
+
+\begin{proposition}[S10b: a valid interval under binding clipping]\label{prop:S10b}
+$\Ex[\btheta_\lambda\mid\bX]-\bbeta^\ast=-\lambda\bP_\lambda\Psi\bbeta^\ast$, $\Cov(\btheta_\lambda\mid\bX)\preceq\bar\sigma^2\bP_\lambda\bG\bP_\lambda$, and the norm bound of Lemma~S4 holds for $\bbeta^\ast$. Consequently Theorem~S5(b) holds for $\bbeta^\ast$, with the same exact and first-order parts, when $\tilde s^2$ is replaced by $\bar\sigma^2$ in $\bV=\bV_{\mathrm{mech}}+\tilde s^2\tilde\bP\hat\bG_2\tilde\bP$. Admissible public choices are: $\bar\sigma^2=B_y^2$, with no model; and, when only the response is clipped and $y_i=\bx_i^\top\bbeta+\varepsilon_i$ before clipping with $\Var(\varepsilon_i\mid\bX)\le\sigma_0^2$, any public $\bar\sigma^2\ge\sigma_0^2$.
+\end{proposition}
+\begin{proof}
+$\Ex[\bc\mid\bX]=\bX^\top\Ex[\tilde\by\mid\bX]=\bG\bbeta^\ast$, so $\Ex[\btheta_\lambda\mid\bX]=\bP_\lambda\bG\bbeta^\ast=\bbeta^\ast-\lambda\bP_\lambda\Psi\bbeta^\ast$; $\Cov(\btheta_\lambda\mid\bX)=\bP_\lambda\bX^\top\boldsymbol\Omega\bX\bP_\lambda$ with $\boldsymbol\Omega=\diag(\Var(\tilde y_i\mid\bX))\preceq\bar\sigma^2\bI$. Lemma~S4 uses no model. The interval is $\tilde\theta_j\pm\cv_\alpha(\bar b_j/\sqrt{V_{jj}})\sqrt{V_{jj}}$; if the true standard deviation is $s\le s'=\sqrt{V_{jj}}$ and $|b|\le\bar b_j$, then $c=\cv_\alpha(\bar b_j/s')s'>\bar b_j\ge|b|$ (since $\cv_\alpha(t)>t$ for $\alpha<\tfrac12$), and $s\mapsto\Pr[|sZ+b|\le c]=\Phi((c-b)/s)-\Phi((-c-b)/s)$ has derivative $-[(c-b)\phi((c-b)/s)+(c+b)\phi((c+b)/s)]/s^2<0$; so coverage at $s$ is at least coverage at $s'$, which is the guarantee of Theorem~S5(b). $|\tilde y_i|\le B_y$ gives $\Var(\tilde y_i\mid\bX)\le B_y^2$. Clipping is $1$-Lipschitz, and $\Var f(Y)=\tfrac12\Ex(f(Y)-f(Y'))^2\le\tfrac12\Ex(Y-Y')^2=\Var Y$ for $1$-Lipschitz $f$ and an independent copy $Y'$, so $\Var(\clip(y_i)\mid\bX)\le\sigma_0^2$.
+\end{proof}
+What remains \status{open} is a guarantee with the data-driven $\tilde s^2$: it estimates an average of the $\Var(\tilde y_i\mid\bX)$ plus a misspecification term, not their maximum, and a sandwich variance would need per-record residuals of $\Op$'s data, that is, a further release. The public bound $B_y^2$ is conservative (on the synthetic population $B_y^2=8.35$ against a clipped residual variance of about $0.5$, which widens the sampling part by about $4.1$).
+
+\subsection{The full-record sensitivity in closed form}
+
+The paper's full-record baseline releases the upper triangle of $\sum_i\mathbf w_i\mathbf w_i^\top$, $\mathbf w=(\bxd,\bx_O,y)$, $\bxd=(1,\mathbf u)$ with an intercept ($\iota=1$; $\bxd=\mathbf u$ and $\iota=0$ without), every entry with the same noise. Let $R_u=B_R^2-\iota$, $o=B_O^2$, $w=B_y^2$, and $m_1=\min(R_u,o)$, $m_2=\max(R_u,o)$. Define
+\[
+  H(a)=\begin{cases}\tfrac23a^2,&|a|\le3m_1,\\ \tfrac12a^2+|a|m_1-\tfrac32m_1^2,&3m_1<|a|\le m_1+2m_2,\\ 2|a|(m_1+m_2)-2(m_1^2+m_2^2+m_1m_2),&|a|>m_1+2m_2,\end{cases}
+\]
+$K=\iota(2R_u+2o)+2R_u^2+2o^2+2R_uo$, and, for $t\in[-w,w]$,
+\[
+  \Psi_2(t)=K+(\iota+R_u+o)\Bigl(w+\frac{t^2}w\Bigr)-2\iota t+\Bigl(w-\frac{t^2}w\Bigr)^2+H(\iota+t),
+\]
+and $\Psi_2^{\neg yy}$ the same without the term $(w-t^2/w)^2$.
+
+\begin{theorem}[S10c: full-record sensitivity]\label{thm:S10c}
+If $\mathbf u$ and $\bx_O$ have dimension at least $2$, the replace-one $\ell_2$ sensitivities of the full-record release are $\Delta_{\mathrm{full}}^2=\max_{|t|\le w}\Psi_2(t)$ (joint mode), $\Delta^2_{\mathrm{full},\neg yy}=\max_{|t|\le w}\Psi_2^{\neg yy}(t)$ (separate mode) and $\Delta_{G,\mathrm{full}}^2=K+H(\iota)$ (stage~1). $\Psi_2$ is a piecewise quartic in $t$, so the maximum is attained at $t=\pm w$, at a point where $|\iota+t|\in\{3m_1,m_1+2m_2\}$, or at a real root of the cubic $\Psi_2'$ on a piece: a finite enumeration, as for Proposition~S1. If a block has dimension $1$, the same values are valid, conservative upper bounds.
+\end{theorem}
+\begin{proof}
+\emph{The bracket.} For a record $\mathbf w$ and its replacement $\mathbf w'$, write $n_k,n'_k$ for the squared norms of the blocks $k\in\{\mathbf u,\bx_O,y\}$ and $g_k$ for their inner products. The change of the first moments has squared norm $\iota\sum_k(n_k+n'_k-2g_k)$; that of the off-diagonal blocks of $\mathbf w\mathbf w^\top-\mathbf w'\mathbf w'^\top$ has squared Frobenius norm $\sum_{k<l}(n_kn_l+n'_kn'_l-2g_kg_l)$; and $\|\triu\mathbf S_k\|^2\le\|\mathbf S_k\|_F^2=n_k^2+n_k'^2-2g_k^2$ for each diagonal block. The supremum of the sum (the paper's expression for $\Delta^2_{\mathrm{full}}$) is attained: for a block of dimension at least $2$ the two vectors can be chosen with any norms and inner product so that $\mathbf S_k$ is diagonal, and for $y$ the bound is exact with $g_y=yy'$.
+
+\emph{Norms at the bounds.} For fixed $g$ and $(y,y')$ every coefficient of $n_k,n'_k$ ($k=\mathbf u,\bx_O$) is non-negative, and the admissible set $|g_k|\le\sqrt{n_kn'_k}$ grows with the norms; so the supremum has $n_{\mathbf u}=n'_{\mathbf u}=R_u$ and $n_O=n'_O=o$. Then, with $s=y^2+y'^2$ and $t=yy'$, the objective is
+\[
+  K+\iota(s-2t)+(R_u+o)s+(s^2-4t^2)+h(g_{\mathbf u},g_O),\qquad h=-2(\iota+t)(g_{\mathbf u}+g_O)-2(g_{\mathbf u}^2+g_O^2+g_{\mathbf u}g_O),
+\]
+over $|g_{\mathbf u}|\le R_u$, $|g_O|\le o$ (the term $s^2-4t^2=(y^2-y'^2)^2$ is absent in separate mode, and every term in $y$ at stage~1).
+
+\emph{The inner maximum.} $h$ is a concave quadratic; its unconstrained maximizer is $g_{\mathbf u}=g_O=-a/3$, $a=\iota+t$, with value $\tfrac23a^2$. If $|a|>3m_1$, the coordinate with the smaller box is clipped at $-\operatorname{sgn}(a)m_1$ and the other is $-\operatorname{sgn}(a)(|a|-m_1)/2$, feasible while $|a|\le m_1+2m_2$, with value $\tfrac12a^2+|a|m_1-\tfrac32m_1^2$; beyond, both are clipped, with value $2|a|(m_1+m_2)-2(m_1^2+m_2^2+m_1m_2)$. Each candidate satisfies the KKT conditions (for the clipped coordinate the partial derivative $-2a-4g_1-2g_2$ has the sign of $-a$ once $|a|>3m_1$), so it is the maximum of the concave problem; this is $H(a)$, continuous at the breakpoints.
+
+\emph{The outer maximum.} For fixed $t$ the objective is strictly increasing in $s$ (its derivative is $\iota+R_u+o+2s>0$). Given $t$, the pairs $(y,y')$ with $yy'=t$ and $y^2,y'^2\le w$ have $s\le w+t^2/w$, with equality iff one of $|y|,|y'|$ equals $B_y$; and $(w+t^2/w)^2-4t^2=(w-t^2/w)^2$. So the supremum is $\max_{|t|\le w}\Psi_2(t)$. A configuration with a block of dimension $1$ embeds in dimension $2$ (collinear vectors), so its supremum is at most the value for dimension $2$.
+\end{proof}
+At unit bounds without an intercept, $\Psi_2(t)=9+t^4+\tfrac23t^2$, so $\Delta^2_{\mathrm{full}}=32/3$ (at $t=\pm1$) and $\Delta^2_{G,\mathrm{full}}=6$, the paper's values. On the simulation population the enumeration gives $\Delta_{\mathrm{full}}=92.670$ and $\Delta_{G,\mathrm{full}}=85.816$ (the paper's $92.7$ and $85.8$). Over $19$ bound vectors, with and without an intercept, it agrees with the paper's grid-and-local-search computation (\texttt{experiments/baselines/sens\_full.py}) to the relative $10^{-12}$ of that computation's safeguard, in all three modes; with a block of dimension $1$ it is above the grid value, as it must be (\texttt{experiments/proofs\_check/sens\_full\_closed.py}). Of the 29 benchmark datasets only one (tamielectric, $d=3$, so $\mathbf u$ has dimension $1$) uses the dimension-$1$ case, for which the theorem gives a valid conservative bound and the grid computation remains a numerical refinement.

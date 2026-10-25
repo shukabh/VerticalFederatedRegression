@@ -1,0 +1,112 @@
+% ==============================================================
+\section{Corrections to the specification}
+\label{sec:fix}
+
+Items are ordered by importance. ``Spec'' refers to \texttt{protocol\_v31.tex}.
+
+\begin{correction}[The centre of the mechanism; affects Lemma~1, Theorem~1 and \textsc{Calibrate}]\label{cor:centre}
+\emph{Spec:} the ideal mechanism is $\bar{\mathbf z}_s(D)+\eta_s$ with $\bar{\mathbf z}_s=\Ecd(\mathbf z_s(D))$, and $e_{M,s}$ includes $\Op$'s encoding roundings of $V_e$ and $\mathbf u_k$.
+
+\emph{Problem:} the decrypted value differs from $\Ecd(\mathbf z_s(D))$ by deterministic, data-dependent terms. Chief among them is the mask spill $\sum_eS_e\,r_{u_e}$, of norm about $2^{30.7}$ to $2^{34.5}$ for $\bar n_O=10^6$ (Remark~\ref{rem:centre}). Flooding them would require $\log_2\Omega\approx67$ to $71$.
+
+\emph{Corrected statement:} centre the mechanism at the noiseless circuit output $\fs_s(D)=\lfloor\Zh_s(D)\rceil$ (Definition~\ref{def:centre}), and use the sensitivity
+\[
+  \widehat\Delta_{\mathrm{enc},s}=\sqrt{2/N}\,\Omf\Delta_s+\Delta_{x,s}+\sqrt N
+\]
+(Corollary~\ref{cor:sensZ}), where $\Delta_{x,2}\approx2^{18.8}$. Then $e_{\mathrm{tot},s}$ consists only of randomness-dependent terms (Proposition~\ref{prop:decomp}), and Theorem~\ref{thm:output} holds with $\rho_s=\widehat\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)$. Numerically this changes $\rho_s$ by a relative $2^{-32.7}$. Lemma~\ref{lem:enc} itself is correct as stated.
+\end{correction}
+
+\begin{correction}[Exact final scale]\label{cor:scale}
+Throughout Lemma~1, \textsc{Calibrate}, $\sigma_s$ and $\Dcd$, $\Omega$ must be the exact final scale $\Omf=\Omega_U\Omega_V\Omega_u/(q_1q_2)$. It must be tracked exactly, as in FLEXIBLEAUTO, or computed from the primes. Decoding with a nominal power-of-two scale, as FIXEDMANUAL does, causes a deterministic relative bias of about $2^{-30}$; we measured $8.7\cdot10^{-10}$ (Section~\ref{sec:empirical}). This bias is not a privacy problem once the mechanism is centred at $\fs_s$, but it is an avoidable estimation bias.
+\end{correction}
+
+\begin{correction}[Obligation O1: the value of $\Btot$ and the required scale]\label{cor:btot}
+\emph{Spec:} $\log_2\Omega\approx52.5$ at $\varepsilon=1$.
+
+\emph{Problem:} that figure floods only the fresh-encryption error, and only at its mean $\ell_2$ norm. For the circuit of Algorithm~4 as written, Theorem~\ref{thm:O1} gives a rigorous worst-case bound of $\Btot\approx2^{25.3}$ for stage~2, with $\delta_B=2^{-50}$. That requires $\log_2\Omega\approx61.5$, or $60.5$ if $P\ge2^{20}\tilde Q_{\max}$ (Table~\ref{tab:btot}).
+
+\emph{Recommended changes:} the following give $\Btot\approx2^{17.6}$ and $\log_2\Omega\approx53.7$:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item evaluate \textsc{EvalSum} before the first rescale, at level~2;
+  \item sum the masked products of a release \emph{before} a single second rescale, instead of rescaling each $P_e$;
+  \item use stochastic rounding in \textsc{Rescale} and in ModDown;
+  \item choose $P\ge2^{10}\tilde Q_{\max}$;
+  \item encode $\Rp$'s vectors at $\Omega_U=q_2\approx2^{60}$.
+\end{enumerate}
+By a rough count, $\log_2(QP)\approx320$ for (A) and $\approx285$ for (C$'$). Both are below the 128-bit limit of about $438$ for $N=2^{14}$~\cite{HES}. \gap{This count is approximate; the modulus chain should be re-derived with the chosen $d_{\mathrm{num}}$.}
+
+\emph{Further requirement:} \textsc{Calibrate} must use the \emph{worst-case}, data-independent $B_{\mathrm{tot},s}(\Omega)$ of Theorem~\ref{thm:O1}. A value estimated from the actual ciphertexts, for example by OpenFHE's noise estimation, would depend on the data. It would then leak through $\sigma_{c,s}$, and it would not be a worst-case bound. Such an estimate may serve as a sanity check only.
+\end{correction}
+
+\begin{correction}[Lemma~2: constants]\label{cor:smudge}
+\emph{Corrected statement:} for $e\in\Z^N$ and $\eta\sim D_{\Z^N,\sigma_c}$ with $\sigma_c>\sigma_2\ge\eta_\epsilon(\Z^N)/\sqrt{2\pi}$,
+\[
+  \SD(\eta+e,\eta)\le\frac{\nrm e_2}{\sqrt{2\pi}\sqrt{\sigma_c^2-\sigma_2^2}}+\frac{4\epsilon}{1-\epsilon}.
+\]
+Alternatively, $\SD(\eta+e,\eta)\le\nrm e_2/(2\sigma_c)$ for every $\sigma_c>0$. With \textsc{Calibrate}'s condition, the per-release distance is at most $2^{-\kappa}(1+2^{-80})+2^{-97}$ (Lemma~\ref{lem:smudge}, Corollary~\ref{cor:flood}).
+\end{correction}
+
+\begin{correction}[$\delta$ accounting]\label{cor:delta}
+\emph{Spec:} $\delta_{\mathrm{DP}}=\delta_{\mathrm{run}}-n_{\mathrm{rel}}(\delta_B+2^{-\kappa})$.
+
+\emph{Corrected statement:} Theorem~\ref{thm:output} gives $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}})$-SIM-CDP with statistical slack
+\[
+  \gamma=n_{\mathrm{rel}}\bigl(\delta_B+2^{-\kappa}(1+2^{-80})+2^{-97}\bigr),
+\]
+plus the sampler-cap failures of Section~\ref{sec:corr}. A single indistinguishability guarantee $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$ requires
+\[
+  \delta_{\mathrm{DP}}=\delta_{\mathrm{run}}-(1+e^{\varepsilon_{\mathrm{run}}})\gamma
+\]
+(Lemma~\ref{lem:sim2ind}). The factor $1+e^{\varepsilon}$ is missing in the spec. For the example ($\gamma\approx2.7\cdot10^{-12}$) the effect on $\rho_{\mathrm{run}}$ is negligible.
+\end{correction}
+
+\begin{correction}[Assumptions of Theorem~1]\label{cor:assump}
+\begin{itemize}[nosep]
+  \item \emph{RLWE in two forms.} RLWE is needed both for the re-randomizer (one sample per release, at modulus $q_0$, with ternary $u$ and $\DG(0,3.2^2)$ errors) and for $\Op$'s key shares (multi-sample, at modulus $PQ_2$, with circular security for the rotation-key shares). These are Assumptions~\ref{as:rlweu} and~\ref{as:rlweO}.
+  \item \emph{What ``threshold key-generation security'' means here.} For the one-round protocols of~\cite{MTBH21} it is exactly Assumption~\ref{as:rlweO}.
+  \item \emph{Unneeded assumptions.} PSI security is \emph{not} needed for G3 under the spec's adjacency, because the identifiers are fixed and the PSI transcript is independent of $(\bx_O,y)$. Nor is the random-oracle model.
+  \item \emph{An implicit requirement.} \textsc{Calibrate}'s outputs must be data-independent.
+\end{itemize}
+\end{correction}
+
+\begin{correction}[PSI and the disclosure claim G4]\label{cor:psi}
+G4 says that $\Rp$ learns only $I$ and $\pi|_I$ from the Link phase. This requires the labeled PSI to be secure against a semi-honest receiver. For the FHE-based PSI of~\cite{CLR17,CHLR18}, that requires \emph{circuit privacy} of $\Op$'s BFV replies, for example by noise flooding or re-randomization before the reply. Without it, the reply noise depends on $\Op$'s identifier set. A modulus switch alone (Algorithm~2, line~4) is a heuristic measure. \emph{Update:} with OPRF-keyed items and labels, the first layer of G4 holds without circuit privacy, in the random-oracle model under CDH (Section~\ref{sec:G4}, Theorem~\ref{thm:G4}); \textsc{SanitizeBFV} adds a statistical second layer, proved for a model of BFV (Proposition~\ref{prop:bpsi}). \unsure{how CLR17 and CHLR18 phrase the noise-flooding requirement}
+\end{correction}
+
+\begin{correction}[G1 and G2: assumptions and slack]\label{cor:G1}
+\emph{Missing assumptions:} G1 needs Assumption~\ref{as:G1}:
+\begin{itemize}[nosep]
+  \item RLWE with circular security in $s_R$, covering $\Rp$'s rotation-key shares;
+  \item the random oracle for the seed expansion;
+  \item IND-CPA of the PSI's BFV, with circular security for any relinearization key;
+  \item obliviousness of the OPRF.
+\end{itemize}
+\emph{Simulator inputs:} the simulator also takes the public parameters and $\Op$'s own input.
+
+\emph{Slack:} G1 and G2 hold up to the probability $p_{\mathrm{cuckoo}}$ that $\Rp$'s cuckoo hashing fails observably.
+\end{correction}
+
+\begin{correction}[Correctness]\label{cor:wrap}
+The $q_0$ condition in \textsc{Calibrate} is sufficient once $\Omega=\Omf$ (Proposition~\ref{prop:wrap}). The spec should state the per-release correctness-failure probability, $\delta_B+2Ne^{-50}\approx2^{-50}$. The sharper condition (Q) saves about $7$ bits of $q_0$. The ``modulus switch to $q_0$'' in Algorithm~4 is a no-op, or an exact limb drop, for a chain $q_0q_1q_2$. A scaling modulus switch would add a rounding term bounded like $T_5$.
+\end{correction}
+
+\begin{correction}[Sampler]\label{cor:sampler}
+\begin{itemize}[nosep]
+  \item Set $\sigma_{c,s}^2$ to a rational, for example $\lceil\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)\rceil$, as CKS20's exact sampler requires.
+  \item ``Constant-time'' must mean (CT) of Section~\ref{sec:corr}. A direct implementation of CKS20 does not satisfy (CT).
+  \item The slot-domain noise has variance at most $\sigma_{c,s}^2N/(2\Omf^2)$ per real slot component. The variance of $\DG(0,\sigma^2)$ is below $\sigma^2$, and at $\sigma\gg1$ the difference is negligible. So $\sigma_s=\sigma_{c,s}\sqrt{N/2}/\Omf$ is an upper bound on the noise s.d., not an exact value.
+\end{itemize}
+\end{correction}
+
+\begin{remark}[Statements verified as correct]
+The following claims of the spec were checked and need no correction:
+\begin{itemize}[nosep]
+  \item the identity $\nrm{\tau^{-1}(\mathbf z)}_2=\sqrt{2/N}\nrm{\mathbf z}_2$ and the rounding term $\sqrt N$ of Lemma~1;
+  \item the zCDP cost $\rho_s=\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)$ of the lattice discrete Gaussian, once $\Delta_{\mathrm{enc}}$ is replaced by $\widehat\Delta_{\mathrm{enc}}$;
+  \item the validity of the conversion used in \textsc{Calibrate};
+  \item the release format $(c_1',h_O)$ with $c_0'$ withheld, which removes the C3 leak;
+  \item the need for fresh $(u,e_0,e_1,\eta)$ in every release;
+  \item the absence of any decryption share from $\Rp$.
+\end{itemize}
+The spec's remark that stage~1's error ``cannot depend on the entries released only in stage~2'' is true but not needed: flooding covers any correlation.
+\end{remark}

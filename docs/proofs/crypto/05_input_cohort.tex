@@ -1,0 +1,67 @@
+% ==============================================================
+\section{Input privacy (G1) and cohort privacy (G2)}
+\label{sec:in}
+
+\paragraph{$\Op$'s view.}
+Besides its own input $D$ and random tape, $\Op$ receives the following from $\Rp$:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item \emph{Key-generation shares:} $p_{0,R}=-as_R+e^{\mathrm{pk}}_R$, and the rotation-key shares $-a_{g,j}s_R+P\mathsf g_j\psi_g(s_R)+e^{\mathrm{rk}}_{R,g,j}$.
+  \item \emph{Link messages:} the blinded OPRF queries, exactly $n_R^{\max}$ of them; $\Rp$'s BFV public key and any evaluation keys used by the PSI; and the BFV ciphertexts of windowed powers. Their number is fixed by public PSI parameters and $n_R^{\max}$.
+  \item \emph{Uploads:} $(c_{0,h},\varsigma_h)$ for each of the $(d_R+2)m$ chunks, with $c_{0,h}=-a_hs_R+e_h+m_{U,h}$ and $a_h=H(\varsigma_h)$.
+  \item \emph{Control messages:} the requests for the two or three releases. Their schedule is fixed by Algorithm~6 and does not depend on $\Rp$'s data. $\Rp$'s refusal at line~7 happens after the last release and is not sent to $\Op$.
+\end{enumerate}
+$\Op$ receives no decryption share and no ciphertext component that involves $s_R$ other than these.
+
+\begin{assumption}[For G1 and G2]\label{as:G1}
+\begin{enumerate}[nosep,label=(\alph*)]
+  \item \emph{RLWE with circular security in $s_R$.} Let $s_R\gets\chikey$, let every error be drawn from $\chierr$, and let all $a$'s be uniform. Then the tuple consisting of
+  \begin{itemize}[nosep]
+    \item $\Rp$'s public-key share,
+    \item its $Ld_{\mathrm{num}}$ rotation-key shares, and
+    \item $(d_R+2)m$ samples $(a_h,-a_hs_R+e_h)$ at modulus $Q_2$
+  \end{itemize}
+  is pseudorandom. This is multi-sample RLWE plus the circular assumption for the rotation-key shares. Samples at modulus $Q_2$ are reductions of samples at modulus $PQ_2$, so a single modulus suffices.
+  \item \emph{Random oracle.} The seed expansion $H$ is a random oracle, and seeds are $\lambda$-bit strings drawn uniformly.
+  \item \emph{The PSI's encryption.} The PSI's BFV is IND-CPA under RLWE, with circular security for any relinearization key $\Rp$ sends.
+  \item \emph{The OPRF.} The blinded OPRF queries of~\cite{CHLR18} are distributed independently of the queried identifiers. For the Diffie--Hellman-type OPRF this holds perfectly in a prime-order group. \unsure{the concrete OPRF instantiation in~\cite{CHLR18} and whether its query blinding is perfectly or computationally hiding}
+\end{enumerate}
+\end{assumption}
+
+\begin{theorem}[G1: $\Rp$-input privacy]\label{thm:G1}
+Under Assumption~\ref{as:G1} there is a PPT simulator $\mathcal S_O$ with the following property. Given $\Op$'s input and random tape, $(n_R^{\max},\bar n_O)$ and the public parameters, $\mathcal S_O$ outputs a view that is indistinguishable from $\Op$'s real view, for every input of $\Rp$. The distance is at most
+\[
+  \mathrm{Adv}_{\mathrm{RLWE},R}+\mathrm{Adv}_{\mathrm{BFV}}+q_H^2/2^{\lambda}+p_{\mathrm{cuckoo}},
+\]
+where $q_H$ is the number of oracle queries and $p_{\mathrm{cuckoo}}$ is the probability that $\Rp$'s cuckoo hashing fails in a way that $\Op$ can observe, for example as an abort or a retry (bounded in Lemma~\ref{lem:cuckoo}). $\Rp$'s abort on a detected false match is observable too; its probability, at most $p_{\mathrm{false}}$ (the paper's Remark on collisions), is added to the slack in the same way.
+\end{theorem}
+\begin{proof}
+\emph{The simulator.} $\mathcal S_O$ outputs:
+\begin{itemize}[nosep]
+  \item uniform key-generation shares;
+  \item $n_R^{\max}$ uniform group elements as the OPRF queries;
+  \item a fresh BFV public key, any evaluation keys, and encryptions of zero in the public number;
+  \item $(d_R+2)m$ pairs $(c^*_{0,h},\varsigma^*_h)$, with $c^*_{0,h}$ uniform in $\Rr_{Q_2}$ and $\varsigma^*_h$ uniform seeds;
+  \item the fixed control messages.
+\end{itemize}
+
+\emph{Hybrids.}
+\begin{enumerate}[nosep]
+  \item Replace the OPRF queries by uniform group elements. The distance is zero for a perfectly hiding blinding, and the OPRF advantage otherwise.
+  \item Replace $\Rp$'s BFV ciphertexts of powers by encryptions of zero, at cost $\mathrm{Adv}_{\mathrm{BFV}}$.
+  \item In the random-oracle model, the $a_h=H(\varsigma_h)$ are uniform and independent unless two seeds collide, which happens with probability at most $q_H^2/2^\lambda$. The reduction programs $H(\varsigma_h)$ to the $a$-components of its RLWE challenge. The tuple of $\Rp$'s key shares and the values $-a_hs_R+e_h$ is then replaced by uniform elements, at cost $\mathrm{Adv}_{\mathrm{RLWE},R}$ by Assumption~\ref{as:G1}(a). Adding the known plaintext $m_{U,h}$ to a uniform element leaves it uniform.
+  \item The real protocol leaks the cuckoo-hashing outcome. Removing that leak costs at most $p_{\mathrm{cuckoo}}$.
+\end{enumerate}
+The final hybrid is $\mathcal S_O$'s output. $\Op$'s own messages, such as the OPRF evaluations, PSI replies and releases, are functions of its view, so they need no simulation.
+\end{proof}
+
+\begin{corollary}[G2: cohort privacy]\label{cor:G2}
+$\mathcal S_O$ does not use $\Rp$'s cohort, $n_R$ or $\bX_R$. Hence, for any two cohorts of size at most $n_R^{\max}$, $\Op$'s views are indistinguishable, up to twice the distance of Theorem~\ref{thm:G1}. Padding the OPRF queries to exactly $n_R^{\max}$ is what makes the number of OPRF calls cohort-independent. The per-run fresh OPRF key and the quota are not needed against an honest-but-curious $\Op$; they matter only for linkage across runs.
+\end{corollary}
+
+\begin{remark}
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item The statement ``$\Op$ never receives a decryption share from $\Rp$'' is what makes G1 a pure encryption argument. If any future version sent $\Rp$'s share $c_1s_R+e$, G1 would need its own flooding.
+  \item The random-oracle model is used only to treat the expanded $a_h$ as uniform. A standard-model alternative is to send $a_h$ in full, at twice the upload size.
+  \item G1 and G2 hold against an honest-but-curious $\Op$ only. A deviating $\Op$ could, for example, choose its PSI replies so as to learn the outcome of $\Rp$'s decryption through $\Rp$'s later behaviour. This is outside the model.
+\end{enumerate}
+\end{remark}
