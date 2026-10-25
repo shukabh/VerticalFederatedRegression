@@ -1,0 +1,142 @@
+{
+ "fws": {
+  "commit": "f0d2bc6e9707501dfc91b231cdd9779bca866e3b",
+  "repo": "github.com/ceciliaferrando/PB-DP-CIs",
+  "replay_max_rel_diff": 8.880518874812381e-16,
+  "coverage": {
+   "coverage_reference": 0.9575,
+   "coverage_reimplementation": 0.95,
+   "width_reference": 0.5812417464781507,
+   "width_reimplementation": 0.5848959487261656,
+   "trials": 400,
+   "N": 1000,
+   "D": 4,
+   "eps": 5.0
+  }
+ },
+ "tukeyem": {
+  "commit": "ba728e288c51126eac25e316b11dfee94d68c301",
+  "repo": "github.com/google-research/google-research (dp_regression)",
+  "deterministic": {
+   "max_abs_diff_log_volumes": 0.0,
+   "distance_mismatches": 0
+  },
+  "replay": {
+   "trials": 60,
+   "mismatches": 0,
+   "max_abs_diff": 1.2612133559741778e-13,
+   "passed": 40
+  },
+  "pass_rates": [
+   {
+    "m": 250,
+    "eps": 0.5,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 250,
+    "eps": 1.0,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 250,
+    "eps": 1.0986122886681096,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 500,
+    "eps": 0.5,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 500,
+    "eps": 1.0,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 500,
+    "eps": 1.0986122886681096,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 1000,
+    "eps": 0.5,
+    "delta": 1e-05,
+    "reference_code": 0.0,
+    "corrected": 0.0,
+    "median_error_reference_code": null,
+    "median_error_corrected": null
+   },
+   {
+    "m": 1000,
+    "eps": 1.0,
+    "delta": 1e-05,
+    "reference_code": 1.0,
+    "corrected": 1.0,
+    "median_error_reference_code": 0.40639537100044426,
+    "median_error_corrected": 0.4245127375174087
+   },
+   {
+    "m": 1000,
+    "eps": 1.0986122886681096,
+    "delta": 1e-05,
+    "reference_code": 1.0,
+    "corrected": 1.0,
+    "median_error_reference_code": 0.407933218128144,
+    "median_error_corrected": 0.40848842072383085
+   },
+   {
+    "m": 2000,
+    "eps": 0.5,
+    "delta": 1e-05,
+    "reference_code": 1.0,
+    "corrected": 1.0,
+    "median_error_reference_code": 1.5821383360530241,
+    "median_error_corrected": 1.6560196202447754
+   },
+   {
+    "m": 2000,
+    "eps": 1.0,
+    "delta": 1e-05,
+    "reference_code": 1.0,
+    "corrected": 1.0,
+    "median_error_reference_code": 1.2560521844676034,
+    "median_error_corrected": 1.273469587714017
+   },
+   {
+    "m": 2000,
+    "eps": 1.0986122886681096,
+    "delta": 1e-05,
+    "reference_code": 1.0,
+    "corrected": 1.0,
+    "median_error_reference_code": 1.2560521844676034,
+    "median_error_corrected": 1.273469587714017
+   }
+  ]
+ },
+ "numpy": "1.26.4"
+}
