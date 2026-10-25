@@ -120,8 +120,11 @@ def test_rerandomization_is_fresh():
 
 
 def test_labeled_psi_exact_recovery():
+    """Two felts per item (64-bit items), the full BFV path with SanitizeBFV: R recovers exactly the matches and
+    their positions, and no felt-wise false match passes the label-consistency test."""
     from vfr import vfr_native as vn
     pp = psi.PSIParams()
+    assert pp.felts == 2
     rng = S.CSPRNG()
     n_bar, n_R = 2000, 300
     O_ids = [f'o{i}' for i in range(1500)] + [f'dummy:{os.urandom(8).hex()}' for _ in range(n_bar - 1500)]
@@ -131,6 +134,7 @@ def test_labeled_psi_exact_recovery():
     k = oprf.keygen()
     outsO = [oprf.evaluate(k, i.encode()) for i in O_ids]
     tables = psi.sender_tables(outsO, tau, pp, n_bar)
+    assert tables['Pc'].shape[2] == pp.felts * pp.N_B
     outsR = []
     for i in R_ids:
         r, a = oprf.blind(i.encode())
@@ -142,23 +146,160 @@ def test_labeled_psi_exact_recovery():
     bo.load_public(pkb, rkb)
     D, alpha = tables['D'], tables['alpha']
     W = pp.windows(D)
+    nb, F = pp.n_bins, pp.felts
     batches = psi.receiver_batches(outsR, pp, np.random.default_rng(1))
     keep = bo.moduli()[:pp.reply_towers]
-    found = {}
+    fl = pp.flood_sigma2()
+    found, stats = {}, {}
     for bt_ in batches:
-        wins = [bf.encrypt_sym(keys, w) for w in psi.window_values(bt_['query'], W, pp.t)]
-        pw = bo.compute_powers(wins, D)
-        Sl, Ql = [], []
-        for Sc, Qc in psi.masked_layers(tables['Pc'], tables['Lc'], rng, pp.t):
-            Sct, Qct = bo.eval_partition(pw, Sc, Qc)
-            fl = pp.flood_sigma2()
-            Sl.append(bf.decrypt(keys, bo.sanitize(Sct, pp.reply_towers, S.residues(S.sample_vector(fl, pp.N_B, rng), keep))))
-            Ql.append(bf.decrypt(keys, bo.sanitize(Qct, pp.reply_towers, S.residues(S.sample_vector(fl, pp.N_B, rng), keep))))
-        f, amb, bad = psi.receiver_decode(Sl, Ql, bt_['slot_item'], outsR, pp.t, n_bar)
+        wins = psi.window_values(bt_['query'], W, pp.t)
+        Sl = [[] for _ in range(alpha)]
+        Ql = [[] for _ in range(alpha)]
+        layers = psi.masked_layers(tables['Pc'], tables['Lc'], rng, pp.t)
+        for f in range(F):
+            pw = bo.compute_powers([bf.encrypt_sym(keys, w[f * nb:(f + 1) * nb]) for w in wins], D)
+            for a, (Sc, Qc) in enumerate(layers):
+                Sct, Qct = bo.eval_partition(pw, psi.felt_slice(Sc, f, nb), psi.felt_slice(Qc, f, nb))
+                Sl[a].append(bf.decrypt(keys, bo.sanitize(Sct, pp.reply_towers, S.residues(S.sample_vector(fl, pp.N_B, rng), keep))))
+                Ql[a].append(bf.decrypt(keys, bo.sanitize(Qct, pp.reply_towers, S.residues(S.sample_vector(fl, pp.N_B, rng), keep))))
+        f_, amb, bad = psi.receiver_decode([np.concatenate(x) for x in Sl], [np.concatenate(x) for x in Ql],
+                                           bt_['slot_item'], outsR, pp.t, n_bar, felts=F, n_bins=nb, stats=stats)
         assert not amb and not bad
-        found.update(f)
+        found.update(f_)
     expect = {ri: tau[O_ids.index(R_ids[ri])] for ri in range(len(R_ids)) if R_ids[ri] in O_ids}
     assert found == expect
+    assert stats['felt_inconsistent'] == 0
+
+
+def _plain_replies(tables, query, t, rng):
+    """Masked replies evaluated in the clear (as R decrypts them, without BFV): S, Q per partition."""
+    S_l, Q_l = [], []
+    for Sc, Qc in psi.masked_layers(tables['Pc'], tables['Lc'], rng, t):
+        acc_s = np.zeros(Sc.shape[1], dtype=object)
+        acc_q = np.zeros(Sc.shape[1], dtype=object)
+        w = np.array([int(v) for v in query], dtype=object)
+        p = np.ones(Sc.shape[1], dtype=object)
+        for d in range(Sc.shape[0]):
+            acc_s = (acc_s + p * Sc[d].astype(object)) % t
+            acc_q = (acc_q + p * Qc[d].astype(object)) % t
+            p = (p * w) % t
+        S_l.append(acc_s.astype(np.uint64))
+        Q_l.append(acc_q.astype(np.uint64))
+    return S_l, Q_l
+
+
+def test_psi_two_felts_forced_near_collisions():
+    """A match on one felt alone is not a match; nor are two felts matched by two different items of a partition
+    (all membership values 0, label felts inconsistent).  An item whose two felts both equal the query's, with a
+    consistent label, is a match.  O's tables are built by bin_items and psi_build_polys, the replies are evaluated
+    in the clear."""
+    from vfr import vfr_native as vn
+    pp = psi.PSIParams()
+    t, nb, F = pp.t, pp.n_bins, pp.felts
+    n_bar = 600
+    k = oprf.keygen()
+    outsO = [oprf.evaluate(k, f'o{i}'.encode()) for i in range(n_bar)]
+    tau = list(range(1, n_bar + 1))
+    outsR = [oprf.evaluate(k, f'r{i}'.encode()) for i in range(4)]        # four non-members
+    bt = psi.receiver_batches(outsR, pp, np.random.default_rng(2))[0]
+    bi = psi.bin_items(outsO, tau, pp, n_bar)
+    xs, ys, counts = bi['xs'], bi['ys'], bi['counts']
+    by_item = {i: b for b, i in bt['slot_item'].items()}
+
+    def plant(b, felts, labels):
+        a = int(np.argmin(counts[:, b]))
+        c = counts[a, b]
+        assert c < bi['D']
+        for f in range(F):
+            xs[a, f * nb + b, c] = felts[f]
+            ys[a, f * nb + b, c] = labels[f]
+            counts[a, f * nb + b] += 1
+        return a
+
+    rng = np.random.default_rng(3)
+    other = lambda v: (v + 1 + int(rng.integers(t - 3))) % (t - 1)   # a different felt value
+    x = {i: psi.item_felts(outsR[i], t, F) for i in range(4)}
+    key = {i: [psi.label_key(outsR[i], t, f) for f in range(F)] for i in range(4)}
+    # item 0: one O item shares felt 0 only;  item 1: one O item shares felt 1 only
+    plant(by_item[0], [x[0][0], other(x[0][1])], [(77 + key[0][0]) % t, (77 + key[0][1]) % t])
+    plant(by_item[1], [other(x[1][0]), x[1][1]], [(78 + key[1][0]) % t, (78 + key[1][1]) % t])
+    # item 2: felt 0 from one O item and felt 1 from another item of the same partition (cross-item)
+    b2 = by_item[2]
+    a2 = int(np.argmin(counts[:, b2]))
+    for f_match, lab in ((0, 91), (1, 92)):
+        fel = [x[2][f] if f == f_match else other(x[2][f]) for f in range(F)]
+        c = counts[a2, b2]
+        for f in range(F):
+            xs[a2, f * nb + b2, c] = fel[f]
+            ys[a2, f * nb + b2, c] = (lab + key[2][f]) % t
+            counts[a2, f * nb + b2] += 1
+    # item 3: a full 64-bit collision with a consistent label (control: decodes to the planted position 55)
+    plant(by_item[3], x[3], [(55 + key[3][f]) % t for f in range(F)])
+    Pc, Lc = vn.psi_build_polys(xs, ys, counts, t)
+    S_l, Q_l = _plain_replies(dict(Pc=Pc, Lc=Lc), bt['query'], t, S.CSPRNG())
+    # one felt alone: some membership value is 0, but not all
+    b0, b1 = by_item[0], by_item[1]
+    assert any(int(S_[b0]) == 0 for S_ in S_l) and any(int(S_[b1 + nb]) == 0 for S_ in S_l)
+    stats = {}
+    found, amb, bad = psi.receiver_decode(S_l, Q_l, bt['slot_item'], outsR, t, n_bar, felts=F, n_bins=nb, stats=stats)
+    assert found == {3: 55} and not amb and not bad
+    assert stats['felt_partial'] >= 2 and stats['felt_inconsistent'] == 1
+    # with one felt per item the same replies would have matched items 0 and 2 (the old behaviour)
+    found1, _, _ = psi.receiver_decode([S_[:nb] for S_ in S_l], [Q_[:nb] for Q_ in Q_l], bt['slot_item'], outsR, t,
+                                       n_bar, felts=1, n_bins=nb)
+    assert {0, 2, 3} <= set(found1)
+
+
+def test_psi_rejects_repeated_position_two_felts():
+    """The repeated-position check also applies with two felts: two identifiers decoding to one position."""
+    t, n_bar, nb = psi.T_DEFAULT, 100, 16
+    outs = [oprf.evaluate(oprf.keygen(), f'id{i}'.encode()) for i in range(3)]
+    slot_item = {5: 0, 9: 1, 11: 2}
+    pos = {0: 17, 1: 17, 2: 40}
+    S_ = np.ones(2 * nb, dtype=np.uint64)
+    Q_ = np.zeros(2 * nb, dtype=np.uint64)
+    for b, i in slot_item.items():
+        for f in range(2):
+            S_[f * nb + b] = 0
+            Q_[f * nb + b] = (pos[i] + psi.label_key(outs[i], t, f)) % t
+    found, amb, bad = psi.receiver_decode([S_], [Q_], slot_item, outs, t, n_bar, felts=2, n_bins=nb)
+    assert found == pos and not amb and not bad
+    with pytest.raises(psi.PSIOutputRejected, match='not injective'):
+        psi.check_injective(found)
+
+
+def test_psi_parameter_check():
+    """False-match, cuckoo and SanitizeBFV requirements: two felts meet delta_psi = 2^-40 at every evaluation size
+    (1M rows, n_R^max up to 100,000); one felt does not, even at 4,096 rows; the exact bounds behave as stated."""
+    from vfr import vfr_native as vn
+    pp = psi.PSIParams()
+    mod = vn.BFVCore(14, pp.t, pp.bfv_depth, True).moduli()
+    for n_bar, n_R in ((4096, 600), (106496, 20000), (1007616, 20000), (1007616, 100000)):
+        c = pp.check(n_bar, n_R, moduli=mod)
+        assert c['ok'], c['reasons']
+        fm = c['false_match']
+        assert fm['p_silent'] < fm['p_pass'] < fm['p_felt'] and fm['p_item'] <= fm['p_felt']
+        assert fm['p_pass'] <= pp.delta_psi and c['p_cuckoo'] <= pp.delta_psi
+        assert c['sanitize']['flood_ok'] and c['sanitize']['switch_ok']
+    # 1M rows, n_R^max = 20,000: the cross-item events alone exceed delta_psi (so the consistency test is needed)
+    fm = pp.false_match(1007616, 20000)
+    assert fm['p_felt'] > pp.delta_psi and fm['p_pass'] < 2.0 ** -60
+    assert pp.tables(2000)[0] == 1 and pp.tables(20000)[:2] == (2, 10000) and pp.tables(100000)[0] == 10
+    p1 = psi.PSIParams(felts=1)
+    c1 = p1.check(4096, 600)
+    assert not c1['ok'] and 'felt' in c1['reasons'][0]
+    assert p1.false_match(1007616, 2000)['p_pass'] > 1e-4          # the old 32-bit items at 1M
+    # a too short chain after the switch is refused (one 60-bit limb: q'/(2t) < t_eta sigma_psi)
+    bad = psi.PSIParams(reply_towers=1).sanitize_check(mod)
+    assert bad['flood_ok'] and not bad['switch_ok']
+
+
+def test_psi_balanced_tables():
+    pp = psi.PSIParams()
+    outs = [os.urandom(64) for _ in range(20000)]
+    bts = psi.receiver_batches(outs, pp, np.random.default_rng(0))
+    assert [len(b['slot_item']) for b in bts] == [10000, 10000]
+    assert sorted(i for b in bts for i in b['slot_item'].values()) == list(range(20000))
 
 
 def test_psi_rejects_repeated_position():

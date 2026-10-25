@@ -1,21 +1,35 @@
 """Labeled PSI on OPRF outputs (Chen-Laine-Rindal style), adapted from scenario_b/psi_common.py.
 
-Items and labels
+Items and labels (F = felts, the number of field elements per item, APSI's "felts per item"; default 2)
   OPRF output y = F(id) (64 bytes): item part y[0:32] (F_k), key part y[32:64] (F'_k).
-  item value  = SHA-256("vfr-item" | y[0:32]) mod (t - 1)   -> in [0, t-2], never the padding root t-1
-  bin_i(item) = SHA-256("vfr-bin" | i | y[0:32]) mod N_bins, i < h
-  label key   = SHA-256("vfr-label" | y[32:64]) mod t
-  label       = (tau(j) + key) mod t                         (tau(j) is O's 1-based shuffled position)
+  felt 0      = SHA-256("vfr-item" | y[0:32]) mod (t - 1)          -> in [0, t-2], never the padding root t-1
+  felt f >= 1 = SHA-256("vfr-item" | f | y[0:32]) mod (t - 1)
+  bin_i(item) = SHA-256("vfr-bin" | i | y[0:32]) mod N_bins, i < h   (one bin for all felts of the item)
+  label key f = SHA-256("vfr-label" | y[32:64]) mod t for f = 0, SHA-256("vfr-label" | f | y[32:64]) mod t otherwise
+  label felt f = (tau(j) + key_f) mod t                            (tau(j) is O's 1-based shuffled position)
 
-Public sizes: N_bins, h, the bin degree D and the number of partitions alpha are public functions of
-(n_bar_O, h, N_bins, d_cap, delta_psi), never of the data (the old prototype used the observed maximum
-load, which is data dependent).
+Slot layout: felt f of bin b sits in slot f * N_bins + b of a vector of F * N_bins slots, i.e. in ciphertext f
+(N_bins = N_B slots each).  Every slot carries its own membership and label polynomial, so O interpolates felt f of
+the items of bin b (and their label felt f) in slot (f, b); the items of one partition hold distinct values in every
+felt.  R queries felt f of its item in slot (f, b) and declares a match in a partition only if (i) the masked
+membership value is 0 in all F slots of the bin and (ii) the F label felts decode to the same position
+(label_f - key_f(x) mod t equal for all f).  A true match always passes both.  A non-member can pass (i) with felts
+from different items of the partition (as in APSI); such a cross-item match decodes F unrelated positions, so (ii)
+rejects it except with probability <= t^-(F-1) per event, and R treats it as no match (no abort, nothing for O to
+observe).  An event that passes both is what can still abort the run or, if its position is in range and not
+repeated, change the output; its probability p_pass is bounded exactly by `PSIParams.false_match` and must be at
+most delta_psi (Setup refuses otherwise, `PSIParams.check`).
+
+Public sizes: N_bins, h, F, the bin degree D, the number of partitions alpha and the number of cuckoo tables are
+public functions of (n_bar_O, n_R^max, h, N_bins, d_cap, delta_psi), never of the data (the old prototype used the
+observed maximum load, which is data dependent).
 """
 from __future__ import annotations
 
 import hashlib
 import math
 from dataclasses import dataclass
+from fractions import Fraction
 
 import numpy as np
 from scipy.stats import binom
@@ -23,6 +37,22 @@ from scipy.stats import binom
 SIGMA_FLOOR = 2.0 ** 42          # floor on the flooding s.d. (as dp.SIGMA_C_FLOOR)
 T_DEFAULT = 4293918721          # prime, = 1 mod 2^20 (BFV batching for N_B <= 2^19), < 2^32
 DUMMY_Y = 0
+
+
+class PSIParamsRefused(ValueError):
+    """The PSI parameters do not meet their failure-probability or SanitizeBFV requirements: Setup refuses."""
+
+
+def hall_bound(n: int, m: int, h: int) -> float:
+    """Upper bound on the probability that no assignment of n items with h uniform candidate bins among m exists
+    (Hall's condition and a union bound; crypto proofs, Lemma "The cuckoo-hashing slack"; every term summed, as in
+    experiments/proofs_check/tv1_cuckoo.py)."""
+    tot = 0.0
+    for s in range(2, n + 1):
+        lt = (math.lgamma(n + 1) - math.lgamma(s + 1) - math.lgamma(n - s + 1)
+              + math.lgamma(m + 1) - math.lgamma(s) - math.lgamma(m - s + 2) + h * s * math.log((s - 1) / m))
+        tot += math.exp(min(lt, 700.0))
+    return tot
 
 
 @dataclass
@@ -35,11 +65,18 @@ class PSIParams:
     bfv_depth: int = 7          # OpenFHE BFV multiplicative depth (sets the modulus chain: 7 x 60 bits)
     reply_towers: int = 2       # SanitizeBFV: modulus switch to this many towers
     kappa: int = 40             # flooding parameter for SanitizeBFV
-    cuckoo_load: float = 0.9
+    cuckoo_load: float = 0.9    # hard cap on the load of one cuckoo table (the table count also meets delta_psi)
+    felts: int = 2              # field elements per item (64-bit items at t ~ 2^32)
+    t_eta: float = 10.0         # SanitizeBFV: tail factor of the flooding noise in the switch condition
 
     @property
     def n_bins(self):
         return self.N_B
+
+    @property
+    def n_slots(self):
+        """Length of the slot axis of a query and of O's coefficient layers: F ciphertexts of N_B slots."""
+        return self.felts * self.N_B
 
     def sizes(self, n_bar_O: int):
         """(D, alpha, load bound) from public sizes: the bin load is Binomial(n_bar_O h, 1/N_bins);
@@ -52,6 +89,25 @@ class PSIParams:
         D = min(self.d_cap, B)
         alpha = -(-B // D)
         return D, alpha, B
+
+    def tables(self, n_R_max: int):
+        """(number of cuckoo tables k, items per table at most, p_cuckoo bound): the smallest k with
+        ceil(n_R^max / k) <= cuckoo_load N_bins and k * hall_bound(ceil(n_R^max / k), N_bins, h) <= delta_psi
+        (R's queries are split into k balanced tables).  If no k up to the cap meets delta_psi, the smallest k
+        allowed by the load cap is returned with its (too large) bound, and `check` refuses."""
+        cap = int(self.cuckoo_load * self.n_bins)
+        k0 = max(1, -(-n_R_max // cap))
+        first = None
+        for k in range(k0, max(k0, n_R_max) + 1):
+            per = -(-n_R_max // k)
+            p = k * hall_bound(per, self.n_bins, self.h)
+            if first is None:
+                first = (k, per, p)
+            if p <= self.delta_psi:
+                return k, per, p
+            if per <= 1:
+                break
+        return first
 
     def windows(self, D: int) -> int:
         return max(1, math.ceil(math.log2(D))) + 1 if D > 1 else 1
@@ -70,63 +126,199 @@ class PSIParams:
         1 + 2^-80 hold; at the defaults sigma_psi = 2^61 and the floor does not bind)."""
         return math.ceil(max(2.0 ** self.kappa * self.B_err(), SIGMA_FLOOR) ** 2)
 
+    def sanitize_check(self, moduli) -> dict:
+        """SanitizeBFV's requirements for the BFV chain `moduli` (the first reply_towers limbs are kept):
+        flooding sigma_psi >= max(2^kappa_psi B_psi / sqrt(2 pi), 2^42), and the modulus-switch condition
+        q'/(2t) > t_eta sigma_psi + B_psi + t (B_psi = B_err).  Exact integer comparisons (sigma_psi^2 is an
+        integer; both sides squared where needed)."""
+        qp = math.prod(int(q) for q in list(moduli)[:self.reply_towers])
+        s2 = self.flood_sigma2()
+        B = Fraction(self.B_err())
+        need = max(Fraction(2) ** self.kappa * B, Fraction(SIGMA_FLOOR))     # sigma_psi >= need (>= the / sqrt(2 pi) form)
+        flood_ok = Fraction(s2) >= need * need
+        sig_up = Fraction(math.isqrt(s2) + 1)                                # >= sigma_psi
+        rhs = Fraction(self.t_eta) * sig_up + B + self.t
+        switch_ok = Fraction(qp, 2 * self.t) > rhs
+        return dict(flood_ok=bool(flood_ok), switch_ok=bool(switch_ok), log2_qprime=math.log2(qp),
+                    log2_sigma_psi=0.5 * math.log2(s2), log2_switch_margin=float(math.log2(Fraction(qp, 2 * self.t) / rhs)))
+
+    def false_match(self, n_bar_O: int, n_R_max: int) -> dict:
+        """Exact upper bounds (random-oracle model for the hashes) on the false-match events of one run.
+
+        Per query and partition with c items (c <= D, sum over the partitions of a bin <= B, the public load bound):
+        each felt of the query is uniform on Z_{t-1} up to the bias of reducing a 256-bit hash, so it hits one of
+        the c distinct values of that felt with probability <= c u_item, u_item = (floor(2^256/(t-1)) + 1)/2^256,
+        independently across felts.  Hence
+          p_felt = n_R^max S_F u_item^F,  S_F = max sum_a c_a^F = floor(B/D) D^F + (B mod D)^F
+        bounds the probability that some query has all F membership values 0 in some partition (with felts from any
+        items of the partition); p_item = n_R^max B u_item^F the same with all F felts from one item.  Such an event
+        passes R's label-consistency test only if F - 1 independent label keys of the query hit given values:
+          p_pass = p_felt u_key^(F-1),  u_key = (floor(2^256/t) + 1)/2^256,
+        and only an event that passes can abort the run (ambiguous, out of range, repeated position) or change the
+        output: p_silent = p_pass n_bar_O u_key (its position must also be in range).  With F = 1 there is no
+        consistency test and p_pass = p_felt.  Returns floats and log2 values; `check` requires p_pass <= delta_psi."""
+        D, alpha, B = self.sizes(n_bar_O)
+        F = self.felts
+        u_item = Fraction(2 ** 256 // (self.t - 1) + 1, 2 ** 256)
+        u_key = Fraction(2 ** 256 // self.t + 1, 2 ** 256)
+        full, rem = divmod(B, D)
+        S_F = full * D ** F + rem ** F
+        p_felt = n_R_max * S_F * u_item ** F
+        p_item = n_R_max * B * u_item ** F
+        p_pass = p_felt * u_key ** (F - 1)
+        p_silent = p_pass * n_bar_O * u_key
+        mean_load = Fraction(n_bar_O * self.h, self.n_bins)
+        p_mean = n_R_max * mean_load * u_item ** F            # the paper's n_R^max n_bar_O h / (N_bins (t-1)^F)
+
+        def lg(x):
+            return float(math.log2(x)) if x > 0 else float('-inf')
+        return dict(felts=F, D=D, alpha=alpha, B=B, S_F=S_F, p_felt=float(p_felt), p_item=float(p_item),
+                    p_pass=float(p_pass), p_silent=float(p_silent), p_mean_formula=float(p_mean),
+                    log2_p_felt=lg(p_felt), log2_p_item=lg(p_item), log2_p_pass=lg(p_pass), log2_p_silent=lg(p_silent),
+                    log2_p_mean_formula=lg(p_mean), item_bits=F * math.log2(self.t - 1),
+                    ok=bool(p_pass <= Fraction(self.delta_psi)))
+
+    def check(self, n_bar_O: int, n_R_max: int, moduli=None) -> dict:
+        """Setup's test of the PSI parameters for the run's public sizes: the false matches that can abort the run
+        or change its output (p_pass <= delta_psi), the cuckoo-hashing failure of R's tables (<= delta_psi), the
+        bin overflow (<= delta_psi by the choice of B in `sizes`) and, if the BFV moduli are given, SanitizeBFV's
+        flooding and modulus-switch conditions.  Returns a dict with 'ok' and 'reasons'."""
+        reasons = []
+        if self.felts < 1 or int(self.felts) != self.felts:
+            raise PSIParamsRefused('felts must be a positive integer')
+        fm = self.false_match(n_bar_O, n_R_max)
+        if not fm['ok']:
+            reasons.append(f"false matches: p_pass = 2^{fm['log2_p_pass']:.1f} > delta_psi with {self.felts} felt(s) "
+                           f"per item (raise felts)")
+        k, per, pc = self.tables(n_R_max)
+        if pc > self.delta_psi:
+            reasons.append(f'cuckoo hashing: {k} table(s) of {per} items fail with probability up to 2^{math.log2(pc):.1f}'
+                           f' > delta_psi')
+        out = dict(false_match=fm, tables=k, per_table=per, p_cuckoo=pc,
+                   log2_p_cuckoo=math.log2(pc) if pc > 0 else float('-inf'))
+        if moduli is not None:
+            sc = self.sanitize_check(moduli)
+            out['sanitize'] = sc
+            if not sc['flood_ok']:
+                reasons.append('SanitizeBFV: flooding s.d. below max(2^kappa_psi B_psi / sqrt(2 pi), 2^42)')
+            if not sc['switch_ok']:
+                reasons.append("SanitizeBFV: q'/(2t) <= t_eta sigma_psi + B_psi + t after the modulus switch")
+        out['ok'] = not reasons
+        out['reasons'] = reasons
+        return out
+
 
 def _h(*parts: bytes) -> bytes:
     return hashlib.sha256(b'|'.join(parts)).digest()
 
 
+def item_felts(y: bytes, t: int, felts: int):
+    """The F field elements of the item of OPRF output y, each in [0, t-2]."""
+    out = [int.from_bytes(_h(b'vfr-item', y[:32]), 'little') % (t - 1)]
+    for f in range(1, felts):
+        out.append(int.from_bytes(_h(b'vfr-item', bytes([f]), y[:32]), 'little') % (t - 1))
+    return out
+
+
 def item_value(y: bytes, t: int) -> int:
-    return int.from_bytes(_h(b'vfr-item', y[:32]), 'little') % (t - 1)
+    """Felt 0 of the item (the whole item when felts = 1)."""
+    return item_felts(y, t, 1)[0]
 
 
 def bins_of(y: bytes, h: int, n_bins: int):
     return [int.from_bytes(_h(b'vfr-bin', bytes([i]), y[:32])[:8], 'little') % n_bins for i in range(h)]
 
 
-def label_key(y: bytes, t: int) -> int:
-    return int.from_bytes(_h(b'vfr-label', y[32:])[:8], 'little') % t
+def label_key(y: bytes, t: int, f: int = 0) -> int:
+    """Label key of felt f, uniform on Z_t up to a relative bias of t / 2^256 (the whole hash is reduced)."""
+    parts = (b'vfr-label', y[32:]) if f == 0 else (b'vfr-label', bytes([f]), y[32:])
+    return int.from_bytes(_h(*parts), 'little') % t
 
 
 # ------------------------------------------------------------------------------------------- O side
+def _greedy_bin(rows, X, alpha: int, D: int):
+    """Place the items `rows` of one bin (in this order) into partitions: the first partition with room whose items
+    differ from the item in every felt.  Returns (partition, index) per row and the number of rows displaced."""
+    F = X.shape[1]
+    seen = [[set() for _ in range(F)] for _ in range(alpha)]
+    cnt = [0] * alpha
+    out, n_dup = [], 0
+    for r in rows:
+        x = [int(v) for v in X[r]]
+        for a in range(alpha):
+            if cnt[a] < D and all(x[f] not in seen[a][f] for f in range(F)):
+                out.append((a, cnt[a]))
+                cnt[a] += 1
+                for f in range(F):
+                    seen[a][f].add(x[f])
+                break
+        else:
+            raise RuntimeError('PSI: duplicate felt values exhaust the partitions of a bin')
+        if a > 0 and any(any(x[f] in seen[a2][f] for f in range(F)) for a2 in range(a)):
+            n_dup += 1
+    return out, n_dup
+
+
 def bin_items(oprf_outputs, positions, pp: PSIParams, n_bar_O: int):
-    """O: hash every row into its h bins and assign it to a partition (no duplicate item value inside a
-    partition).  Returns the (alpha, N_bins, D) item/label arrays, the counts and the public sizes."""
+    """O: hash every row into its h bins and assign it to a partition, in row order: the k-th item of a bin goes to
+    partition k // D unless an item already there shares one of its felt values, in which case the bin is placed by
+    the first-fit rule of `_greedy_bin` (rare: a felt collision inside a partition has probability ~ D^2 / 2t).
+    Returns the (alpha, F * N_bins, D) item/label arrays (slot f * N_bins + b holds felt f of bin b), the counts and
+    the public sizes."""
     D, alpha, B = pp.sizes(n_bar_O)
-    t, nb = pp.t, pp.n_bins
-    bins = [[] for _ in range(nb)]
-    for y, pos in zip(oprf_outputs, positions):
-        x = item_value(y, t)
-        lab = (pos + label_key(y, t)) % t
-        for b in sorted(set(bins_of(y, pp.h, nb))):
-            bins[b].append((x, lab))
-    xs = np.zeros((alpha, nb, D), dtype=np.uint64)
-    ys = np.zeros((alpha, nb, D), dtype=np.uint64)
-    counts = np.zeros((alpha, nb), dtype=np.int32)
+    t, nb, F, h = pp.t, pp.n_bins, pp.felts, pp.h
+    n = len(oprf_outputs)
+    X = np.empty((n, F), dtype=np.uint64)
+    L = np.empty((n, F), dtype=np.uint64)
+    BIN = np.empty((n, h), dtype=np.int64)
+    for j, (y, pos) in enumerate(zip(oprf_outputs, positions)):
+        X[j] = item_felts(y, t, F)
+        L[j] = [(int(pos) + label_key(y, t, f)) % t for f in range(F)]
+        BIN[j] = bins_of(y, h, nb)
+    Bs = np.sort(BIN, axis=1)
+    keep = np.ones(Bs.shape, dtype=bool)
+    keep[:, 1:] = Bs[:, 1:] != Bs[:, :-1]                      # an item enters each of its distinct bins once
+    rows = np.broadcast_to(np.arange(n)[:, None], Bs.shape)[keep]
+    bins = Bs[keep]
+    order = np.argsort(bins, kind='stable')                    # within a bin, row order
+    rows, bins = rows[order], bins[order]
+    load = np.bincount(bins, minlength=nb)
+    max_load = int(load.max()) if n else 0
+    if max_load > alpha * D:
+        raise RuntimeError('PSI bin overflow (probability <= delta_psi): abort the run')
+    start = np.concatenate([[0], np.cumsum(load)[:-1]])
+    rank = np.arange(len(bins)) - start[bins]
+    part, idx = rank // D, rank % D
+    # felt collisions inside a (bin, partition): redo those bins with the first-fit rule
+    bad_bins = set()
+    for f in range(F):
+        key = np.lexsort((X[rows, f], part, bins))
+        same = (bins[key][1:] == bins[key][:-1]) & (part[key][1:] == part[key][:-1]) & \
+               (X[rows, f][key][1:] == X[rows, f][key][:-1])
+        bad_bins.update(int(b) for b in bins[key][1:][same])
     n_dup = 0
-    for b, items in enumerate(bins):
-        if len(items) > alpha * D:
-            raise RuntimeError('PSI bin overflow (probability <= delta_psi): abort the run')
-        seen = [set() for _ in range(alpha)]
-        for x, lab in items:
-            # first partition that has room and does not already hold the same item value
-            for a in range(alpha):
-                if counts[a, b] < D and x not in seen[a]:
-                    xs[a, b, counts[a, b]] = x
-                    ys[a, b, counts[a, b]] = lab
-                    counts[a, b] += 1
-                    seen[a].add(x)
-                    break
-            else:
-                raise RuntimeError('PSI: duplicate item values exhaust the partitions of a bin')
-            if any(x in s_ for s_ in seen[:a]):
-                n_dup += 1
-    return dict(xs=xs, ys=ys, counts=counts, D=D, alpha=alpha, B=B, n_dup=n_dup,
-                max_load=max(len(x) for x in bins))
+    for b in sorted(bad_bins):
+        sel = np.nonzero(bins == b)[0]
+        placed, nd = _greedy_bin(rows[sel], X, alpha, D)
+        n_dup += nd
+        part[sel] = [p for p, _ in placed]
+        idx[sel] = [i for _, i in placed]
+    xs = np.zeros((alpha, F * nb, D), dtype=np.uint64)
+    ys = np.zeros((alpha, F * nb, D), dtype=np.uint64)
+    counts = np.zeros((alpha, F * nb), dtype=np.int32)
+    cnt = np.zeros((alpha, nb), dtype=np.int32)
+    np.add.at(cnt, (part, bins), 1)
+    for f in range(F):
+        xs[part, f * nb + bins, idx] = X[rows, f]
+        ys[part, f * nb + bins, idx] = L[rows, f]
+        counts[:, f * nb:(f + 1) * nb] = cnt
+    return dict(xs=xs, ys=ys, counts=counts, D=D, alpha=alpha, B=B, n_dup=n_dup, n_bins_redone=len(bad_bins),
+                max_load=max_load)
 
 
 def sender_tables(oprf_outputs, positions, pp: PSIParams, n_bar_O: int):
     """O's per-run preprocessing.  oprf_outputs[j] = F(id_j), positions[j] = tau(j) (1-based).
-    Returns (Pc, Lc) layers (alpha, D+1, N_bins) and (alpha, D, N_bins) and the public sizes."""
+    Returns (Pc, Lc) layers (alpha, D+1, F N_bins) and (alpha, D, F N_bins) and the public sizes."""
     import time
     t0 = time.time()
     bi = bin_items(oprf_outputs, positions, pp, n_bar_O)
@@ -134,12 +326,12 @@ def sender_tables(oprf_outputs, positions, pp: PSIParams, n_bar_O: int):
     from . import vfr_native as vn
     Pc, Lc = vn.psi_build_polys(bi['xs'], bi['ys'], bi['counts'], pp.t)
     return dict(Pc=Pc, Lc=Lc, D=bi['D'], alpha=bi['alpha'], B=bi['B'], n_dup=bi['n_dup'], max_load=bi['max_load'],
-                t_bin=t1 - t0, t_polys=time.time() - t1)
+                n_bins_redone=bi['n_bins_redone'], t_bin=t1 - t0, t_polys=time.time() - t1)
 
 
 def masked_layers(Pc, Lc, rng_bytes, t: int):
-    """Fold fresh masks r1, r2 (uniform in Z_t^*, one per bin and partition) into the coefficients:
-    Sc = r1 * Pc, Qc = r2 * Pc + Lc (mod t)."""
+    """Fold fresh masks r1, r2 (uniform in Z_t^*, one per slot and partition, so independent across the felts of a
+    bin) into the coefficients: Sc = r1 * Pc, Qc = r2 * Pc + Lc (mod t)."""
     alpha, D1, nb = Pc.shape
     out = []
     for a in range(alpha):
@@ -151,6 +343,11 @@ def masked_layers(Pc, Lc, rng_bytes, t: int):
         Qc[:D1 - 1] = (Qc[:D1 - 1] + Lc[a]) % np.uint64(t)
         out.append((Sc, Qc))
     return out
+
+
+def felt_slice(M, f: int, N_B: int):
+    """The columns of a (rows, F N_B) layer that belong to ciphertext f (felt f), as a contiguous array."""
+    return np.ascontiguousarray(M[:, f * N_B:(f + 1) * N_B])
 
 
 def _uniform_nonzero(rng, n, t):
@@ -226,33 +423,41 @@ def _augment(table: dict, items_bins, u: int) -> bool:
 
 
 def receiver_batches(oprf_outputs, pp: PSIParams, rng):
-    """R: split its (padded) items into cuckoo tables of at most cuckoo_load * N_bins items each."""
-    cap = int(pp.cuckoo_load * pp.n_bins)
-    t = pp.t
+    """R: split its (padded) items into pp.tables(len(items)) balanced cuckoo tables (sizes differ by at most one,
+    each at most cuckoo_load * N_bins) and build each table's query: felt f of the item in bin b goes to slot
+    f * N_bins + b; empty bins query DUMMY_Y and are ignored at decoding."""
+    n = len(oprf_outputs)
+    k, _, _ = pp.tables(n)
+    t, nb, F = pp.t, pp.n_bins, pp.felts
     batches = []
-    for start in range(0, len(oprf_outputs), cap):
-        chunk = list(range(start, min(start + cap, len(oprf_outputs))))
-        cand = [bins_of(oprf_outputs[i], pp.h, pp.n_bins) for i in chunk]
-        tab = cuckoo(cand, pp.n_bins, pp.h, rng)
+    bounds = [n * j // k for j in range(k + 1)]
+    for j in range(k):
+        chunk = list(range(bounds[j], bounds[j + 1]))
+        cand = [bins_of(oprf_outputs[i], pp.h, nb) for i in chunk]
+        stats = {}
+        tab = cuckoo(cand, nb, pp.h, rng, stats=stats)
         if tab is None:
             raise RuntimeError('cuckoo hashing failed')
-        q = np.full(pp.n_bins, DUMMY_Y, dtype=np.uint64)
+        q = np.full(F * nb, DUMMY_Y, dtype=np.uint64)
         slot_item = {}
         for b, li in tab.items():
             i = chunk[li]
-            q[b] = item_value(oprf_outputs[i], t)
+            for f, v in enumerate(item_felts(oprf_outputs[i], t, F)):
+                q[f * nb + b] = v
             slot_item[b] = i
-        batches.append(dict(query=q, slot_item=slot_item))
+        batches.append(dict(query=q, slot_item=slot_item, fallback=stats.get('fallback', False)))
     return batches
 
 
 def window_values(q: np.ndarray, W: int, t: int):
-    """w^(2^i) mod t for i < W, slot-wise."""
+    """w^(2^i) mod t for i < W, slot-wise (exact: values < t < 2^32, so squares fit in 64 bits)."""
+    if t >= 2 ** 32:
+        raise ValueError('window_values needs t < 2^32')
     out = []
     cur = q.astype(np.uint64) % np.uint64(t)
     for i in range(W):
         out.append(cur.copy())
-        cur = np.array([(int(v) * int(v)) % t for v in cur], dtype=np.uint64)   # exact (Python ints)
+        cur = (cur * cur) % np.uint64(t)
     return out
 
 
@@ -271,15 +476,37 @@ def check_injective(found):
         seen[pos] = i
 
 
-def receiver_decode(S_list, Q_list, slot_item, oprf_outputs, t: int, n_bar_O: int):
-    """From the decrypted replies of each partition, recover {item index: position}.  Flags ambiguities."""
+def receiver_decode(S_list, Q_list, slot_item, oprf_outputs, t: int, n_bar_O: int, felts: int = 1,
+                    n_bins: int | None = None, stats: dict | None = None):
+    """From the decrypted replies of each partition (each of length felts * n_bins; felt f of bin b in slot
+    f * n_bins + b), recover {item index: position}.  A partition matches item i only if its membership value is 0
+    in every felt slot of i's bin and the label felts decode to one position (label_f - key_f mod t equal for all f);
+    a partition that passes the first test but not the second is a cross-item or colliding false match and is not
+    a match (counted in stats['felt_inconsistent']).  Returns (found, ambiguous, bad): ambiguous = items matched in
+    two partitions with different positions, bad = positions outside [1, n_bar_O]."""
+    if n_bins is None:
+        n_bins = len(S_list[0]) // felts
     found, ambiguous = {}, set()
+    n_incons = n_partial = 0
+    keys = {}
     for S, Q in zip(S_list, Q_list):
         for b, i in slot_item.items():
-            if int(S[b]) == 0:
-                pos = (int(Q[b]) - label_key(oprf_outputs[i], t)) % t
-                if i in found and found[i] != pos:
-                    ambiguous.add(i)
-                found[i] = pos
+            zero = [int(S[f * n_bins + b]) == 0 for f in range(felts)]
+            if not all(zero):
+                n_partial += any(zero)
+                continue
+            if i not in keys:
+                keys[i] = [label_key(oprf_outputs[i], t, f) for f in range(felts)]
+            pos = {(int(Q[f * n_bins + b]) - keys[i][f]) % t for f in range(felts)}
+            if len(pos) != 1:
+                n_incons += 1
+                continue
+            pos = pos.pop()
+            if i in found and found[i] != pos:
+                ambiguous.add(i)
+            found[i] = pos
     bad = {i for i, p in found.items() if not (1 <= p <= n_bar_O)}
+    if stats is not None:
+        stats['felt_inconsistent'] = stats.get('felt_inconsistent', 0) + n_incons
+        stats['felt_partial'] = stats.get('felt_partial', 0) + n_partial
     return found, ambiguous, bad

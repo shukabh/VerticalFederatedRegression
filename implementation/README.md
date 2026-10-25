@@ -30,7 +30,7 @@ NTTs, hybrid key switching and BFV evaluation.
 scripts/build_openfhe.sh /opt/openfhe-1.5.1          # once (about 5 min on 4 cores)
 python3 -m pip install numpy scipy cryptography pybind11 pytest
 native/build.sh /opt/openfhe-1.5.1                   # builds vfr/vfr_native*.so
-python3 -m pytest -q tests/                          # 89 tests, about 2.5 min (8 min on a loaded machine)
+python3 -m pytest -q tests/                          # 94 tests, about 2.5 min (8 min on a loaded machine)
 python3 run_protocol.py toy
 python3 run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300   # [--eps 8] [--kappa auto|48] [--ledger_eps none]
 #                                                     [--setting prev|I|P] [--r1_mode union|exact] [--f1 F] ...
@@ -48,13 +48,13 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 | | `vfr/btot.py` | worst-case, data-independent B_tot (port of the proofs' btot.py, generalized to separate scales and OpenFHE's gadget; reproduces the proofs' table) and Delta_x |
 | | `native: CKKSCore.pk_share / make_pk / rotkey_share / make_rotkeys` | threshold keygen with a CRS (SHAKE-256): `p0 = -a s + e` with `s = s_R + s_O`; joint rotation keys for the 13 shifts 2^i in OpenFHE's hybrid layout; no relinearization or conjugation key |
 | 1 Link (Alg. 2) | `vfr/oprf.py` | 2HashDH OPRF, RFC 9497 mode 0, ristretto255-SHA512 over libsodium; passes the RFC test vectors; fresh key k per run; exactly n_R^max blinded queries |
-| | `vfr/psi.py`, `native: BFVCore, psi_build_polys` | labeled PSI: cuckoo hashing at R (h = 3, N_bins = 16384; random walk with an augmenting-path fallback), O's membership/label polynomials per bin and partition (labels tau(j) + H(F'_k(id)) mod t), windowed powers under R's own BFV key, fresh masks r1, r2, SanitizeBFV (switch to 2 limbs + Enc_pk(0) + exact discrete-Gaussian flooding with 2^40 B_err); R recovers I and pi, computes A exactly |
+| | `vfr/psi.py`, `native: BFVCore, psi_build_polys` | labeled PSI: 64-bit items as F = 2 field elements (felts) of Z_t, felt f of bin b in slot f N_bins + b (ciphertext f); cuckoo hashing at R (h = 3, N_bins = 16384, k balanced tables with total failure bound <= delta_psi; random walk with an augmenting-path fallback), O's membership/label polynomials per slot and partition (label felts tau(j) + H_f(F'_k(id)) mod t); a match needs all felts zero and consistent label felts; Setup checks the false-match, cuckoo and SanitizeBFV conditions (`PSIParams.check`), windowed powers under R's own BFV key, fresh masks r1, r2, SanitizeBFV (switch to 2 limbs + Enc_pk(0) + exact discrete-Gaussian flooding with 2^40 B_err); R recovers I and pi, computes A exactly |
 | 2 Upload (Alg. 3) | `native: encrypt_seeded / convert` | R: `c0 = -a s_R + e + Ecd(v)`, `a = PRG(seed)`, sends (c0, seed) (seeded form, half size); O: `c0 <- c0 - a s_O` |
 | 3 Aggregate (Alg. 4) | `vfr/aggregate.py` | circuit A as written (`T_e = EvalSum(Rescale(sum_h U_e[h] * Ecd(V_e[h])))`, `P_e = Rescale(T_e * Ecd(u_slot))`, M1 = sum over (triu B, C), M2 = all stage-2 entries, My if separate); circuit C as an option; optional entry-parallel threads |
 | 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; sends only (c1', h_O) (the ledger was charged at admission) |
 | | `native: combine / decode_i128` | R: `v = h_O + c1' s_R mod q0`, CRT to int128, decode with the exact rational final scale |
 | 5 Solve and infer (Alg. 6) | `vfr/solve.py` | corrected Algorithm 6 (port of alg6.py with the paper's corrections); stage-1 radius r_1 by the union bound (`r1_mode='union'`) or the exact Monte Carlo quantile (`'exact'`, `r1_quantile_exact`, cached in `vfr/r1_quantiles.json`); `intervals=False` for estimate-only settings |
-| parties | `vfr/party_r.py`, `vfr/party_o.py`, `vfr/protocol.py`, `vfr/wire.py` | two processes, one socket; JSON header + binary fields, no pickle; per-message transcript (type, direction, bytes per field, SHA-256) |
+| parties | `vfr/party_r.py`, `vfr/party_o.py`, `vfr/protocol.py`, `vfr/wire.py` | two processes, one socket; JSON header + binary fields, no pickle; per-message transcript (type, direction, bytes per field, SHA-256); each party also returns local phase marks (wall time, process CPU time over all threads, peak RSS; `common.mark`) |
 | inputs | `vfr/data.py` | toy example; synthetic cohorts from `experiments/sim_core.Population` (d_R = 4, d_O = 6) |
 | preprocessing (Setup, `Preprocess`) | `bench/utility_runs.py` (`transform`) | each party transforms its own columns before the protocol with constants from a public reference split: standardize, optional winsorizing / rank-Gaussian, optional block unit norm; bounds = 99.5% quantiles on the transformed reference data. It is local computation, so it runs before `protocol.run` |
 
@@ -84,10 +84,11 @@ persistent demo ledger. With the hockey-stick ledger (xi_L = 1e-3, the default) 
 it to 48 / 46 / 44 / 42 / 46. `--log2_Omega_U q2` selects the
 earlier choice Omega_U = q2. The benchmarks in `bench/results/` were measured with Omega_U = q2; the modulus chain
 and the operations are the same, so the timings carry over. BFV N_B = 2^14,
-t = 4293918721, 7 x 60-bit limbs, reply switched to 2 limbs, SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50,
-delta_psi = 2^-40.
+t = 4293918721, 2 felts per item (64-bit items; `PSIParams.felts`), 7 x 60-bit limbs, reply switched to 2 limbs,
+SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50, delta_psi = 2^-40. At 1M rows and n_R^max = 20,000 the
+false-match bound p_pass is 2^-67.5 and R's two cuckoo tables fail with probability at most 2^-43.4 (DEVIATIONS A22, A23).
 
-## Tests (`tests/`, 89 passing)
+## Tests (`tests/`, 94 passing)
 
 - `test_primitives.py`: RFC 9497 vectors; exact sampler (chi-square at sigma^2 = 3, moments and low bits at
   sigma = 2^55); DeltaRep against the closed forms, the paper's (1, 1, 5) example and a random search; rho_run =
@@ -96,13 +97,17 @@ delta_psi = 2^-40.
 - `test_ckks_psi.py`: encoder round trip at scales up to 2^61.5; seeded upload and key conversion (and failure
   with a wrong share or seed); EvalSum with joint keys = trace; circuits A, A with Omega_U = 2^68, and C reproduce
   the plaintext statistics with eta = 0; the randomness-dependent error measured from two independent key sets
-  stays more than 3 bits below the worst-case B_tot; fresh re-randomization; labeled PSI exact recovery; the cuckoo insertion's augmenting-path fallback
+  stays more than 3 bits below the worst-case B_tot; fresh re-randomization; labeled PSI exact recovery with two felts
+  through BFV and SanitizeBFV; forced near collisions (one felt alone, or two felts from two different items of a
+  partition, is not a match; a full 64-bit collision with a consistent label is); the repeated-position check with
+  one and two felts; the PSI parameter check (two felts meet delta_psi up to 1M rows and n_R^max = 100,000, one felt
+  is refused, a one-limb reply fails the switch condition); balanced cuckoo tables; the cuckoo insertion's augmenting-path fallback
   (forced by a cut-off walk) returns an assignment exactly when one exists (checked against scipy's bipartite
   matching), and the walk alone is unchanged at the evaluation's load.
 - `test_protocol.py` (two processes): toy example (I = {104, 221}, pi(104) = 6, pi(221) = 3; B, C, c_R, c_O, y'y
   equal toy.json to < 1e-10); synthetic cohort n_bar_O = 4096, n = 300: exact match set and alignment, noise-off
   G and c equal to 1e-11 relative; transcript checks (allowed message types only; both transcripts agree frame by
-  frame; a release carries exactly two ring elements mod q0; OPRF count = n_R^max; the bytes of c0' never appear in
+  frame; a release carries exactly two ring elements mod q0; Setup refuses one-felt PSI items before charging the ledger; OPRF count = n_R^max; the bytes of c0' never appear in
   anything R receives; the bytes of R's would-be share c1' s_R never appear in anything O receives); noise on: the
   stage-2 estimate, both intervals, V_mech, RSS correction equal alg6.py fed the same decoded statistics; the debug
   flag is refused without the test-only environment variable; O's ledger holds the run's full cost, charged once at

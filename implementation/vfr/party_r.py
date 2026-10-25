@@ -42,6 +42,8 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     tr = Transcript('R', keep_raw=opts.get('keep_raw', False))
     ch = Channel(sock, tr)
     T = {}
+    MK = []
+    C.mark(MK, 'start')
     if 'threads' in opts:
         from . import vfr_native as vn
         vn.set_threads(int(opts['threads']))
@@ -82,8 +84,14 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     Omf_dd = C.dd(Omf)
     pp = psi.PSIParams(**{k: v for k, v in pub['psi'].items()})
     D, alpha, W = pub['psi_sizes']['D'], pub['psi_sizes']['alpha'], pub['psi_sizes']['W']
+    psi_check = pp.check(ag.n_bar_O, ag.n_R_max)       # public: recompute the failure bounds and the sizes
+    if not psi_check['ok']:
+        raise RuntimeError('PSI parameters do not meet their requirements: ' + '; '.join(psi_check['reasons']))
+    if (D, alpha, W) != (*pp.sizes(ag.n_bar_O)[:2], pp.windows(D)) or pub['psi_sizes']['tables'] != psi_check['tables']:
+        raise RuntimeError('PSI sizes differ from the public parameters')
     crs = bytes.fromhex(pub['crs'])
     T['setup_verify'] = time.time() - t0
+    C.mark(MK, 'setup')
 
     t0 = time.time()
     sR = ck.sample_secret()
@@ -92,6 +100,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     ch.send('keygen_R', blobs={'p0_R': p0R, 'rotkey_b_R': bR})
     ch.recv('keygen_O')
     T['keygen_R'] = time.time() - t0
+    C.mark(MK, 'keygen')
 
     # ------------------------------------------------------------------ Phase 1: link
     t0 = time.time()
@@ -106,6 +115,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     ev = ob['evaluated']
     outs = [oprf.finalize(padded[i].encode(), blinds[i], ev[32 * i:32 * i + 32]) for i in range(len(padded))]
     T['psi_oprf'] = time.time() - t0
+    C.mark(MK, 'oprf')
 
     t0 = time.time()
     from . import vfr_native as vn
@@ -115,18 +125,23 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     ch.send('psi_keys', blobs={'context': bf.context_bytes(), 'pk': pkb, 'rk': rkb})
     batches = psi.receiver_batches(outs, pp, nprng)
     found, amb, bad = {}, set(), set()
+    psi_stats = dict(tables=len(batches), cuckoo_fallback=sum(b['fallback'] for b in batches))
     T['psi_query'] = 0.0
     T['psi_decode'] = 0.0
+    nb, F = pp.n_bins, pp.felts
     for bi, bt_ in enumerate(batches):
         ta = time.time()
         wins = psi.window_values(bt_['query'], W, pp.t)
-        ch.send('psi_query', meta=dict(batch=bi), blobs={f'w{i}': bf.encrypt_sym(bkeys, w) for i, w in enumerate(wins)})
+        ch.send('psi_query', meta=dict(batch=bi),
+                blobs={f'w{i}_{f}': bf.encrypt_sym(bkeys, w[f * nb:(f + 1) * nb]) for i, w in enumerate(wins)
+                       for f in range(F)})
         T['psi_query'] += time.time() - ta
         _, _, rb = ch.recv('psi_response')
         ta = time.time()
-        Sl = [bf.decrypt(bkeys, rb[f'S{a}']) for a in range(alpha)]
-        Ql = [bf.decrypt(bkeys, rb[f'Q{a}']) for a in range(alpha)]
-        f, am, bd = psi.receiver_decode(Sl, Ql, bt_['slot_item'], outs, pp.t, ag.n_bar_O)
+        Sl = [np.concatenate([bf.decrypt(bkeys, rb[f'S{a}_{f}']) for f in range(F)]) for a in range(alpha)]
+        Ql = [np.concatenate([bf.decrypt(bkeys, rb[f'Q{a}_{f}']) for f in range(F)]) for a in range(alpha)]
+        f, am, bd = psi.receiver_decode(Sl, Ql, bt_['slot_item'], outs, pp.t, ag.n_bar_O, felts=F, n_bins=nb,
+                                        stats=psi_stats)
         found.update(f)
         amb |= am
         bad |= bd
@@ -144,6 +159,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     Xdot = np.hstack([np.ones((len(ids), 1)), XRc])
     A = Xdot[I].T @ Xdot[I]
     T['link_total_R'] = T['psi_oprf'] + T['psi_query'] + T['psi_decode']
+    C.mark(MK, 'psi')
 
     # ------------------------------------------------------------------ Phase 2: upload
     t0 = time.time()
@@ -165,7 +181,9 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
             blobs[f'c0_{v}_{h}'] = ck.encrypt_seeded(sR, seg, OmU, seed)
             blobs[f'seed_{v}_{h}'] = seed
     T['upload_encrypt'] = time.time() - t0
+    C.mark(MK, 'upload_encrypt')
     ch.send('upload', meta=dict(m=m, nvec=ag.d_R + 2), blobs=blobs)
+    C.mark(MK, 'upload_sent')
 
     # ------------------------------------------------------------------ Phase 4/5: releases, solve, infer
     ents = C.entries(ag.d_R, ag.d_O, joint)
@@ -210,6 +228,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         yy2 = rely['yy']
         sig_yy = sig['y']
     ch.send('done')
+    C.mark(MK, 'releases')
     G2 = solve.assemble(A, B2, C2)
     c2 = np.concatenate([cR, cO])
     t0 = time.time()
@@ -219,9 +238,11 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
                                  ag.B_beta_pub, np.random.default_rng(opts.get('solve_seed')), Bboot=opts.get('Bboot', 2000),
                                  truncate=True, antithetic=opts.get('antithetic', True), intervals=ag.intervals)
     T['solve'] = time.time() - t0
+    C.mark(MK, 'solve')
     out = dict(I=[ids[i] for i in I], pi=pi, n=n, A=A, rel1=rel1, rel2=rel2, yy=yy2, G1=G1, G2=G2, c2=c2,
                stage1={k: v for k, v in s1.items()}, result=res, sigma=sig, Omega_f=float(Omf),
                calibration=cal, timings=T, transcript=tr.records, summary=tr.summary(), joint=joint,
+               psi_stats=psi_stats, psi_check=psi_check, marks=MK,
                decoded={'1': z1, '2': z2, 'y': zy})
     if opts.get('keep_raw'):
         out['raw'] = tr.raw

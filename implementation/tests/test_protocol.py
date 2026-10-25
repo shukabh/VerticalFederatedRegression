@@ -159,3 +159,14 @@ def test_debug_flag_is_guarded(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match='VFR_DEBUG_NO_DP'):
         protocol.run(ag, C.CKKSParams(), dR_, dO_, {}, dict(debug_no_dp=True, ledger_path=str(tmp_path / 'l.json')),
                      timeout=120)
+
+
+def test_setup_refuses_short_psi_items(tmp_path):
+    """O's Setup refuses (before the ledger is charged) when the PSI items are too short for delta_psi: one felt
+    per item (32-bit items) at 4,096 rows and n_R^max = 600."""
+    dR_, dO_, truth, b = data.synthetic(4096, 3500, 500, 300, seed=22)
+    ag = dp.Agreement(n_R_max=600, n_bar_O=4096, d_R=4, d_O=6, **b)
+    led = tmp_path / 'l.json'
+    R, O = protocol.run(ag, C.CKKSParams(), dR_, dO_, {}, dict(ledger_path=str(led), psi=dict(felts=1)), timeout=300)
+    assert R['refused'].startswith('PSI parameters') and 'felt' in R['refused']
+    assert not led.exists()

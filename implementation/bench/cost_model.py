@@ -32,28 +32,30 @@ def load(name):
         return json.load(fh)
 
 
-def model(nbar, nRmax, mu, e2e_fit, logN=14, mu15=None):
-    """Single-thread seconds per phase and bytes per message.  mu: micro_t1 (N = 2^14)."""
+def model(nbar, nRmax, mu, e2e_fit, logN=14, mu15=None, felts=None, legacy_batches=False):
+    """Single-thread seconds per phase and bytes per message.  mu: micro_t1 (N = 2^14).  felts: field elements per
+    PSI item (default PSIParams().felts); legacy_batches: tables filled to 0.9 N_bins (the runs before 2026-10-25)."""
     m14 = mu
     N = 2 ** logN
     Ns = N // 2
     m = -(-nbar // Ns)
-    pp = P.PSIParams()
+    pp = P.PSIParams() if felts is None else P.PSIParams(felts=felts)
     D, alpha, _ = pp.sizes(nbar)
     W = pp.windows(D)
-    batches = -(-nRmax // int(pp.cuckoo_load * pp.n_bins))
+    F = pp.felts                                        # field elements per item: F ciphertexts per query/reply set
+    batches = -(-nRmax // int(pp.cuckoo_load * pp.n_bins)) if legacy_batches else pp.tables(nRmax)[0]
     ck = m14 if logN == 14 else mu15
     t = {}
     # ---------------- O
     t['O.keygen'] = ck['ckks_rotkey_share'] + ck['ckks_make_rotkeys'] + ck['ckks_pk_share']
     t['O.psi.oprf_self'] = nbar * m14['oprf_server_evaluate_per_item']
     t['O.psi.binning'] = nbar * e2e_fit['bin_per_item']
-    t['O.psi.polys'] = m14['psi_build_polys_1M_shape'] * (alpha * D * D) / (m14['psi_alpha_1M'] * m14['psi_D'] ** 2)
+    t['O.psi.polys'] = F * m14['psi_build_polys_1M_shape'] * (alpha * D * D) / (m14['psi_alpha_1M'] * m14['psi_D'] ** 2)
     t['O.psi.oprf_requests'] = nRmax * m14['oprf_server_blind_eval_per_item']
     per_mult = m14['bfv_compute_powers_D64'] / (m14['psi_D'] - m14['psi_W'])
     per_coef = m14['bfv_eval_partition_D64'] / (m14['psi_D'] + 1)
-    t['O.psi.eval'] = batches * (max(D - W, 0) * per_mult + alpha * (D + 1) * per_coef)
-    t['O.psi.sanitize'] = batches * 2 * alpha * (m14['bfv_flood_sample_N'] + m14['bfv_sanitize_excl_sampling'])
+    t['O.psi.eval'] = batches * F * (max(D - W, 0) * per_mult + alpha * (D + 1) * per_coef)
+    t['O.psi.sanitize'] = batches * 2 * alpha * F * (m14['bfv_flood_sample_N'] + m14['bfv_sanitize_excl_sampling'])
     t['O.upload_convert'] = N_VEC * m * ck['ckks_convert_O']
     t['O.agg.encode'] = N_ENT * m * ck['ckks_encode_dd']
     t['O.agg.mul_add'] = N_ENT * m * (ck['ckks_mul_plain_L0'] + ck['ckks_add_L0'])
@@ -63,7 +65,7 @@ def model(nbar, nRmax, mu, e2e_fit, logN=14, mu15=None):
     # ---------------- R
     t['R.keygen'] = ck['ckks_rotkey_share'] + ck['ckks_pk_share']
     t['R.psi.oprf'] = nRmax * (m14['oprf_client_blind_per_item'] + m14['oprf_client_finalize_per_item'])
-    t['R.psi.bfv'] = e2e_fit['bfv_keygen'] + batches * (W * m14['bfv_encrypt'] + 2 * alpha * m14['bfv_decrypt'])
+    t['R.psi.bfv'] = e2e_fit['bfv_keygen'] + batches * F * (W * m14['bfv_encrypt'] + 2 * alpha * m14['bfv_decrypt'])
     t['R.upload_encrypt'] = N_VEC * m * ck['ckks_encrypt_seeded_R']
     t['R.release'] = N_REL * (ck['ckks_combine_R'] + ck['ckks_decode_dd_R'])
     # ---------------- communication
@@ -74,16 +76,16 @@ def model(nbar, nRmax, mu, e2e_fit, logN=14, mu15=None):
     b['R->O OPRF'] = 32 * nRmax
     b['O->R OPRF'] = 32 * nRmax
     b['R->O BFV keys'] = m14['size_bfv_pk_relin_bytes']
-    b['R->O PSI query'] = batches * W * m14['size_bfv_query_ct_bytes']
-    b['O->R PSI reply'] = batches * 2 * alpha * m14['size_bfv_reply_ct_bytes']
+    b['R->O PSI query'] = batches * F * W * m14['size_bfv_query_ct_bytes']
+    b['O->R PSI reply'] = batches * 2 * alpha * F * m14['size_bfv_reply_ct_bytes']
     b['R->O upload'] = N_VEC * m * ct_up
     b['O->R releases'] = N_REL * ck['size_release_bytes']
     # ---------------- memory at O (peak, approximate)
     ct_full = ck['size_ckks_ct_L0_bytes']
     mem = dict(uploaded_cts=N_VEC * m * ct_full, rotation_keys=2 * ck['size_rotkey_share_bytes'],
-               psi_tables=alpha * (2 * D + 1) * pp.n_bins * 8, bfv_powers=D * m14['size_bfv_query_ct_bytes'],
+               psi_tables=alpha * (2 * D + 1) * pp.n_slots * 8, bfv_powers=D * m14['size_bfv_query_ct_bytes'],
                register=nbar * (D_O + 1) * 8 * 4 + nbar * 64)
-    return dict(n_bar_O=nbar, m=m, D=D, alpha=alpha, W=W, batches=batches, t=t, bytes=b, mem=mem,
+    return dict(n_bar_O=nbar, m=m, D=D, alpha=alpha, W=W, batches=batches, felts=F, t=t, bytes=b, mem=mem,
                 cpu_O=sum(v for k, v in t.items() if k.startswith('O.')),
                 cpu_R=sum(v for k, v in t.items() if k.startswith('R.')),
                 comm=sum(b.values()), mem_O=sum(mem.values()))
@@ -138,7 +140,7 @@ def main():
     out = dict(fit=fit, speedups_4cores=sp, validation=[], extrapolation=[], nRmax=a.nRmax)
     # ---------------- validation against the measured single-thread runs
     for r in e1:
-        mrec = model(r['n_bar_O'], r['n_R_max'], mu, fit)
+        mrec = model(r['n_bar_O'], r['n_R_max'], mu, fit, felts=r.get('felts', 1), legacy_batches='felts' not in r)
         O = r['O']
         meas = dict(agg=O['aggregate'], psi_eval=O['psi_eval'], psi_san=O['psi_sanitize'],
                     oprf_self=O['psi_oprf_self'], upload=O['upload_convert'] + r['R']['upload_encrypt'])

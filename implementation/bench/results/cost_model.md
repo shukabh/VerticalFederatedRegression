@@ -1,6 +1,6 @@
 # Cost model (single thread unless stated; N = 2^14, d_R = 4, d_O = 6, |E| = 63, 2 releases)
 
-Fitted: binning 22.9 us/row; R's BFV keygen 0.05 s. Measured 4-core speedups: aggregation 3.96x (parallel entries), PSI polynomials 4.04x, BFV powers 2.21x (OpenFHE OpenMP).
+Fitted: binning 11.0 us/row; R's BFV keygen 0.05 s. Measured 4-core speedups: aggregation 3.96x (parallel entries), PSI polynomials 4.04x, BFV powers 2.21x (OpenFHE OpenMP).
 
 ## Validation against the measured end-to-end runs (single thread)
 
@@ -16,28 +16,28 @@ Fitted: binning 22.9 us/row; R's BFV keygen 0.05 s. Measured 4-core speedups: ag
 
 | n_bar_O | n_R^max | m | D, alpha | O CPU 1 core (s) | O wall 4 cores (s) | O wall 16 cores (s) | R CPU (s) | comm (MB) | O memory (MB) | aggregate N=2^14 / 2^15 (s) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 100,000 | 2,000 | 13 | 64, 1 | 52 | 17 | 9 | 3 | 88 | 273 | 25 / 48 |
-| 100,000 | 10,000 | 13 | 64, 1 | 53 | 18 | 10 | 5 | 88 | 273 | 25 / 48 |
-| 300,000 | 2,000 | 37 | 64, 2 | 99 | 30 | 13 | 6 | 161 | 488 | 42 / 68 |
-| 300,000 | 10,000 | 37 | 64, 2 | 99 | 31 | 14 | 8 | 161 | 488 | 42 / 68 |
-| 1,000,000 | 2,000 | 123 | 64, 5 | 260 | 76 | 28 | 17 | 422 | 1244 | 102 / 142 |
-| 1,000,000 | 10,000 | 123 | 64, 5 | 261 | 77 | 29 | 18 | 422 | 1244 | 102 / 142 |
+| 100,000 | 2,000 | 13 | 64, 1 | 64 | 23 | 14 | 3 | 101 | 289 | 25 / 48 |
+| 100,000 | 10,000 | 13 | 64, 1 | 65 | 23 | 15 | 5 | 102 | 289 | 25 / 48 |
+| 300,000 | 2,000 | 37 | 64, 2 | 115 | 38 | 20 | 6 | 175 | 520 | 42 / 68 |
+| 300,000 | 10,000 | 37 | 64, 2 | 115 | 38 | 20 | 8 | 176 | 520 | 42 / 68 |
+| 1,000,000 | 2,000 | 123 | 64, 5 | 286 | 88 | 39 | 17 | 439 | 1325 | 102 / 142 |
+| 1,000,000 | 10,000 | 123 | 64, 5 | 287 | 89 | 39 | 19 | 440 | 1325 | 102 / 142 |
 
 ### Breakdown at n_bar_O = 1M, n_R^max = 2000 (single thread, seconds)
 
 - O.psi.oprf_self: 91.1
 - O.agg.encode: 75.9
-- O.psi.binning: 22.9
-- O.psi.polys: 20.9
+- O.psi.polys: 41.9
+- O.psi.eval: 23.4
 - O.agg.evalsum: 15.0
 - R.upload_encrypt: 14.9
-- O.psi.eval: 11.7
+- O.psi.binning: 11.0
 - O.agg.mul_add: 10.6
+- O.psi.sanitize: 9.8
 - O.upload_convert: 5.0
-- O.psi.sanitize: 4.9
+- R.psi.bfv: 1.4
 - O.keygen: 0.9
 - O.release: 0.7
-- R.psi.bfv: 0.7
 - O.agg.rescale_mask: 0.6
 - R.keygen: 0.6
 - R.psi.oprf: 0.4
@@ -51,8 +51,8 @@ Communication at 1M:
 - R->O OPRF: 0.1 MB
 - O->R OPRF: 0.1 MB
 - R->O BFV keys: 14.0 MB
-- R->O PSI query: 12.3 MB
-- O->R PSI reply: 5.0 MB
+- R->O PSI query: 24.5 MB
+- O->R PSI reply: 10.0 MB
 - R->O upload: 369.0 MB
 - O->R releases: 1.0 MB
 
@@ -60,6 +60,6 @@ Memory at O at 1M:
 
 - uploaded_cts: 738 MB
 - rotation_keys: 39 MB
-- psi_tables: 81 MB
+- psi_tables: 161 MB
 - bfv_powers: 112 MB
 - register: 275 MB

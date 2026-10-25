@@ -75,3 +75,12 @@ def release_entries(ents, stage):
 
 def stage_key(s):
     return 'y' if s == 'y' else int(s)
+
+
+def mark(marks: list, name: str):
+    """Append (name, wall time, process CPU time of all threads, peak RSS so far in KB) to `marks`: a party's
+    CPU time and peak memory per phase are the differences and values between consecutive marks.  Local
+    measurement only (never sent)."""
+    import resource
+    import time
+    marks.append((name, time.time(), time.process_time(), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
