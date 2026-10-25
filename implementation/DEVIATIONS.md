@@ -80,7 +80,7 @@ kappa of A7 is 41 at eps = 4, which adds one bit):
 
 | option | log2 Omega_f needed (eps 1 / 4) at 4k, 1M | chain | EvalSum, 1 thread | proof status |
 |---|---|---|---|---|
-| A as written, Omega_U = q2 (implemented option, `--log2_Omega_U q2`) | 62.78 / 64.72 at 4k; 63.19 / 70.28 at 1M | [60,60,59,59] + P[60,60], 358 bits | 0.24 s | complete (model M2); bound generalized |
+| A as written, Omega_U = q2 (implemented option, `--log2_Omega_U q2`) | 62.78 / 64.72 at 4k; 63.19 / 70.28 at 1M | [60,59,59,59] + P[60,60], 357 bits | 0.24 s | complete (model M2); bound generalized |
 | A, Omega_U = 2^68 (implemented, **default**) | 62.75 / 64.62 at every size | same | same | same as above |
 | C restructured (implemented option) | 53.66 / 55.59 at 4k; 54.06 / 61.16 at 1M | same | 0.23 s (at the top level) | sketched in the proofs |
 | OpenFHE composite scaling (not used; benchmarked) | native 2^64 | 8 Q limbs [45,45,32x6] + P[2], 376 bits, dnum 4 | 0.73 s (3.1x) | rescale by a product of primes; bound to redo |
