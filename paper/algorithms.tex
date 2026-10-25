@@ -13,16 +13,16 @@
 \label{alg:setup}
 \small
 \begin{algorithmic}[1]
-\State \Bdo agree on the parameter vector $\mathcal P$ (Table~\ref{tab:params}): the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the ledger cap $(\varepsilon_L,\delta_L,\zeta_L)$, $f_1$ (and $f_y$), $\zeta$, $\kappa_{\min}$ (or a fixed $\kappa$), $\delta_B$, $t_\eta$, $\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, $\eta_B$, $B$, the PSI parameters, $N$, the chain, $\Omega_U$ and $\Omega_u$
+\State \Bdo agree on the parameter vector $\mathcal P$ (Table~\ref{tab:params}): the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the ledger parameters $(\varepsilon_L,\delta_L,\zeta_L,\xi_L,\delta')$, $f_1$ (and $f_y$), $\zeta$, $\kappa_{\min}$ (or a fixed $\kappa$), $\delta_B$, $t_\eta$, $\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, $\eta_B$, $B$, the PSI parameters, $N$, the chain, $\Omega_U$ and $\Omega_u$
 \State \Odo $D_\Phi\gets\{j:\Phi(j)\}$; pad with dummy rows (fresh random identifiers, $\bx_O=\mathbf 0$, $y=0$) to $\bar n_O$; draw a fresh secret permutation $\tau$ of $[\bar n_O]$
 \State \Rdo and \Odo, each on its own columns only: $\textsc{Preprocess}$ with constants from public reference data or domain knowledge
 \State \Bdo $(B_R,B_O,B_y)\gets\textsc{ChooseBounds}$ on the preprocessed reference data, or from domain knowledge \Comment{$B_R$ covers $\Rp$'s intercept}
 \State $(\Delta,\Delta_{\neg yy})\gets\textsc{DeltaRep}(B_R,B_O,B_y)$;\quad $\Delta_G\gets\textsc{DeltaRep}(B_R,B_O,0)$;\quad $\Delta_y\gets B_y^2$
 \State $\textit{mode}\gets\textsf{joint}$ if $\Delta-\Delta_{\neg yy}\le10^{-9}\Delta$, otherwise $\textsf{separate}$ \Comment{release $\by^\top\by$ jointly only when it is free}
-\State \Odo $(\kappa,\Omega_V,\Omega_f,\{\sigma_{c,s},\rho_s,\gamma_s\}_s)\gets\textsc{Calibrate}(\mathcal P)$; refuse if it refuses \Comment{$\Rp$ repeats it and checks}
-\State \Odo \textbf{if} the ledger of the base register does not admit $(\rho_{\mathrm{run}},\gamma)$ (Section~\ref{sec:privacy:ledger}) \textbf{then} refuse
+\State \Odo $(\kappa,\Omega_V,\Omega_f,\{\sigma_{c,s},\rho_s\}_s,\mathit{cost})\gets\textsc{Calibrate}(\mathcal P)$; refuse if it refuses \Comment{$\Rp$ repeats it and checks}
+\State \Odo atomically: \textbf{if} the ledger of the base register admits $\mathit{cost}=(\rho_{\mathrm{run}},\varepsilon'_{\mathrm{run}},\gamma_L)$ (Section~\ref{sec:privacy:ledger}) \textbf{then} charge it in full, for every planned release, \textbf{else} refuse \Comment{no refund}
 \State \Bdo threshold key generation with a common random $a$: $s=s_R+s_O$, $\pk=(p_0,a)$ with $p_0=-as+e$, and rotation keys for $\{2^i\}$
-\Statex \hspace{\algorithmicindent}(no relinearization or conjugation key)
+\Statex \hspace{\algorithmicindent}($\Rp$ sends $p_{0,R}$ and its rotation-key shares; $\Op$ sends only $p_{0,O}$ and keeps the joint rotation keys; no relinearization or conjugation key)
 \State \Odo fresh OPRF key $k$; PSI preprocessing on the items $\{F_k(\mathrm{id}_j)\}$ with labels $\tau(j)$ encrypted under keys derived from $F'_k(\mathrm{id}_j)$; bin sizes and partition counts public; log the run against the OPRF quota of (researcher, project)
 \end{algorithmic}
 \end{algorithm}
@@ -80,7 +80,7 @@
 
 % --------------------------------------------------------------
 \begin{algorithm}[p]
-\caption{\textsc{Release}$(M,\sigma_c,\rho,\gamma_s)$: one DP release (Phase~4)}
+\caption{\textsc{Release}$(M,\sigma_c)$: one DP release (Phase~4)}
 \label{alg:release}
 \small
 \begin{algorithmic}[1]
@@ -88,8 +88,8 @@
 \State \Odo $c_0'\gets c_0+p_0u+e_0$;\quad $c_1'\gets c_1+au+e_1$ \Comment{re-randomize $M=(c_0,c_1)$ under the joint $\pk$}
 \State \Odo $\eta\gets(\textsc{SampleDG}(\sigma_c))^{N}$, fresh \Comment{exact discrete Gaussian on $\Z^N$}
 \State \Odo $h_O\gets c_0'+c_1's_O+\eta\bmod q_0$
-\State \Odo $\mathrm{Ledger}\mathrel{+}=(\rho,\gamma_s)$; send $(c_1',h_O)$; erase $c_0',u,e_0,e_1,\eta$ \Comment{$c_0'$ is never sent}
-\State \Rdo $v\gets h_O+c_1's_R\bmod q_0$;\quad \Return $\Dcd(v)$ restricted to the slots of this release \Comment{decode with the exact final scale}
+\State \Odo send $(c_1',h_O)$; erase $c_0',u,e_0,e_1,\eta$ \Comment{$c_0'$ is never sent; the ledger was charged at admission}
+\State \Rdo $v\gets h_O+c_1's_R\bmod q_0$;\quad \Return $\Dcd(v)$ restricted to the slots of this release \Comment{exact final scale; $v$ never leaves $\Rp$}
 \end{algorithmic}
 \end{algorithm}
 
@@ -100,13 +100,13 @@
 \small
 \begin{algorithmic}[1]
 \Require $\bA$, $n$, $p$, slot-domain s.d.\ $\sigma_1,\sigma_2$ (and $\sigma_y$); from $\mathcal P$: $\vartheta^\star$, $\alpha=\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, bootstrap truncation $\eta_B$ and size $B$
-\State $(\hat\bB_1,\hat\bC_1)\gets\textsc{Release}(M_1,\sigma_{c,1},\rho_1,\gamma_1)$;\quad $\hat\bG_1\gets\begin{psmallmatrix}\bA&\hat\bC_1\\ \hat\bC_1^\top&\hat\bB_1\end{psmallmatrix}$
+\State $(\hat\bB_1,\hat\bC_1)\gets\textsc{Release}(M_1,\sigma_{c,1})$;\quad $\hat\bG_1\gets\begin{psmallmatrix}\bA&\hat\bC_1\\ \hat\bC_1^\top&\hat\bB_1\end{psmallmatrix}$
 \State $r_1\gets\sigma_1\bigl(2\sqrt p+2\sqrt{\ln(1/\alpha_L)}\bigr)$ \Comment{$\Pr[\lambda_{\max}(\hat\bG_1-\bG)>r_1]\le\alpha_L$ (one-sided)}
 \State $\hat L\gets\max\{0,\ \lambda_{\min}(\hat\bG_1)-r_1\}$;\quad $g^\star\gets2\vartheta^\star\sigma_2\sqrt p$
 \State $\lambda_I\gets\max\{0,\ g^\star+r_1-\lambda_{\min}(\hat\bG_1)\}$;\quad $\lambda_O\gets\min\{\lambda\ge0:\lambda_{\min}(\hat\bG_1+\lambda\PiO)\ge g^\star+r_1\}$ ($\infty$ if none)
 \Statex \hspace{\algorithmicindent}\tocheck{Replace the bisection for lambda-O by the closed form of the proofs (Lemma S3(c)).}
 \State $(\lambda,\Psi)\gets(\lambda_O,\PiO)$ if $\lambda_O\le\kappa_\Psi\lambda_I$, otherwise $(\lambda_I,\bI)$ \Comment{uses stage 1 and $\bA$ only}
-\State $(\hat\bB_2,\hat\bC_2,\hat\bc_R,\hat\bc_O,\widehat{yy})\gets\textsc{Release}(M_2,\sigma_{c,2},\rho_2,\gamma_2)$; if separate, $\widehat{yy}\gets\textsc{Release}(M_y,\sigma_{c,y},\rho_y,\gamma_y)$
+\State $(\hat\bB_2,\hat\bC_2,\hat\bc_R,\hat\bc_O,\widehat{yy})\gets\textsc{Release}(M_2,\sigma_{c,2})$; if separate, $\widehat{yy}\gets\textsc{Release}(M_y,\sigma_{c,y})$
 \State assemble $\hat\bG_2$, $\hat\bc_2$;\quad $\hat\vartheta\gets\lambda_{\min}(\hat\bG_2+\lambda\Psi)/(2\sigma_2\sqrt p)$;\quad \textbf{if} $\hat\vartheta<1$ \textbf{then return} \textsf{refused} \Comment{budget is spent}
 \State $\tilde\bP\gets(\hat\bG_2+\lambda\Psi)^{-1}$;\quad $\tilde\btheta\gets\tilde\bP\hat\bc_2$ \Comment{the bias correction of Section~\ref{sec:bias} is an option}
 \State $\widetilde{\mathrm{RSS}}\gets\widehat{yy}-\hat\bc_2^\top\tilde\btheta-\lambda\,\tilde\btheta^\top\Psi\tilde\btheta$;\quad $\sigma_{yy}\gets\sigma_2$ (joint) or $\sigma_y$ (separate)
@@ -140,19 +140,20 @@
 \Statex
 \Function{Calibrate}{$\mathcal P$} \Comment{public values only; refuses when a step has no solution}
   \State \textit{mode}, $n_{\mathrm{rel}}\in\{2,3\}$ and $\{\Delta_s\}$ as in \textsc{Setup};\quad \textbf{refuse if} $\log_2(QP)>L_{\max}(N,\lambda_{\mathrm{sec}})$
-  \State $\gamma(k):=n_{\mathrm{rel}}\bigl(\delta_B+2^{-k}(1+2^{-80})+2^{-97}\bigr)$
+  \State $\gamma(k):=n_{\mathrm{rel}}\bigl(\delta_B+2^{-k}(1+2^{-80})+2^{-97}\bigr)$;\quad $\varepsilon'(k):=\min\{\varepsilon:\delta(\pi4^{-k},\varepsilon)\le\delta'\}$ \Comment{per run; per release}
   \State \textbf{unless} $\mathcal P$ fixes $\kappa$: $\kappa\gets\max\{\kappa_{\min},\kappa_{\mathrm{run}},\kappa_L\}$ \Comment{\eqref{eq:kappa}; refuse if none exists}
-  \Statex \hspace{\algorithmicindent}$\kappa_{\mathrm{run}}=\min\{k:(1+e^{\varepsilon_{\mathrm{run}}})\gamma(k)\le\zeta\delta_{\mathrm{run}}\}$;\quad $\kappa_L=\min\{k:\gamma(k)\le(\tilde\rho_{\mathrm{run}}/\rho_L)\,\Gamma_L\}$
+  \Statex \hspace{\algorithmicindent}$\kappa_{\mathrm{run}}=\min\{k:(1+e^{\varepsilon_{\mathrm{run}}})\gamma(k)\le\zeta\delta_{\mathrm{run}}\}$;\quad $\kappa_L=\min\{k:n_{\mathrm{rel}}\varepsilon'(k)\le(\tilde\rho_{\mathrm{run}}/\rho_L)\,E'_L\}$,
+  \Statex \hspace{\algorithmicindent}with $\rho_L$, $E'_L=\xi_L\varepsilon_L/2$ and $\Gamma_L$ of Section~\ref{sec:privacy:ledger}; \textbf{refuse if} $n_{\mathrm{rel}}(\delta_B+\delta')>(\tilde\rho_{\mathrm{run}}/\rho_L)\,\Gamma_L$
   \State $\gamma\gets\gamma(\kappa)$;\quad $\delta_{\mathrm{DP}}\gets\delta_{\mathrm{run}}-(1+e^{\varepsilon_{\mathrm{run}}})\gamma$;\quad \textbf{refuse if} $\delta_{\mathrm{DP}}\le0$
   \State $\rho_{\mathrm{run}}\gets\max\{\rho:\ \inf_{a>1}\frac{e^{(a-1)(a\rho-\varepsilon_{\mathrm{run}})}}{a-1}\bigl(1-\tfrac1a\bigr)^{a}\le\delta_{\mathrm{DP}}\}$ \Comment{tight zCDP conversion}
   \State $\rho_1\gets f_1\rho_{\mathrm{run}}$;\quad $\rho_y\gets f_y\rho_{\mathrm{run}}$ (0 in joint mode);\quad $\rho_2\gets\rho_{\mathrm{run}}-\rho_1-\rho_y$
   \For{$\Omega_f$ in increasing admissible scales} \Comment{$\Omega_V=\Omega_fq_1q_2/(\Omega_U\Omega_u)$, exactly representable}
     \State for each release $s$: $\widehat\Delta_{\mathrm{enc},s}\gets\sqrt{2/N}\,\Omega_f\Delta_s+\Delta_{x,s}+\sqrt N$;\quad $\sigma_{c,s}^2\gets\lceil\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)\rceil$
-    \State \textbf{if} $\sigma_{c,s}\ge\max\{2^{\kappa}B_{\mathrm{tot},s}(\Omega_f)/\sqrt{2\pi},\,2^{20}\}$ for every $s$ \textbf{then break} \Comment{worst-case $B_{\mathrm{tot},s}$}
+    \State \textbf{if} $\sigma_{c,s}\ge\max\{2^{\kappa}B_{\mathrm{tot},s}(\Omega_f)/\sqrt{2\pi},\,2^{42}\}$ for every $s$ \textbf{then break} \Comment{worst-case $B_{\mathrm{tot},s}$}
   \EndFor \Comment{refuse if no scale floods}
   \State $\sigma_s\gets\sigma_{c,s}\sqrt{N/2}/\Omega_f$;\quad \textbf{refuse unless} $q_0>2\bigl(\Omega_fS_{\max}+2^{\kappa}B_{\mathrm{tot},\max}+t_\eta\sigma_{c,\max}\bigr)$
   \Statex \hspace{\algorithmicindent}with $S_{\max}=\bar n_O\max(r,o,w,\sqrt{ro},\sqrt{rw},\sqrt{ow})$ \Comment{no wraparound}
-  \State \Return $\kappa$, $\Omega_V$, $\Omega_f$, $\{\sigma_{c,s}^2,\sigma_s,\rho_s\}_s$ and $\gamma_s=\gamma/n_{\mathrm{rel}}$ per release
+  \State \Return $\kappa$, $\Omega_V$, $\Omega_f$, $\{\sigma_{c,s}^2,\sigma_s,\rho_s\}_s$ and the run's ledger cost $(\rho_{\mathrm{run}},\ n_{\mathrm{rel}}\varepsilon'(\kappa),\ n_{\mathrm{rel}}(\delta_B+\delta'))$
 \EndFunction
 \Statex
 \Function{SampleDG}{$\sigma$} exact discrete Gaussian on $\Z$ by rejection from a discrete Laplace, with big-integer
@@ -160,7 +161,7 @@
 \EndFunction
 \Statex
 \Function{SanitizeBFV}{$\mathit{ct}$} \Comment{statistical flooding; BFV decryption stays exact}
-  \State $\mathit{ct}\gets\mathsf{ModSwitch}_{q'}\bigl(\mathit{ct}\boxplus\mathsf{BFV.Enc}_{\pk_B}(\mathbf 0)\bigr)$;\quad $\mathbf e\gets\mathcal D_{\Z^{N_B},\,\sigma_\psi}$ \Comment{$\sigma_\psi\ge\max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi},2^{20}\}$}
+  \State $\mathit{ct}\gets\mathsf{ModSwitch}_{q'}\bigl(\mathit{ct}\boxplus\mathsf{BFV.Enc}_{\pk_B}(\mathbf 0)\bigr)$;\quad $\mathbf e\gets\mathcal D_{\Z^{N_B},\,\sigma_\psi}$ \Comment{$\sigma_\psi\ge\max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi},2^{42}\}$}
   \State \Return $\mathit{ct}\boxplus(\mathbf e,0)$ \Comment{requires $q'/(2t)>t_\eta\sigma_\psi+B_\psi$; $B_\psi$: Section~\ref{sec:input}}
 \EndFunction
 \Statex

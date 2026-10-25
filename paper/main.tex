@@ -189,7 +189,7 @@ $\Delta$, $\Delta_{\neg yy}$, $\Delta_G$, $\Delta_y$ & replace-one $\ell_2$ sens
 $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$, $f_1$, $f_y$ & per-run budget; stage-1 share; share of a separate $\by^\top\by$ release \\
 $\rho_s$, $\rho_{\mathrm{run}}$ & zCDP cost of release $s$; $\rho_{\mathrm{run}} = \sum_s \rho_s$ \\
 $\gamma$, $\delta_{\mathrm{DP}}$, $\zeta$ & statistical slack of a run; the part of $\delta_{\mathrm{run}}$ left to the DP mechanism; the largest share of $\delta_{\mathrm{run}}$ the slack may take \\
-$(\varepsilon_L, \delta_L)$, $\zeta_L$; $\rho_L$, $\Gamma_L$ & ledger cap of a base register and its slack share; the derived zCDP and slack capacities \\
+$(\varepsilon_L, \delta_L)$, $\zeta_L$, $\xi_L$, $\delta'$; $\rho_L$, $E'_L$, $\Gamma_L$ & ledger cap of a base register, its slack share, its share reserved for smudging, and the per-release slack of smudging; the derived zCDP, smudging and slack capacities \\
 $N$, $N_s = N/2$, $q_0$ & ring dimension, slots, last-level modulus \\
 $\Omega_U$, $\Omega_u$, $\Omega_V$, $\Omega_f$ & encoding scales of $\Rp$'s vectors, of the one-hot masks and of $\Op$'s data; the exact final scale $\Omega_f = \Omega_U\Omega_V\Omega_u/(q_1q_2)$ \\
 $\Ecd$, $\Dcd$ & encoding $\Ecd_{\Omega}(\mathbf z) = \lfloor \Omega\,\tau_{\mathrm{can}}^{-1}(\mathbf z) \rceil$ and decoding $\Dcd(v) = \tau_{\mathrm{can}}(v)/\Omega_f$, with $\tau_{\mathrm{can}}$ the canonical embedding \\
@@ -218,7 +218,7 @@ where $\bA$ is $\Rp$'s own block and $\bB$, $\bC$, $\bcR$, $\bcO$ and $\by^\top\
 \label{sec:defs}
 % ==============================================================
 
-Both parties are \emph{honest-but-curious}. They follow the protocol, including key generation and $\Rp$'s preparation of its inputs (clipping, the selection vector), and they try to learn what they can from their views. Channels are private and authenticated. $\Rp$ is the analyst and receives the output.
+Both parties are \emph{honest-but-curious}. They follow the protocol, including key generation and $\Rp$'s preparation of its inputs (clipping, the selection vector), and they try to learn what they can from their views. Following the protocol includes drawing every secret, error and coin from its specified distribution with fresh randomness. In particular, the flooding bound of Theorem~\ref{thm:btot}, and with it Theorem~\ref{thm:output}, needs $\Rp$'s encryption and key-share errors to be sampled honestly: a researcher who inflated them would push the term ``$\Rp$'s errors times $\Op$'s data'' beyond the bound, and that term is correlated with $\Op$'s data (Remark~\ref{rem:whoknows}; robustness to such a researcher is an extension, Section~\ref{sec:ext}). $\Op$'s ledger is honest and admits runs one at a time (Section~\ref{sec:privacy:ledger}). Channels are private and authenticated. $\Rp$ is the analyst and receives the output. $\Op$ receives no output, and its guarantees G1 and G2 below concern its view of the protocol only.
 
 \begin{definition}[Datasets and adjacency]
 \label{def:adj}
@@ -258,9 +258,9 @@ Chain $\mathrm{view}(D) \approx \mathcal S(\mathcal M(D))$ (cost $\gamma$), the 
 \toprule
  & Guarantee & Basis \\
 \midrule
-G1 & \textbf{$\Rp$-input privacy}: $\Op$'s view can be simulated from $(n_R^{\max}, \bar n_O)$ and the public parameters. & RLWE in $s_R$; security of the PSI. $\Op$ never receives a decryption share from $\Rp$. \\
-G2 & \textbf{Cohort privacy}: $\Op$ learns nothing about $\Rp$'s cohort beyond $n_R^{\max}$. & Padded OPRF queries; labeled PSI. \\
-G3 & \textbf{Output privacy}: $\Rp$'s view of a run is $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$-SIM-CDP for $\sim$ with slack $\gamma$, hence $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$-IND-CDP. The joint view of all researchers over all runs on a base register is $(\varepsilon_L, \delta_L)$-IND-CDP. & Theorem~\ref{thm:output}; Proposition~\ref{prop:compose} (ledger). \\
+G1 & \textbf{$\Rp$-input privacy}: $\Op$'s view of the protocol can be simulated from $(n_R^{\max}, \bar n_O)$ and the public parameters. It does not cover what $\Rp$ later discloses, which is noiseless to $\Op$. & RLWE in $s_R$; security of the PSI. $\Op$ never receives a decryption share from $\Rp$, nor $\Rp$'s decrypted value $v_s$ (Section~\ref{sec:input}). \\
+G2 & \textbf{Cohort privacy}: from its view of the protocol, $\Op$ learns nothing about $\Rp$'s cohort beyond $n_R^{\max}$. & Padded OPRF queries; labeled PSI. \\
+G3 & \textbf{Output privacy}: $\Rp$'s view of a run is $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$-SIM-CDP for $\sim$ with slack $\gamma$, hence $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$-IND-CDP. The joint view of all researchers over all runs on a base register, for runs chosen adaptively under the filter, is $(\varepsilon_L, \delta_L)$-IND-CDP for base-register adjacency (Definition~\ref{def:baseadj}). & Theorem~\ref{thm:output}; Proposition~\ref{prop:compose} (ledger). $\Rp$ samples its errors honestly. \\
 G4 & \textbf{Disclosed}: $\Rp$ learns $I$ (which cohort members are in $D_\Phi$) and uniformly random positions $\tau(j)$, and nothing else about $\Op$'s register. & By design (Remark~\ref{rem:revealed}); OPRF-keyed items and labels and \textsc{SanitizeBFV} (Section~\ref{sec:input}). \\
 \bottomrule
 \end{tabularx}
@@ -289,7 +289,7 @@ the encoded vector plus a small error. In the threshold variant the key is split
 \[
   p_{0,R} = -a s_R + e_R, \qquad p_{0,O} = -a s_O + e_O, \qquad \pk = \bigl(p_{0,R} + p_{0,O},\ a\bigr) = (-a s + e,\ a).
 \]
-Rotation keys for the slot shifts $2^i$ are generated the same way. The circuit has depth two and no ciphertext--ciphertext products, so no relinearization or conjugation key is needed.
+Rotation keys for the slot shifts $2^i$ are generated the same way: $\Rp$ sends its rotation-key shares to $\Op$, which adds its own and keeps the joint rotation keys, since only $\Op$ evaluates. $\Op$ sends $\Rp$ only its public-key share $p_{0,O}$. The circuit has depth two and no ciphertext--ciphertext products, so no relinearization or conjugation key is needed.
 
 \paragraph{Upload at half size.} $\Rp$ encrypts with its own share symmetrically, using a random $a$ expanded from a short seed: $c_0 = -a s_R + e + \Ecd(\mathbf v)$, $a = \mathrm{PRG}(\varsigma)$. It sends $(c_0, \varsigma)$. $\Op$ regenerates $a$ and sets $c_0 \gets c_0 - a s_O$, after which $c_0 + a s = \Ecd(\mathbf v) + e$: a ciphertext under the joint key.
 
@@ -324,7 +324,7 @@ Figure~\ref{fig:protocol} shows the message flow and Algorithms~\ref{alg:setup}-
   \label{fig:protocol}
 \end{figure}
 
-\paragraph{Phase 0: setup (Algorithm~\ref{alg:setup}).} The parties agree on the parameter vector $\mathcal P$ (Section~\ref{sec:params}): the scope, the caps, the budget, the ledger cap of the base register, the statistical constants, the PSI parameters and the encoding scales. Each party preprocesses its own columns with public constants (Section~\ref{sec:protocol:preproc}), and the clipping bounds are chosen on the preprocessed public reference data or from domain knowledge. The sensitivities follow from the bounds alone (Section~\ref{sec:privacy:sens}). $\Op$ runs \textsc{Calibrate} (Algorithm~\ref{alg:sub}), which derives the flooding parameter, the CKKS scale and the noise from $\mathcal P$ and refuses the run if $\mathcal P$ is not admissible; $\Op$ also refuses if its ledger would exceed the cap (Section~\ref{sec:privacy:ledger}). $\Rp$ repeats \textsc{Calibrate}, whose outputs depend on public values only, and checks $\Op$'s. The parties run threshold key generation, and $\Op$ draws a fresh OPRF key, a fresh shuffle $\tau$, and prepares its PSI polynomials.
+\paragraph{Phase 0: setup (Algorithm~\ref{alg:setup}).} The parties agree on the parameter vector $\mathcal P$ (Section~\ref{sec:params}): the scope, the caps, the budget, the ledger cap of the base register, the statistical constants, the PSI parameters and the encoding scales. Each party preprocesses its own columns with public constants (Section~\ref{sec:protocol:preproc}), and the clipping bounds are chosen on the preprocessed public reference data or from domain knowledge. The sensitivities follow from the bounds alone (Section~\ref{sec:privacy:sens}). $\Op$ runs \textsc{Calibrate} (Algorithm~\ref{alg:sub}), which derives the flooding parameter, the CKKS scale and the noise from $\mathcal P$ and refuses the run if $\mathcal P$ is not admissible; $\Op$ also refuses if the run's full cost would exceed its ledger's cap, and otherwise charges that cost at once (Section~\ref{sec:privacy:ledger}). $\Rp$ repeats \textsc{Calibrate}, whose outputs depend on public values only, and checks $\Op$'s. The parties run threshold key generation, and $\Op$ draws a fresh OPRF key, a fresh shuffle $\tau$, and prepares its PSI polynomials.
 
 \tocheck{ChooseBounds: the evaluation uses the 99.5\% quantile of each block's norm on the preprocessed reference data. The optimized choice (quantile grid minimizing first-order MSE plus squared clipping bias) has not been specified or evaluated.}
 
@@ -349,7 +349,7 @@ and $\Enc{\by^\top\by} = \sum_t \Enc{b_t}\,y_t^2$. Unmatched positions contribut
 \[
   h_O = c_0' + c_1' s_O + \eta, \qquad \eta \sim \DG(0, \sigma_c^2)^N \text{ fresh},
 \]
-charges its ledger, and sends $(c_1', h_O)$. It never sends $c_0'$. $\Rp$ computes $v = h_O + c_1' s_R = \Ecd(\mathbf z) + e + \eta$ and decodes. Stage~1 releases $M_1$ with s.d.\ $\sigma_1$, stage~2 releases $M_2$ with s.d.\ $\sigma_2$, and the releases use independent randomness.
+and sends $(c_1', h_O)$; the release was paid for when the run was admitted. It never sends $c_0'$. $\Rp$ computes $v = h_O + c_1' s_R = \Ecd(\mathbf z) + e + \eta$ and decodes. Stage~1 releases $M_1$ with s.d.\ $\sigma_1$, stage~2 releases $M_2$ with s.d.\ $\sigma_2$, and the releases use independent randomness.
 
 \paragraph{Phase 5: solve and infer (Algorithm~\ref{alg:solve}).} From stage~1 and its exact $\bA$, $\Rp$ chooses the ridge $(\lambda, \Psi)$. After stage~2 it checks the gate $\hat\vartheta \ge 1$, solves $\tilde\btheta = (\hat\bG_2 + \lambda\Psi)^{-1}\hat\bc_2$, and computes both intervals (Section~\ref{sec:stats}). All of this is post-processing.
 
@@ -363,8 +363,8 @@ charges its ledger, and sends $(c_1', h_O)$. It never sends $c_0'$. $\Rp$ comput
 \begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
 \toprule
 $\Rp \to \Op$ & key-generation shares ($p_{0,R}$ and rotation-key shares); $n_R^{\max}$ blinded OPRF elements; BFV encryptions of windowed powers under $\Rp$'s own BFV key; seeded uploads $(c_0, \varsigma)$ of $\bb$ and the columns of $\dXR$ \\
-$\Op \to \Rp$ & public parameters: the agreed $\mathcal P$ (including $B_O, B_y, d_O, \bar n_O$) and \textsc{Calibrate}'s outputs $(\kappa, \Omega_V, \Omega_f, q_0, \sigma_{c,s})$, PSI sizes; key-generation shares; OPRF responses; masked, sanitized PSI replies; per release, $(c_1', h_O)$ \\
-never transmitted & $s_R$, $s_O$; $\bA$; raw $\bXR$, $\bXO$, $\by$; $\tau$; $k$; $c_0'$, $u$, $e_0$, $e_1$ and $\eta$ of every release \\
+$\Op \to \Rp$ & public parameters: the agreed $\mathcal P$ (including $B_O, B_y, d_O, \bar n_O$) and \textsc{Calibrate}'s outputs $(\kappa, \Omega_V, \Omega_f, q_0, \sigma_{c,s})$, PSI sizes; the public-key share $p_{0,O}$ (not its rotation-key shares); OPRF responses; masked, sanitized PSI replies; per release, $(c_1', h_O)$ \\
+never transmitted & $s_R$, $s_O$; $\bA$; raw $\bXR$, $\bXO$, $\by$; $\tau$; $k$; $c_0'$, $u$, $e_0$, $e_1$ and $\eta$ of every release; $\Rp$'s reconstruction $v_s = h_{O,s} + c'_{1,s}s_R$ of every release (with $h_{O,s}$ and $c'_{1,s}$ it would reveal $s_R$) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -380,7 +380,7 @@ never transmitted & $s_R$, $s_O$; $\bA$; raw $\bXR$, $\bXO$, $\by$; $\tau$; $k$;
   \item \textbf{Input checks.} The homomorphic input checks of v3 are removed: they addressed only a malicious researcher, and one could be bypassed. Robustness to a deviating researcher is an extension (Section~\ref{sec:ext}).
   \item \textbf{Bias correction.} The zero-budget correction of Section~\ref{sec:bias} is now an option, off in our evaluation.
   \item \textbf{Preprocessing.} Each party transforms its own columns in Setup, with public constants (Section~\ref{sec:protocol:preproc}).
-  \item \textbf{Parameters.} The protocol is stated for a parameter vector with explicit admissibility constraints (Section~\ref{sec:params}). The flooding parameter is derived from the budget and the ledger cap, the PSI replies are sanitized with their own flooding parameter, and the ledger has a specified composition rule.
+  \item \textbf{Parameters.} The protocol is stated for a parameter vector with explicit admissibility constraints (Section~\ref{sec:params}). The flooding parameter is derived from the budget and the ledger cap, the PSI replies are sanitized with their own flooding parameter, and the ledger has a specified composition rule, which charges a run's full cost at admission.
 \end{enumerate}
 \end{remark}
 
@@ -508,39 +508,75 @@ $e_{\mathrm{tot},s} \in \Z^N$ collects every term that depends on a key, an erro
 
 \begin{lemma}[Smudging]
 \label{lem:smudge}
-For $e \in \Z^N$ and $\eta \sim \mathcal D_{\Z^N, \sigma_c}$, $\mathrm{SD}(\eta + e, \eta) \le \|e\|_2/(2\sigma_c)$, and, for $\sigma_c$ above the smoothing parameter, $\mathrm{SD}(\eta + e, \eta) \le \|e\|_2/(\sqrt{2\pi}\,\sigma_c) + \mathrm{negl}$. If $\sigma_c \ge \max\{2^{\kappa}B_{\mathrm{tot}}/\sqrt{2\pi},\ 2^{20}\}$ and $\|e\|_2 \le B_{\mathrm{tot}}$, the distance is at most $2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$, also given any side information independent of $\eta$.
+For $e \in \Z^N$ and $\eta \sim \mathcal D_{\Z^N, \sigma_c}$, $\mathrm{SD}(\eta + e, \eta) \le \|e\|_2/(2\sigma_c)$, and, for $\sigma_c$ above the smoothing parameter, $\mathrm{SD}(\eta + e, \eta) \le \|e\|_2/(\sqrt{2\pi}\,\sigma_c) + \mathrm{negl}$. If $\sigma_c \ge \max\{2^{\kappa}B_{\mathrm{tot}}/\sqrt{2\pi},\ 2^{42}\}$ and $\|e\|_2 \le B_{\mathrm{tot}}$, the distance is at most $2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$, also given any side information independent of $\eta$.
 \end{lemma}
+
+The floor $2^{42}$ is what the factor $1 + 2^{-80}$ needs, which holds for $\sigma_c \ge 2.1 \cdot 2^{40}$; earlier drafts stated $2^{20}$, at which the proof gives only $1 + 2^{-37.9}$ (proofs, composition appendix, Remark~2.6). The floor never binds at an admissible evaluation setting, where $2^{\kappa}B_{\mathrm{tot}}/\sqrt{2\pi} \ge 2^{55}$.
 
 \begin{theorem}[Worst-case error bound]
 \label{thm:btot}
-For the circuit of Algorithm~\ref{alg:aggregate} there is an explicit bound $B_{\mathrm{tot},s}$, a function of public parameters only ($N$, $\bar n_O$, $d_R$, $d_O$, $B_R$, $B_O$, $B_y$, the primes and the key-switching gadget, $\Omega_U$, $\Omega_V$, $\Omega_u$, $\delta_B$ and the error distribution), such that $\Pr[\|e_{\mathrm{tot},s}\|_2 \le B_{\mathrm{tot},s}] \ge 1 - \delta_B$ for every dataset in the clipped domain, the probability being over keys and fresh randomness only (proofs, Part~A, Theorem~O1).
+For the circuit of Algorithm~\ref{alg:aggregate} there is an explicit bound $B_{\mathrm{tot},s}$, a function of public parameters only ($N$, $\bar n_O$, $d_R$, $d_O$, $B_R$, $B_O$, $B_y$, the primes and the key-switching gadget, $\Omega_U$, $\Omega_V$, $\Omega_u$, $\delta_B$ and the error distribution), such that $\Pr[\|e_{\mathrm{tot},s}\|_2 \le B_{\mathrm{tot},s}] \ge 1 - \delta_B$ for every dataset in the clipped domain, the probability being over keys and fresh randomness only (proofs, Part~A, Theorem~O1). The bound assumes, as model (M5) of the proofs, that every secret and error is drawn independently and honestly from its specified distribution, the errors from a mean-zero $\sigma_e^2$-subgaussian distribution with $\sigma_e = 3.2$.
 \end{theorem}
 
-At the proofs' example ($N = 2^{14}$, $\bar n_O = 10^6$, the bounds of the simulation population, all scales and both rescaling primes $2^{52.5}$, centred key switching, $\delta_B = 2^{-50}$) $B_{\mathrm{tot},2} \approx 2^{25.3}$, and the bound was checked against OpenFHE's noise estimates with a margin of $6$--$8$ bits. With OpenFHE's key switching, whose fast base conversions are not centred, and the evaluation settings of Section~\ref{sec:params}, $B_{\mathrm{tot},2} \approx 2^{26.6}$.
+At the proofs' example ($N = 2^{14}$, $\bar n_O = 10^6$, the bounds of the simulation population, all scales and both rescaling primes $2^{52.5}$, centred key switching, $\delta_B = 2^{-50}$), $B_{\mathrm{tot},2} \approx 2^{25.3}$. The error measured in OpenFHE runs at that setting stays $6$--$8$ bits below it.
 
-\textsc{Calibrate} must use this worst-case, data-independent bound. A bound estimated from the actual ciphertexts would depend on the data, leak through $\sigma_{c,s}$, and not be a worst-case bound.
+With OpenFHE's key switching and the evaluation settings of Section~\ref{sec:params}, $B_{\mathrm{tot},2} \approx 2^{26.6}$. Two properties of OpenFHE~1.5.1, read from its source, change the proofs' centred constants:
+\begin{itemize}[noitemsep]
+  \item the fast base conversion in ModUp returns digits in $[0, k_j\tilde Q_j)$, so the digit factor becomes $\varsigma_\uparrow = 2k_j$;
+  \item ModDown's rounding lies in $(-k_P, 0]$, so the rounding factor becomes $\varsigma_\downarrow = 2k_P$.
+\end{itemize}
+Here $k_j$ is the number of primes in digit $j$ and $k_P$ the number of special primes. The dominant terms are the key-switching gadget term ($2^{25.3}$) and the ModDown roundings ($2^{25.7}$).
+
+Every term of $B_{\mathrm{tot}}$ is an analytic bound; none is an estimate or a measurement. The implementation draws its errors with OpenFHE's inversion-table sampler at $\sigma = 3.19$, whose support is $|x| \le 27$. From the sampler's table we checked numerically that it is subgaussian with variance proxy $3.19^2 \le 3.2^2$, as (M5) requires; this is a check, not a proof. Neither party uses OpenFHE's noise estimation, its \texttt{NOISE\_FLOODING\_DECRYPT} mode or its multiparty decryption. $\Op$'s share is computed directly on the polynomials, and $\eta$ is the only noise added.
+
+As a sanity check, not part of the guarantee, we measured the whole error $e_{\mathrm{tot},s}$ of releases of the implementation against the exactly computed centre $f_s(D)$. Over $12$ runs ($24$ releases) at $\bar n_O \in \{4096, 16384\}$, on the synthetic population and on data at the clipping bounds, its $\ell_2$ norm was $2^{17.8}$--$2^{18.8}$, between $7.8$ and $8.7$ bits below $B_{\mathrm{tot},s}$. The re-randomization term contributed almost nothing, and data at the clipping bounds did not increase the error. The deterministic part that the centring removes, $\|f_s(D) - \Ecd_{\Omega_f}(\mathbf z_s(D))\|_2$, was $2^{21.3}$--$2^{29.6}$; on the extreme data it exceeds $B_{\mathrm{tot},s}$, which is why the mechanism must be centred.
+
+\tocheck{(T4) Model (M5) assumes mean-zero subgaussian errors. OpenFHE's floating-point inversion-table sampler was checked to be $3.2^2$-subgaussian only numerically, including perturbations of every probability by up to $2^{-53}$, and its mean is zero only up to the $2^{-53}$ granularity of its uniform generator. Add the mean term and the numerical check to the proofs, or draw the errors with an exact sampler.}
+
+\textsc{Calibrate} must use this worst-case, data-independent bound. A bound estimated from the actual ciphertexts would depend on the data, leak through $\sigma_{c,s}$, and not be a worst-case bound. Recent attacks make the point concrete. Guo, Nabokov, Suvanto and Johansson~\cite{guo2024key} recover the secret key from a single shared decryption in OpenFHE when the flooding noise is set from non-worst-case noise estimates. Checri, Sirdey, Boudguiga and Bultel~\cite{checri2024practical} show that threshold BFV, BGV and CKKS are exposed to key recovery unless smudging noise is added after partial decryption. In v3.1 the only partial decryption that leaves its owner is $\Op$'s; it carries $\eta$, calibrated to the worst-case bound, and $\Rp$'s is never sent. Kluczniak and Santato~\cite{kluczniak2025circuit} show that Gaussian noise exponential in the security parameter, added to the partial decryptions of threshold and multikey approximate HE, gives indistinguishability-based security, and that this noise level is tight. Our release uses noise of the same kind. It differs in two ways: the same noise is the zCDP noise of the released statistic, and we prove a simulation-based guarantee for $\Rp$'s whole view, with an explicit statistical slack at a concrete $\kappa$.
+
+\tocheck{(T2) Kluczniak and Santato (CiC 2(1), 2025): the description (indistinguishability-based circuit privacy, a KL-divergence analysis, noise exponential in the security parameter, tightness, partial decryptions of multikey and threshold schemes) comes from search-engine extracts. Check the theorem statements and the exact noise condition, and whether their tightness result says anything about a statistical flooding parameter $\kappa = 40$ accounted for as an explicit slack.}
+
+\tocheck{(T3) Guo et al.\ (USENIX Security 2024) and Checri et al.\ (CRYPTO 2024): the claims are from abstracts and search-engine extracts. Check which OpenFHE modes they attacked. In OpenFHE 1.5.1, multiparty decryption adds a Gaussian with $\sigma = 2^{20}$ by default, estimate-based flooding under \texttt{NOISE\_FLOODING\_DECRYPT}, and uniform noise under \texttt{NOISE\_FLOODING\_MULTIPARTY}. The given names of Checri et al.\ and the page numbers of Guo et al.\ ($7447$--$7461$, from an extract) are not verified and are not in the bibliography.}
 
 \begin{theorem}[Output privacy against an honest-but-curious $\Rp$]
 \label{thm:output}
 Let the parameter vector satisfy the constraints of Section~\ref{sec:params}, and let \textup{\textsc{Calibrate}}'s outputs, which depend on public values only, satisfy for every release $s$
 \begin{enumerate}[noitemsep, label=(\roman*)]
-  \item $\sigma_{c,s} \ge \max\{2^{\kappa}B_{\mathrm{tot},s}/\sqrt{2\pi},\ 2^{20}\}$, with $B_{\mathrm{tot},s}$ from Theorem~\ref{thm:btot};
+  \item $\sigma_{c,s} \ge \max\{2^{\kappa}B_{\mathrm{tot},s}/\sqrt{2\pi},\ 2^{42}\}$, with $B_{\mathrm{tot},s}$ from Theorem~\ref{thm:btot};
   \item $\rho_s = \widehat\Delta_{\mathrm{enc},s}^2/(2\sigma_{c,s}^2)$ and $\sum_s\rho_s \le \rho_{\mathrm{run}}$, where $\rho_{\mathrm{run}}$ is the largest $\rho$ whose tight conversion gives $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$, with
   \[
     \gamma = n_{\mathrm{rel}}\bigl(\delta_B + 2^{-\kappa}(1 + 2^{-80}) + 2^{-97}\bigr), \qquad \delta_{\mathrm{DP}} = \delta_{\mathrm{run}} - (1 + e^{\varepsilon_{\mathrm{run}}})\gamma > 0 .
   \]
 \end{enumerate}
-Assume RLWE for the re-randomizer (one sample per release, modulus $q_0$) and for $\Op$'s key shares (multi-sample, with circular security for the rotation-key shares), at ring dimension $N$ and modulus $QP$ with $\log_2(QP) \le L_{\max}(N, \lambda_{\mathrm{sec}})$. Then $\Rp$'s view of one run is $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$-SIM-CDP for $\sim$ with statistical slack $\gamma$, and therefore $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$-IND-CDP. The ideal mechanism $\mathcal M(D) = (f_s(D) + \eta_s)_s$ is a composition of lattice discrete Gaussian mechanisms and is $\rho_{\mathrm{run}}$-zCDP. PSI security is not needed for this guarantee: the identifiers are fixed under $\sim$, so the PSI transcript does not depend on $(\bx_O, y)$.
+Assume RLWE for the re-randomizer (one sample per release, modulus $q_0$) and for $\Op$'s public-key share $p_{0,O}$ (one sample; $\Op$'s rotation-key shares are never sent), at ring dimension $N$ and modulus $QP$ with $\log_2(QP) \le L_{\max}(N, \lambda_{\mathrm{sec}})$, and that $\Rp$ samples its errors honestly (Section~\ref{sec:defs}). Then $\Rp$'s view of one run is $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$-SIM-CDP for $\sim$ with statistical slack $\gamma$, and therefore $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$-IND-CDP. The ideal mechanism $\mathcal M(D) = (f_s(D) + \eta_s)_s$ is a composition of lattice discrete Gaussian mechanisms and is $\rho_{\mathrm{run}}$-zCDP. PSI security is not needed for this guarantee: the identifiers are fixed under $\sim$, so the PSI transcript does not depend on $(\bx_O, y)$.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-A sequence of hybrids. H0 is the real view: setup messages, PSI messages, and $\{(c'_{1,s}, h_{O,s})\}_s$. H1 rewrites $h_{O,s} = v_s - c'_{1,s}s_R$, which is identical. H2 replaces $v_s$ by $f_s(D) + \eta_s$; by Lemma~\ref{lem:smudge} with side information and Theorem~\ref{thm:btot} this costs at most $\delta_B + 2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$ per release, $\gamma$ in total. After H2, $(u_s, e_{1,s})$ appear only through $c'_{1,s} = c_{1,s} + a u_s + e_{1,s}$, because $c'_{0,s}$ is never sent. H3 replaces $c'_{1,s}$ by a uniform element (RLWE with secret $u_s$; fresh $u_s$ per release). H4 simulates the setup messages from the RLWE assumption on $\Op$'s key shares. The simulator, given $\mathcal M(D)$ and $s_R$, samples a uniform $c_1^\ast$ per release and outputs $h^\ast = \mathcal M(D)_s - c_1^\ast s_R$. The multivariate discrete Gaussian with sensitivity $\widehat\Delta_{\mathrm{enc},s}$ is exactly $\rho_s$-zCDP~\cite{canonne2020discrete}; costs add, and the tight conversion gives $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$-DP. Lemma~\ref{lem:sim2ind} turns the slack into $\delta_{\mathrm{run}} = \delta_{\mathrm{DP}} + (1 + e^{\varepsilon_{\mathrm{run}}})\gamma$.
+A sequence of hybrids. H0 is the real view: setup messages, PSI messages, and $\{(c'_{1,s}, h_{O,s})\}_s$. H1 rewrites $h_{O,s} = v_s - c'_{1,s}s_R$, which is identical. H2 replaces $v_s$ by $f_s(D) + \eta_s$; by Lemma~\ref{lem:smudge} with side information and Theorem~\ref{thm:btot} this costs at most $\delta_B + 2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$ per release, $\gamma$ in total. The side information includes $\Rp$'s random tape, whose errors and key share enter $e_{\mathrm{tot},s}$; Theorem~\ref{thm:btot} needs those errors to be honestly sampled; and $\gamma$ is a statistical slack, not negligible in $\lambda_{\mathrm{sec}}$. After H2, $(u_s, e_{1,s})$ appear only through $c'_{1,s} = c_{1,s} + a u_s + e_{1,s}$, because $c'_{0,s}$ is never sent. H3 replaces $c'_{1,s}$ by a uniform element (RLWE with secret $u_s$; fresh $u_s$ per release). H4 simulates the setup messages by plain RLWE for $\Op$'s public-key share, the only key material $\Op$ sends. The simulator, given $\mathcal M(D)$ and $s_R$, samples a uniform $c_1^\ast$ per release and outputs $h^\ast = \mathcal M(D)_s - c_1^\ast s_R$. The multivariate discrete Gaussian with sensitivity $\widehat\Delta_{\mathrm{enc},s}$ is exactly $\rho_s$-zCDP~\cite{canonne2020discrete}; costs add, and the tight conversion gives $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$-DP. Lemma~\ref{lem:sim2ind} turns the slack into $\delta_{\mathrm{run}} = \delta_{\mathrm{DP}} + (1 + e^{\varepsilon_{\mathrm{run}}})\gamma$.
 \end{proof}
 
 \begin{remark}[Why the release format matters]
 \label{rem:format}
 If $\Op$ sent $c_0'$, or a share $c_1' s_O$ without $\eta$, $\Rp$ would learn $c_1' s_O$ exactly and could recover $s_O$, since $c_1'$ is invertible with overwhelming probability. Re-randomization matters too. The evaluated $c_1$ is computed from public values and $\Op$'s plaintext columns, and $\Rp$ chose the seed of $a$, so without it $c_1$ could reveal $\Op$'s data. In a real OpenFHE run of an earlier specification that added the noise as a plaintext scalar, without re-randomizing, $\Rp$ identified the true dataset in 20 of 20 trials, for a matched and for an unmatched record, where an $\varepsilon = 1$ guarantee caps the success rate at $e/(1 + e) \approx 73\%$. Reusing $\eta$ or $u$ across releases would reveal $v_2 - v_1$ exactly, so both are fresh every time. Stage~1 uses its own packed ciphertext $M_1$, which depends only on $\triu\bB$ and $\bC$, so its error cannot depend on entries released only in stage~2.
 \end{remark}
+
+\begin{remark}[Who knows the noise]
+\label{rem:whoknows}
+Hwang et al.~\cite{hwang2025insecurity} show that two-party CKKS protocols in which each party adds its own smudging noise to a shared output are not secure in the standard simulation sense when both parties have inputs. The party that sampled a share of the noise knows it, so its view yields a closer approximation of the exact result than the ideal output reveals. Such protocols meet only a relaxed (``liberal'') notion, in which the simulator also receives the exact result. Their remedy is to sample the noise jointly, so that no party knows it.
+
+v3.1 avoids this obstruction for the analyst, at the price of an explicit statistical slack. $\Rp$ adds no noise: its decryption share is never sent, so it needs no flooding of its own, and $\eta$ is the only noise in the output. $\Rp$'s coins still enter $e_{\mathrm{tot},s}$, through its encryption errors (multiplied by $\Op$'s data), its key-share errors and $s_R$. All of this is bounded by $B_{\mathrm{tot},s} \le 2^{-\kappa}\sqrt{2\pi}\,\sigma_{c,s}$ and is absorbed by Lemma~\ref{lem:smudge}, which allows any side information independent of $\eta$, including $\Rp$'s random tape. The simulator of Theorem~\ref{thm:output} therefore needs only $\mathcal M(D)$, never the exact $f_s(D)$. The price is the slack $\gamma$, which is statistical rather than negligible in $\lambda_{\mathrm{sec}}$. The deterministic CKKS terms are part of the functionality $f_s(D) + \eta$, not of its noise. Their effect on privacy is accounted for by $\Delta_{x,s}$, so the ideal output is $f_s(D) + \eta$ rather than $\Ecd(\mathbf z_s(D)) + \eta$.
+
+Two qualifications follow.
+\begin{enumerate}[noitemsep, label=(\roman*)]
+  \item The flooding argument needs $\Rp$'s errors to be sampled honestly. A researcher who inflated its encryption errors would push the term ``$\Rp$'s errors times $\Op$'s data'' beyond $B_{\mathrm{tot}}$, and that term is correlated with $\Op$'s data. This lies outside the honest-but-curious model (Section~\ref{sec:ext}).
+  \item The obstruction applies unchanged to $\Op$, which knows $\eta$. G1 and G2 are statements about $\Op$'s view of the protocol, in which $\Op$ has no output, and they do not extend to $\Rp$'s outputs (Section~\ref{sec:input}).
+\end{enumerate}
+\end{remark}
+
+\tocheck{(T1) Hwang et al.\ (ePrint 2025/395; the later version's title, used in the bibliography, is ``On the (In)security of Approximate Computation Protocols from CKKS'', listed as accepted at ASIACRYPT 2026): the definitions and the two-party obstruction were checked against the authors' FHE.org 2026 poster only, and the abstract, the later title and the venue only through search-engine extracts. Confirm against the full text the exact standard and liberal definitions; that the obstruction needs the corrupted party's noise share to be non-negligible next to the rest of the output noise; and the statement for the case of one party with input. Fix the venue in the bibliography once confirmed.}
+
+\tocheck{(T8) Release timing: the exact sampler is not constant time (implementation, DEVIATIONS A13), and $\Rp$ observes the latency of each release. That latency depends on $\eta$ and lies outside the simulation of Theorem~\ref{thm:output}. Pad the release time to a public bound, or bound the leak.}
 
 \subsection{Calibration}
 \label{sec:privacy:calib}
@@ -550,7 +586,7 @@ If $\Op$ sent $c_0'$, or a share $c_1' s_O$ without $\eta$, $\Rp$ would learn $c
   \item \emph{Mode and sensitivities.} $\Delta$, $\Delta_{\neg yy}$, $\Delta_G$ and $\Delta_y$ from the bounds (Proposition~\ref{prop:sens}). $\by^\top\by$ joins stage~2 iff it is free (Remark~\ref{rem:yyfree}), so the number of releases is $n_{\mathrm{rel}} = 2$ (joint mode) or $3$ (separate mode).
   \item \emph{Flooding parameter and slack.} $\kappa$ from~\eqref{eq:kappa} below, unless the parameters fix it; $\gamma = n_{\mathrm{rel}}(\delta_B + 2^{-\kappa}(1 + 2^{-80}) + 2^{-97})$ and $\delta_{\mathrm{DP}} = \delta_{\mathrm{run}} - (1 + e^{\varepsilon_{\mathrm{run}}})\gamma$.
   \item \emph{Budget.} $\rho_{\mathrm{run}}$, the largest $\rho$ whose tight conversion gives $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{DP}})$, split as $\rho_1 = f_1\rho_{\mathrm{run}}$, $\rho_y = f_y\rho_{\mathrm{run}}$ in separate mode, and $\rho_2$ the rest.
-  \item \emph{Scale and noise.} The smallest admissible final scale $\Omega_f$ (that is, the smallest $\Omega_V$, given $\Omega_U$ and $\Omega_u$) at which $\sigma_{c,s} \ge \max\{2^{\kappa}B_{\mathrm{tot},s}(\Omega_f)/\sqrt{2\pi},\ 2^{20}\}$ for every release, with $\sigma_{c,s}^2 = \lceil \widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s) \rceil$ an integer, as the exact sampler needs. Rounding up only lowers the cost below $\rho_s$.
+  \item \emph{Scale and noise.} The smallest admissible final scale $\Omega_f$ (that is, the smallest $\Omega_V$, given $\Omega_U$ and $\Omega_u$) at which $\sigma_{c,s} \ge \max\{2^{\kappa}B_{\mathrm{tot},s}(\Omega_f)/\sqrt{2\pi},\ 2^{42}\}$ for every release, with $\sigma_{c,s}^2 = \lceil \widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s) \rceil$ an integer, as the exact sampler needs. Rounding up only lowers the cost below $\rho_s$.
   \item \emph{Modulus and security.} $q_0 > 2(\Omega_f S_{\max} + 2^{\kappa}B_{\mathrm{tot},\max} + t_\eta\,\sigma_{c,\max})$ with $S_{\max} = \bar n_O\max(r, o, w, \sqrt{ro}, \sqrt{rw}, \sqrt{ow})$, so that honest inputs never wrap around, and $\log_2(QP) \le L_{\max}(N, \lambda_{\mathrm{sec}})$, the largest modulus at which RLWE with ring dimension $N$ and ternary secrets has security $\lambda_{\mathrm{sec}}$~\cite{albrecht2018he}.
 \end{enumerate}
 \textsc{Calibrate} refuses the run when a step has no solution: no admissible $\kappa$, $\delta_{\mathrm{DP}} \le 0$, no scale that floods, $q_0$ too small, or a chain above the security bound.
@@ -569,17 +605,17 @@ in joint mode ($\Delta_{\neg yy}$ and $1 - f_1 - f_y$ replace $\Delta$ and $1 - 
   \kappa = \max\{\kappa_{\min},\ \kappa_{\mathrm{run}},\ \kappa_L\},
   \label{eq:kappa}
 \end{equation}
-where $\kappa_{\mathrm{run}}$ is the smallest integer with $(1 + e^{\varepsilon_{\mathrm{run}}})\gamma \le \zeta\,\delta_{\mathrm{run}}$, and $\kappa_L$ is the smallest integer with $\gamma \le (\tilde\rho_{\mathrm{run}}/\rho_L)\,\Gamma_L$, this run's share of the ledger's slack capacity (Section~\ref{sec:privacy:ledger}); $\tilde\rho_{\mathrm{run}}$ is the budget at $\delta_{\mathrm{DP}} = (1 - \zeta)\delta_{\mathrm{run}}$, a lower bound on $\rho_{\mathrm{run}}$ once $\kappa \ge \kappa_{\mathrm{run}}$. The three terms have separate jobs.
+where $\kappa_{\mathrm{run}}$ is the smallest integer with $(1 + e^{\varepsilon_{\mathrm{run}}})\gamma \le \zeta\,\delta_{\mathrm{run}}$, and $\kappa_L$ is the smallest integer with $n_{\mathrm{rel}}\varepsilon'(\kappa) \le (\tilde\rho_{\mathrm{run}}/\rho_L)\,E'_L$, this run's share of the ledger's smudging budget, with $\varepsilon'(\kappa)$ the smudging cost of one release (Section~\ref{sec:privacy:ledger}, Remark~\ref{rem:sharperslack}); $\tilde\rho_{\mathrm{run}}$ is the budget at $\delta_{\mathrm{DP}} = (1 - \zeta)\delta_{\mathrm{run}}$, a lower bound on $\rho_{\mathrm{run}}$ once $\kappa \ge \kappa_{\mathrm{run}}$. The three terms have separate jobs.
 \begin{itemize}[noitemsep]
   \item $\kappa_{\mathrm{run}}$ makes the per-run statement hold with the slack taking at most a share $\zeta$ of $\delta_{\mathrm{run}}$. $\gamma$ falls with $\kappa$ to the floor $n_{\mathrm{rel}}(\delta_B + 2^{-97})$, so $\kappa_{\mathrm{run}}$ exists iff $n_{\mathrm{rel}}(1 + e^{\varepsilon_{\mathrm{run}}})(\delta_B + 2^{-97}) < \zeta\delta_{\mathrm{run}}$; otherwise $\delta_B$ must be lowered.
-  \item $\kappa_L$ makes the ledger run out of zCDP budget before it runs out of slack, whatever the order and the sizes of the runs.
+  \item $\kappa_L$ makes the ledger run out of zCDP budget before it runs out of smudging budget, whatever the order and the sizes of the runs, provided every run on the register uses $\kappa \ge \kappa_L$. Since the smudging step is accounted in hockey-stick divergence, its $2^{-\kappa}$ part is not multiplied by $e^{\varepsilon_L}$, and $\kappa_L$ is far below $\kappa_{\min}$ at the evaluation settings.
   \item $\kappa_{\min}$ is a statistical security floor. $\gamma$ also bounds what $\Rp$ can learn beyond $\mathcal M(D)$, including about $\Op$'s key share, so it should not grow with a generous $\delta_{\mathrm{run}}$.
 \end{itemize}
 $\zeta$ trades budget for bits. Shrinking $\delta_{\mathrm{DP}}$ from $\delta_{\mathrm{run}}$ to $(1 - \zeta)\delta_{\mathrm{run}}$ lowers $\rho_{\mathrm{run}}$ by a relative $\zeta/\sqrt{L(L + \varepsilon_{\mathrm{run}})}$ to first order (simple conversion, $L = \ln(1/\delta_{\mathrm{run}})$), so $\sigma_2$ rises by half that, while each unit of $\kappa$ adds one bit to $\Omega_f$ and to $q_0$. At $\delta_{\mathrm{run}} = 10^{-9}$ and $\varepsilon_{\mathrm{run}} \in \{1, 4, 8\}$ the tight conversion loses $0.46$--$0.59\%$ of $\rho_{\mathrm{run}}$ at $\zeta = 0.1$ and $0.04$--$0.06\%$ at $\zeta = 0.01$, and $\zeta = 0.01$ raises $\kappa$ by $3$ bits at $\varepsilon_{\mathrm{run}} = 4$ and $5$ at $\varepsilon_{\mathrm{run}} = 8$ (by at most $1$ where the floor $\kappa_{\min} = 40$ binds). Table~\ref{tab:kappa} gives $\kappa$ and the resulting scale at the previous setting ($f_1 = 0.1$); at $f_1 = 0.25$ (setting I) the scale is about $0.13$ bits lower and $\kappa$ is the same.
 
 \begin{table}[ht]
   \centering\small
-  \caption{Example at the previous setting ($f_1 = 0.1$): the flooding parameter from~\eqref{eq:kappa} and the final scale \textsc{Calibrate} chooses, simulation population ($p = 11$, joint mode, $n_{\mathrm{rel}} = 2$), $\delta_{\mathrm{run}} = 10^{-9}$, $\zeta = 0.1$, $\kappa_{\min} = 40$, $\Omega_U = 2^{68}$, $N = 2^{14}$, $q_0 \approx 2^{119}$, $\log_2(QP) = 357 \le 438$. Left: a single-run ledger. Right: ledger cap $(\varepsilon_L, \delta_L) = (10, 10^{-6})$ with $\zeta_L = 0.1$. Every row is feasible. At a fixed $\kappa = 40$, $\varepsilon_{\mathrm{run}} = 8$ is not: the slack exceeds $\delta_{\mathrm{run}}$.}
+  \caption{Example at the previous setting ($f_1 = 0.1$): the flooding parameter from~\eqref{eq:kappa} and the final scale \textsc{Calibrate} chooses, simulation population ($p = 11$, joint mode, $n_{\mathrm{rel}} = 2$), $\delta_{\mathrm{run}} = 10^{-9}$, $\zeta = 0.1$, $\kappa_{\min} = 40$, $\Omega_U = 2^{68}$, $N = 2^{14}$, $q_0 \approx 2^{119}$, $\log_2(QP) = 357 \le 438$. Left: a single-run ledger. Right: ledger cap $(\varepsilon_L, \delta_L) = (10, 10^{-6})$ with $\zeta_L = 0.1$, $\xi_L = 10^{-3}$ and $\delta' = 2^{-100}$; $\kappa_L$ is below $\kappa_{\min}$, so $\kappa$ and the scale equal the single-run values (the statistical-distance accounting would give $\kappa_L = 48, 46, 44, 42, 40$). All values were computed by the implementation's \textsc{Calibrate}. Every row is feasible. At a fixed $\kappa = 40$, $\varepsilon_{\mathrm{run}} = 8$ is not: the slack exceeds $\delta_{\mathrm{run}}$.}
   \label{tab:kappa}
   \begin{tabular}{@{}rrrrrrrrrr@{}}
     \toprule
@@ -588,11 +624,11 @@ $\zeta$ trades budget for bits. Shrinking $\delta_{\mathrm{DP}}$ from $\delta_{\
     & & & slack & \multicolumn{2}{c}{$\log_2\Omega_f$} & $\log_2 q_0$ & & & $\log_2\Omega_f$ \\
     $\varepsilon_{\mathrm{run}}$ & $\kappa_{\mathrm{run}}$ & $\kappa$ & ($\%$ of $\delta$) & $\bar n_O = 4{,}096$ & $10^6$ & needed, $10^6$ & $\kappa_L$ & $\kappa$ & $10^6$ \\
     \midrule
-    0.5 & 36 & 40 & 0.48 & 61.78 & 61.78 & 88.0 & 48 & 48 & 69.88 \\
-    1 & 37 & 40 & 0.68 & 62.75 & 62.75 & 89.0 & 46 & 46 & 68.78 \\
-    2 & 38 & 40 & 1.53 & 63.69 & 63.69 & 89.9 & 44 & 44 & 67.72 \\
-    4 & 41 & 41 & 5.07 & 65.62 & 65.66 & 91.9 & 42 & 42 & 66.66 \\
-    8 & 46 & 46 & 9.00 & 71.56 & 71.94 & 98.2 & 40 & 46 & 71.94 \\
+    0.5 & 36 & 40 & 0.48 & 61.78 & 61.78 & 88.0 & 22 & 40 & 61.78 \\
+    1 & 37 & 40 & 0.68 & 62.75 & 62.75 & 89.0 & 21 & 40 & 62.75 \\
+    2 & 38 & 40 & 1.53 & 63.69 & 63.69 & 89.9 & 19 & 40 & 63.69 \\
+    4 & 41 & 41 & 5.07 & 65.62 & 65.66 & 91.9 & 17 & 41 & 65.66 \\
+    8 & 46 & 46 & 9.00 & 71.56 & 71.94 & 98.2 & 15 & 46 & 71.94 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -608,35 +644,74 @@ Example: for the simulation population at $\varepsilon = 1$, $\delta = 10^{-9}$,
 \subsection{The ledger and composition across runs}
 \label{sec:privacy:ledger}
 
-$\Op$ keeps one ledger per base register, shared across all researchers and scopes, and refuses to produce a decryption share once the cap would be exceeded. Because no decryption is possible without $\Op$'s share, the cap is enforced technically, not by policy. A refused stage-2 gate (Section~\ref{sec:stats:stage2}) still spends the budget. The OPRF quota limits membership look-ups across sessions as a matter of policy.
+$\Op$ keeps one ledger per base register, shared across all researchers and scopes. It admits a run only if the run's full cost fits under the cap, and it produces decryption shares only within admitted runs. Because no decryption is possible without $\Op$'s share, the cap is enforced technically, not by policy. A refused stage-2 gate (Section~\ref{sec:stats:stage2}) still spends the budget. The OPRF quota limits membership look-ups across sessions as a matter of policy.
 
-\paragraph{Parameters and state.} The ledger's parameters are a cap $(\varepsilon_L, \delta_L)$ and the share $\zeta_L \in (0, 1)$ of $\delta_L$ reserved for statistical slack. From them, $\rho_L$ is the largest $\rho$ whose tight conversion gives $(\varepsilon_L, (1 - \zeta_L)\delta_L)$, and $\Gamma_L = \zeta_L\delta_L/(1 + e^{\varepsilon_L})$. The state is the sum $\rho_\Sigma$ of the zCDP costs $\rho_s$ and the sum $\Gamma_\Sigma$ of the raw slacks $\gamma_s = \delta_B + 2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$ of every release made on the register. The raw slacks add, not the converted ones $(1 + e^{\varepsilon_{\mathrm{run}}})\gamma$: they are converted once, at the cap's $\varepsilon_L$.
-
-\paragraph{Admission.} Write $\delta(\rho, \varepsilon)$ for the tight conversion.
+\paragraph{Parameters and state.} The ledger's parameters are four:
 \begin{itemize}[noitemsep]
-  \item \emph{Runs fixed in advance} (non-adaptive). Admit a run iff $\delta(\rho_\Sigma + \rho_{\mathrm{run}}, \varepsilon_L) + (1 + e^{\varepsilon_L})(\Gamma_\Sigma + \gamma) \le \delta_L$.
-  \item \emph{Runs chosen after seeing earlier results} (adaptive). Admit a run iff $\rho_\Sigma + \rho_{\mathrm{run}} \le \rho_L$ and $\Gamma_\Sigma + \gamma \le \Gamma_L$. This is a privacy filter in the sense of Rogers et al.~\cite{rogers2016odometers}, and it is the rule for a shared register, where later runs are rarely fixed in advance. With $\kappa_L$ in~\eqref{eq:kappa} the slack condition holds whenever the zCDP condition does.
+  \item a cap $(\varepsilon_L, \delta_L)$;
+  \item the share $\zeta_L \in (0, 1)$ of $\delta_L$ reserved for statistical slack;
+  \item the share $\xi_L \in (0, 1)$ of $\varepsilon_L$ reserved for the smudging of the encryption error;
+  \item a per-release constant $\delta' \in (0, 1)$.
 \end{itemize}
-A register on which a single run is allowed is the special case $(\varepsilon_L, \delta_L) = (\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$ under the first rule, which that run fills exactly; then $\kappa_L = \kappa_{\mathrm{run}}$.
+From them,
+\[
+  E'_L = \xi_L\varepsilon_L/2, \qquad
+  \rho_L = \max\{\rho : \delta(\rho, (1 - \xi_L)\varepsilon_L) \le e^{-E'_L}(1 - \zeta_L)\delta_L\}, \qquad
+  \Gamma_L = \frac{\zeta_L\delta_L}{1 + e^{\varepsilon_L - E'_L}} ,
+\]
+where $\delta(\rho, \varepsilon)$ is the tight conversion. A run with $n_{\mathrm{rel}}$ releases at flooding parameter $\kappa$ costs three amounts:
+\begin{itemize}[noitemsep]
+  \item its zCDP cost $\rho_{\mathrm{run}}$;
+  \item a smudging cost $\varepsilon'_{\mathrm{run}} = n_{\mathrm{rel}}\varepsilon'(\kappa)$, where $\varepsilon'(\kappa)$ is the smallest $\varepsilon$ with $\delta(\pi 4^{-\kappa}, \varepsilon) \le \delta'$, at most $2\sqrt{\pi\ln(1/\delta')}\,2^{-\kappa} + \pi 4^{-\kappa}$;
+  \item a slack $\gamma_L = n_{\mathrm{rel}}(\delta_B + \delta')$.
+\end{itemize}
+The three costs come from the hockey-stick form of the smudging step (Remark~\ref{rem:sharperslack}). The state is their three sums $(\rho_\Sigma, E_\Sigma, \Gamma_\Sigma)$ over the runs admitted on the register. A run is charged its full cost, for all its planned releases, at the moment it is admitted, and it is not refunded if it is aborted or a release is never requested. Refunding the zCDP cost and the $2^{-\kappa}$-dependent smudging cost of releases not made would be sound, but the $\delta_B$ part must stay charged, because $\Rp$'s decision to continue may depend on its own key share and encryption errors, which enter $e_{\mathrm{tot}}$ (proofs, composition appendix, Remark~4.3); the composition statement below is proved for the rule without refunds. Requests are processed one at a time, and a run's cost is reserved atomically when it is admitted, so concurrent runs cannot jointly exceed the cap. The capacities are rounded down and the costs up. The evaluation uses $\xi_L = 10^{-3}$ and $\delta' = 2^{-100}$.
+
+\paragraph{Admission.} Write $\rho^+ = \rho_\Sigma + \rho_{\mathrm{run}}$, $E^+ = E_\Sigma + \varepsilon'_{\mathrm{run}}$ and $\Gamma^+ = \Gamma_\Sigma + \gamma_L$.
+\begin{itemize}[noitemsep]
+  \item \emph{Runs fixed in advance}, with the parameters and inputs of every run fixed before the first run and independent of any output: admit iff $e^{E^+}\delta(\rho^+, \varepsilon_L - 2E^+) + (1 + e^{\varepsilon_L - E^+})\Gamma^+ \le \delta_L$.
+  \item \emph{Runs chosen after seeing earlier results}: admit iff $\rho^+ \le \rho_L$, $E^+ \le E'_L$ and $\Gamma^+ \le \Gamma_L$. This is a privacy filter in the sense of Rogers et al.~\cite{rogers2016odometers}, and it is the rule for a shared register, where later runs are rarely fixed in advance. With $\kappa_L$ in~\eqref{eq:kappa} for every run, the smudging condition holds whenever the zCDP condition does. The slack condition does too, provided $n_{\mathrm{rel}}(\delta_B + \delta') \le (\tilde\rho_{\mathrm{run}}/\rho_L)\Gamma_L$, a constraint on $\delta_B$ that does not involve $\kappa$.
+\end{itemize}
+Either rule makes the joint view $(\varepsilon_L, \delta_L)$-IND-CDP (Proposition~\ref{prop:compose}; proofs, composition appendix, Corollary~5.4). A register on which a single run is allowed is covered by Theorem~\ref{thm:output} alone, with cap $(\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$, which that run fills exactly; $\kappa_L$ plays no role there. The earlier accounting, which measures the smudging step in statistical distance, has two sums, $\Gamma_L = \zeta_L\delta_L/(1 + e^{\varepsilon_L})$ and the raw slack $\gamma = n_{\mathrm{rel}}(\delta_B + 2^{-\kappa}(1 + 2^{-80}) + 2^{-97})$ per run; it is also proved (Theorem~4.2 there) and remains an option of the implementation, but it multiplies the $2^{-\kappa}$ part by $e^{\varepsilon_L}$.
+
+\begin{definition}[Base-register adjacency]
+\label{def:baseadj}
+A base register is $\mathfrak D = \{(\mathrm{id}_j, \mathbf a_j, \bx_j, y_j)\}_j$, with identifiers, public attributes, all of $\Op$'s feature columns and the response. $\mathfrak D \sim_{\mathrm b} \mathfrak D'$ if they have the same identifiers and public attributes and differ in $(\bx_j, y_j)$ of exactly one row. Scopes use public attributes only, and preprocessing acts row by row with public constants. So for every run, the padded scope registers of $\mathfrak D$ and $\mathfrak D'$ either coincide or are adjacent in the sense of Definition~\ref{def:adj}, whatever the scope, the model and the cohort (proofs, composition appendix, Lemma~1.3).
+\end{definition}
 
 \begin{proposition}[Composition across runs]
 \label{prop:compose}
-Let runs $k = 1, 2, \dots$ on one base register use independent keys, shuffles and randomness, let each satisfy the hypotheses of Theorem~\ref{thm:output} with zCDP cost $\rho_k$ and slack $\gamma_k$, and let the number of runs be polynomial in $\lambda_{\mathrm{sec}}$. If the runs are fixed in advance and admitted by the first rule, or chosen adaptively and admitted by the second, then the joint view of all researchers is $(\varepsilon_L, \delta_L)$-IND-CDP for $\sim$.
+Let all researchers using one base register act as one coalition, possibly colluding. The coalition chooses each run's parameters (scope, model, budget, flooding parameter, ring parameters from a fixed finite menu) and each cohort as a function of the joint view of earlier runs. It follows the protocol within each run, and it may interleave and abort runs. Assume that:
+\begin{itemize}[noitemsep]
+  \item every admitted run draws fresh CKKS key material and fresh release coins, and satisfies the hypotheses of Theorem~\ref{thm:output};
+  \item the register is static;
+  \item RLWE holds, as in Theorem~\ref{thm:output}, for every ring parameter set of the menu, against non-uniform adversaries;
+  \item $\Op$'s ledger is honest, admits runs one at a time, and charges a run's full cost at admission.
+\end{itemize}
+Then the joint view of all researchers is $(\varepsilon_L, \delta_L)$-IND-CDP for $\sim_{\mathrm b}$ in two cases: under the second (filter) rule, for every PPT coalition; and under the first rule, when the runs are fixed in advance.
+
+More precisely, the joint view is simulated, with statistical slack $\E[\sum_{k\ \mathrm{admitted}}\gamma_k] + \mathrm{negl}(\lambda_{\mathrm{sec}})$, by an ideal experiment. This ideal experiment is a post-processing of an adaptive $\rho^*$-zCDP mechanism whenever $\sum_{k\ \mathrm{admitted}}\rho_k \le \rho^*$ in every execution (proofs, composition appendix, Theorem~4.2). With the smudging step measured in hockey-stick divergence, the same holds with an $(\varepsilon'(\kappa), \delta')$ step per release in place of the slack $2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$ (Theorem~5.2 there), which gives the ledger of this section (Corollary~5.4 there).
 \end{proposition}
 
 \begin{proof}[Proof sketch]
-\emph{Simulation, run by run.} Replace the runs one at a time by their simulations $\mathcal S_k(\mathcal M_k(D))$. Run $k$ uses keys and randomness independent of the other runs, so the reduction for each hybrid step can generate every other run, real or simulated, from $D$. This holds also when the parameters of run $k$ are a function of the researchers' views of earlier runs, since the reduction can compute that function. Step $k$ costs the expectation of $\gamma_k$ plus a negligible term, so the joint view is simulated from $(\mathcal M_k(D))_k$ with slack $\Gamma = \E\sum_k\gamma_k$, which is at most $\Gamma_\Sigma$ for fixed runs and at most $\Gamma_L$ under the filter. For fixed runs this is the composition lemma of the proofs (Part~A); the adaptive case is the same hybrid.
-\emph{The ideal mechanisms.} For fixed runs, zCDP costs add~\cite{bun2016concentrated}. For adaptive runs, $\mathcal M_k$ is $\rho_k$-zCDP, that is, $(a, a\rho_k)$-R\'enyi DP for every order $a > 1$, with $\rho_k$ a function of earlier outputs and $\sum_k\rho_k \le \rho_L$ always. The R\'enyi filter of Feldman and Zrnic~\cite{feldman2021individual} (Theorem~1.1), applied at each order $a$, makes the composition $(a, a\rho_L)$-R\'enyi DP for every $a$, that is, $\rho_L$-zCDP.
-\emph{Conversion.} The tight conversion gives $(\varepsilon_L, \delta(\rho, \varepsilon_L))$-DP for the composed mechanism, and Lemma~\ref{lem:sim2ind} adds $(1 + e^{\varepsilon_L})\Gamma$; each admission rule keeps the sum within $\delta_L$.
+The full proof is in the composition appendix of the proofs (Theorem~4.2). It has four steps.
+
+\emph{Statistical hybrid.} Write $\Op$'s share as $v - c_1's_R$ with $v = f_s(D) + e_{\mathrm{tot},s} + \eta_s$. Remove $e_{\mathrm{tot},s}$ from every release of every run in one hybrid, before any computational step. A hybrid lemma for adaptive processes bounds the statistical distance by a single expectation under the real experiment: of $\sum_{\mathrm{made}}2^{-\kappa}(1 + 2^{-80}) + 2^{-97}$ plus $\delta_B$ for every planned release of every admitted run. That expectation is at most $\E[\sum_{k\ \mathrm{admitted}}\gamma_k]$, which each admission rule bounds pointwise.
+
+\emph{Computational hybrids, run by run.} In admission order, replace each run's re-randomized $c_1'$ and then $\Op$'s key shares by uniform elements. The reduction for a step has $D$ as advice. It plays earlier runs ideally and later runs honestly, and it computes the adaptively chosen parameters by running the coalition, which is PPT, together with \textsc{Calibrate} and the ledger, which are deterministic and efficient. It announces the step's ring parameters before receiving its RLWE challenge, at a loss of the menu's size. The number of steps is at most $(n_{\mathrm{rel}} + 1)$ times the coalition's running time; under the filter it is also at most $(n_{\mathrm{rel}} + 1)\Gamma_L/\min_k\gamma_k$.
+
+\emph{Ideal composition.} The ideal experiment releases $f_s(D) + \eta_s$ through lattice Gaussian steps whose dimension, centre and $\sigma$ depend on the history, interleaved with public steps of cost $0$: refusals, coins, the PSI, and uniform key shares and $c_1'$. A R\'enyi filter, proved there by the supermartingale argument behind the filters of Rogers et al.~\cite{rogers2016odometers} and Feldman and Zrnic~\cite{feldman2021individual}, makes it $(a, a\rho^*)$-R\'enyi DP for every $a > 1$ when $\sum\rho_k \le \rho^*$ pointwise. Refusals and the stage-2 gate are coordinates of the view, not events conditioned on.
+
+\emph{Conversion.} Chaining as in Lemma~\ref{lem:sim2ind} gives $(\varepsilon, \delta(\rho^*, \varepsilon) + (1 + e^{\varepsilon})\Gamma^*)$ for every $\varepsilon$, where $\Gamma^*$ bounds $\sum_{\mathrm{admitted}}\gamma_k$ pointwise. Under the statistical-distance filter $(\rho^*, \Gamma^*) = (\rho_L, \Gamma_L)$ with $\Gamma_L = \zeta_L\delta_L/(1 + e^{\varepsilon_L})$, and the $\delta$ budget is used exactly. For runs fixed in advance, the admitted set is deterministic, and the first rule at the last admission gives the same bound. With the hockey-stick ledger, the statistical step is the $(\varepsilon'(\kappa), \delta')$ step of Remark~\ref{rem:sharperslack}, applied before every computational step so that the computational losses only add, and the conversion is Corollary~5.4 there: $\varepsilon = (1 - \xi_L)\varepsilon_L$, $E^* = E'_L$, and $e^{E'_L}\delta(\rho_L, \varepsilon) + (1 + e^{\varepsilon_L - E'_L})\Gamma_L \le \delta_L$.
 \end{proof}
 
-\tocheck{Composition: the adaptive hybrid of Proposition~\ref{prop:compose} is argued here but not yet written out in the proofs, which prove the non-adaptive case. The literature was checked only through search-engine extracts, not the full texts: Feldman and Zrnic's Theorem~1.1 as quoted from the arXiv version (check its number in the NeurIPS version, and the page numbers); the pages of Rogers et al.\ (1921--1929); the volume and pages of Whitehouse et al.\ (PMLR~202, 36990--37007).}
+\tocheck{Composition: the proof, including the adaptive hybrid and the hockey-stick ledger, is written out in the composition appendix of the proofs (Theorems~4.2 and~5.2, Corollary~5.4), with a self-contained R\'enyi filter, so the cited filter results are attributions only. Not proved there: that the first rule (runs fixed in advance) is valid when the requests are chosen adaptively, where the proof gives only $\delta(\sup\rho_\Sigma, \varepsilon_L) + (1 + e^{\varepsilon_L})\sup\Gamma_\Sigma$, which can approach $2\delta_L$; and the cut-off argument for the expected-polynomial-time exact sampler inside the reductions, which is stated but not written out. The per-run results it takes from Part~A of the proofs were not re-verified. The bibliographic details of the filter literature were checked only through search-engine extracts: Feldman and Zrnic's theorem number in the NeurIPS version, the pages of Rogers et al.\ (1921--1929), and the volume and pages of Whitehouse et al.\ (PMLR~202, 36990--37007).}
 
-Two consequences. First, a statement over many runs converts the slack with $1 + e^{\varepsilon_L}$, not $1 + e^{\varepsilon_{\mathrm{run}}}$, so a ledger with a large $\varepsilon_L$ needs a larger $\kappa$ per run. At $(\varepsilon_L, \delta_L, \zeta_L) = (10, 10^{-6}, 0.1)$, for example, $\kappa_L$ is $48$, $46$, $44$, $42$ and $40$ for $\varepsilon_{\mathrm{run}} = 0.5, 1, 2, 4, 8$ (Table~\ref{tab:kappa}); at $\varepsilon_L = 20$ the floor $n_{\mathrm{rel}}\delta_B$ alone exceeds every run's share unless $\delta_B$ is lowered well below $2^{-50}$. Second, the filter loses nothing against non-adaptive composition, because zCDP composes by summing a single parameter. For $(\varepsilon, \delta)$-DP, filters that match advanced composition, and a filter for approximate zCDP, are given by Whitehouse et al.~\cite{whitehouse2023fully}.
+Two consequences. First, a statement over many runs multiplies the slack by $1 + e^{\varepsilon_L - E'_L}$, not $1 + e^{\varepsilon_{\mathrm{run}}}$. The smudging step's $2^{-\kappa}$ part, however, enters only through the small budget $E'_L$. At $(\varepsilon_L, \delta_L, \zeta_L, \xi_L) = (10, 10^{-6}, 0.1, 10^{-3})$, for example, $\kappa_L$ is $22$, $21$, $19$, $17$ and $15$ for $\varepsilon_{\mathrm{run}} = 0.5, 1, 2, 4, 8$. That is below $\kappa_{\min} = 40$, so the ledger does not raise $\kappa$ (Table~\ref{tab:kappa}). The statistical-distance accounting would give $48$, $46$, $44$, $42$ and $40$, which cost $8.1$, $6.0$, $4.0$, $1.0$ and $0$ bits of $\Omega_f$ at $\bar n_O = 10^6$. The reserved share costs $0.2\%$ of $\rho_L$. $\delta_B$ is still multiplied by $e^{\varepsilon_L - E'_L}$: at $\varepsilon_L = 20$ the floor $n_{\mathrm{rel}}\delta_B$ alone exceeds every run's share unless $\delta_B$ is lowered well below $2^{-50}$. Second, the filter loses nothing against non-adaptive composition, because zCDP composes by summing a single parameter. For $(\varepsilon, \delta)$-DP, filters that match advanced composition, and a filter for approximate zCDP, are given by Whitehouse et al.~\cite{whitehouse2023fully}.
 
-\begin{remark}[A sharper slack]
+\begin{remark}[The smudging step in hockey-stick divergence]
 \label{rem:sharperslack}
-The factor $1 + e^{\varepsilon_L}$ comes from measuring the smudging step of Theorem~\ref{thm:output} in statistical distance. A shifted discrete Gaussian $\eta + e$ with $\|e\|_2 \le B_{\mathrm{tot}}$ is also $(\varepsilon', \delta')$-indistinguishable from $\eta$ with $\varepsilon'$ of order $2^{-\kappa}\sqrt{\ln(1/\delta')}$. Measuring that step in hockey-stick divergence would move most of the slack into a negligible $\varepsilon'$ and leave only $\delta_B$ and a small $\delta'$ to be multiplied by $e^{\varepsilon_L}$, which would lower $\kappa_L$ substantially. It needs a new proof of the hybrids and is not used here.
+Let $e \in \Z^N$ with $\|e\|_2 \le B_{\mathrm{tot}}$ and $\sigma_c \ge 2^{\kappa}B_{\mathrm{tot}}/\sqrt{2\pi}$. Then $\eta + e$ and $\eta$ are $(\varepsilon'(\kappa), \delta')$-indistinguishable, with $\varepsilon'(\kappa) \le 2\sqrt{\pi\ln(1/\delta')}\,2^{-\kappa} + \pi 4^{-\kappa}$. For $\delta' = 2^{-100}$ this is at most $29.52 \cdot 2^{-\kappa} + \pi 4^{-\kappa}$, or $2.7 \cdot 10^{-11}$ at $\kappa = 40$, where the tight value is $2.0 \cdot 10^{-11}$. The bound follows from the R\'enyi bound for integer shifts and the conversion, and it needs no smoothing condition and no floor on $\sigma_c$ (proofs, composition appendix, Lemma~5.1). The ledger uses this form across runs (Theorem~5.2 there). Theorem~\ref{thm:output} keeps the statistical-distance form for a single run. With the hockey-stick form there too, $\kappa_{\mathrm{run}}$ would be $18$, $17$, $16$, $15$ and $14$ at a reserved share $\xi = 10^{-3}$ of $\varepsilon_{\mathrm{run}}$, and $\kappa = \kappa_{\min}$ in every row of Table~\ref{tab:kappa}.
 \end{remark}
 
 % ==============================================================
@@ -644,7 +719,17 @@ The factor $1 + e^{\varepsilon_L}$ comes from measuring the smudging step of The
 \label{sec:input}
 % ==============================================================
 
-\paragraph{G1.} $\Op$ sees $\Rp$'s seeded uploads $c_0 = -a s_R + e + \Ecd(\mathbf v)$, which are pseudorandom under RLWE in $s_R$ (with circular security covering $\Rp$'s rotation-key shares, and the PRG modelled as a random oracle); the PSI messages, which are BFV ciphertexts under $\Rp$'s own key and blinded OPRF elements; and $\Rp$'s key-generation shares, which are RLWE samples. $\Op$ never receives a decryption share from $\Rp$, so its view can be simulated from $(n_R^{\max}, \bar n_O)$, up to the failure probability of cuckoo hashing.
+\paragraph{G1.} $\Op$ sees $\Rp$'s seeded uploads $c_0 = -a s_R + e + \Ecd(\mathbf v)$, which are pseudorandom under RLWE in $s_R$ (with circular security covering $\Rp$'s rotation-key shares, and the PRG modelled as a random oracle); the PSI messages, which are BFV ciphertexts under $\Rp$'s own key and blinded OPRF elements; and $\Rp$'s key-generation shares, which are RLWE samples. $\Op$ never receives a decryption share from $\Rp$, so its view can be simulated from $(n_R^{\max}, \bar n_O)$, up to the failure probability of cuckoo hashing and the probability that $\Rp$ aborts on an ambiguous or out-of-range label (Appendix~\ref{app:psi}), a reaction that $\Op$ observes and whose probability can depend on the cohort.
+
+G1 and G2 concern $\Op$'s view of the protocol. $\Op$ receives no output, and its view includes $\eta$, so the guarantees do not extend to anything $\Rp$ later discloses (Remark~\ref{rem:whoknows}).
+\begin{itemize}[noitemsep]
+  \item \emph{Disclosed results are noiseless to $\Op$.} A statistic or model that $\Rp$ computes from the releases and publishes is, to $\Op$, a function of $f_s(D) + e_{\mathrm{tot},s}$. The DP noise protects $\Op$'s records from $\Rp$ and from third parties; it never protects $\Rp$'s data from $\Op$. This matters beyond what Remark~\ref{rem:revealed} already discloses: $\bA$ is exact in a published model, and $\bC$ and $\bcR$ become exact to $\Op$.
+  \item \emph{$v_s$ must stay with $\Rp$.} $\Op$ knows $h_{O,s}$ and $c'_{1,s}$, so $v_s$ would give it $c'_{1,s}s_R$. Since $c'_{1,s}$ is invertible with overwhelming probability, that gives $s_R$, and with it $\Rp$'s uploads: G1 and G2 would both fail. Disclosing $v_s$ is equivalent to sending $\Rp$'s decryption share, which would need flooding by $\Rp$ (the client-side noise of the protocols analysed by Hwang et al.~\cite{hwang2025insecurity}). $v_s$ is therefore never transmitted (Table~\ref{tab:ledger}).
+  \item \emph{Decoded values at double precision are not a key leak.} Rounding $\Dcd(v_s)$ to double precision leaves an error of about $2^{19}$ per slot, or about $2^{12}$ per coefficient of $v_s$, because $|\tau(\eta)_k| \approx \sqrt N\sigma_c$. Even all slots at that precision would therefore give $\Op$ only a rounding-type RLWE sample of $s_R$ with that error at modulus $q_0 \approx 2^{119}$, far inside the secure region for $N = 2^{14}$. Only $v_s$ itself, or a decoding of equal precision, is dangerous. Rounding published entries to a precision commensurate with $\sigma_s$ is still good practice, and it is free.
+\end{itemize}
+A guarantee for $\Op$ in the standard sense, jointly with $\Rp$'s output, would need noise that $\Op$ does not know either. Hwang et al.\ do this by sampling the noise jointly; here $\Rp$ must not know it either, because of DP. That is a protocol change we do not make.
+
+\tocheck{(T6) Guidance for publishing: should Algorithm~\ref{alg:release} round $\Dcd(v)$ to a fixed precision relative to $\sigma_s$ before $\Rp$ publishes anything? Rounding is post-processing and costs no budget. The implementation's \texttt{run\_R} returns the full decoded slot vectors locally; they must not be published as such.}
 
 \paragraph{G2.} $\Op$ evaluates exactly $n_R^{\max}$ OPRF calls on blinded inputs and answers padded PSI queries, so it learns nothing about the cohort or $n_R$.
 
@@ -653,7 +738,7 @@ The factor $1 + e^{\varepsilon_L}$ comes from measuring the smudging step of The
   \item \emph{OPRF-keyed items and labels.} Every item $\Op$ inserts is $F_k(\mathrm{id}_j)$ under a fresh key, and every label is $\tau(j)$ masked by a key derived from $F'_k(\mathrm{id}_j)$. $\Rp$ learns $F_k$ only at its $n_R^{\max}$ queries, so the item and the label of every row outside $I$ are pseudorandom to it; $\tau$ is a uniform permutation, and the masks $\mathbf r_1$, $\mathbf r_2$ are fresh. A reply, noise included, is a deterministic function of $\Rp$'s ciphertexts and of these values. A simulator that knows $(I, \pi|_I)$, the public sizes and $\Rp$'s view of the OPRF can therefore run $\Op$'s evaluation on fresh random items and labels outside $I$ and obtain replies indistinguishable from the real ones, under the security of the OPRF. Even without circuit privacy, then, what the noise reveals about $\Op$'s register beyond $(I, \pi|_I)$ is pseudorandom.
   \item \textsc{SanitizeBFV} (Algorithm~\ref{alg:sub}) is part of the protocol nevertheless, so that G4 does not rest on the pseudorandomness of the evaluation's inputs alone. It switches each reply to the reply modulus $q'$, adds a fresh encryption of zero under $\Rp$'s BFV key, and floods the noise with an exact discrete Gaussian $\mathcal D_{\Z^{N_B}, \sigma_\psi}$. Let $B_\psi$ bound, with probability at least $1 - \delta_{B,\psi}$ and for every input of $\Op$, the $\ell_2$ norm of the switched reply's error other than the flooding noise. The requirements are
   \[
-    \sigma_\psi \ge \max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi},\ 2^{20}\} \ \text{(flooding)}, \qquad
+    \sigma_\psi \ge \max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi},\ 2^{42}\} \ \text{(flooding)}, \qquad
     q'/(2t) > t_\eta\,\sigma_\psi + B_\psi \ \text{(exact decryption)}.
   \]
   Then, as in hybrids H2 and H3 of Theorem~\ref{thm:output}, each reply ciphertext is within statistical distance $\delta_{B,\psi} + 2^{-\kappa_\psi}(1 + 2^{-80}) + 2^{-97}$, plus a computational term (RLWE in the randomness of the fresh encryption), of a ciphertext computed from its plaintext and fresh randomness alone. Over the $n_\psi$ reply ciphertexts of a run the distances add. The plaintexts themselves are $0$ or uniform, and a label or uniform, because of the masks.
@@ -1089,8 +1174,8 @@ Parameter & Role & Constraint & Evaluation setting \\
 $N$ & CKKS ring dimension; $N_s = N/2$ slots & power of two; with the chain, $\log_2(QP) \le L_{\max}(N, \lambda_{\mathrm{sec}})$ & $2^{14}$ \\
 $\lambda_{\mathrm{sec}}$ & computational security level & sets $L_{\max}$~\cite{albrecht2018he}: $438$ for $N = 2^{14}$ at 128 bits, ternary secrets & 128 bits (classical) \\
 chain $q_0, q_1, q_2$; $P$; $d_{\mathrm{num}}$ & last-level modulus; primes removed by the two rescales; special modulus and digits of key switching & $\log_2(QP) \le L_{\max}$; $q_0 > 2(\Omega_fS_{\max} + 2^{\kappa}B_{\mathrm{tot},\max} + t_\eta\sigma_{c,\max})$ (checked by \textsc{Calibrate}) & $q_0$: primes of 60 and 59 bits; $q_1, q_2$: 59 bits; $P$: two 60-bit primes; $d_{\mathrm{num}} = 2$; $\log_2(QP) = 357$ \\
-secret and error distributions & RLWE assumptions of Theorem~\ref{thm:output} and G1 & uniform ternary secrets; discrete Gaussian errors & $\sigma_e = 3.19$ (bounds use $3.2$) \\
-$\delta_B$ & failure probability of $B_{\mathrm{tot},s}$ & $\delta_B \in (0, 1)$; $n_{\mathrm{rel}}(1 + e^{\varepsilon_{\mathrm{run}}})(\delta_B + 2^{-97}) < \zeta\delta_{\mathrm{run}}$, and $n_{\mathrm{rel}}(\delta_B + 2^{-97})$ below the run's ledger share & $2^{-50}$ \\
+secret and error distributions & RLWE assumptions of Theorem~\ref{thm:output} and G1 & uniform ternary secrets; discrete Gaussian errors, mean zero and $\sigma_e^2$-subgaussian (model (M5)), sampled honestly by both parties & $\sigma_e = 3.19$ (bounds use $3.2$); OpenFHE's table sampler, subgaussianity checked numerically \\
+$\delta_B$ & failure probability of $B_{\mathrm{tot},s}$ & $\delta_B \in (0, 1)$; $n_{\mathrm{rel}}(1 + e^{\varepsilon_{\mathrm{run}}})(\delta_B + 2^{-97}) < \zeta\delta_{\mathrm{run}}$, and $n_{\mathrm{rel}}(\delta_B + \delta')$ below the run's ledger share & $2^{-50}$ \\
 $\kappa_{\min}$ & floor on the flooding parameter (statistical security) & integer $\ge 1$ & $40$ \\
 $\kappa$ & flooding parameter & derived by~\eqref{eq:kappa}; if fixed instead, $\delta_{\mathrm{DP}} > 0$ & derived (Table~\ref{tab:kappa}) \\
 $t_\eta$ & noise margin in $q_0$, in units of $\sigma_{c,s}$ & $t_\eta > 0$; correctness failure $2Ne^{-t_\eta^2/2}$ per release & $10$ \\
@@ -1105,7 +1190,9 @@ mode, $n_{\mathrm{rel}}$ & $\by^\top\by$ in stage~2 or apart; number of releases
 \multicolumn{4}{@{}l}{\textbf{Ledger of a base register}} \\*
 $(\varepsilon_L, \delta_L)$ & cap over all runs on the register & $\varepsilon_L \ge \varepsilon_{\mathrm{run}}$, $\delta_L \ge \delta_{\mathrm{run}}$ for every run; public & one run per register: cap $= (\varepsilon_{\mathrm{run}}, \delta_{\mathrm{run}})$; example $(10, 10^{-6})$ in Table~\ref{tab:kappa} \\
 $\zeta_L$ & share of $\delta_L$ reserved for slack & $\zeta_L \in (0, 1)$ & $0.1$ \\
-admission rule & runs fixed in advance, or chosen adaptively & the filter rule unless every run is fixed in advance (Section~\ref{sec:privacy:ledger}) & fixed (one run) \\
+$\xi_L$ & share of $\varepsilon_L$ reserved for smudging & $\xi_L \in (0, 1)$ & $10^{-3}$ \\
+$\delta'$ & per-release hockey-stick slack of smudging & $\delta' \in (0, 1)$ & $2^{-100}$ \\
+admission rule & runs fixed in advance, or chosen adaptively; a run's full cost is charged at admission, atomically, without refund & the filter rule unless every run is fixed in advance (Section~\ref{sec:privacy:ledger}) & fixed (one run) \\
 OPRF quota & membership look-ups per researcher and project & policy & none \\
 \midrule
 \multicolumn{4}{@{}l}{\textbf{Statistics}} \\*
@@ -1126,12 +1213,12 @@ $n_R^{\max}$ & certified cohort cap & $n_R \le n_R^{\max}$, public & cohort size
 \multicolumn{4}{@{}l}{\textbf{Labeled PSI}} \\*
 $N_B$, $t$ & BFV ring dimension; plaintext modulus, which is the item length & $t$ prime, $t \equiv 1 \bmod 2N_B$; $t \ge n_R^{\max}\bar n_O h/(N_{\mathrm{bins}}\delta_{\mathrm{psi}})$ for false matches (Appendix~\ref{app:psi}) & $2^{14}$; $t \approx 2^{32}$, which does not meet the constraint (Appendix~\ref{app:psi}) \\
 $h$, $N_{\mathrm{bins}}$, $d_{\mathrm{cap}}$, $\delta_{\mathrm{psi}}$ & cuckoo hashing, bins, largest partition degree, failure probability & sizes are public functions of these; failures are correctness events, not charged to $\delta$ & $3$; $2^{14}$; $64$; $2^{-40}$ \\
-$\kappa_\psi$, $B_\psi$, $\delta_{B,\psi}$, $q'$ & flooding of the PSI replies (\textsc{SanitizeBFV}) & $\sigma_\psi \ge \max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi}, 2^{20}\}$; $q'/(2t) > t_\eta\sigma_\psi + B_\psi$; $B_\psi$ a worst-case bound (Section~\ref{sec:input}) & $40$; $2^{21}$ (evaluation noise measured, not bounded); $0$; two 60-bit limbs \\
+$\kappa_\psi$, $B_\psi$, $\delta_{B,\psi}$, $q'$ & flooding of the PSI replies (\textsc{SanitizeBFV}) & $\sigma_\psi \ge \max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi}, 2^{42}\}$; $q'/(2t) > t_\eta\sigma_\psi + B_\psi$; $B_\psi$ a worst-case bound (Section~\ref{sec:input}) & $40$; $2^{21}$ (evaluation noise measured, not bounded); $0$; two 60-bit limbs \\
 \midrule
 \multicolumn{4}{@{}l}{\textbf{Encoding}} \\*
 $\Omega_U$ & scale of $\Rp$'s vectors & exactly representable; $\Omega_U \ge \Omega_f$ keeps $B_{\mathrm{tot}}$ independent of $\bar n_O$ & $2^{68}$ \\
 $\Omega_u$ & scale of the one-hot masks & exactly representable & $q_1$ \\
-$\Omega_V$, $\Omega_f$ & scale of $\Op$'s data; final scale & derived: smallest $\Omega_f = \Omega_U\Omega_V\Omega_u/(q_1q_2)$ that floods, tracked exactly & derived (Table~\ref{tab:kappa}) \\
+$\Omega_V$, $\Omega_f$ & scale of $\Op$'s data; final scale & derived: smallest $\Omega_f = \Omega_U\Omega_V\Omega_u/(q_1q_2)$ that floods, $\sigma_{c,s} \ge \max\{2^{\kappa}B_{\mathrm{tot},s}/\sqrt{2\pi}, 2^{42}\}$, tracked exactly & derived (Table~\ref{tab:kappa}) \\
 \end{xltabular}}
 
 \paragraph{Derived quantities.} Table~\ref{tab:derived} follows \textsc{Calibrate} through one run at the previous setting ($f_1 = 0.1$). At setting I ($f_1 = 0.25$) the split gives $\rho_1 = 0.00374$ and $\rho_2 = 0.01123$, so $\sigma_1 = 892.4$ and $\sigma_2 = 575.2$, and $\Omega_f$ is $0.13$ bits lower ($2^{62.62}$); at setting P ($f_1 = 0.2$) $\sigma_1 = 997.8$ and $\sigma_2 = 556.9$. $\kappa$, $\gamma$, $\delta_{\mathrm{DP}}$ and $\rho_{\mathrm{run}}$ do not depend on $f_1$.
@@ -1720,18 +1807,18 @@ Replacing labeled PSI with circuit-PSI (for example VOLE-PSI with payloads~\cite
 \label{sec:summary}
 % ==============================================================
 
-Protocol v3.1 links records with an OPRF and labeled PSI, aggregates under two-party threshold CKKS, and makes each release a threshold decryption in which $\Op$'s share carries the DP noise and floods the encryption error. $\Op$ never decrypts, $\Rp$ never sees a noiseless statistic that depends on $\Op$'s data, and the budget is enforced by $\Op$'s control of its share. Two releases separate the choice of the ridge from the estimate, which makes the bias theory and the intervals valid. The protocol and its guarantees are stated for any admissible parameter vector (Section~\ref{sec:params}); \textsc{Calibrate} derives the flooding parameter, the scale and the noise from it, and the ledger composes runs, fixed or adaptive, under a per-register cap. The evaluation uses two settings of the same protocol, chosen on synthetic data by a pre-registered rule. Setting I keeps the interval guarantee: with an exact Monte Carlo quantile for the stage-1 radius and $f_1 = 0.25$ it lowers the ridge threshold by $35\%$, and its intervals cover in every simulated regime. Setting P gives up the intervals for a smaller ridge. It predicts best on the synthetic population, but on block-normalized real data its gate refuses most releases, so a prediction setting remains open.
+Protocol v3.1 links records with an OPRF and labeled PSI, aggregates under two-party threshold CKKS, and makes each release a threshold decryption in which $\Op$'s share carries the DP noise and floods the encryption error. $\Op$ never decrypts, $\Rp$ never sees a noiseless statistic that depends on $\Op$'s data, and the budget is enforced by $\Op$'s control of its share. Two releases separate the choice of the ridge from the estimate, which makes the bias theory and the intervals valid. The protocol and its guarantees are stated for any admissible parameter vector (Section~\ref{sec:params}); \textsc{Calibrate} derives the flooding parameter, the scale and the noise from it, and the ledger composes runs, fixed or adaptive, under a per-register cap: it charges a run's full cost at admission and accounts the smudging step in hockey-stick divergence, so that across runs it no longer raises the flooding parameter. The evaluation uses two settings of the same protocol, chosen on synthetic data by a pre-registered rule. Setting I keeps the interval guarantee: with an exact Monte Carlo quantile for the stage-1 radius and $f_1 = 0.25$ it lowers the ridge threshold by $35\%$, and its intervals cover in every simulated regime. Setting P gives up the intervals for a smaller ridge. It predicts best on the synthetic population, but on block-normalized real data its gate refuses most releases, so a prediction setting remains open.
 
 \paragraph{Remaining obligations.}
 \begin{enumerate}[noitemsep, label=O\arabic*.]
   \item The worst-case error bound: proven for the circuit as written, as an explicit function of the parameters ($B_{\mathrm{tot}} \approx 2^{25.3}$ at the proofs' example); proofs for the restructured circuit are open.
-  \item Smudging for the discrete Gaussian, for every $\sigma_c \ge 2^{20}$ (proven), and a concrete constant-time exact sampler (open).
-  \item Simulation security of threshold key generation and rotation keys against a semi-honest $\Rp$ (reduced to RLWE with circular security).
+  \item Smudging for the discrete Gaussian, for every $\sigma_c \ge 2^{42}$ in statistical distance and with no floor in hockey-stick divergence (proven), and a concrete constant-time exact sampler, or a release padded to a public time bound (open).
+  \item Simulation security of threshold key generation against a semi-honest $\Rp$ (reduced to plain RLWE, since $\Op$ sends only its public-key share).
   \item The two-stage rule, the RSS correction and the coverage of both intervals, checked by simulation (Sections~\ref{sec:eval:coverage} and~\ref{sec:eval:sim}, the latter at setting I) and still to be checked on real data under v3.1.
   \item PSI parameters with explicit failure probabilities (correctness only, not charged to $\delta$), an item length that meets them at $\bar n_O = 10^6$, and a worst-case bound $B_\psi$ on the evaluation noise of the PSI replies, which \textsc{SanitizeBFV} floods.
 \end{enumerate}
 
-\paragraph{Other open items.} A written proof of the adaptive hybrid in Proposition~\ref{prop:compose}; a sharper treatment of the smudging step (Remark~\ref{rem:sharperslack}); no-wraparound constants at the earlier levels; precise modulus-chain sizes; the free-set boundary for $\by^\top\by$ and a closed form for $d_O = 1$; explicit constants for the bootstrap RSS correction; a remedy for heteroskedasticity when clipping binds; and sixteen citation details flagged for verification in the proofs.
+\paragraph{Other open items.} Whether the rule for runs fixed in advance stays valid when requests are chosen adaptively (Proposition~\ref{prop:compose}); a proof of the subgaussianity of OpenFHE's error sampler, which is checked only numerically; guidance on the precision at which $\Rp$ publishes results; no-wraparound constants at the earlier levels; precise modulus-chain sizes; the free-set boundary for $\by^\top\by$ and a closed form for $d_O = 1$; explicit constants for the bootstrap RSS correction; a remedy for heteroskedasticity when clipping binds; and sixteen citation details flagged for verification in the proofs.
 
 \appendix
 
@@ -1825,7 +1912,7 @@ $\Op$ sees $n_R^{\max}$ uniformly random group elements in the OPRF and BFV ciph
 \label{app:status}
 % ==============================================================
 
-The companion proofs document (Part~A: cryptography and DP; Part~B: sensitivity and statistics) labels every step as exact, first order, asymptotic, numerical or open. Table~\ref{tab:status} summarizes it.
+The companion proofs document (Part~A: cryptography and DP; Part~B: sensitivity and statistics; and a composition appendix on composition across runs and the hockey-stick ledger) labels every step as exact, first order, asymptotic, numerical or open. Table~\ref{tab:status} summarizes it.
 
 \begin{table}[ht]
 \centering\small
@@ -1836,13 +1923,13 @@ The companion proofs document (Part~A: cryptography and DP; Part~B: sensitivity 
 Claim & Status & Notes \\
 \midrule
 Encoding sensitivity (Lemma~\ref{lem:enc}) & proven & $\sqrt{2/N}$ and the $\sqrt N$ rounding term \\
-Smudging (Lemma~\ref{lem:smudge}) & proven & explicit constants \\
-Worst-case $B_{\mathrm{tot}}$ (Theorem~\ref{thm:btot}) & proven, explicit & $\approx 2^{25.3}$ for the circuit as written; checked against OpenFHE \\
+Smudging (Lemma~\ref{lem:smudge}) & proven & explicit constants; the factor $1 + 2^{-80}$ needs $\sigma_c \ge 2^{42}$ (earlier stated for $2^{20}$); hockey-stick form (Remark~\ref{rem:sharperslack}) proven with no floor \\
+Worst-case $B_{\mathrm{tot}}$ (Theorem~\ref{thm:btot}) & proven, explicit & $\approx 2^{25.3}$ for the circuit as written; assumes (M5) and honestly sampled errors; measured errors $7.8$--$8.7$ bits below it \\
 zCDP of the ideal mechanism; tight conversion & proven & $\rho_{\mathrm{run}} = 0.01496$ at $\varepsilon = 1$, $\delta = 10^{-9}$ \\
-Output privacy (Theorem~\ref{thm:output}) & proven (hybrids) & RLWE in two forms; circular security for $\Op$'s rotation-key shares \\
-Input and cohort privacy (G1, G2) & proven & simulators, up to the cuckoo-hashing failure probability \\
+Output privacy (Theorem~\ref{thm:output}) & proven (hybrids) & RLWE for the re-randomizer and plain RLWE for $\Op$'s public-key share; $\Rp$'s errors honestly sampled; slack $\gamma$ statistical, not negligible in $\lambda_{\mathrm{sec}}$ \\
+Input and cohort privacy (G1, G2) & proven & $\Op$'s view only; simulators, up to the cuckoo-hashing failure probability and $\Rp$'s abort on an ambiguous label \\
 Correctness (no wraparound) & proven & failure probability $\le \delta_B + 2Ne^{-t_\eta^2/2}$ per release \\
-Composition across runs (Proposition~\ref{prop:compose}) & non-adaptive proven; adaptive argued & the adaptive hybrid is not yet written out in the proofs \\
+Composition across runs (Proposition~\ref{prop:compose}) & proven, fixed and adaptive (filter) & composition appendix, Theorem~4.2; hockey-stick ledger, Corollary~5.4; the rule for fixed runs with adaptively chosen requests is not proved \\
 G4 with \textsc{SanitizeBFV} & argued & needs a worst-case bound $B_\psi$ on the BFV evaluation noise \\
 Replace-one sensitivity (Proposition~\ref{prop:sens}) & proven, exact for $d_O \ge 2$ & regime 3 reduces to three cubics; $d_O = 1$ valid but conservative \\
 When $\by^\top\by$ is free & partly proven & boundary between $2(r + o)$ and $3(r + o)$ numerical only \\
@@ -1891,6 +1978,11 @@ in \textit{Proc.\ TCC}, 2016.
 C.~L.~Canonne, G.~Kamath, and T.~Steinke,
 ``\href{https://proceedings.neurips.cc/paper/2020/hash/b53b3a3d6ab90ce0268229151c9bde11-Abstract.html}{The discrete Gaussian for differential privacy},''
 in \textit{Proc.\ NeurIPS}, 2020, pp.\ 15676--15688.
+
+\bibitem{checri2024practical}
+Checri, Sirdey, Boudguiga, and Bultel,
+``On the practical CPAD security of `exact' and threshold FHE schemes and libraries,''
+in \textit{Advances in Cryptology -- CRYPTO 2024}, 2024. Cryptology ePrint Archive, Paper 2024/116.
 
 \bibitem{chen2017fast}
 H.~Chen, K.~Laine, and P.~Rindal,
@@ -1947,15 +2039,30 @@ A.~Gasc\'on, P.~Schoppmann, B.~Balle, M.~Raykova, J.~Doerner, S.~Zahur, and D.~E
 ``Privacy-preserving distributed linear regression on high-dimensional data,''
 \textit{Proc.\ Privacy Enhancing Technologies}, 2017.
 
+\bibitem{guo2024key}
+Q.~Guo, D.~Nabokov, E.~Suvanto, and T.~Johansson,
+``Key recovery attacks on approximate homomorphic encryption with non-worst-case noise flooding countermeasures,''
+in \textit{Proc.\ 33rd USENIX Security Symposium}, 2024.
+
 \bibitem{hardy2017private}
 S.~Hardy, W.~Henecka, H.~Ivey-Law, R.~Nock, G.~Patrini, G.~Smith, and B.~Thorne,
 ``Private federated learning on vertically partitioned data via entity resolution and additively homomorphic encryption,''
 arXiv:1711.10677, 2017.
 
+\bibitem{hwang2025insecurity}
+I.~Hwang, Y.~Hwang, M.~Kim, D.~Lee, and Y.~Song,
+``On the (in)security of approximate computation protocols from CKKS,''
+Cryptology ePrint Archive, Paper 2025/395, 2025. Earlier title: ``Provably secure approximate computation protocols from CKKS.''
+
 \bibitem{jarecki2014round}
 S.~Jarecki, A.~Kiayias, and H.~Krawczyk,
 ``Round-optimal password-protected secret sharing and T-PAKE in the password-only model,''
 in \textit{Proc.\ ASIACRYPT}, 2014.
+
+\bibitem{kluczniak2025circuit}
+K.~Kluczniak and G.~Santato,
+``On circuit private, multikey and threshold approximate homomorphic encryption,''
+\textit{IACR Communications in Cryptology}, vol.~2, no.~1, 2025. Cryptology ePrint Archive, Paper 2023/301.
 
 \bibitem{li2021security}
 B.~Li and D.~Micciancio,
