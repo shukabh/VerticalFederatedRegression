@@ -92,7 +92,7 @@ R's upload is 369 MB of the 475 MB of traffic. At n_R^max = 100,000, the PSI eva
 
 The paper's earlier extrapolation (one felt, n_R^max = 2,000) was:
 - O's CPU time of 52 / 99 / 260 s on one core;
-- 76 s on four cores at 1M, which assumed a parallel OPRF that is not implemented;
+- 76 s on four cores at 1M, which assumed a parallel OPRF that was not implemented at the time (it is since 2026-10-26: O's total at 1M is 91 s, `reports/eng/`);
 - 88–422 MB of traffic.
 
 ## PSI

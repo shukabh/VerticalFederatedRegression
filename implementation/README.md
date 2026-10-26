@@ -4,7 +4,8 @@ Two-party vertical federated ridge regression with threshold CKKS and lattice DP
 implemented end to end: R and O run as separate OS processes that exchange explicit, structured messages over a
 socket, and both log a transcript of every message. Validated at small scale; benchmarked at 1k-64k register rows,
 and run end to end at 100k, 300k and 1M register rows (n_R^max = 20,000 and 100,000; 78 runs; `reports/large/`): about
-3 minutes per run at 1M on 4 cores, O's peak memory 2.3 GB, 475 MB of traffic.
+3 minutes per run at 1M on 4 cores, O's peak memory 2.3 GB, 475 MB of traffic. With O's OPRF evaluation now parallel
+(A25) a run at 1M takes 2.0 minutes (O: 91 s; `reports/eng/`).
 
 Deviations, choices and open points: [DEVIATIONS.md](DEVIATIONS.md). Results: `bench/results/` (validation.json,
 benchmarks.md, cost_model.md, scale_options.json).
@@ -31,7 +32,7 @@ NTTs, hybrid key switching and BFV evaluation.
 scripts/build_openfhe.sh /opt/openfhe-1.5.1          # once (about 5 min on 4 cores)
 python3 -m pip install numpy scipy cryptography pybind11 pytest
 native/build.sh /opt/openfhe-1.5.1                   # builds vfr/vfr_native*.so
-python3 -m pytest -q tests/                          # 94 tests, about 2.5 min (8 min on a loaded machine)
+python3 -m pytest -q tests/                          # 107 tests, about 3 min (8 min on a loaded machine)
 python3 run_protocol.py toy
 python3 run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300   # [--eps 8] [--kappa auto|48] [--ledger_eps none]
 #                                                     [--setting prev|I|P] [--r1_mode union|exact] [--f1 F] ...
@@ -39,6 +40,7 @@ python3 bench/validate.py                            # numbers in bench/results/
 python3 bench/bench_micro.py --threads 1             # microbenchmarks (full parameters)
 python3 bench/bench_e2e.py --sizes 1024 4096 16384 32768 65536 --threads 1 [--workers 4]
 python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/report_tables.py
+python3 ../experiments/eng/refresh_cost_model.py         # re-measure the cost-model inputs (idle machine) and refit
 ```
 
 ## Layout and mapping to the specification
@@ -49,10 +51,11 @@ python3 bench/cost_model.py && python3 bench/scale_options.py && python3 bench/r
 | | `vfr/btot.py` | worst-case, data-independent B_tot (port of the proofs' btot.py, generalized to separate scales and OpenFHE's gadget; reproduces the proofs' table) and Delta_x |
 | | `native: CKKSCore.pk_share / make_pk / rotkey_share / make_rotkeys` | threshold keygen with a CRS (SHAKE-256): `p0 = -a s + e` with `s = s_R + s_O`; joint rotation keys for the 13 shifts 2^i in OpenFHE's hybrid layout; no relinearization or conjugation key |
 | 1 Link (Alg. 2) | `vfr/oprf.py` | 2HashDH OPRF, RFC 9497 mode 0, ristretto255-SHA512 over libsodium; passes the RFC test vectors; fresh key k per run; exactly n_R^max blinded queries |
+| | `vfr/oprf.py` `evaluate_batch`, `blind_evaluate_batch`; `native: oprf_evaluate_batch, oprf_blind_evaluate_batch` | O's OPRF over its register and its answer to the blinded queries, batched and parallel over the items (OpenMP, the run's threads), the same libsodium calls and key; bit-identical to the item-by-item functions (DEVIATIONS A25) |
 | | `vfr/psi.py`, `native: BFVCore, psi_build_polys` | labeled PSI: 64-bit items as F = 2 field elements (felts) of Z_t, felt f of bin b in slot f N_bins + b (ciphertext f); cuckoo hashing at R (h = 3, N_bins = 16384, k balanced tables with total failure bound <= delta_psi; random walk with an augmenting-path fallback), O's membership/label polynomials per slot and partition (label felts tau(j) + H_f(F'_k(id)) mod t); a match needs all felts zero and consistent label felts; Setup checks the false-match, cuckoo and SanitizeBFV conditions (`PSIParams.check`), windowed powers under R's own BFV key, fresh masks r1, r2, SanitizeBFV (switch to 2 limbs + Enc_pk(0) + exact discrete-Gaussian flooding with 2^40 B_err); R recovers I and pi, computes A exactly |
 | 2 Upload (Alg. 3) | `native: encrypt_seeded / convert` | R: `c0 = -a s_R + e + Ecd(v)`, `a = PRG(seed)`, sends (c0, seed) (seeded form, half size); O: `c0 <- c0 - a s_O` |
 | 3 Aggregate (Alg. 4) | `vfr/aggregate.py` | circuit A as written (`T_e = EvalSum(Rescale(sum_h U_e[h] * Ecd(V_e[h])))`, `P_e = Rescale(T_e * Ecd(u_slot))`, M1 = sum over (triu B, C), M2 = all stage-2 entries, My if separate); circuit C as an option; optional entry-parallel threads |
-| 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; sends only (c1', h_O) (the ledger was charged at admission) |
+| 4 Release (Alg. 5) | `vfr/aggregate.release_share`, `native: rerand_partial_decrypt` | fresh ternary u and errors e0, e1; `c0' = c0 + p0 u + e0`, `c1' = c1 + a u + e1`; eta exact `N_Z(0, sigma_c^2)^N` (big integers, `vfr/sampler.py`); `h_O = c0' + c1' s_O + eta mod q0`; sends only (c1', h_O) (the ledger was charged at admission); each release is held until a deadline fixed before the first one from public parameters (`Agreement.release_pad`, default 'auto': 2 x the calibrated time of one release), and refused if its computation overruns it (DEVIATIONS A24) |
 | | `native: combine / decode_i128` | R: `v = h_O + c1' s_R mod q0`, CRT to int128, decode with the exact rational final scale |
 | 5 Solve and infer (Alg. 6) | `vfr/solve.py` | corrected Algorithm 6 (port of alg6.py with the paper's corrections); stage-1 radius r_1 by the union bound (`r1_mode='union'`) or the exact Monte Carlo quantile (`'exact'`, `r1_quantile_exact`, cached in `vfr/r1_quantiles.json`); `intervals=False` for estimate-only settings |
 | parties | `vfr/party_r.py`, `vfr/party_o.py`, `vfr/protocol.py`, `vfr/wire.py` | two processes, one socket; JSON header + binary fields, no pickle; per-message transcript (type, direction, bytes per field, SHA-256); each party also returns local phase marks (wall time, process CPU time over all threads, peak RSS; `common.mark`) |
@@ -89,7 +92,7 @@ t = 4293918721, 2 felts per item (64-bit items; `PSIParams.felts`), 7 x 60-bit l
 SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50, delta_psi = 2^-40. At 1M rows and n_R^max = 20,000 the
 false-match bound p_pass is 2^-67.5 and R's two cuckoo tables fail with probability at most 2^-43.4 (DEVIATIONS A22, A23).
 
-## Tests (`tests/`, 94 passing)
+## Tests (`tests/`, 107 passing)
 
 - `test_primitives.py`: RFC 9497 vectors; exact sampler (chi-square at sigma^2 = 3, moments and low bits at
   sigma = 2^55); DeltaRep against the closed forms, the paper's (1, 1, 5) example and a random search; rho_run =
@@ -134,5 +137,12 @@ false-match bound p_pass is 2^-67.5 and R's two cuckoo tables fail with probabil
   covers the true quantile at its confidence level; the union bound is still the default and matches the formula;
   the agreement's alpha split, intervals flag and named settings; a two-process run threads `r1_mode='exact'`,
   alpha_L = 0.25 and `intervals=False` through both parties, and O refuses an ill-formed setting.
+- `test_oprf_parallel.py`: the batched, parallel OPRF evaluation (native, OpenMP) is bit-identical to the
+  item-by-item reference at 1, 2, 4 and 7 threads, on the RFC 9497 vectors and on R's blinded queries (R's finalized
+  outputs equal O's direct evaluation); invalid points, the identity element and a short key are refused.
+- `test_release_timing.py`: release padding: the hold ends at the deadline whatever the work before it took; with a
+  fixed deadline (1.5 s) and with 'auto', every release takes exactly the deadline at O (to 10 ms) and R's latency of
+  the second release lies in [D, D + 0.25 s]; an overrun (deadline 0.1 ms) is refused, never sent, and the run's
+  cost stays charged; release_pad=None restores the earlier behaviour; ill-formed values are refused in Setup.
 - `test_noise.py`: 40 + 20 releases of one packed ciphertext: pooled s.d. of (decoded - true) within 6% of
   sigma_s from Calibrate, per-entry s.d. within [0.4, 1.9] sigma_s.
