@@ -37,6 +37,44 @@ def _shuffle(n, rng: S.CSPRNG):
     return perm
 
 
+def _hold_until(t_end: float):
+    """Sleep until perf_counter() >= t_end (the last few ms by a short spin, so the overshoot stays small)."""
+    while True:
+        rem = t_end - time.perf_counter()
+        if rem <= 0:
+            return
+        time.sleep(rem - 0.002 if rem > 0.004 else 0)
+
+
+def calibrate_release_time(ck, sigma_c2: int, M, pk, sO, q0_towers, reps: int = dp.RELEASE_PAD_REPS) -> dict:
+    """Time one release on public inputs only: `reps` exact samplings of N values at sigma_c2 (with an independent
+    generator; the values are discarded) plus their residues, and one re-randomized partial decryption of M with
+    eta = 0 (its output is discarded, never sent).  Returns the worst sampling time and the decryption time."""
+    rng = S.CSPRNG()
+    ts = []
+    for _ in range(reps):
+        t0 = time.perf_counter()
+        S.residues(S.sample_vector(sigma_c2, ck.N, rng), q0_towers)
+        ts.append(time.perf_counter() - t0)
+    t0 = time.perf_counter()
+    out = ck.rerand_partial_decrypt(M, pk, sO, np.zeros((2, ck.N), dtype=np.uint64))
+    t_pdec = time.perf_counter() - t0
+    del out
+    return dict(sample_max=max(ts), samples=ts, rerand_pdec=t_pdec)
+
+
+def release_deadline(ag: dp.Agreement, ck, cal, M, pk, sO, q0_towers, debug_no_dp=False):
+    """The release deadline in seconds (Agreement.release_pad), or None without padding.  It is fixed before the
+    first release and depends only on public parameters (N, the run's sigma_c^2, the margin) and the machine."""
+    if ag.release_pad is None:
+        return None
+    if ag.release_pad != 'auto':
+        return float(ag.release_pad)
+    s2 = max(int(r['sigma_c2']) for r in cal['releases'].values())
+    c = calibrate_release_time(ck, s2, M, pk, sO, q0_towers)
+    return float(ag.release_pad_margin) * (c['sample_max'] + c['rerand_pdec'])
+
+
 def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     tr = Transcript('O', keep_raw=opts.get('keep_raw', False))
     ch = Channel(sock, tr)
@@ -225,6 +263,10 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     q0_towers = [qs[0], qs[1]]
     released = set()
     T['release'] = {}
+    t0 = time.time()
+    deadline = release_deadline(ag, ck, cal, Ms[stages[0]], pk, sO, q0_towers, debug_no_dp)
+    T['release_deadline'] = deadline
+    T['release_calibrate'] = time.time() - t0
     while True:
         mtype, meta, _ = ch.recv()
         if mtype == 'done':
@@ -235,6 +277,7 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         if s in released or s not in Ms:
             raise RuntimeError('each release is made once')
         t0 = time.time()
+        tq = time.perf_counter()                        # the deadline runs from the receipt of the request
         rel = cal['releases'][str(s)]
         if debug_no_dp:
             eta_res = np.zeros((2, ck.N), dtype=np.uint64)      # DEBUG ONLY (guarded above)
@@ -251,7 +294,16 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         del eta_res                                     # (the release was charged at admission)
         released.add(s)
         T['release'][str(s)] = dict(sample=t1 - t0, rerand_pdec=time.time() - t1)
-        ch.send('release', meta=dict(stage=str(s)), blobs={'c1p': c1p, 'h': h})
+        if deadline is not None:
+            busy = time.perf_counter() - tq
+            T['release'][str(s)].update(busy=busy, deadline=deadline, overrun=busy > deadline)
+            if busy > deadline:                         # rule: an overrun release is refused, never sent late
+                del c1p, h
+                ch.send('refuse', meta=dict(reason='release deadline overrun', stage=str(s)))
+                break
+            _hold_until(tq + deadline)
+            T['release'][str(s)]['held'] = time.perf_counter() - tq - busy
+        ch.send('release', meta=dict(stage=str(s), deadline=deadline), blobs={'c1p': c1p, 'h': h})
     C.mark(MK, 'releases')
     out = dict(timings=T, transcript=tr.records, summary=tr.summary(), calibration=cal, debug=debug, marks=MK,
                tau={i: p for i, p in zip(all_ids, tau) if not i.startswith('dummy:')})

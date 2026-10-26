@@ -19,6 +19,10 @@ from . import dp, oprf, psi, solve
 from .wire import Channel, Transcript
 
 
+class ReleaseRefused(RuntimeError):
+    """O refused a release because its computation overran the agreed release deadline (Agreement.release_pad)."""
+
+
 def round_published(x, sigma: float, digits: int = 2):
     """Publishing guidance (paper, Algorithm 5 and the remark on publishing): before R publishes any decoded value
     Dcd(v) of a release with slot-domain noise s.d. sigma, it rounds the value to a fixed precision relative to
@@ -61,7 +65,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
               'zeta', 'kappa_min', 'delta_B', 't_eta', 'lambda_sec', 'ledger_eps', 'ledger_delta', 'ledger_zeta',
               'ledger_mode', 'ledger_xi', 'ledger_delta_prime', 'variant', 'theta_star', 'kappa_Psi', 'alpha',
               'alpha_L', 'alpha_U', 'r1_mode',
-              'intervals'):
+              'intervals', 'release_pad', 'release_pad_margin'):
         if a2[f] != getattr(ag, f):
             raise RuntimeError(f'agreement mismatch on {f}')
     a_L, a_U, _ = dp.alpha_split(ag)                    # validates the statistical setting
@@ -191,8 +195,16 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     fp = {}
 
     def release(stage):
+        tq = time.perf_counter()
         ch.send('release_request', meta=dict(stage=str(stage)))
-        _, rm, rb = ch.recv('release')
+        mt, rm, rb = ch.recv()
+        T.setdefault('release_latency_R', {})[str(stage)] = time.perf_counter() - tq
+        if mt == 'refuse':                              # O's release deadline was overrun (release_pad)
+            raise ReleaseRefused(f"release {stage} refused by O: {rm.get('reason')}")
+        if mt != 'release':
+            raise RuntimeError(f'unexpected message {mt}')
+        if ag.release_pad is not None and isinstance(ag.release_pad, (int, float)) and rm.get('deadline') != float(ag.release_pad):
+            raise RuntimeError('release deadline differs from the agreement')
         ta = time.time()
         if opts.get('test_partial_share') and os.environ.get('VFR_DEBUG_NO_DP') == '1':
             fp.setdefault(str(stage), ck._test_partial_share(rb['c1p'], sR).tobytes()[:256])
@@ -211,11 +223,17 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         Cm = np.array([[vals[f'C_{j}{k}'] for k in range(dO)] for j in range(dA)])
         return B, Cm
 
-    rel1, z1 = release(1)
+    try:
+        rel1, z1 = release(1)
+    except ReleaseRefused as e:
+        return dict(refused=str(e), transcript=tr.records, timings=T)
     B1, C1 = unpack(rel1)
     G1 = solve.assemble(A, B1, C1)
     s1 = solve.stage1_rule(G1, dA, sig['1'], sig['2'], a_L, ag.theta_star, ag.kappa_Psi, r1_mode=ag.r1_mode)
-    rel2, z2 = release(2)
+    try:
+        rel2, z2 = release(2)
+    except ReleaseRefused as e:
+        return dict(refused=str(e), transcript=tr.records, timings=T)
     B2, C2 = unpack(rel2)
     cR = np.array([rel2[f'cR_{j}'] for j in range(dA)])
     cO = np.array([rel2[f'cO_{k}'] for k in range(dO)])
@@ -224,7 +242,10 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         sig_yy = sig['2']
         zy = None
     else:
-        rely, zy = release('y')
+        try:
+            rely, zy = release('y')
+        except ReleaseRefused as e:
+            return dict(refused=str(e), transcript=tr.records, timings=T)
         yy2 = rely['yy']
         sig_yy = sig['y']
     ch.send('done')

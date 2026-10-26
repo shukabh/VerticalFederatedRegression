@@ -231,11 +231,21 @@ class Agreement:
     # R's encoding scale: 'auto' = 2^68 for circuit A (decided: keeps B_tot and Omega_f independent of n_bar_O),
     # q2 for circuit C; None = q2 (the prime of the first rescale); a number = 2^log2_Omega_U
     log2_Omega_U: float | str | None = 'auto'
+    # release timing (paper, "Release timing"): O holds every release until a deadline fixed before the first one,
+    # measured from the receipt of the request, so that R's observed latency does not depend on the noise values
+    # drawn by the (not constant-time) exact sampler.  'auto': deadline = release_pad_margin x the calibrated time
+    # of one release (O times RELEASE_PAD_REPS dummy samplings at the largest sigma_c^2 of the run, with an
+    # independent generator, plus one re-randomized partial decryption whose output is discarded); a number: that
+    # deadline in seconds; None: no padding (earlier behaviour).  A release whose computation overruns the deadline
+    # is refused (O sends 'refuse'; the run's cost stays charged, as for any abort).
+    release_pad: float | str | None = 'auto'
+    release_pad_margin: float = 2.0
     researcher: str = 'R'
     project: str = 'demo'
 
 
 LOG2_OMEGA_U_A = 68.0   # R's encoding scale for circuit A
+RELEASE_PAD_REPS = 3    # dummy samplings timed by O for release_pad='auto'
 
 # Named evaluation settings of the statistical parameters (paper, Section "Parameters").  None of them is part
 # of the protocol.  'prev' is the earlier evaluation setting (the Agreement defaults).  'I' (inference) keeps the
@@ -277,7 +287,21 @@ def alpha_split(ag: 'Agreement'):
     aCI = ag.alpha - aL - aU
     if ag.intervals and not aCI > 0:
         raise ValueError('with intervals on, alpha_L + alpha_U must be below alpha')
+    check_release_pad(ag)
     return aL, aU, aCI
+
+
+def check_release_pad(ag: 'Agreement'):
+    """release_pad must be None, 'auto' (with a margin of at least 1) or a positive number of seconds."""
+    rp = ag.release_pad
+    if rp is None:
+        return
+    if rp == 'auto':
+        if not float(ag.release_pad_margin) >= 1.0:
+            raise ValueError('release_pad_margin must be at least 1')
+        return
+    if isinstance(rp, bool) or not isinstance(rp, (int, float)) or not (0 < float(rp) < float('inf')):
+        raise ValueError(f"release_pad must be None, 'auto' or a positive number of seconds, not {rp!r}")
 
 
 def resolve_log2_Omega_U(log2_Omega_U, variant):
