@@ -100,11 +100,17 @@ def main():
             print(f'{kk:36s} {v}')
         return
     # ------------------------------------------------------------------ OPRF
+    # O's side as party O runs it: batched in the native layer, OpenMP over the items (a.threads); the earlier
+    # item-by-item Python loop is kept as *_py (single-threaded whatever a.threads); R's side is item by item
     k = oprf.keygen()
-    xs = [str(i).encode() for i in range(200)]
-    t = time.perf_counter(); [oprf.evaluate(k, x) for x in xs]; R['oprf_server_evaluate_per_item'] = (time.perf_counter() - t) / len(xs)
+    xs = [str(i).encode() for i in range(2000)]
+    xb = [str(i).encode() for i in range(40000)]
+    t = time.perf_counter(); oprf.evaluate_batch(k, xb, a.threads); R['oprf_server_evaluate_per_item'] = (time.perf_counter() - t) / len(xb)
+    t = time.perf_counter(); [oprf.evaluate(k, x) for x in xs]; R['oprf_server_evaluate_per_item_py'] = (time.perf_counter() - t) / len(xs)
     t = time.perf_counter(); bl = [oprf.blind(x) for x in xs]; R['oprf_client_blind_per_item'] = (time.perf_counter() - t) / len(xs)
-    t = time.perf_counter(); ev = [oprf.blind_evaluate(k, b[1]) for b in bl]; R['oprf_server_blind_eval_per_item'] = (time.perf_counter() - t) / len(xs)
+    t = time.perf_counter(); ev = [oprf.blind_evaluate(k, b[1]) for b in bl]; R['oprf_server_blind_eval_per_item_py'] = (time.perf_counter() - t) / len(xs)
+    blob = b''.join(b[1] for b in bl) * 10
+    t = time.perf_counter(); oprf.blind_evaluate_batch(k, blob, a.threads); R['oprf_server_blind_eval_per_item'] = (time.perf_counter() - t) / (len(blob) // 32)
     t = time.perf_counter(); [oprf.finalize(x, b[0], e) for x, b, e in zip(xs, bl, ev)]; R['oprf_client_finalize_per_item'] = (time.perf_counter() - t) / len(xs)
     # ------------------------------------------------------------------ BFV PSI
     pp = psi.PSIParams()
@@ -137,7 +143,12 @@ def main():
     ys_ = rng.integers(0, pp.t, (alpha, pp.N_B, D), dtype=np.uint64)
     cnt = np.full((alpha, pp.N_B), D, dtype=np.int32)
     R['psi_build_polys_1M_shape'], _ = timeit(lambda: vn.psi_build_polys(xs_, ys_, cnt, pp.t), 1)
+    # the same shape with empty partitions: the membership polynomials (D dummy roots, always degree D) without
+    # any label interpolation; the cost model splits the full-partition time into these two parts (partition fill)
+    cnt0 = np.zeros((alpha, pp.N_B), dtype=np.int32)
+    R['psi_build_polys_1M_shape_empty'], _ = timeit(lambda: vn.psi_build_polys(xs_, ys_, cnt0, pp.t), 1)
     R['threads'] = a.threads
+    R['stamp'] = time.strftime('%Y-%m-%d %H:%M')
     R['calibration_1M'] = dict(log2_Omega_f=cal['log2_Omega_f'], log2_B_tot={s: math.log2(v['B_tot']) for s, v in cal['releases'].items()},
                                sigma_slot={s: v['sigma_slot'] for s, v in cal['releases'].items()})
     os.makedirs(os.path.join(HERE, 'results'), exist_ok=True)

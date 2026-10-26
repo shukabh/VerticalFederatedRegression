@@ -1,0 +1,24 @@
+{
+ "stamp": "2026-10-26 00:13",
+ "source": "experiments/large/agg_speed.py",
+ "runs": [
+  {
+   "threads": 1,
+   "workers": 1,
+   "n_bar": 106496,
+   "seconds": 13.307422876358032
+  },
+  {
+   "threads": 4,
+   "workers": 4,
+   "n_bar": 106496,
+   "seconds": 4.702390670776367
+  },
+  {
+   "threads": 1,
+   "workers": 4,
+   "n_bar": 106496,
+   "seconds": 3.7933642864227295
+  }
+ ]
+}

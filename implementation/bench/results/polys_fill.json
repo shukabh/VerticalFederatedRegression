@@ -1,0 +1,109 @@
+{
+ "stamp": "2026-10-26 00:16",
+ "rows": [
+  {
+   "n_bar_O": 106496,
+   "threads": 1,
+   "D": 64,
+   "alpha": 2,
+   "B": 66,
+   "mean_load": 19.5252685546875,
+   "fill": 0.1525411605834961,
+   "seconds": 1.353946728500091,
+   "model_fill": 1.5465559179787,
+   "model_full_partitions": 7.558800744000109,
+   "ratio_measured_over_model_fill": 0.8754592787499444
+  },
+  {
+   "n_bar_O": 106496,
+   "threads": 4,
+   "D": 64,
+   "alpha": 2,
+   "B": 66,
+   "mean_load": 19.5252685546875,
+   "fill": 0.1525411605834961,
+   "seconds": 0.45061214149995976,
+   "model_fill": 0.4648676725323618,
+   "model_full_partitions": 1.8942657831999896,
+   "ratio_measured_over_model_fill": 0.9693342172951173
+  },
+  {
+   "n_bar_O": 303104,
+   "threads": 1,
+   "D": 64,
+   "alpha": 2,
+   "B": 128,
+   "mean_load": 55.39508056640625,
+   "fill": 0.43277406692504883,
+   "seconds": 3.4208478170000944,
+   "model_fill": 3.607430091272425,
+   "model_full_partitions": 7.558800744000109,
+   "ratio_measured_over_model_fill": 0.9482783395515452
+  },
+  {
+   "n_bar_O": 303104,
+   "threads": 4,
+   "D": 64,
+   "alpha": 2,
+   "B": 128,
+   "mean_load": 55.39508056640625,
+   "fill": 0.43277406692504883,
+   "seconds": 1.470224331000054,
+   "model_fill": 1.4964156463486196,
+   "model_full_partitions": 1.8942657831999896,
+   "ratio_measured_over_model_fill": 0.9824972991879131
+  },
+  {
+   "n_bar_O": 1007616,
+   "threads": 1,
+   "D": 64,
+   "alpha": 5,
+   "B": 308,
+   "mean_load": 184.55548095703125,
+   "fill": 0.5767358779907227,
+   "seconds": 11.320290677000116,
+   "model_fill": 11.774109586896591,
+   "model_full_partitions": 18.897001860000273,
+   "ratio_measured_over_model_fill": 0.9614562012908789
+  },
+  {
+   "n_bar_O": 1007616,
+   "threads": 4,
+   "D": 64,
+   "alpha": 5,
+   "B": 308,
+   "mean_load": 184.55548095703125,
+   "fill": 0.5767358779907227,
+   "seconds": 4.648865302499871,
+   "model_fill": 4.735664125812013,
+   "model_full_partitions": 4.735664457999974,
+   "ratio_measured_over_model_fill": 0.9816712458894541
+  },
+  {
+   "n_bar_O": 311296,
+   "threads": 1,
+   "D": 64,
+   "alpha": 3,
+   "B": 130,
+   "mean_load": 56.8994140625,
+   "fill": 0.2963511149088542,
+   "seconds": 4.199758589500107,
+   "model_fill": 4.333154456182208,
+   "model_full_partitions": 11.338201116000164,
+   "ratio_measured_over_model_fill": 0.9692150676762094
+  },
+  {
+   "n_bar_O": 311296,
+   "threads": 4,
+   "D": 64,
+   "alpha": 3,
+   "B": 130,
+   "mean_load": 56.8994140625,
+   "fill": 0.2963511149088542,
+   "seconds": 2.1044881255000973,
+   "model_fill": 2.323579049894192,
+   "model_full_partitions": 2.841398674799984,
+   "ratio_measured_over_model_fill": 0.9057097177717834
+  }
+ ]
+}

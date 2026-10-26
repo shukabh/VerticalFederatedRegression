@@ -1,0 +1,3059 @@
+{
+ "source": "bench/results/ (refreshed)",
+ "speedup_aggregate": 2.8299271175104153,
+ "stages": {
+  "1": {
+   "cells": [
+    {
+     "id": "A100k_Istd_e1",
+     "stage": 1,
+     "n_bar_O": 106496,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 8.395963748296102,
+       "predicted": 8.335991279615088,
+       "ratio": 1.007194401561776
+      },
+      "O.psi_preprocess": {
+       "measured": 1.9611574808756511,
+       "predicted": 1.8064000065167367,
+       "ratio": 1.0856717636185862
+      },
+      "O.oprf_requests": {
+       "measured": 1.4001486936666676,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.2079904305452476
+      },
+      "O.psi_eval": {
+       "measured": 10.9916832447052,
+       "predicted": 10.320376491999923,
+       "ratio": 1.0650467309235914
+      },
+      "O.psi_sanitize": {
+       "measured": 4.908313274383545,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0610114339041958
+      },
+      "O.upload_convert": {
+       "measured": 0.42306017875671387,
+       "predicted": 0.4168525920067623,
+       "ratio": 1.0148915632743647
+      },
+      "O.aggregate": {
+       "measured": 4.662632465362549,
+       "predicted": 4.637700692765923,
+       "ratio": 1.005375890823553
+      },
+      "O.release": {
+       "measured": 0.4636252721150716,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0775764353790058
+      },
+      "O.keygen": {
+       "measured": 1.2796625296274822,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.7728123382543197
+      },
+      "R.oprf": {
+       "measured": 3.6827915489999996,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2700581217418911
+      },
+      "R.psi_bfv": {
+       "measured": 1.2094649473826091,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.104585281120704
+      },
+      "R.upload_encrypt": {
+       "measured": 1.0673813819885254,
+       "predicted": 0.9182564820025618,
+       "ratio": 1.162400051520189
+      },
+      "R.keygen": {
+       "measured": 1.0588693618774414,
+       "predicted": 0.25632308300009754,
+       "ratio": 4.1309949516994475
+      },
+      "R.release": {
+       "measured": 0.039306322733561196,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.5797967547930676
+      }
+     },
+     "O_total": {
+      "measured": 34.48624688778898,
+      "predicted": 32.194215465901365,
+      "ratio": 1.0711938896077535
+     },
+     "old_remeasured_ratio": 1.1876071610174435,
+     "old_published_ratio": 0.686867753242692
+    },
+    {
+     "id": "A100k_Istd_e4",
+     "stage": 1,
+     "n_bar_O": 106496,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 8.09265915552775,
+       "predicted": 8.335991279615088,
+       "ratio": 0.9708094555374134
+      },
+      "O.psi_preprocess": {
+       "measured": 1.9270706176757812,
+       "predicted": 1.8064000065167367,
+       "ratio": 1.0668017109852277
+      },
+      "O.oprf_requests": {
+       "measured": 1.349727056333333,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.1644887255716245
+      },
+      "O.psi_eval": {
+       "measured": 10.39507794380188,
+       "predicted": 10.320376491999923,
+       "ratio": 1.0072382487072893
+      },
+      "O.psi_sanitize": {
+       "measured": 4.7601016362508135,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.028973087143159
+      },
+      "O.upload_convert": {
+       "measured": 0.40662717819213867,
+       "predicted": 0.4168525920067623,
+       "ratio": 0.9754699526626484
+      },
+      "O.aggregate": {
+       "measured": 4.523051818211873,
+       "predicted": 4.637700692765923,
+       "ratio": 0.9752789405463609
+      },
+      "O.release": {
+       "measured": 0.4751460552215576,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.1043535011244223
+      },
+      "O.keygen": {
+       "measured": 1.0681922435760498,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.314591983464157
+      },
+      "R.oprf": {
+       "measured": 3.638380637333333,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2547424465792478
+      },
+      "R.psi_bfv": {
+       "measured": 1.1291011174519856,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.0311902613907336
+      },
+      "R.upload_encrypt": {
+       "measured": 1.001344919204712,
+       "predicted": 0.9182564820025618,
+       "ratio": 1.0904849993772419
+      },
+      "R.keygen": {
+       "measured": 0.8402104377746582,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.2779351275762334
+      },
+      "R.release": {
+       "measured": 0.03867109616597494,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.554265776562579
+      }
+     },
+     "O_total": {
+      "measured": 32.997653704791176,
+      "predicted": 32.194215465901365,
+      "ratio": 1.0249559812923776
+     },
+     "old_remeasured_ratio": 1.1363442929610208,
+     "old_published_ratio": 0.6572192194829883
+    },
+    {
+     "id": "A100k_Pstd_e1",
+     "stage": 1,
+     "n_bar_O": 106496,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 8.270575523376465,
+       "predicted": 8.335991279615088,
+       "ratio": 0.992152612203591
+      },
+      "O.psi_preprocess": {
+       "measured": 1.9227945804595947,
+       "predicted": 1.8064000065167367,
+       "ratio": 1.0644345513302453
+      },
+      "O.oprf_requests": {
+       "measured": 1.1924567656666667,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.028802418114603
+      },
+      "O.psi_eval": {
+       "measured": 10.535082817077637,
+       "predicted": 10.320376491999923,
+       "ratio": 1.0208041174897202
+      },
+      "O.psi_sanitize": {
+       "measured": 4.805121421813965,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0387048431587564
+      },
+      "O.upload_convert": {
+       "measured": 0.37824233373006183,
+       "predicted": 0.4168525920067623,
+       "ratio": 0.9073767105757277
+      },
+      "O.aggregate": {
+       "measured": 4.511974811553955,
+       "predicted": 4.637700692765923,
+       "ratio": 0.9728904710456887
+      },
+      "O.release": {
+       "measured": 0.4561148484547933,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0601204077575863
+      },
+      "O.keygen": {
+       "measured": 1.100119670232137,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.383773318785806
+      },
+      "R.oprf": {
+       "measured": 3.4574489226666665,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.1923458133091722
+      },
+      "R.psi_bfv": {
+       "measured": 1.171273152033488,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.0697053161465162
+      },
+      "R.upload_encrypt": {
+       "measured": 0.9527234236399332,
+       "predicted": 0.9182564820025618,
+       "ratio": 1.0375352010172636
+      },
+      "R.keygen": {
+       "measured": 0.9010833899180094,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.5154203802927357
+      },
+      "R.release": {
+       "measured": 0.035203138987223305,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.414881903543207
+      }
+     },
+     "O_total": {
+      "measured": 33.17248277236528,
+      "predicted": 32.194215465901365,
+      "ratio": 1.0303864309878912
+     },
+     "old_remeasured_ratio": 1.1423649032431598,
+     "old_published_ratio": 0.6607013162515021
+    },
+    {
+     "id": "A100k_Pstd_e4",
+     "stage": 1,
+     "n_bar_O": 106496,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 8.305059591929117,
+       "predicted": 8.335991279615088,
+       "ratio": 0.9962893809928026
+      },
+      "O.psi_preprocess": {
+       "measured": 1.8892898559570312,
+       "predicted": 1.8064000065167367,
+       "ratio": 1.0458867632535775
+      },
+      "O.oprf_requests": {
+       "measured": 1.233985925,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0646320605591353
+      },
+      "O.psi_eval": {
+       "measured": 10.013319492340088,
+       "predicted": 10.320376491999923,
+       "ratio": 0.970247500185884
+      },
+      "O.psi_sanitize": {
+       "measured": 4.634084939956665,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.001732536641069
+      },
+      "O.upload_convert": {
+       "measured": 0.471896489461263,
+       "predicted": 0.4168525920067623,
+       "ratio": 1.1320464320241237
+      },
+      "O.aggregate": {
+       "measured": 4.7064723173777265,
+       "predicted": 4.637700692765923,
+       "ratio": 1.0148288190997485
+      },
+      "O.release": {
+       "measured": 0.4781545003255208,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.111345849786463
+      },
+      "O.keygen": {
+       "measured": 1.062546173731486,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.3023579047401284
+      },
+      "R.oprf": {
+       "measured": 3.491475541,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2040803311048907
+      },
+      "R.psi_bfv": {
+       "measured": 1.094521443049113,
+       "predicted": 1.0949493606826763,
+       "ratio": 0.9996091895671809
+      },
+      "R.upload_encrypt": {
+       "measured": 0.9603284200032552,
+       "predicted": 0.9182564820025618,
+       "ratio": 1.045817196856527
+      },
+      "R.keygen": {
+       "measured": 0.8502713839213053,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.3171861619695866
+      },
+      "R.release": {
+       "measured": 0.030289411544799805,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.2173897412746106
+      }
+     },
+     "O_total": {
+      "measured": 32.794809286078895,
+      "predicted": 32.194215465901365,
+      "ratio": 1.018655333310223
+     },
+     "old_remeasured_ratio": 1.1293589145573062,
+     "old_published_ratio": 0.6531791367627067
+    },
+    {
+     "id": "A100k_Pbn_e1",
+     "stage": 1,
+     "n_bar_O": 106496,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 7.975974003473918,
+       "predicted": 8.335991279615088,
+       "ratio": 0.9568117019242138
+      },
+      "O.psi_preprocess": {
+       "measured": 1.8348064422607422,
+       "predicted": 1.8064000065167367,
+       "ratio": 1.015725440457001
+      },
+      "O.oprf_requests": {
+       "measured": 1.2737866780000004,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0989705054471477
+      },
+      "O.psi_eval": {
+       "measured": 10.268115123112997,
+       "predicted": 10.320376491999923,
+       "ratio": 0.9949360986076974
+      },
+      "O.psi_sanitize": {
+       "measured": 4.6212310791015625,
+       "predicted": 4.6260701039973355,
+       "ratio": 0.9989539663716743
+      },
+      "O.upload_convert": {
+       "measured": 0.3818267186482747,
+       "predicted": 0.4168525920067623,
+       "ratio": 0.9159753974663558
+      },
+      "O.aggregate": {
+       "measured": 4.739257415135701,
+       "predicted": 4.637700692765923,
+       "ratio": 1.0218980760289664
+      },
+      "O.release": {
+       "measured": 0.7243165969848633,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.683485658803948
+      },
+      "O.keygen": {
+       "measured": 1.1130448182423909,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.411779929159111
+      },
+      "R.oprf": {
+       "measured": 3.418982660333333,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.1790802270712628
+      },
+      "R.psi_bfv": {
+       "measured": 1.0955588817596436,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.000556665996487
+      },
+      "R.upload_encrypt": {
+       "measured": 0.9625809192657471,
+       "predicted": 0.9182564820025618,
+       "ratio": 1.048270214402975
+      },
+      "R.keygen": {
+       "measured": 0.856833299001058,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.3427863342324575
+      },
+      "R.release": {
+       "measured": 0.0513754685719808,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.0648789528380047
+      }
+     },
+     "O_total": {
+      "measured": 32.93235887496045,
+      "predicted": 32.194215465901365,
+      "ratio": 1.0229278272005382
+     },
+     "old_remeasured_ratio": 1.1340957268083542,
+     "old_published_ratio": 0.6559187325610532
+    },
+    {
+     "id": "A100k_Pbn_e4",
+     "stage": 1,
+     "n_bar_O": 106496,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 8.157684644063314,
+       "predicted": 8.335991279615088,
+       "ratio": 0.978610026141965
+      },
+      "O.psi_preprocess": {
+       "measured": 1.8615461985270183,
+       "predicted": 1.8064000065167367,
+       "ratio": 1.0305282284163735
+      },
+      "O.oprf_requests": {
+       "measured": 1.1842388400000001,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0217123314622572
+      },
+      "O.psi_eval": {
+       "measured": 10.100495417912802,
+       "predicted": 10.320376491999923,
+       "ratio": 0.9786944716350642
+      },
+      "O.psi_sanitize": {
+       "measured": 4.548821051915486,
+       "predicted": 4.6260701039973355,
+       "ratio": 0.9833013658796266
+      },
+      "O.upload_convert": {
+       "measured": 0.45399705568949383,
+       "predicted": 0.4168525920067623,
+       "ratio": 1.0891069514619427
+      },
+      "O.aggregate": {
+       "measured": 4.530397812525432,
+       "predicted": 4.637700692765923,
+       "ratio": 0.97686291389872
+      },
+      "O.release": {
+       "measured": 0.7106633186340332,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.651752162160406
+      },
+      "O.keygen": {
+       "measured": 1.0907917022705078,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.3635611893719863
+      },
+      "R.oprf": {
+       "measured": 3.492823012,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.204545023842612
+      },
+      "R.psi_bfv": {
+       "measured": 1.0820762316385906,
+       "predicted": 1.0949493606826763,
+       "ratio": 0.9882431740623515
+      },
+      "R.upload_encrypt": {
+       "measured": 0.959928035736084,
+       "predicted": 0.9182564820025618,
+       "ratio": 1.0453811702397608
+      },
+      "R.keygen": {
+       "measured": 0.8563851515452067,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.3410379647504502
+      },
+      "R.release": {
+       "measured": 0.0549470583597819,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.208428019853693
+      }
+     },
+     "O_total": {
+      "measured": 32.63863604153809,
+      "predicted": 32.194215465901365,
+      "ratio": 1.0138043611004417
+     },
+     "old_remeasured_ratio": 1.1239807571666376,
+     "old_published_ratio": 0.650068610820484
+    }
+   ],
+   "phases": {
+    "O.aggregate": {
+     "ratio_min": 0.9728904710456887,
+     "ratio_max": 1.0218980760289664,
+     "ratio_mean": 0.9945225185738397,
+     "measured_mean": 4.612297773361206,
+     "predicted": 4.637700692765923,
+     "gated": true
+    },
+    "O.keygen": {
+     "ratio_min": 2.3023579047401284,
+     "ratio_max": 2.7728123382543197,
+     "ratio_mean": 2.424812777295918,
+     "measured_mean": 1.1190595229466755,
+     "predicted": 0.4615034750000859,
+     "gated": false
+    },
+    "O.oprf_requests": {
+     "ratio_min": 1.0217123314622572,
+     "ratio_max": 1.2079904305452476,
+     "ratio_mean": 1.097766078616669,
+     "measured_mean": 1.2723906597777779,
+     "predicted": 1.1590726700001142,
+     "gated": false
+    },
+    "O.oprf_self": {
+     "ratio_min": 0.9568117019242138,
+     "ratio_max": 1.007194401561776,
+     "ratio_mean": 0.9836445963936269,
+     "measured_mean": 8.199652777777777,
+     "predicted": 8.335991279615088,
+     "gated": true
+    },
+    "O.psi_eval": {
+     "ratio_min": 0.970247500185884,
+     "ratio_max": 1.0650467309235914,
+     "ratio_mean": 1.006161194591541,
+     "measured_mean": 10.383962339825102,
+     "predicted": 10.320376491999923,
+     "gated": true
+    },
+    "O.psi_preprocess": {
+     "ratio_min": 1.015725440457001,
+     "ratio_max": 1.0856717636185862,
+     "ratio_mean": 1.0515080763435019,
+     "measured_mean": 1.8994441959593031,
+     "predicted": 1.8064000065167367,
+     "gated": false
+    },
+    "O.psi_sanitize": {
+     "ratio_min": 0.9833013658796266,
+     "ratio_max": 1.0610114339041958,
+     "ratio_mean": 1.0187795388497467,
+     "measured_mean": 4.712945567237006,
+     "predicted": 4.6260701039973355,
+     "gated": true
+    },
+    "O.release": {
+     "ratio_min": 1.0601204077575863,
+     "ratio_max": 1.683485658803948,
+     "ratio_mean": 1.2814390025019717,
+     "measured_mean": 0.5513367652893066,
+     "predicted": 0.43024815399940053,
+     "gated": false
+    },
+    "O.upload_convert": {
+     "ratio_min": 0.9073767105757277,
+     "ratio_max": 1.1320464320241237,
+     "ratio_mean": 1.0058111679108606,
+     "measured_mean": 0.419274992412991,
+     "predicted": 0.4168525920067623,
+     "gated": false
+    },
+    "R.keygen": {
+     "ratio_min": 3.2779351275762334,
+     "ratio_max": 4.1309949516994475,
+     "ratio_mean": 3.4875601534201515,
+     "measured_mean": 0.8939421706729465,
+     "predicted": 0.25632308300009754,
+     "gated": false
+    },
+    "R.oprf": {
+     "ratio_min": 1.1790802270712628,
+     "ratio_max": 1.2700581217418911,
+     "ratio_mean": 1.217475327274846,
+     "measured_mean": 3.530317053722222,
+     "predicted": 2.8997031600010814,
+     "gated": true
+    },
+    "R.psi_bfv": {
+     "ratio_min": 0.9882431740623515,
+     "ratio_max": 1.104585281120704,
+     "ratio_mean": 1.0323149813806622,
+     "measured_mean": 1.130332628885905,
+     "predicted": 1.0949493606826763,
+     "gated": false
+    },
+    "R.release": {
+     "ratio_min": 1.2173897412746106,
+     "ratio_max": 2.208428019853693,
+     "ratio_mean": 1.6732735248108603,
+     "measured_mean": 0.04163208272722032,
+     "predicted": 0.024880620000203635,
+     "gated": false
+    },
+    "R.upload_encrypt": {
+     "ratio_min": 1.0375352010172636,
+     "ratio_max": 1.162400051520189,
+     "ratio_mean": 1.0716481389023262,
+     "measured_mean": 0.9840478499730428,
+     "predicted": 0.9182564820025618,
+     "gated": false
+    }
+   },
+   "O_total_ratio": [
+    1.0138043611004417,
+    1.0711938896077535
+   ],
+   "O_total_predicted": 32.19421546590137,
+   "O_total_measured": 33.17036459458715,
+   "within_25pct_gated": false,
+   "misses": [
+    [
+     "R.oprf",
+     1.25
+    ],
+    [
+     "R.oprf",
+     1.27
+    ]
+   ]
+  },
+  "2": {
+   "cells": [
+    {
+     "id": "A300k_Istd_e1",
+     "stage": 2,
+     "n_bar_O": 303104,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 24.2365779876709,
+       "predicted": 23.725513641981408,
+       "ratio": 1.0215407073331042
+      },
+      "O.psi_preprocess": {
+       "measured": 5.706021785736084,
+       "predicted": 5.314623058457995,
+       "ratio": 1.073645623212204
+      },
+      "O.oprf_requests": {
+       "measured": 1.263932149000001,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0904684250728442
+      },
+      "O.psi_eval": {
+       "measured": 10.427652359008789,
+       "predicted": 10.320376491999923,
+       "ratio": 1.010394569141157
+      },
+      "O.psi_sanitize": {
+       "measured": 4.628821611404419,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0005947829032478
+      },
+      "O.upload_convert": {
+       "measured": 1.1852374076843262,
+       "predicted": 1.1864266080192465,
+       "ratio": 0.9989976621167442
+      },
+      "O.aggregate": {
+       "measured": 7.364662806193034,
+       "predicted": 7.73352882822963,
+       "ratio": 0.9523030132518382
+      },
+      "O.release": {
+       "measured": 0.5050508975982666,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.1738595340933649
+      },
+      "O.keygen": {
+       "measured": 1.2407306830088298,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.6884536091707627
+      },
+      "R.oprf": {
+       "measured": 3.588855613666667,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2376631039934889
+      },
+      "R.psi_bfv": {
+       "measured": 1.0619786580403645,
+       "predicted": 1.0949493606826763,
+       "ratio": 0.9698883767357467
+      },
+      "R.upload_encrypt": {
+       "measured": 2.61699906984965,
+       "predicted": 2.6134992180072913,
+       "ratio": 1.0013391440174324
+      },
+      "R.keygen": {
+       "measured": 0.8815273443857828,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.4391258643898546
+      },
+      "R.release": {
+       "measured": 0.037430763244628906,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.5044144094609602
+      }
+     },
+     "O_total": {
+      "measured": 56.55868768730464,
+      "predicted": 54.95736303168514,
+      "ratio": 1.0291375817048622
+     },
+     "old_remeasured_ratio": 1.1504847260876423,
+     "old_published_ratio": 0.7348921890240945
+    },
+    {
+     "id": "A300k_Istd_e4",
+     "stage": 2,
+     "n_bar_O": 303104,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 23.733606894810993,
+       "predicted": 23.725513641981408,
+       "ratio": 1.0003411202367085
+      },
+      "O.psi_preprocess": {
+       "measured": 5.811759869257609,
+       "predicted": 5.314623058457995,
+       "ratio": 1.093541311459228
+      },
+      "O.oprf_requests": {
+       "measured": 1.2496689283333329,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0781627077215183
+      },
+      "O.psi_eval": {
+       "measured": 10.50073766708374,
+       "predicted": 10.320376491999923,
+       "ratio": 1.017476220487075
+      },
+      "O.psi_sanitize": {
+       "measured": 4.929994821548462,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0656982515869158
+      },
+      "O.upload_convert": {
+       "measured": 1.153189977010091,
+       "predicted": 1.1864266080192465,
+       "ratio": 0.9719859359318952
+      },
+      "O.aggregate": {
+       "measured": 7.463110287984212,
+       "predicted": 7.73352882822963,
+       "ratio": 0.9650329692625814
+      },
+      "O.release": {
+       "measured": 0.4705762068430583,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0937320764047112
+      },
+      "O.keygen": {
+       "measured": 1.3191104729970295,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.8582893617361904
+      },
+      "R.oprf": {
+       "measured": 3.7297317243333334,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2862460460718133
+      },
+      "R.psi_bfv": {
+       "measured": 1.1409677664438884,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.0420278849539861
+      },
+      "R.upload_encrypt": {
+       "measured": 2.8951516151428223,
+       "predicted": 2.6134992180072913,
+       "ratio": 1.1077683112338108
+      },
+      "R.keygen": {
+       "measured": 0.9589736461639404,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.741269162885246
+      },
+      "R.release": {
+       "measured": 0.03470484415690104,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.394854475355397
+      }
+     },
+     "O_total": {
+      "measured": 56.63175512586854,
+      "predicted": 54.95736303168514,
+      "ratio": 1.0304671112625625
+     },
+     "old_remeasured_ratio": 1.1519710224548223,
+     "old_published_ratio": 0.735841586757109
+    },
+    {
+     "id": "A300k_Pstd_e1",
+     "stage": 2,
+     "n_bar_O": 303104,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 25.745206435521443,
+       "predicted": 23.725513641981408,
+       "ratio": 1.0851274633720158
+      },
+      "O.psi_preprocess": {
+       "measured": 6.093769311904907,
+       "predicted": 5.314623058457995,
+       "ratio": 1.146604236062788
+      },
+      "O.oprf_requests": {
+       "measured": 1.338133704000003,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.1544864602836948
+      },
+      "O.psi_eval": {
+       "measured": 11.914926926294962,
+       "predicted": 10.320376491999923,
+       "ratio": 1.1545050643773598
+      },
+      "O.psi_sanitize": {
+       "measured": 4.924924214680989,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0646021577635447
+      },
+      "O.upload_convert": {
+       "measured": 1.398140589396159,
+       "predicted": 1.1864266080192465,
+       "ratio": 1.1784467576383604
+      },
+      "O.aggregate": {
+       "measured": 8.112908204396566,
+       "predicted": 7.73352882822963,
+       "ratio": 1.04905643782979
+      },
+      "O.release": {
+       "measured": 0.46202635765075684,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.073860174310941
+      },
+      "O.keygen": {
+       "measured": 1.3239840666453044,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.868849615151994
+      },
+      "R.oprf": {
+       "measured": 3.7407105636666667,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2900322402880962
+      },
+      "R.psi_bfv": {
+       "measured": 1.227721134821574,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.1212583694794045
+      },
+      "R.upload_encrypt": {
+       "measured": 3.0193259716033936,
+       "predicted": 2.6134992180072913,
+       "ratio": 1.1552809929308232
+      },
+      "R.keygen": {
+       "measured": 0.9357672532399496,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.650733450485197
+      },
+      "R.release": {
+       "measured": 0.036820014317830406,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.479867234720399
+      }
+     },
+     "O_total": {
+      "measured": 61.31401981049109,
+      "predicted": 54.95736303168514,
+      "ratio": 1.1156652435296264
+     },
+     "old_remeasured_ratio": 1.247214993335833,
+     "old_published_ratio": 0.7966803346908743
+    },
+    {
+     "id": "A300k_Pstd_e4",
+     "stage": 2,
+     "n_bar_O": 303104,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 24.419644753138225,
+       "predicted": 23.725513641981408,
+       "ratio": 1.0292567369301788
+      },
+      "O.psi_preprocess": {
+       "measured": 5.826322158177693,
+       "predicted": 5.314623058457995,
+       "ratio": 1.0962813531818312
+      },
+      "O.oprf_requests": {
+       "measured": 1.2517507553333356,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0799588220238272
+      },
+      "O.psi_eval": {
+       "measured": 10.782583395640055,
+       "predicted": 10.320376491999923,
+       "ratio": 1.044785856794897
+      },
+      "O.psi_sanitize": {
+       "measured": 4.845309893290202,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.047392232362286
+      },
+      "O.upload_convert": {
+       "measured": 1.3340764045715332,
+       "predicted": 1.1864266080192465,
+       "ratio": 1.1244491615025305
+      },
+      "O.aggregate": {
+       "measured": 7.757624626159668,
+       "predicted": 7.73352882822963,
+       "ratio": 1.0031157571744067
+      },
+      "O.release": {
+       "measured": 0.45981748898824054,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0687262332539402
+      },
+      "O.keygen": {
+       "measured": 1.3327174186706543,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.8877733123686795
+      },
+      "R.oprf": {
+       "measured": 3.762513047666666,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2975511078400392
+      },
+      "R.psi_bfv": {
+       "measured": 1.1378602981567383,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.0391898831260178
+      },
+      "R.upload_encrypt": {
+       "measured": 2.957705577214559,
+       "predicted": 2.6134992180072913,
+       "ratio": 1.1317032570110022
+      },
+      "R.keygen": {
+       "measured": 0.9815789063771566,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.8294596603957944
+      },
+      "R.release": {
+       "measured": 0.033530235290527344,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.3476446845075771
+      }
+     },
+     "O_total": {
+      "measured": 58.00984689396961,
+      "predicted": 54.95736303168514,
+      "ratio": 1.0555427643157584
+     },
+     "old_remeasured_ratio": 1.1800033830907866,
+     "old_published_ratio": 0.7537477461385829
+    },
+    {
+     "id": "A300k_Pbn_e1",
+     "stage": 2,
+     "n_bar_O": 303104,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 23.201892852783203,
+       "predicted": 23.725513641981408,
+       "ratio": 0.977930054661844
+      },
+      "O.psi_preprocess": {
+       "measured": 6.0243377685546875,
+       "predicted": 5.314623058457995,
+       "ratio": 1.1335399900030938
+      },
+      "O.oprf_requests": {
+       "measured": 1.3273767116666686,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.1452057718404645
+      },
+      "O.psi_eval": {
+       "measured": 10.891309181849161,
+       "predicted": 10.320376491999923,
+       "ratio": 1.05532091685723
+      },
+      "O.psi_sanitize": {
+       "measured": 4.827255487442017,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0434894800385406
+      },
+      "O.upload_convert": {
+       "measured": 1.1491741339365642,
+       "predicted": 1.1864266080192465,
+       "ratio": 0.9686011137723254
+      },
+      "O.aggregate": {
+       "measured": 7.399545590082805,
+       "predicted": 7.73352882822963,
+       "ratio": 0.9568136040396346
+      },
+      "O.release": {
+       "measured": 0.8139896392822266,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.8919073370001274
+      },
+      "O.keygen": {
+       "measured": 1.2798312505086262,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.7731779278766817
+      },
+      "R.oprf": {
+       "measured": 3.7488052326666668,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2928237911998097
+      },
+      "R.psi_bfv": {
+       "measured": 1.1665788491566975,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.0654180832886753
+      },
+      "R.upload_encrypt": {
+       "measured": 2.7434028784434,
+       "predicted": 2.6134992180072913,
+       "ratio": 1.049704878249459
+      },
+      "R.keygen": {
+       "measured": 0.9093726476033529,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.5477594797929566
+      },
+      "R.release": {
+       "measured": 0.05682778358459473,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.284017986052181
+      }
+     },
+     "O_total": {
+      "measured": 56.91471261610596,
+      "predicted": 54.95736303168514,
+      "ratio": 1.0356157842451852
+     },
+     "old_remeasured_ratio": 1.1577267831338898,
+     "old_published_ratio": 0.7395181793002563
+    },
+    {
+     "id": "A300k_Pbn_e4",
+     "stage": 2,
+     "n_bar_O": 303104,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 23.39385183652242,
+       "predicted": 23.725513641981408,
+       "ratio": 0.9860208798652887
+      },
+      "O.psi_preprocess": {
+       "measured": 5.640054941177368,
+       "predicted": 5.314623058457995,
+       "ratio": 1.061233295219585
+      },
+      "O.oprf_requests": {
+       "measured": 1.247438686,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0762385468030033
+      },
+      "O.psi_eval": {
+       "measured": 10.546416918436686,
+       "predicted": 10.320376491999923,
+       "ratio": 1.0219023430600602
+      },
+      "O.psi_sanitize": {
+       "measured": 4.734364827473958,
+       "predicted": 4.6260701039973355,
+       "ratio": 1.0234096589636734
+      },
+      "O.upload_convert": {
+       "measured": 1.2538916269938152,
+       "predicted": 1.1864266080192465,
+       "ratio": 1.0568640474839
+      },
+      "O.aggregate": {
+       "measured": 7.3834863503774,
+       "predicted": 7.73352882822963,
+       "ratio": 0.9547370307104213
+      },
+      "O.release": {
+       "measured": 0.7988843123118082,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.8567989307698956
+      },
+      "O.keygen": {
+       "measured": 1.3584199746449788,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.94346640541488
+      },
+      "R.oprf": {
+       "measured": 3.5606068173333334,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2279211425668846
+      },
+      "R.psi_bfv": {
+       "measured": 1.126918077468872,
+       "predicted": 1.0949493606826763,
+       "ratio": 1.0291965253683184
+      },
+      "R.upload_encrypt": {
+       "measured": 2.71807853380839,
+       "predicted": 2.6134992180072913,
+       "ratio": 1.0400150553252652
+      },
+      "R.keygen": {
+       "measured": 0.9491916497548422,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.703106402455689
+      },
+      "R.release": {
+       "measured": 0.05454707145690918,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.1923517764614684
+      }
+     },
+     "O_total": {
+      "measured": 56.35680947393843,
+      "predicted": 54.95736303168514,
+      "ratio": 1.0254642210807396
+     },
+     "old_remeasured_ratio": 1.1463782340436302,
+     "old_published_ratio": 0.7322690955931225
+    }
+   ],
+   "phases": {
+    "O.aggregate": {
+     "ratio_min": 0.9523030132518382,
+     "ratio_max": 1.04905643782979,
+     "ratio_mean": 0.9801764687114454,
+     "measured_mean": 7.580222977532281,
+     "predicted": 7.73352882822963,
+     "gated": true
+    },
+    "O.keygen": {
+     "ratio_min": 2.6884536091707627,
+     "ratio_max": 2.94346640541488,
+     "ratio_mean": 2.8366683719531984,
+     "measured_mean": 1.3091323110792372,
+     "predicted": 0.4615034750000859,
+     "gated": false
+    },
+    "O.oprf_requests": {
+     "ratio_min": 1.0762385468030033,
+     "ratio_max": 1.1544864602836948,
+     "ratio_mean": 1.1040867889575587,
+     "measured_mean": 1.2797168223888902,
+     "predicted": 1.1590726700001142,
+     "gated": false
+    },
+    "O.oprf_self": {
+     "ratio_min": 0.977930054661844,
+     "ratio_max": 1.0851274633720158,
+     "ratio_mean": 1.0167028270665235,
+     "measured_mean": 24.121796793407864,
+     "predicted": 23.725513641981408,
+     "gated": true
+    },
+    "O.psi_eval": {
+     "ratio_min": 1.010394569141157,
+     "ratio_max": 1.1545050643773598,
+     "ratio_mean": 1.0507308284529633,
+     "measured_mean": 10.843937741385565,
+     "predicted": 10.320376491999923,
+     "gated": true
+    },
+    "O.psi_preprocess": {
+     "ratio_min": 1.061233295219585,
+     "ratio_max": 1.146604236062788,
+     "ratio_mean": 1.100807634856455,
+     "measured_mean": 5.850377639134725,
+     "predicted": 5.314623058457995,
+     "gated": true
+    },
+    "O.psi_sanitize": {
+     "ratio_min": 1.0005947829032478,
+     "ratio_max": 1.0656982515869158,
+     "ratio_mean": 1.0408644272697014,
+     "measured_mean": 4.815111809306674,
+     "predicted": 4.6260701039973355,
+     "gated": true
+    },
+    "O.release": {
+     "ratio_min": 1.0687262332539402,
+     "ratio_max": 1.8919073370001274,
+     "ratio_mean": 1.35981404763883,
+     "measured_mean": 0.5850574837790595,
+     "predicted": 0.43024815399940053,
+     "gated": false
+    },
+    "O.upload_convert": {
+     "ratio_min": 0.9686011137723254,
+     "ratio_max": 1.1784467576383604,
+     "ratio_mean": 1.0498907797409593,
+     "measured_mean": 1.2456183565987482,
+     "predicted": 1.1864266080192465,
+     "gated": false
+    },
+    "R.keygen": {
+     "ratio_min": 3.4391258643898546,
+     "ratio_max": 3.8294596603957944,
+     "ratio_mean": 3.6519090034007893,
+     "measured_mean": 0.936068574587504,
+     "predicted": 0.25632308300009754,
+     "gated": false
+    },
+    "R.oprf": {
+     "ratio_min": 1.2279211425668846,
+     "ratio_max": 1.2975511078400392,
+     "ratio_mean": 1.2720395719933555,
+     "measured_mean": 3.6885371665555553,
+     "predicted": 2.8997031600010814,
+     "gated": true
+    },
+    "R.psi_bfv": {
+     "ratio_min": 0.9698883767357467,
+     "ratio_max": 1.1212583694794045,
+     "ratio_mean": 1.044496520492025,
+     "measured_mean": 1.1436707973480225,
+     "predicted": 1.0949493606826763,
+     "gated": false
+    },
+    "R.release": {
+     "ratio_min": 1.3476446845075771,
+     "ratio_max": 2.284017986052181,
+     "ratio_mean": 1.7005250944263304,
+     "measured_mean": 0.042310118675231934,
+     "predicted": 0.024880620000203635,
+     "gated": false
+    },
+    "R.upload_encrypt": {
+     "ratio_min": 1.0013391440174324,
+     "ratio_max": 1.1552809929308232,
+     "ratio_mean": 1.0809686064612987,
+     "measured_mean": 2.825110607677036,
+     "predicted": 2.6134992180072913,
+     "gated": true
+    }
+   },
+   "O_total_ratio": [
+    1.0254642210807396,
+    1.1156652435296264
+   ],
+   "O_total_predicted": 54.95736303168514,
+   "O_total_measured": 57.63097193461305,
+   "within_25pct_gated": false,
+   "misses": [
+    [
+     "R.oprf",
+     1.29
+    ],
+    [
+     "R.oprf",
+     1.3
+    ]
+   ]
+  },
+  "3": {
+   "cells": [
+    {
+     "id": "A1M_Istd_e1",
+     "stage": 3,
+     "n_bar_O": 1007616,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 79.84545024236043,
+       "predicted": 78.87130210712738,
+       "ratio": 1.0123511100895723
+      },
+      "O.psi_preprocess": {
+       "measured": 19.257240533828735,
+       "predicted": 17.428623901202638,
+       "ratio": 1.1049203105759782
+      },
+      "O.oprf_requests": {
+       "measured": 1.2831841306666594,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.107078239250118
+      },
+      "O.psi_eval": {
+       "measured": 14.678627014160156,
+       "predicted": 13.714223757999662,
+       "ratio": 1.070321388448832
+      },
+      "O.psi_sanitize": {
+       "measured": 11.76518726348877,
+       "predicted": 11.565175259993339,
+       "ratio": 1.0172943339810265
+      },
+      "O.upload_convert": {
+       "measured": 4.823834657669067,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.2230610846786012
+      },
+      "O.aggregate": {
+       "measured": 17.741149187088013,
+       "predicted": 18.826912980307917,
+       "ratio": 0.9423291649376845
+      },
+      "O.release": {
+       "measured": 0.5527069568634033,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.2846236566634366
+      },
+      "O.keygen": {
+       "measured": 1.9331233501434326,
+       "predicted": 0.4615034750000859,
+       "ratio": 4.188751450123041
+      },
+      "R.oprf": {
+       "measured": 3.809760234,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.3138449088694235
+      },
+      "R.psi_bfv": {
+       "measured": 1.817725658416748,
+       "predicted": 1.7045722326861323,
+       "ratio": 1.066382300239811
+      },
+      "R.upload_encrypt": {
+       "measured": 10.369928280512491,
+       "predicted": 8.688119022024239,
+       "ratio": 1.1935757618219656
+      },
+      "R.keygen": {
+       "measured": 0.8668218453725179,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.3817549134745235
+      },
+      "R.release": {
+       "measured": 0.03479433059692383,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.3984511075945476
+      }
+     },
+     "O_total": {
+      "measured": 151.88050333626865,
+      "predicted": 146.4011291376945,
+      "ratio": 1.0374271307253418
+     },
+     "old_remeasured_ratio": 1.1678342731628168,
+     "old_published_ratio": 0.7833659782031592
+    },
+    {
+     "id": "A1M_Istd_e4",
+     "stage": 3,
+     "n_bar_O": 1007616,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 77.84704152743022,
+       "predicted": 78.87130210712738,
+       "ratio": 0.9870135200975134
+      },
+      "O.psi_preprocess": {
+       "measured": 18.837246497472126,
+       "predicted": 17.428623901202638,
+       "ratio": 1.0808223646487827
+      },
+      "O.oprf_requests": {
+       "measured": 1.2238892703333353,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0559210841656845
+      },
+      "O.psi_eval": {
+       "measured": 13.971510569254557,
+       "predicted": 13.714223757999662,
+       "ratio": 1.0187605814076657
+      },
+      "O.psi_sanitize": {
+       "measured": 11.762679974238077,
+       "predicted": 11.565175259993339,
+       "ratio": 1.0170775375041616
+      },
+      "O.upload_convert": {
+       "measured": 4.526531616846721,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.1476812664652358
+      },
+      "O.aggregate": {
+       "measured": 16.811036348342896,
+       "predicted": 18.826912980307917,
+       "ratio": 0.8929258007367679
+      },
+      "O.release": {
+       "measured": 0.4927150408426921,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.145188041511919
+      },
+      "O.keygen": {
+       "measured": 1.9085004329681396,
+       "predicted": 0.4615034750000859,
+       "ratio": 4.13539775181061
+      },
+      "R.oprf": {
+       "measured": 3.4990635893333333,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.206697167351443
+      },
+      "R.psi_bfv": {
+       "measured": 1.730186939239502,
+       "predicted": 1.7045722326861323,
+       "ratio": 1.0150270584385883
+      },
+      "R.upload_encrypt": {
+       "measured": 9.684339682261148,
+       "predicted": 8.688119022024239,
+       "ratio": 1.1146647113962764
+      },
+      "R.keygen": {
+       "measured": 0.8561143080393473,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.339981315842013
+      },
+      "R.release": {
+       "measured": 0.03586991628011068,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.4416809661422063
+      }
+     },
+     "O_total": {
+      "measured": 147.38115127772875,
+      "predicted": 146.4011291376945,
+      "ratio": 1.0066940886713551
+     },
+     "old_remeasured_ratio": 1.1332380121183367,
+     "old_published_ratio": 0.7601593173797169
+    },
+    {
+     "id": "A1M_Pstd_e1",
+     "stage": 3,
+     "n_bar_O": 1007616,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 76.58297904332478,
+       "predicted": 78.87130210712738,
+       "ratio": 0.9709866199407426
+      },
+      "O.psi_preprocess": {
+       "measured": 19.43785611788432,
+       "predicted": 17.428623901202638,
+       "ratio": 1.1152834686244528
+      },
+      "O.oprf_requests": {
+       "measured": 1.2405803726666658,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0703214774847065
+      },
+      "O.psi_eval": {
+       "measured": 13.628657499949137,
+       "predicted": 13.714223757999662,
+       "ratio": 0.993760765497164
+      },
+      "O.psi_sanitize": {
+       "measured": 11.790400981903076,
+       "predicted": 11.565175259993339,
+       "ratio": 1.0194744754702374
+      },
+      "O.upload_convert": {
+       "measured": 4.700226783752441,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.1917208769235665
+      },
+      "O.aggregate": {
+       "measured": 16.686502695083618,
+       "predicted": 18.826912980307917,
+       "ratio": 0.8863111394064939
+      },
+      "O.release": {
+       "measured": 0.46041472752888996,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0701143590020643
+      },
+      "O.keygen": {
+       "measured": 1.6328198115030925,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.5380444567677167
+      },
+      "R.oprf": {
+       "measured": 3.5130956629999996,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2115363087712363
+      },
+      "R.psi_bfv": {
+       "measured": 1.7377098401387532,
+       "predicted": 1.7045722326861323,
+       "ratio": 1.0194404242995332
+      },
+      "R.upload_encrypt": {
+       "measured": 9.083445151646933,
+       "predicted": 8.688119022024239,
+       "ratio": 1.0455019237904717
+      },
+      "R.keygen": {
+       "measured": 0.8211425940195719,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.2035452461347753
+      },
+      "R.release": {
+       "measured": 0.036232312520345054,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.4562463684606135
+      }
+     },
+     "O_total": {
+      "measured": 146.16043803359605,
+      "predicted": 146.4011291376945,
+      "ratio": 0.9983559477613586
+     },
+     "old_remeasured_ratio": 1.1238517463838493,
+     "old_published_ratio": 0.7538631489868695
+    },
+    {
+     "id": "A1M_Pstd_e4",
+     "stage": 3,
+     "n_bar_O": 1007616,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 75.62972569465637,
+       "predicted": 78.87130210712738,
+       "ratio": 0.9589004324022936
+      },
+      "O.psi_preprocess": {
+       "measured": 18.817909876505535,
+       "predicted": 17.428623901202638,
+       "ratio": 1.0797128897369248
+      },
+      "O.oprf_requests": {
+       "measured": 1.185652038666665,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.022931580870204
+      },
+      "O.psi_eval": {
+       "measured": 13.572944482167562,
+       "predicted": 13.714223757999662,
+       "ratio": 0.9896983395979894
+      },
+      "O.psi_sanitize": {
+       "measured": 11.703191439310709,
+       "predicted": 11.565175259993339,
+       "ratio": 1.011933773264535
+      },
+      "O.upload_convert": {
+       "measured": 4.3885276317596436,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.1126909909543976
+      },
+      "O.aggregate": {
+       "measured": 16.183278401692707,
+       "predicted": 18.826912980307917,
+       "ratio": 0.8595821534109002
+      },
+      "O.release": {
+       "measured": 0.45439871152242023,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0561316935320386
+      },
+      "O.keygen": {
+       "measured": 1.6959255536397297,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.6747839301522354
+      },
+      "R.oprf": {
+       "measured": 3.445839089333333,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.1883420126810662
+      },
+      "R.psi_bfv": {
+       "measured": 1.7100684642791748,
+       "predicted": 1.7045722326861323,
+       "ratio": 1.0032244052130201
+      },
+      "R.upload_encrypt": {
+       "measured": 9.14969539642334,
+       "predicted": 8.688119022024239,
+       "ratio": 1.0531273079050842
+      },
+      "R.keygen": {
+       "measured": 0.8813854853312174,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.4385724259210866
+      },
+      "R.release": {
+       "measured": 0.03305856386820475,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.328687302323422
+      }
+     },
+     "O_total": {
+      "measured": 143.63155382992136,
+      "predicted": 146.4011291376945,
+      "ratio": 0.9810822817823469
+     },
+     "old_remeasured_ratio": 1.104406738097482,
+     "old_published_ratio": 0.7408197246864637
+    },
+    {
+     "id": "A1M_Pbn_e1",
+     "stage": 3,
+     "n_bar_O": 1007616,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 77.55283935864766,
+       "predicted": 78.87130210712738,
+       "ratio": 0.9832833652639726
+      },
+      "O.psi_preprocess": {
+       "measured": 18.794794877370197,
+       "predicted": 17.428623901202638,
+       "ratio": 1.0783866232877564
+      },
+      "O.oprf_requests": {
+       "measured": 1.177162945666666,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0156075422488824
+      },
+      "O.psi_eval": {
+       "measured": 13.36043151219686,
+       "predicted": 13.714223757999662,
+       "ratio": 0.9742025321997221
+      },
+      "O.psi_sanitize": {
+       "measured": 11.261078516642252,
+       "predicted": 11.565175259993339,
+       "ratio": 0.9737058248997722
+      },
+      "O.upload_convert": {
+       "measured": 4.6728575229644775,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.1847815267671593
+      },
+      "O.aggregate": {
+       "measured": 16.42546017964681,
+       "predicted": 18.826912980307917,
+       "ratio": 0.8724457481068236
+      },
+      "O.release": {
+       "measured": 0.7684328556060791,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.7860224348740605
+      },
+      "O.keygen": {
+       "measured": 1.80504576365153,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.91122897536404
+      },
+      "R.oprf": {
+       "measured": 3.422765696666667,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.180384855898626
+      },
+      "R.psi_bfv": {
+       "measured": 1.6746619542439778,
+       "predicted": 1.7045722326861323,
+       "ratio": 0.9824529123092538
+      },
+      "R.upload_encrypt": {
+       "measured": 8.831180254618326,
+       "predicted": 8.688119022024239,
+       "ratio": 1.0164663067151163
+      },
+      "R.keygen": {
+       "measured": 0.878722349802653,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.428182665087243
+      },
+      "R.release": {
+       "measured": 0.05365316073099772,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.156423784076064
+      }
+     },
+     "O_total": {
+      "measured": 145.8181035323925,
+      "predicted": 146.4011291376945,
+      "ratio": 0.9960176153781325
+     },
+     "old_remeasured_ratio": 1.1212194798676762,
+     "old_published_ratio": 0.7520974634938852
+    },
+    {
+     "id": "A1M_Pbn_e4",
+     "stage": 3,
+     "n_bar_O": 1007616,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 78.01802738507588,
+       "predicted": 78.87130210712738,
+       "ratio": 0.989181429756383
+      },
+      "O.psi_preprocess": {
+       "measured": 19.638571341832478,
+       "predicted": 17.428623901202638,
+       "ratio": 1.1267998812274185
+      },
+      "O.oprf_requests": {
+       "measured": 1.3009340289999993,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.1223921180022916
+      },
+      "O.psi_eval": {
+       "measured": 14.066537221272787,
+       "predicted": 13.714223757999662,
+       "ratio": 1.0256896394203585
+      },
+      "O.psi_sanitize": {
+       "measured": 11.438899119695028,
+       "predicted": 11.565175259993339,
+       "ratio": 0.9890813465892618
+      },
+      "O.upload_convert": {
+       "measured": 5.35536527633667,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.3578282276555993
+      },
+      "O.aggregate": {
+       "measured": 16.951494614283245,
+       "predicted": 18.826912980307917,
+       "ratio": 0.900386305073685
+      },
+      "O.release": {
+       "measured": 0.7564714749654134,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.7582213146845191
+      },
+      "O.keygen": {
+       "measured": 1.690268913904826,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.6625269482629816
+      },
+      "R.oprf": {
+       "measured": 3.4496213963333333,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.1896463899884313
+      },
+      "R.psi_bfv": {
+       "measured": 1.7346398035685222,
+       "predicted": 1.7045722326861323,
+       "ratio": 1.017639364472697
+      },
+      "R.upload_encrypt": {
+       "measured": 9.143435398737589,
+       "predicted": 8.688119022024239,
+       "ratio": 1.052406783972357
+      },
+      "R.keygen": {
+       "measured": 0.8480731646219889,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.308610191075402
+      },
+      "R.release": {
+       "measured": 0.05320970217386881,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.1386003312390653
+      }
+     },
+     "O_total": {
+      "measured": 149.21656937636632,
+      "predicted": 146.4011291376945,
+      "ratio": 1.0192310008485235
+     },
+     "old_remeasured_ratio": 1.1473508449973968,
+     "old_published_ratio": 0.7696259971883007
+    }
+   ],
+   "phases": {
+    "O.aggregate": {
+     "ratio_min": 0.8595821534109002,
+     "ratio_max": 0.9423291649376845,
+     "ratio_mean": 0.8923300519453924,
+     "measured_mean": 16.79982023768955,
+     "predicted": 18.826912980307917,
+     "gated": true
+    },
+    "O.keygen": {
+     "ratio_min": 3.5380444567677167,
+     "ratio_max": 4.188751450123041,
+     "ratio_mean": 3.8517889187467707,
+     "measured_mean": 1.7776139709684582,
+     "predicted": 0.4615034750000859,
+     "gated": false
+    },
+    "O.oprf_requests": {
+     "ratio_min": 1.0156075422488824,
+     "ratio_max": 1.1223921180022916,
+     "ratio_mean": 1.0657086736703147,
+     "measured_mean": 1.2352337978333316,
+     "predicted": 1.1590726700001142,
+     "gated": false
+    },
+    "O.oprf_self": {
+     "ratio_min": 0.9589004324022936,
+     "ratio_max": 1.0123511100895723,
+     "ratio_mean": 0.9836194129250796,
+     "measured_mean": 77.57934387524922,
+     "predicted": 78.87130210712738,
+     "gated": true
+    },
+    "O.psi_eval": {
+     "ratio_min": 0.9742025321997221,
+     "ratio_max": 1.070321388448832,
+     "ratio_mean": 1.012072207761955,
+     "measured_mean": 13.879784716500176,
+     "predicted": 13.714223757999662,
+     "gated": true
+    },
+    "O.psi_preprocess": {
+     "ratio_min": 1.0783866232877564,
+     "ratio_max": 1.1267998812274185,
+     "ratio_mean": 1.097654256350219,
+     "measured_mean": 19.13060320748223,
+     "predicted": 17.428623901202638,
+     "gated": true
+    },
+    "O.psi_sanitize": {
+     "ratio_min": 0.9737058248997722,
+     "ratio_max": 1.0194744754702374,
+     "ratio_mean": 1.0047612152848324,
+     "measured_mean": 11.620239549212984,
+     "predicted": 11.565175259993339,
+     "gated": true
+    },
+    "O.release": {
+     "ratio_min": 1.0561316935320386,
+     "ratio_max": 1.7860224348740605,
+     "ratio_mean": 1.3500502500446732,
+     "measured_mean": 0.5808566278881496,
+     "predicted": 0.43024815399940053,
+     "gated": false
+    },
+    "O.upload_convert": {
+     "ratio_min": 1.1126909909543976,
+     "ratio_max": 1.3578282276555993,
+     "ratio_mean": 1.2029606622407598,
+     "measured_mean": 4.744557248221503,
+     "predicted": 3.9440668320639816,
+     "gated": true
+    },
+    "R.keygen": {
+     "ratio_min": 3.2035452461347753,
+     "ratio_max": 3.4385724259210866,
+     "ratio_mean": 3.350107792922507,
+     "measured_mean": 0.8587099578645495,
+     "predicted": 0.25632308300009754,
+     "gated": false
+    },
+    "R.oprf": {
+     "ratio_min": 1.180384855898626,
+     "ratio_max": 1.3138449088694235,
+     "ratio_mean": 1.2150752739267043,
+     "measured_mean": 3.5233576114444443,
+     "predicted": 2.8997031600010814,
+     "gated": true
+    },
+    "R.psi_bfv": {
+     "ratio_min": 0.9824529123092538,
+     "ratio_max": 1.066382300239811,
+     "ratio_mean": 1.0173610774954838,
+     "measured_mean": 1.7341654433144462,
+     "predicted": 1.7045722326861323,
+     "gated": false
+    },
+    "R.release": {
+     "ratio_min": 1.328687302323422,
+     "ratio_max": 2.156423784076064,
+     "ratio_mean": 1.6533483099726531,
+     "measured_mean": 0.041136331028408475,
+     "predicted": 0.024880620000203635,
+     "gated": false
+    },
+    "R.upload_encrypt": {
+     "ratio_min": 1.0164663067151163,
+     "ratio_max": 1.1935757618219656,
+     "ratio_mean": 1.0792904659335452,
+     "measured_mean": 9.377004027366636,
+     "predicted": 8.688119022024239,
+     "gated": true
+    }
+   },
+   "O_total_ratio": [
+    0.9810822817823469,
+    1.0374271307253418
+   ],
+   "O_total_predicted": 146.4011291376945,
+   "O_total_measured": 147.3480532310456,
+   "within_25pct_gated": false,
+   "misses": [
+    [
+     "O.upload_convert",
+     1.36
+    ],
+    [
+     "R.oprf",
+     1.31
+    ]
+   ]
+  },
+  "4": {
+   "cells": [
+    {
+     "id": "B60k_Istd_e0.5",
+     "stage": 4,
+     "n_bar_O": 1007616,
+     "n_R_max": 100000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 78.80012726783752,
+       "predicted": 78.87130210712738,
+       "ratio": 0.9990975825504544
+      },
+      "O.psi_preprocess": {
+       "measured": 19.8450182278951,
+       "predicted": 17.428623901202638,
+       "ratio": 1.138645158699289
+      },
+      "O.oprf_requests": {
+       "measured": 6.280155341333336,
+       "predicted": 5.795363350000571,
+       "ratio": 1.0836516991350884
+      },
+      "O.psi_eval": {
+       "measured": 67.99542236328125,
+       "predicted": 68.57111878999831,
+       "ratio": 0.9916043891819798
+      },
+      "O.psi_sanitize": {
+       "measured": 59.023977518081665,
+       "predicted": 57.825876299966694,
+       "ratio": 1.0207191190998979
+      },
+      "O.upload_convert": {
+       "measured": 4.833052237828572,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.2253981597211863
+      },
+      "O.aggregate": {
+       "measured": 17.045453945795696,
+       "predicted": 18.826912980307917,
+       "ratio": 0.9053769974729503
+      },
+      "O.release": {
+       "measured": 0.5186846256256104,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.2055475910916589
+      },
+      "O.keygen": {
+       "measured": 1.8414339224497478,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.990075963023691
+      },
+      "R.oprf": {
+       "measured": 17.908058402333335,
+       "predicted": 14.498515800005407,
+       "ratio": 1.2351649402848985
+      },
+      "R.psi_bfv": {
+       "measured": 8.599880377451578,
+       "predicted": 8.035333784703198,
+       "ratio": 1.070258013901439
+      },
+      "R.upload_encrypt": {
+       "measured": 9.554770787556967,
+       "predicted": 8.688119022024239,
+       "ratio": 1.0997513688907552
+      },
+      "R.keygen": {
+       "measured": 0.8827365239461263,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.4438432684807805
+      },
+      "R.release": {
+       "measured": 0.03746183713277181,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.5056633288264203
+      }
+     },
+     "O_total": {
+      "measured": 256.1833254501285,
+      "predicted": 252.155015889667,
+      "ratio": 1.0159755281736063
+     },
+     "old_remeasured_ratio": 1.1383567115943691,
+     "old_published_ratio": 0.7170886742250357
+    },
+    {
+     "id": "B60k_Istd_e1",
+     "stage": 4,
+     "n_bar_O": 1007616,
+     "n_R_max": 100000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 81.34755651156108,
+       "predicted": 78.87130210712738,
+       "ratio": 1.0313961395118127
+      },
+      "O.psi_preprocess": {
+       "measured": 20.36890395482381,
+       "predicted": 17.428623901202638,
+       "ratio": 1.1687040853189954
+      },
+      "O.oprf_requests": {
+       "measured": 6.742029450333338,
+       "predicted": 5.795363350000571,
+       "ratio": 1.1633488779150791
+      },
+      "O.psi_eval": {
+       "measured": 73.72028517723083,
+       "predicted": 68.57111878999831,
+       "ratio": 1.0750923490544473
+      },
+      "O.psi_sanitize": {
+       "measured": 62.33341932296753,
+       "predicted": 57.825876299966694,
+       "ratio": 1.077950276094708
+      },
+      "O.upload_convert": {
+       "measured": 5.0485786596934,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.280043892423449
+      },
+      "O.aggregate": {
+       "measured": 18.55678645769755,
+       "predicted": 18.826912980307917,
+       "ratio": 0.9856521075498195
+      },
+      "O.release": {
+       "measured": 0.528489351272583,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.2283361273255327
+      },
+      "O.keygen": {
+       "measured": 1.8652822176615398,
+       "predicted": 0.4615034750000859,
+       "ratio": 4.041751186513151
+      },
+      "R.oprf": {
+       "measured": 18.431550801,
+       "predicted": 14.498515800005407,
+       "ratio": 1.2712715601546696
+      },
+      "R.psi_bfv": {
+       "measured": 9.043346802393595,
+       "predicted": 8.035333784703198,
+       "ratio": 1.1254475600763896
+      },
+      "R.upload_encrypt": {
+       "measured": 9.771662791570028,
+       "predicted": 8.688119022024239,
+       "ratio": 1.1247155761562455
+      },
+      "R.keygen": {
+       "measured": 0.9450124899546305,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.6868021361707437
+      },
+      "R.release": {
+       "measured": 0.03730344772338867,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.499297353646467
+      }
+     },
+     "O_total": {
+      "measured": 270.5113311032417,
+      "predicted": 252.155015889667,
+      "ratio": 1.072797739711062
+     },
+     "old_remeasured_ratio": 1.2020235461563968,
+     "old_published_ratio": 0.7571945263917486
+    },
+    {
+     "id": "B95k_Istd_e0.5",
+     "stage": 4,
+     "n_bar_O": 1007616,
+     "n_R_max": 100000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 79.41588973999023,
+       "predicted": 78.87130210712738,
+       "ratio": 1.0069047628010903
+      },
+      "O.psi_preprocess": {
+       "measured": 19.30119864145915,
+       "predicted": 17.428623901202638,
+       "ratio": 1.1074424894857762
+      },
+      "O.oprf_requests": {
+       "measured": 6.096005126666668,
+       "predicted": 5.795363350000571,
+       "ratio": 1.0518762601254446
+      },
+      "O.psi_eval": {
+       "measured": 66.4175910949707,
+       "predicted": 68.57111878999831,
+       "ratio": 0.9685942459007725
+      },
+      "O.psi_sanitize": {
+       "measured": 58.17760133743286,
+       "predicted": 57.825876299966694,
+       "ratio": 1.0060824852120118
+      },
+      "O.upload_convert": {
+       "measured": 5.006342490514119,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.2693351060418605
+      },
+      "O.aggregate": {
+       "measured": 17.091996908187866,
+       "predicted": 18.826912980307917,
+       "ratio": 0.9078491479758422
+      },
+      "O.release": {
+       "measured": 0.4800576368967692,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.1157691960659477
+      },
+      "O.keygen": {
+       "measured": 1.7923952738444011,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.8838175028781037
+      },
+      "R.oprf": {
+       "measured": 17.621255289,
+       "predicted": 14.498515800005407,
+       "ratio": 1.2153833904152747
+      },
+      "R.psi_bfv": {
+       "measured": 8.6963259379069,
+       "predicted": 8.035333784703198,
+       "ratio": 1.082260696433299
+      },
+      "R.upload_encrypt": {
+       "measured": 9.402919371922811,
+       "predicted": 8.688119022024239,
+       "ratio": 1.0822733146365244
+      },
+      "R.keygen": {
+       "measured": 0.8937853972117106,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.486948528983519
+      },
+      "R.release": {
+       "measured": 0.034410317738850914,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.3830168918045163
+      }
+     },
+     "O_total": {
+      "measured": 253.77907824996277,
+      "predicted": 252.155015889667,
+      "ratio": 1.0064407299397382
+     },
+     "old_remeasured_ratio": 1.1276733818662075,
+     "old_published_ratio": 0.7103588902539407
+    },
+    {
+     "id": "B95k_Istd_e1",
+     "stage": 4,
+     "n_bar_O": 1007616,
+     "n_R_max": 100000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 77.05486154556274,
+       "predicted": 78.87130210712738,
+       "ratio": 0.9769695629077172
+      },
+      "O.psi_preprocess": {
+       "measured": 18.735124270121258,
+       "predicted": 17.428623901202638,
+       "ratio": 1.0749629102288716
+      },
+      "O.oprf_requests": {
+       "measured": 5.890491996333334,
+       "predicted": 5.795363350000571,
+       "ratio": 1.0164146129565377
+      },
+      "O.psi_eval": {
+       "measured": 65.72760160764058,
+       "predicted": 68.57111878999831,
+       "ratio": 0.9585318537522173
+      },
+      "O.psi_sanitize": {
+       "measured": 57.46089498202006,
+       "predicted": 57.825876299966694,
+       "ratio": 0.9936882700047064
+      },
+      "O.upload_convert": {
+       "measured": 5.512050310770671,
+       "predicted": 3.9440668320639816,
+       "ratio": 1.397554997283386
+      },
+      "O.aggregate": {
+       "measured": 17.3073570728302,
+       "predicted": 18.826912980307917,
+       "ratio": 0.9192881005469615
+      },
+      "O.release": {
+       "measured": 0.4500312805175781,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.0459807353832484
+      },
+      "O.keygen": {
+       "measured": 1.7197957038879395,
+       "predicted": 0.4615034750000859,
+       "ratio": 3.7265065098103958
+      },
+      "R.oprf": {
+       "measured": 16.916603726333335,
+       "predicted": 14.498515800005407,
+       "ratio": 1.1667817561247908
+      },
+      "R.psi_bfv": {
+       "measured": 8.671960830688477,
+       "predicted": 8.035333784703198,
+       "ratio": 1.0792284506210832
+      },
+      "R.upload_encrypt": {
+       "measured": 9.088198184967041,
+       "predicted": 8.688119022024239,
+       "ratio": 1.0460489965582433
+      },
+      "R.keygen": {
+       "measured": 0.819561243057251,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.197375879943435
+      },
+      "R.release": {
+       "measured": 0.036770264307657875,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.477867686068793
+      }
+     },
+     "O_total": {
+      "measured": 249.85820876968435,
+      "predicted": 252.155015889667,
+      "ratio": 0.9908912891862217
+     },
+     "old_remeasured_ratio": 1.1102509048946165,
+     "old_published_ratio": 0.6993838937646801
+    }
+   ],
+   "phases": {
+    "O.aggregate": {
+     "ratio_min": 0.9053769974729503,
+     "ratio_max": 0.9856521075498195,
+     "ratio_mean": 0.9295415883863933,
+     "measured_mean": 17.50039859612783,
+     "predicted": 18.826912980307917,
+     "gated": true
+    },
+    "O.keygen": {
+     "ratio_min": 3.7265065098103958,
+     "ratio_max": 4.041751186513151,
+     "ratio_mean": 3.910537790556335,
+     "measured_mean": 1.804726779460907,
+     "predicted": 0.4615034750000859,
+     "gated": false
+    },
+    "O.oprf_requests": {
+     "ratio_min": 1.0164146129565377,
+     "ratio_max": 1.1633488779150791,
+     "ratio_mean": 1.0788228625330376,
+     "measured_mean": 6.252170478666669,
+     "predicted": 5.795363350000571,
+     "gated": true
+    },
+    "O.oprf_self": {
+     "ratio_min": 0.9769695629077172,
+     "ratio_max": 1.0313961395118127,
+     "ratio_mean": 1.0035920119427686,
+     "measured_mean": 79.1546087662379,
+     "predicted": 78.87130210712738,
+     "gated": true
+    },
+    "O.psi_eval": {
+     "ratio_min": 0.9585318537522173,
+     "ratio_max": 1.0750923490544473,
+     "ratio_mean": 0.9984557094723542,
+     "measured_mean": 68.46522506078084,
+     "predicted": 68.57111878999831,
+     "gated": true
+    },
+    "O.psi_preprocess": {
+     "ratio_min": 1.0749629102288716,
+     "ratio_max": 1.1687040853189954,
+     "ratio_mean": 1.1224386609332329,
+     "measured_mean": 19.56256127357483,
+     "predicted": 17.428623901202638,
+     "gated": true
+    },
+    "O.psi_sanitize": {
+     "ratio_min": 0.9936882700047064,
+     "ratio_max": 1.077950276094708,
+     "ratio_mean": 1.024610037602831,
+     "measured_mean": 59.24897329012553,
+     "predicted": 57.825876299966694,
+     "gated": true
+    },
+    "O.release": {
+     "ratio_min": 1.0459807353832484,
+     "ratio_max": 1.2283361273255327,
+     "ratio_mean": 1.148908412466597,
+     "measured_mean": 0.4943157235781352,
+     "predicted": 0.43024815399940053,
+     "gated": false
+    },
+    "O.upload_convert": {
+     "ratio_min": 1.2253981597211863,
+     "ratio_max": 1.397554997283386,
+     "ratio_mean": 1.2930830388674703,
+     "measured_mean": 5.100005924701691,
+     "predicted": 3.9440668320639816,
+     "gated": true
+    },
+    "R.keygen": {
+     "ratio_min": 3.197375879943435,
+     "ratio_max": 3.6868021361707437,
+     "ratio_mean": 3.4537424533946193,
+     "measured_mean": 0.8852739135424296,
+     "predicted": 0.25632308300009754,
+     "gated": false
+    },
+    "R.oprf": {
+     "ratio_min": 1.1667817561247908,
+     "ratio_max": 1.2712715601546696,
+     "ratio_mean": 1.2221504117449082,
+     "measured_mean": 17.71936705466667,
+     "predicted": 14.498515800005407,
+     "gated": true
+    },
+    "R.psi_bfv": {
+     "ratio_min": 1.070258013901439,
+     "ratio_max": 1.1254475600763896,
+     "ratio_mean": 1.0892986802580527,
+     "measured_mean": 8.752878487110138,
+     "predicted": 8.035333784703198,
+     "gated": true
+    },
+    "R.release": {
+     "ratio_min": 1.3830168918045163,
+     "ratio_max": 1.5056633288264203,
+     "ratio_mean": 1.466461315086549,
+     "measured_mean": 0.03648646672566732,
+     "predicted": 0.024880620000203635,
+     "gated": false
+    },
+    "R.upload_encrypt": {
+     "ratio_min": 1.0460489965582433,
+     "ratio_max": 1.1247155761562455,
+     "ratio_mean": 1.0881973140604422,
+     "measured_mean": 9.454387784004211,
+     "predicted": 8.688119022024239,
+     "gated": true
+    }
+   },
+   "O_total_ratio": [
+    0.9908912891862217,
+    1.072797739711062
+   ],
+   "O_total_predicted": 252.155015889667,
+   "O_total_measured": 257.5829858932543,
+   "within_25pct_gated": false,
+   "misses": [
+    [
+     "O.upload_convert",
+     1.27
+    ],
+    [
+     "O.upload_convert",
+     1.28
+    ],
+    [
+     "O.upload_convert",
+     1.4
+    ],
+    [
+     "R.oprf",
+     1.27
+    ]
+   ]
+  },
+  "5": {
+   "cells": [
+    {
+     "id": "R3d_Ibn_e1",
+     "stage": 5,
+     "n_bar_O": 311296,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 24.636367559432983,
+       "predicted": 24.366743740413337,
+       "ratio": 1.0110652380101353
+      },
+      "O.psi_preprocess": {
+       "measured": 6.784200827280681,
+       "predicted": 6.244981256925442,
+       "ratio": 1.0863444657671735
+      },
+      "O.oprf_requests": {
+       "measured": 1.231229015333336,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0622535128304034
+      },
+      "O.psi_eval": {
+       "measured": 12.506422201792398,
+       "predicted": 11.451658913999836,
+       "ratio": 1.0921057198536621
+      },
+      "O.psi_sanitize": {
+       "measured": 7.090092420578003,
+       "predicted": 6.939105155996003,
+       "ratio": 1.0217588955906705
+      },
+      "O.upload_convert": {
+       "measured": 0.6119264761606852,
+       "predicted": 0.6092460960098833,
+       "ratio": 1.0043995032029855
+      },
+      "O.aggregate": {
+       "measured": 1.493812084197998,
+       "predicted": 1.4976231747061495,
+       "ratio": 0.9974552406957116
+      },
+      "O.release": {
+       "measured": 0.7305568059285482,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.697989402482285
+      },
+      "O.keygen": {
+       "measured": 1.3414688905080159,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.9067362721543235
+      },
+      "R.oprf": {
+       "measured": 3.6861966146666667,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.2712324025143635
+      },
+      "R.psi_bfv": {
+       "measured": 1.3744998772939045,
+       "predicted": 1.2981569846838283,
+       "ratio": 1.058808675307224
+      },
+      "R.upload_encrypt": {
+       "measured": 1.462368329366048,
+       "predicted": 1.3420671660037442,
+       "ratio": 1.0896387054312067
+      },
+      "R.keygen": {
+       "measured": 0.9165966510772705,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.5759426749596397
+      },
+      "R.release": {
+       "measured": 0.048709710439046226,
+       "predicted": 0.024880620000203635,
+       "ratio": 1.9577370032839843
+      }
+     },
+     "O_total": {
+      "measured": 56.42607628121265,
+      "predicted": 53.160182637050255,
+      "ratio": 1.0614349590643848
+     },
+     "old_remeasured_ratio": 1.0490774882072902,
+     "old_published_ratio": 0.6631034068612981
+    },
+    {
+     "id": "R3d_Ibn_e4",
+     "stage": 5,
+     "n_bar_O": 311296,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 24.373465538024902,
+       "predicted": 24.366743740413337,
+       "ratio": 1.0002758594945298
+      },
+      "O.psi_preprocess": {
+       "measured": 6.618915478388469,
+       "predicted": 6.244981256925442,
+       "ratio": 1.0598775570460437
+      },
+      "O.oprf_requests": {
+       "measured": 1.2120536036666678,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0457097600848
+      },
+      "O.psi_eval": {
+       "measured": 11.718940496444702,
+       "predicted": 11.451658913999836,
+       "ratio": 1.0233399880709082
+      },
+      "O.psi_sanitize": {
+       "measured": 7.125244379043579,
+       "predicted": 6.939105155996003,
+       "ratio": 1.026824672470446
+      },
+      "O.upload_convert": {
+       "measured": 0.5809152921040853,
+       "predicted": 0.6092460960098833,
+       "ratio": 0.9534985876949494
+      },
+      "O.aggregate": {
+       "measured": 1.3761827150980632,
+       "predicted": 1.4976231747061495,
+       "ratio": 0.918911204327541
+      },
+      "O.release": {
+       "measured": 0.7335809866587321,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.70501832451733
+      },
+      "O.keygen": {
+       "measured": 1.2338249683380127,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.673490093087128
+      },
+      "R.oprf": {
+       "measured": 3.504004753333333,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.208401191428169
+      },
+      "R.psi_bfv": {
+       "measured": 1.3541608651479085,
+       "predicted": 1.2981569846838283,
+       "ratio": 1.0431410693196863
+      },
+      "R.upload_encrypt": {
+       "measured": 1.4073778788248699,
+       "predicted": 1.3420671660037442,
+       "ratio": 1.048664265452228
+      },
+      "R.keygen": {
+       "measured": 0.8593858083089193,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.3527445060755308
+      },
+      "R.release": {
+       "measured": 0.05014300346374512,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.0153438082867194
+      }
+     },
+     "O_total": {
+      "measured": 54.97312345776721,
+      "predicted": 53.160182637050255,
+      "ratio": 1.0341033595218203
+     },
+     "old_remeasured_ratio": 1.0220640894569089,
+     "old_published_ratio": 0.6460287131960183
+    },
+    {
+     "id": "R3d_Pbn_e1",
+     "stage": 5,
+     "n_bar_O": 311296,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 23.472779830296833,
+       "predicted": 24.366743740413337,
+       "ratio": 0.9633121306794135
+      },
+      "O.psi_preprocess": {
+       "measured": 6.341922680536906,
+       "predicted": 6.244981256925442,
+       "ratio": 1.0155230928041554
+      },
+      "O.oprf_requests": {
+       "measured": 1.2707664166666675,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.096364748783648
+      },
+      "O.psi_eval": {
+       "measured": 11.208197593688965,
+       "predicted": 11.451658913999836,
+       "ratio": 0.9787400828002976
+      },
+      "O.psi_sanitize": {
+       "measured": 6.751227060953776,
+       "predicted": 6.939105155996003,
+       "ratio": 0.9729247372941332
+      },
+      "O.upload_convert": {
+       "measured": 0.5054397583007812,
+       "predicted": 0.6092460960098833,
+       "ratio": 0.8296150957897676
+      },
+      "O.aggregate": {
+       "measured": 1.2920962969462078,
+       "predicted": 1.4976231747061495,
+       "ratio": 0.8627646251532743
+      },
+      "O.release": {
+       "measured": 0.6917924880981445,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.6078918216558076
+      },
+      "O.keygen": {
+       "measured": 1.2384032408396404,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.6834104355106096
+      },
+      "R.oprf": {
+       "measured": 3.4760257623333337,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.1987522758474483
+      },
+      "R.psi_bfv": {
+       "measured": 1.2974085013071697,
+       "predicted": 1.2981569846838283,
+       "ratio": 0.9994234261453048
+      },
+      "R.upload_encrypt": {
+       "measured": 1.2927387555440266,
+       "predicted": 1.3420671660037442,
+       "ratio": 0.9632444547417085
+      },
+      "R.keygen": {
+       "measured": 0.8718667030334473,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.4014365496419825
+      },
+      "R.release": {
+       "measured": 0.053624232610066734,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.1552611072243315
+      }
+     },
+     "O_total": {
+      "measured": 52.772625366327915,
+      "predicted": 53.160182637050255,
+      "ratio": 0.9927096324448624
+     },
+     "old_remeasured_ratio": 0.9811522777075475,
+     "old_published_ratio": 0.6201690774142722
+    },
+    {
+     "id": "R3d_Pbn_e4",
+     "stage": 5,
+     "n_bar_O": 311296,
+     "n_R_max": 20000,
+     "phases": {
+      "O.oprf_self": {
+       "measured": 22.158378918965656,
+       "predicted": 24.366743740413337,
+       "ratio": 0.9093697194432669
+      },
+      "O.psi_preprocess": {
+       "measured": 6.159504731496175,
+       "predicted": 6.244981256925442,
+       "ratio": 0.9863127650968565
+      },
+      "O.oprf_requests": {
+       "measured": 1.1686770949999996,
+       "predicted": 1.1590726700001142,
+       "ratio": 1.0082863009787681
+      },
+      "O.psi_eval": {
+       "measured": 10.87158473332723,
+       "predicted": 11.451658913999836,
+       "ratio": 0.9493458384476108
+      },
+      "O.psi_sanitize": {
+       "measured": 6.3552563190460205,
+       "predicted": 6.939105155996003,
+       "ratio": 0.9158610766338531
+      },
+      "O.upload_convert": {
+       "measured": 0.5200727780659994,
+       "predicted": 0.6092460960098833,
+       "ratio": 0.8536333371228737
+      },
+      "O.aggregate": {
+       "measured": 1.2949642340342205,
+       "predicted": 1.4976231747061495,
+       "ratio": 0.8646796176136277
+      },
+      "O.release": {
+       "measured": 0.6409274737040201,
+       "predicted": 0.43024815399940053,
+       "ratio": 1.4896693169888955
+      },
+      "O.keygen": {
+       "measured": 1.195218801498413,
+       "predicted": 0.4615034750000859,
+       "ratio": 2.5898370570193228
+      },
+      "R.oprf": {
+       "measured": 3.2455694336666667,
+       "predicted": 2.8997031600010814,
+       "ratio": 1.1192764412704423
+      },
+      "R.psi_bfv": {
+       "measured": 1.2531569798787434,
+       "predicted": 1.2981569846838283,
+       "ratio": 0.9653354676391124
+      },
+      "R.upload_encrypt": {
+       "measured": 1.327510674794515,
+       "predicted": 1.3420671660037442,
+       "ratio": 0.9891536790572308
+      },
+      "R.keygen": {
+       "measured": 0.8437376022338867,
+       "predicted": 0.25632308300009754,
+       "ratio": 3.2916957472517825
+      },
+      "R.release": {
+       "measured": 0.05234686533610026,
+       "predicted": 0.024880620000203635,
+       "ratio": 2.103921258219121
+      }
+     },
+     "O_total": {
+      "measured": 50.36458508513773,
+      "predicted": 53.160182637050255,
+      "ratio": 0.9474118143837205
+     },
+     "old_remeasured_ratio": 0.936381827302615,
+     "old_published_ratio": 0.59187046408595
+    }
+   ],
+   "phases": {
+    "O.aggregate": {
+     "ratio_min": 0.8627646251532743,
+     "ratio_max": 0.9974552406957116,
+     "ratio_mean": 0.9109526719475386,
+     "measured_mean": 1.3642638325691225,
+     "predicted": 1.4976231747061495,
+     "gated": false
+    },
+    "O.keygen": {
+     "ratio_min": 2.5898370570193228,
+     "ratio_max": 2.9067362721543235,
+     "ratio_mean": 2.713368464442846,
+     "measured_mean": 1.2522289752960205,
+     "predicted": 0.4615034750000859,
+     "gated": false
+    },
+    "O.oprf_requests": {
+     "ratio_min": 1.0082863009787681,
+     "ratio_max": 1.096364748783648,
+     "ratio_mean": 1.0531535806694048,
+     "measured_mean": 1.2206815326666678,
+     "predicted": 1.1590726700001142,
+     "gated": false
+    },
+    "O.oprf_self": {
+     "ratio_min": 0.9093697194432669,
+     "ratio_max": 1.0110652380101353,
+     "ratio_mean": 0.9710057369068364,
+     "measured_mean": 23.660247961680092,
+     "predicted": 24.366743740413337,
+     "gated": true
+    },
+    "O.psi_eval": {
+     "ratio_min": 0.9493458384476108,
+     "ratio_max": 1.0921057198536621,
+     "ratio_mean": 1.0108829072931196,
+     "measured_mean": 11.576286256313324,
+     "predicted": 11.451658913999836,
+     "gated": true
+    },
+    "O.psi_preprocess": {
+     "ratio_min": 0.9863127650968565,
+     "ratio_max": 1.0863444657671735,
+     "ratio_mean": 1.0370144701785573,
+     "measured_mean": 6.476135929425557,
+     "predicted": 6.244981256925442,
+     "gated": true
+    },
+    "O.psi_sanitize": {
+     "ratio_min": 0.9158610766338531,
+     "ratio_max": 1.026824672470446,
+     "ratio_mean": 0.9843423454972756,
+     "measured_mean": 6.830455044905345,
+     "predicted": 6.939105155996003,
+     "gated": true
+    },
+    "O.release": {
+     "ratio_min": 1.4896693169888955,
+     "ratio_max": 1.70501832451733,
+     "ratio_mean": 1.6251422164110796,
+     "measured_mean": 0.6992144385973612,
+     "predicted": 0.43024815399940053,
+     "gated": false
+    },
+    "O.upload_convert": {
+     "ratio_min": 0.8296150957897676,
+     "ratio_max": 1.0043995032029855,
+     "ratio_mean": 0.9102866309526441,
+     "measured_mean": 0.5545885761578878,
+     "predicted": 0.6092460960098833,
+     "gated": false
+    },
+    "R.keygen": {
+     "ratio_min": 3.2916957472517825,
+     "ratio_max": 3.5759426749596397,
+     "ratio_mean": 3.405454869482234,
+     "measured_mean": 0.872896691163381,
+     "predicted": 0.25632308300009754,
+     "gated": false
+    },
+    "R.oprf": {
+     "ratio_min": 1.1192764412704423,
+     "ratio_max": 1.2712324025143635,
+     "ratio_mean": 1.1994155777651057,
+     "measured_mean": 3.4779491410000003,
+     "predicted": 2.8997031600010814,
+     "gated": true
+    },
+    "R.psi_bfv": {
+     "ratio_min": 0.9653354676391124,
+     "ratio_max": 1.058808675307224,
+     "ratio_mean": 1.016677159602832,
+     "measured_mean": 1.3198065559069314,
+     "predicted": 1.2981569846838283,
+     "gated": false
+    },
+    "R.release": {
+     "ratio_min": 1.9577370032839843,
+     "ratio_max": 2.1552611072243315,
+     "ratio_mean": 2.058065794253539,
+     "measured_mean": 0.051205952962239586,
+     "predicted": 0.024880620000203635,
+     "gated": false
+    },
+    "R.upload_encrypt": {
+     "ratio_min": 0.9632444547417085,
+     "ratio_max": 1.0896387054312067,
+     "ratio_mean": 1.0226752761705935,
+     "measured_mean": 1.3724989096323648,
+     "predicted": 1.3420671660037442,
+     "gated": false
+    }
+   },
+   "O_total_ratio": [
+    0.9474118143837205,
+    1.0614349590643848
+   ],
+   "O_total_predicted": 53.160182637050255,
+   "O_total_measured": 53.63410254761138,
+   "within_25pct_gated": false,
+   "misses": [
+    [
+     "R.oprf",
+     1.27
+    ]
+   ]
+  }
+ },
+ "new_runs": [
+  {
+   "id": "A100k_Istd_e1",
+   "n_bar_O": 106496,
+   "phases": {
+    "O.oprf_self": {
+     "measured": 2.353520393371582,
+     "predicted": 1.8579012714492156,
+     "ratio": 1.2667628950680299
+    },
+    "O.psi_preprocess": {
+     "measured": 1.681875467300415,
+     "predicted": 1.8064000065167367,
+     "ratio": 0.9310648036054644
+    },
+    "O.oprf_requests": {
+     "measured": 1.0491698150000008,
+     "predicted": 0.30283453099991675,
+     "ratio": 3.4644986208666184
+    },
+    "O.psi_eval": {
+     "measured": 11.317437171936035,
+     "predicted": 10.320376491999923,
+     "ratio": 1.0966108824333112
+    },
+    "O.psi_sanitize": {
+     "measured": 4.247344255447388,
+     "predicted": 4.6260701039973355,
+     "ratio": 0.9181322720936081
+    },
+    "O.upload_convert": {
+     "measured": 0.3705325126647949,
+     "predicted": 0.4168525920067623,
+     "ratio": 0.8888813930147855
+    },
+    "O.aggregate": {
+     "measured": 4.594932794570923,
+     "predicted": 4.637700692765923,
+     "ratio": 0.9907782107927511
+    },
+    "O.release": {
+     "measured": 1.6604974394174405,
+     "predicted": 1.4951959969982909,
+     "ratio": 1.1105550327522302
+    },
+    "O.keygen": {
+     "measured": 1.2822957038879395,
+     "predicted": 0.4615034750000859,
+     "ratio": 2.7785179816635197
+    },
+    "R.oprf": {
+     "measured": 3.3119770470000005,
+     "predicted": 2.8997031600010814,
+     "ratio": 1.1421779624500479
+    },
+    "R.psi_bfv": {
+     "measured": 1.7286193370819092,
+     "predicted": 1.0949493606826763,
+     "ratio": 1.5787208058682767
+    },
+    "R.upload_encrypt": {
+     "measured": 0.9454703330993652,
+     "predicted": 0.9182564820025618,
+     "ratio": 1.0296364377820177
+    },
+    "R.keygen": {
+     "measured": 1.073509931564331,
+     "predicted": 0.25632308300009754,
+     "ratio": 4.188112592122351
+    },
+    "R.release": {
+     "measured": 0.027434349060058594,
+     "predicted": 0.024880620000203635,
+     "ratio": 1.1026392855095275
+    }
+   },
+   "O_total": {
+    "measured": 28.557605553596517,
+    "predicted": 25.92483516173419,
+    "ratio": 1.1015539877278901
+   }
+  },
+  {
+   "id": "A1M_Istd_e1",
+   "n_bar_O": 1007616,
+   "phases": {
+    "O.oprf_self": {
+     "measured": 18.561047792434692,
+     "predicted": 17.578604337557962,
+     "ratio": 1.0558885925191266
+    },
+    "O.psi_preprocess": {
+     "measured": 18.46254801750183,
+     "predicted": 17.428623901202638,
+     "ratio": 1.0593233362633896
+    },
+    "O.oprf_requests": {
+     "measured": 1.121792047999989,
+     "predicted": 0.30283453099991675,
+     "ratio": 3.704306917365039
+    },
+    "O.psi_eval": {
+     "measured": 16.28617238998413,
+     "predicted": 13.714223757999662,
+     "ratio": 1.1875387683159409
+    },
+    "O.psi_sanitize": {
+     "measured": 11.569343566894531,
+     "predicted": 11.565175259993339,
+     "ratio": 1.0003604188269946
+    },
+    "O.upload_convert": {
+     "measured": 4.971364498138428,
+     "predicted": 3.9440668320639816,
+     "ratio": 1.2604665969964937
+    },
+    "O.aggregate": {
+     "measured": 16.759020566940308,
+     "predicted": 18.826912980307917,
+     "ratio": 0.8901629589763054
+    },
+    "O.release": {
+     "measured": 1.6852133623872305,
+     "predicted": 1.4951959969982909,
+     "ratio": 1.1270852555587445
+    },
+    "O.keygen": {
+     "measured": 1.697922706604004,
+     "predicted": 0.4615034750000859,
+     "ratio": 3.6791114229501476
+    },
+    "R.oprf": {
+     "measured": 3.31124004,
+     "predicted": 2.8997031600010814,
+     "ratio": 1.1419237960891022
+    },
+    "R.psi_bfv": {
+     "measured": 2.337475538253784,
+     "predicted": 1.7045722326861323,
+     "ratio": 1.3712974395753812
+    },
+    "R.upload_encrypt": {
+     "measured": 10.715282917022705,
+     "predicted": 8.688119022024239,
+     "ratio": 1.2333259811312023
+    },
+    "R.keygen": {
+     "measured": 0.8005468845367432,
+     "predicted": 0.25632308300009754,
+     "ratio": 3.1231946618574282
+    },
+    "R.release": {
+     "measured": 0.027116060256958008,
+     "predicted": 0.024880620000203635,
+     "ratio": 1.0898466459732947
+    }
+   },
+   "O_total": {
+    "measured": 91.11442494888514,
+    "predicted": 85.3171410721238,
+    "ratio": 1.0679498141160233
+   }
+  }
+ ]
+}
