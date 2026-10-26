@@ -14,6 +14,6 @@ g++ -O3 -march=native -std=c++17 -fopenmp -fPIC -shared \
     -Wno-deprecated-declarations \
     -I"$PYINC" -I"$PBINC" -I"$INC" -I"$INC/core" -I"$INC/pke" -I"$INC/binfhe" -I"$INC/cereal" \
     "$HERE/vfr_native.cpp" -o "$OUT" \
-    -L"$PREFIX/lib" -lOPENFHEpke -lOPENFHEcore -lOPENFHEbinfhe -lcrypto -lquadmath \
+    -L"$PREFIX/lib" -lOPENFHEpke -lOPENFHEcore -lOPENFHEbinfhe -lcrypto -l:libsodium.so.23 -lquadmath \
     -Wl,--disable-new-dtags -Wl,-rpath,"$PREFIX/lib"
 echo "built $OUT"

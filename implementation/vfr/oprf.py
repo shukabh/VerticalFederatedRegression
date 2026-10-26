@@ -7,6 +7,12 @@ RFC and is checked against its test vectors (tests/test_oprf.py).
   client (R):  blind(x) -> (r, alpha = r * H1(x));  finalize(x, r, beta) = SHA512(len|x|len|r^-1 beta|"Finalize")
   server (O):  blind_evaluate(k, alpha) = k * alpha;  evaluate(k, x) = the same output computed directly
 The 64-byte output is split by the protocol into an item part F_k (bytes 0..31) and a key part F'_k (32..63).
+
+O's OPRF over its whole register and its answer to R's blinded queries are batched: evaluate_batch and
+blind_evaluate_batch run the same libsodium calls (hash-to-group, scalar multiplication, point validation) in the
+native layer (native/vfr_native.cpp), in parallel over the items with OpenMP, and return outputs bit-identical to
+the item-by-item functions below (tests/test_oprf_parallel.py).  The key is the same for every item; each thread
+only reads it.
 """
 from __future__ import annotations
 
@@ -134,3 +140,21 @@ def finalize(x: bytes, r: bytes, beta: bytes) -> bytes:
 def evaluate(k: bytes, x: bytes) -> bytes:
     n = scalarmult(k, hash_to_group(x))
     return hashlib.sha512(i2osp(len(x), 2) + x + i2osp(len(n), 2) + n + b'Finalize').digest()
+
+
+def _native():
+    from . import vfr_native as vn
+    return vn
+
+
+def evaluate_batch(k: bytes, xs, threads: int = 0) -> list:
+    """[evaluate(k, x) for x in xs], computed in parallel (threads <= 0: the OpenMP setting, vfr_native.set_threads)."""
+    xs = list(xs)
+    out = _native().oprf_evaluate_batch(k, xs, int(threads))
+    return [out[64 * i:64 * i + 64] for i in range(len(xs))]
+
+
+def blind_evaluate_batch(k: bytes, blinded: bytes, threads: int = 0) -> bytes:
+    """b''.join(blind_evaluate(k, alpha_i)) over the 32-byte elements of `blinded`, computed in parallel; raises
+    ValueError if any element is not a valid ristretto255 point."""
+    return _native().oprf_blind_evaluate_batch(k, blinded, int(threads))

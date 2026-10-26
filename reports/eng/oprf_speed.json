@@ -1,0 +1,42 @@
+{
+ "stamp": "2026-10-26 00:01",
+ "cpus": 4,
+ "load_before": [
+  0.37939453125,
+  0.23779296875,
+  0.08984375
+ ],
+ "sizes": [
+  {
+   "n_bar_O": 106496,
+   "python_1thread_s": 7.776498743000047,
+   "native_1threads_s": 6.771655305999957,
+   "native_1threads_identical": true,
+   "native_4threads_s": 1.8452429680000932,
+   "native_4threads_identical": true,
+   "speedup_4threads_vs_python": 4.214349480181655,
+   "speedup_4threads_vs_native1": 3.669790603965393,
+   "requests_python_s": 1.1697501459999557,
+   "requests_native_4threads_s": 0.29955733899998904,
+   "requests_identical": true
+  },
+  {
+   "n_bar_O": 1007616,
+   "python_1thread_s": 72.66245307700001,
+   "native_1threads_s": 67.53915384799996,
+   "native_1threads_identical": true,
+   "native_4threads_s": 17.658866515,
+   "native_4threads_identical": true,
+   "speedup_4threads_vs_python": 4.114785794166246,
+   "speedup_4threads_vs_native1": 3.824659628670394,
+   "requests_python_s": 1.2501193010000407,
+   "requests_native_4threads_s": 0.3186656520000497,
+   "requests_identical": true
+  }
+ ],
+ "load_after": [
+  1.8671875,
+  0.8369140625,
+  0.345703125
+ ]
+}

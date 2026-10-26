@@ -134,7 +134,7 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     # ------------------------------------------------------------------ Phase 1: link
     t0 = time.time()
     k = oprf.keygen()                                   # fresh OPRF key for this run
-    outs = [oprf.evaluate(k, i.encode()) for i in all_ids]
+    outs = oprf.evaluate_batch(k, [i.encode() for i in all_ids], int(opts.get('threads', 0)))   # parallel, native
     T['psi_oprf_self'] = time.time() - t0
     C.mark(MK, 'oprf_self')
     t0 = time.time()
@@ -150,7 +150,7 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     blinded = ob['blinded']
     if len(blinded) != 32 * ag.n_R_max:
         raise RuntimeError('OPRF request must contain exactly n_R_max elements')
-    ev = b''.join(oprf.blind_evaluate(k, blinded[32 * i:32 * i + 32]) for i in range(ag.n_R_max))
+    ev = oprf.blind_evaluate_batch(k, blinded, int(opts.get('threads', 0)))
     ch.send('oprf_response', blobs={'evaluated': ev})
     ledger.log_oprf_run(ag.researcher, ag.project)
     T['psi_oprf_requests'] = time.time() - t0

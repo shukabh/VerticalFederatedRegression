@@ -13,7 +13,10 @@
 //     decryption h_O = c0' + c1' s_O + eta with eta supplied by the caller (exact sampler in Python);
 //   * R's combination v = h_O + c1' s_R, CRT to int128 and decoding with the exact final scale;
 //   * BFV labeled-PSI evaluation (windowed powers, membership/label polynomials, masks) and
-//     SanitizeBFV (modulus switch, + Enc_pk(0), + flooding noise supplied by the caller).
+//     SanitizeBFV (modulus switch, + Enc_pk(0), + flooding noise supplied by the caller);
+//   * O's OPRF evaluation of a whole register, F_k(x) = SHA512(len|x|len|k H1(x)|"Finalize") of RFC 9497
+//     (ristretto255-SHA512, mode 0), and its blind evaluation k alpha, in parallel over the items (OpenMP); the
+//     group operations are libsodium's, the same calls as vfr/oprf.py, so the outputs are bit-identical.
 #include "openfhe.h"
 #include "ciphertext-ser.h"
 #include "cryptocontext-ser.h"
@@ -1125,6 +1128,96 @@ static py::tuple psi_build_polys(py::array_t<uint64_t, py::array::c_style | py::
     return py::make_tuple(P, L);
 }
 
+// =====================================================================================
+// OPRF (RFC 9497 mode 0, ristretto255-SHA512) over libsodium, batched over items with OpenMP.
+// libsodium is linked directly (its headers are not installed here, so the five prototypes are declared).
+extern "C" {
+int sodium_init(void);
+int crypto_core_ristretto255_from_hash(unsigned char* p, const unsigned char* r);
+int crypto_scalarmult_ristretto255(unsigned char* q, const unsigned char* n, const unsigned char* p);
+int crypto_core_ristretto255_is_valid_point(const unsigned char* p);
+int crypto_hash_sha512(unsigned char* out, const unsigned char* in, unsigned long long inlen);
+}
+
+static const std::string OPRF_DST_H2G = "HashToGroup-OPRFV1-" + std::string(1, '\0') + "-ristretto255-SHA512";
+
+// H1(x): expand_message_xmd(x, DST_H2G, 64) (RFC 9380, SHA-512, ell = 1) then ristretto255 from_hash
+static void oprf_hash_to_group(const std::string& x, unsigned char P[32]) {
+    const std::string& dst = OPRF_DST_H2G;
+    std::string dst_prime = dst + std::string(1, (char)dst.size());
+    std::string m0(128, '\0');                                  // Z_pad (s_in_bytes = 128)
+    m0 += x;
+    m0 += std::string("\x00\x40", 2);                           // I2OSP(64, 2)
+    m0 += std::string(1, '\0');                                 // I2OSP(0, 1)
+    m0 += dst_prime;
+    unsigned char b0[64], b1[64];
+    crypto_hash_sha512(b0, (const unsigned char*)m0.data(), m0.size());
+    std::string m1((const char*)b0, 64);
+    m1 += std::string(1, '\x01');
+    m1 += dst_prime;
+    crypto_hash_sha512(b1, (const unsigned char*)m1.data(), m1.size());
+    crypto_core_ristretto255_from_hash(P, b1);
+}
+
+static void oprf_finalize_hash(const std::string& x, const unsigned char n[32], unsigned char out[64]) {
+    std::string m;
+    m.reserve(x.size() + 46);
+    m += (char)((x.size() >> 8) & 0xff);
+    m += (char)(x.size() & 0xff);
+    m += x;
+    m += std::string("\x00\x20", 2);
+    m.append((const char*)n, 32);
+    m += "Finalize";
+    crypto_hash_sha512(out, (const unsigned char*)m.data(), m.size());
+}
+
+// F_k(x) for every x, in order: 64 bytes per item, concatenated.  threads <= 0: OpenMP's current setting.
+static py::bytes oprf_evaluate_batch(const std::string& k, const std::vector<std::string>& xs, int threads) {
+    if (k.size() != 32) throw std::invalid_argument("oprf_evaluate_batch: key must be 32 bytes");
+    for (const auto& x : xs)
+        if (x.size() > 0xffff) throw std::invalid_argument("oprf_evaluate_batch: input too long");
+    const ssize_t n = (ssize_t)xs.size();
+    std::string out((size_t)n * 64, '\0');
+    int bad = 0;
+    {
+        py::gil_scoped_release rel;
+        const int nt = threads > 0 ? threads : omp_get_max_threads();
+        const unsigned char* kk = (const unsigned char*)k.data();
+#pragma omp parallel for schedule(static) num_threads(nt) reduction(| : bad)
+        for (ssize_t i = 0; i < n; ++i) {
+            unsigned char P[32], Q[32];
+            oprf_hash_to_group(xs[i], P);
+            if (crypto_scalarmult_ristretto255(Q, kk, P) != 0) { bad |= 1; continue; }
+            oprf_finalize_hash(xs[i], Q, (unsigned char*)&out[(size_t)i * 64]);
+        }
+    }
+    if (bad) throw std::invalid_argument("identity element");
+    return py::bytes(out);
+}
+
+// k * alpha_i for n blinded elements (32 bytes each, concatenated); every alpha_i must be a valid point.
+static py::bytes oprf_blind_evaluate_batch(const std::string& k, const std::string& blinded, int threads) {
+    if (k.size() != 32) throw std::invalid_argument("oprf_blind_evaluate_batch: key must be 32 bytes");
+    if (blinded.size() % 32) throw std::invalid_argument("oprf_blind_evaluate_batch: length not a multiple of 32");
+    const ssize_t n = (ssize_t)(blinded.size() / 32);
+    std::string out((size_t)n * 32, '\0');
+    int bad = 0;
+    {
+        py::gil_scoped_release rel;
+        const int nt = threads > 0 ? threads : omp_get_max_threads();
+        const unsigned char* kk = (const unsigned char*)k.data();
+#pragma omp parallel for schedule(static) num_threads(nt) reduction(| : bad)
+        for (ssize_t i = 0; i < n; ++i) {
+            const unsigned char* a = (const unsigned char*)&blinded[(size_t)i * 32];
+            if (crypto_core_ristretto255_is_valid_point(a) != 1) { bad |= 1; continue; }
+            if (crypto_scalarmult_ristretto255((unsigned char*)&out[(size_t)i * 32], kk, a) != 0) bad |= 2;
+        }
+    }
+    if (bad & 1) throw std::invalid_argument("invalid blinded element");
+    if (bad & 2) throw std::invalid_argument("identity element");
+    return py::bytes(out);
+}
+
 static void set_threads(int n) { omp_set_num_threads(n); }
 
 // =====================================================================================
@@ -1200,4 +1293,8 @@ PYBIND11_MODULE(vfr_native, m) {
         .def("compress_bytes", &BFVCore::compress_bytes)
         .def("_test_noise_log2", &BFVCore::_test_noise_log2);
     m.def("psi_build_polys", &psi_build_polys);
+    if (sodium_init() < 0) throw std::runtime_error("libsodium initialisation failed");
+    m.def("oprf_evaluate_batch", &oprf_evaluate_batch, py::arg("k"), py::arg("xs"), py::arg("threads") = 0);
+    m.def("oprf_blind_evaluate_batch", &oprf_blind_evaluate_batch, py::arg("k"), py::arg("blinded"),
+          py::arg("threads") = 0);
 }
