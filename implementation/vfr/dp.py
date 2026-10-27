@@ -211,6 +211,13 @@ class Agreement:
     r1_mode: str = 'union'         # stage-1 radius: 'union' (union bound) or 'exact' (Monte Carlo quantile, solve.py)
     intervals: bool = True         # False: estimate only, no interval guarantee (alpha_CI need not be positive)
     B_beta_pub: float = float('inf')
+    # public bound sigma_bar^2 on the conditional variances Var(y~_i | X) of the clipped response, fixed before the
+    # run from public information (paper, Section "Intervals"; proofs Part B, Proposition S10b).  The bias-aware
+    # interval reported as guaranteed uses it in place of the data-driven s~^2.  None: B_y^2, valid with no model.
+    # A smaller value is admissible only as a declared bound on the error variance before clipping when only y is
+    # clipped (y_i = x_i'beta + e_i, Var(e_i | X) <= sigma_bar^2); neither party can check that, so it is the
+    # agreement's responsibility.  Must lie in (0, B_y^2]: B_y^2 is always admissible, so a larger value is refused.
+    sigma_bar2: float | None = None
     kappa_Psi: float = 2.0
     kappa: int | str = 'auto'      # flooding parameter: an integer, or 'auto' (derived by Calibrate)
     zeta: float = 0.1              # kappa='auto': slack (1 + e^eps) gamma at most zeta delta_run
@@ -288,7 +295,24 @@ def alpha_split(ag: 'Agreement'):
     if ag.intervals and not aCI > 0:
         raise ValueError('with intervals on, alpha_L + alpha_U must be below alpha')
     check_release_pad(ag)
+    sigma_bar2_of(ag)
     return aL, aU, aCI
+
+
+def sigma_bar2_of(ag: 'Agreement') -> float:
+    """The public variance bound sigma_bar^2 of an agreement: B_y^2 if unset, otherwise the declared value, which
+    must be finite and lie in (0, B_y^2].  |y~_i| <= B_y bounds every conditional variance by B_y^2 with no model,
+    so a larger declared value would only widen the interval and is refused as a likely error."""
+    by2 = float(ag.B_y) ** 2
+    if ag.sigma_bar2 is None:
+        return by2
+    v = float(ag.sigma_bar2)
+    if not (math.isfinite(v) and v > 0):
+        raise ValueError(f'sigma_bar2 must be a positive finite number, not {ag.sigma_bar2!r}')
+    if v > by2 * (1 + 1e-12):
+        raise ValueError(f'sigma_bar2 = {v:g} exceeds B_y^2 = {by2:g}, which is always an admissible bound; '
+                         'leave sigma_bar2 unset (None) to use B_y^2')
+    return min(v, by2)
 
 
 def check_release_pad(ag: 'Agreement'):
