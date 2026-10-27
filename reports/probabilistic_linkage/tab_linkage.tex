@@ -1,0 +1,17 @@
+\begin{table}[t]\centering\small
+\caption{Linkage on the synthetic world ($\Op$: $10^6$ rows; $\Rp$: 50{,}000 records, 40{,}000 in scope). Precision and recall
+of the accepted 1:1 links against the truth; candidate recall: true pairs among the PSI candidates (the ceiling of any
+resolution); candidate pairs and non-cohort positions: what $\Rp$ learns from the PSI (Section~\ref{sec:leak}). Last two
+columns: the MNAR world (corruption doubled for outcomes below the median). The FS rows score the candidates of the multi-label multikey blocking. $^\dagger$Not supported by the current PSI
+(one label per item).}\label{tab:linkage}
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrrrrrrrr@{}}\toprule
+scheme & $K$ & precision & recall & cand.\ recall & cand.\ pairs & non-cohort pos. & prec.\ MNAR & rec.\ MNAR\\\midrule
+exact QIs ($K{=}1$) & 1 & 99.99\% & 78.3\% & 78.3\% & 31{,}305 & 2 & 99.99\% & 62.8\% \\
+multikey, filter, $\ge1$ key & 7 & 99.31\% & 97.0\% & 97.0\% & 39{,}195 & 360 & 99.12\% & 88.7\% \\
+multikey, filter, $\ge2$ keys & 7 & 99.97\% & 87.7\% & 97.0\% & 39{,}195 & 360 & 99.96\% & 76.0\% \\
+multikey, multi-label$^\dagger$ & 7 & 99.31\% & 97.0\% & 97.1\% & 40{,}822 & 1{,}889 & 99.12\% & 88.7\% \\
+LSH, filter, $\ge1$ band & 8 & 77.95\% & 72.4\% & 73.0\% & 41{,}607 & 11{,}777 & 72.09\% & 63.8\% \\
+LSH, filter, $\ge2$ bands & 8 & 97.13\% & 51.1\% & 73.0\% & 41{,}607 & 11{,}777 & 96.21\% & 44.6\% \\
+FS on field tokens (c1), $p\ge0.5$ & 9 & 99.33\% & 97.0\% & -- & 40{,}822 & 1{,}889 & 99.13\% & 88.8\% \\
+FS on field tokens (c1), $p\ge0.999$ & 9 & 99.37\% & 97.0\% & -- & 40{,}822 & 1{,}889 & 99.17\% & 88.8\% \\
+\bottomrule\end{tabular}}\end{table}

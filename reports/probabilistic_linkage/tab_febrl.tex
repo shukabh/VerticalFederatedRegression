@@ -1,0 +1,16 @@
+\begin{table}[t]\centering\small
+\caption{FEBRL4 (5{,}000 originals as $\Op$, 5{,}000 corrupted duplicates as $\Rp$; no sex field). FEBRL's duplicates
+carry several modifications each, so recall is lower than in our world; with only 5{,}000 rows there are almost no
+collisions, so precision is near 1 for the deterministic keys.}\label{tab:febrl}
+\begin{tabular}{@{}lrrr@{}}\toprule scheme & precision & recall & cand.\ recall\\\midrule
+exact QIs ($K{=}1$) & 100.00\% & 42.6\% & 42.6\% \\
+multikey, filter, $\ge1$ key & 100.00\% & 79.6\% & 79.6\% \\
+multikey, filter, $\ge2$ keys & 100.00\% & 57.5\% & 79.6\% \\
+multikey, multi-label$^\dagger$ & 100.00\% & 79.6\% & 79.6\% \\
+LSH, filter, $\ge1$ band & 99.09\% & 72.2\% & 72.4\% \\
+LSH, filter, $\ge2$ bands & 99.82\% & 65.2\% & 72.4\% \\
+LSH, multi-label$^\dagger$, $\ge1$ & 99.12\% & 72.2\% & 73.1\% \\
+LSH, multi-label$^\dagger$, $\ge2$ & 99.76\% & 65.7\% & 73.1\% \\
+FS on field tokens (c1), $p\ge0.5$ & 100.00\% & 79.6\% & -- \\
+FS on field tokens (c1), $p\ge0.999$ & 100.00\% & 79.6\% & -- \\
+\bottomrule\end{tabular}\end{table}

@@ -1,0 +1,31 @@
+\begin{table}[t]\centering\small
+\caption{Quality and leakage against register size ($\Rp$: 5{,}000 records, 4{,}000 in scope; at least one agreeing key,
+1:1 resolution). Dropped: share of $\Op$'s key items removed by the uniqueness filter. Deterministic multikey linkage
+degrades slowly with $\bar n_O$; LSH keys either lose most of their items to the filter or flood $\Rp$ with candidates.}
+\label{tab:scale}
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrrrrrr@{}}\toprule scheme & $\bar n_O$ & precision & recall & cand.\ pairs & non-cohort pos. & dropped\\\midrule
+exact QIs & 100{,}000 & 99.97\% & 78.6\% & 3{,}147 & 1 & 0.0\% \\
+exact QIs & 300{,}000 & 100.00\% & 79.4\% & 3{,}177 & 0 & 0.0\% \\
+exact QIs & 1{,}000{,}000 & 100.00\% & 78.7\% & 3{,}149 & 0 & 0.0\% \\
+exact QIs & 3{,}000{,}000 & 99.97\% & 77.9\% & 3{,}116 & 1 & 0.1\% \\
+\addlinespace
+multikey, filter & 100{,}000 & 99.87\% & 97.2\% & 3{,}899 & 10 & 0.3\% \\
+multikey, filter & 300{,}000 & 99.79\% & 97.2\% & 3{,}900 & 12 & 0.4\% \\
+multikey, filter & 1{,}000{,}000 & 99.31\% & 97.0\% & 3{,}919 & 37 & 0.7\% \\
+multikey, filter & 3{,}000{,}000 & 98.27\% & 96.5\% & 3{,}954 & 83 & 1.4\% \\
+\addlinespace
+multikey, multi-label & 100{,}000 & 99.87\% & 97.2\% & 3{,}965 & 66 & 0.0\% \\
+multikey, multi-label & 300{,}000 & 99.79\% & 97.2\% & 3{,}986 & 97 & 0.0\% \\
+multikey, multi-label & 1{,}000{,}000 & 99.31\% & 97.0\% & 4{,}062 & 178 & 0.0\% \\
+multikey, multi-label & 3{,}000{,}000 & 98.27\% & 96.4\% & 4{,}324 & 449 & 0.0\% \\
+\addlinespace
+LSH, filter & 100{,}000 & 80.26\% & 89.6\% & 5{,}100 & 1{,}424 & 39.8\% \\
+LSH, filter & 300{,}000 & 79.73\% & 85.8\% & 4{,}824 & 1{,}364 & 57.1\% \\
+LSH, filter & 1{,}000{,}000 & 77.09\% & 72.4\% & 4{,}225 & 1{,}297 & 74.2\% \\
+LSH, filter & 3{,}000{,}000 & 75.37\% & 51.7\% & 2{,}992 & 911 & 86.0\% \\
+\addlinespace
+LSH, multi-label & 100{,}000 & 82.14\% & 90.3\% & 64{,}713 & 36{,}798 & 0.0\% \\
+LSH, multi-label & 300{,}000 & 81.18\% & 88.9\% & 191{,}659 & 113{,}771 & 0.0\% \\
+LSH, multi-label & 1{,}000{,}000 & 79.90\% & 85.4\% & 607{,}878 & 375{,}100 & 0.0\% \\
+LSH, multi-label & 3{,}000{,}000 & 77.53\% & 78.8\% & 1{,}839{,}977 & 1{,}138{,}767 & 0.0\% \\
+\bottomrule\end{tabular}}\end{table}

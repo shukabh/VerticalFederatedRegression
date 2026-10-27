@@ -1,0 +1,638 @@
+{
+ "exact/unique/k>=1": {
+  "eval": {
+   "accepted": 2128,
+   "correct": 2128,
+   "precision": 1.0,
+   "recall": 0.4256,
+   "false_rate": 0.0,
+   "false_with_outsider": 0,
+   "false_with_insider": 0
+  },
+  "leak": {
+   "candidate_pairs": 2128,
+   "wrong_pairs": 0,
+   "positions_revealed": 2128,
+   "positions_not_true_match": 0,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 0,
+   "positions_with_multiple_candidates": 0,
+   "max_candidates_per_record": 1,
+   "max_candidates_per_position": 1
+  },
+  "cnt": {
+   "K": 1,
+   "O_items": 4750,
+   "O_items_after_filter": 4750,
+   "O_items_dropped_nonunique": 0,
+   "R_queries": 4424,
+   "R_key_hits": 2128
+  },
+  "em": {
+   "m": [
+    0.9999
+   ],
+   "u": [
+    1e-09
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.4256,
+  "K": 1
+ },
+ "multikey/unique/k>=1": {
+  "eval": {
+   "accepted": 3981,
+   "correct": 3981,
+   "precision": 1.0,
+   "recall": 0.7962,
+   "false_rate": 0.0,
+   "false_with_outsider": 0,
+   "false_with_insider": 0
+  },
+  "leak": {
+   "candidate_pairs": 3981,
+   "wrong_pairs": 0,
+   "positions_revealed": 3981,
+   "positions_not_true_match": 0,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 0,
+   "positions_with_multiple_candidates": 0,
+   "max_candidates_per_record": 1,
+   "max_candidates_per_position": 1
+  },
+  "cnt": {
+   "K": 7,
+   "O_items": 33496,
+   "O_items_after_filter": 33492,
+   "O_items_dropped_nonunique": 4,
+   "R_queries": 31523,
+   "R_key_hits": 16958
+  },
+  "em": {
+   "m": [
+    0.5345390605376312,
+    0.5968349660890093,
+    0.7442853554384321,
+    0.5016327555890747,
+    0.6262245666918769,
+    0.6257221803567351,
+    0.6304948505401171
+   ],
+   "u": [
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.7962,
+  "K": 7
+ },
+ "multikey/unique/k>=2": {
+  "eval": {
+   "accepted": 2874,
+   "correct": 2874,
+   "precision": 1.0,
+   "recall": 0.5748,
+   "false_rate": 0.0,
+   "false_with_outsider": 0,
+   "false_with_insider": 0
+  },
+  "leak": {
+   "candidate_pairs": 3981,
+   "wrong_pairs": 0,
+   "positions_revealed": 3981,
+   "positions_not_true_match": 0,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 0,
+   "positions_with_multiple_candidates": 0,
+   "max_candidates_per_record": 1,
+   "max_candidates_per_position": 1
+  },
+  "cnt": {
+   "K": 7,
+   "O_items": 33496,
+   "O_items_after_filter": 33492,
+   "O_items_dropped_nonunique": 4,
+   "R_queries": 31523,
+   "R_key_hits": 16958
+  },
+  "em": {
+   "m": [
+    0.5345390605376312,
+    0.5968349660890093,
+    0.7442853554384321,
+    0.5016327555890747,
+    0.6262245666918769,
+    0.6257221803567351,
+    0.6304948505401171
+   ],
+   "u": [
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.7962,
+  "K": 7
+ },
+ "multikey/multi/k>=1": {
+  "eval": {
+   "accepted": 3981,
+   "correct": 3981,
+   "precision": 1.0,
+   "recall": 0.7962,
+   "false_rate": 0.0,
+   "false_with_outsider": 0,
+   "false_with_insider": 0
+  },
+  "leak": {
+   "candidate_pairs": 3983,
+   "wrong_pairs": 2,
+   "positions_revealed": 3983,
+   "positions_not_true_match": 2,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 2,
+   "positions_with_multiple_candidates": 0,
+   "max_candidates_per_record": 2,
+   "max_candidates_per_position": 1
+  },
+  "cnt": {
+   "K": 7,
+   "O_items": 33496,
+   "O_items_after_filter": 33496,
+   "O_items_dropped_nonunique": 0,
+   "R_queries": 31523,
+   "R_key_hits": 16960
+  },
+  "em": {
+   "m": [
+    0.5342706502636981,
+    0.59653527491849,
+    0.7439116244038156,
+    0.5018830027617638,
+    0.6264122520713937,
+    0.6254079839317512,
+    0.6301782575948295
+   ],
+   "u": [
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09,
+    1e-09
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.7962,
+  "K": 7
+ },
+ "lsh/unique/k>=1": {
+  "eval": {
+   "accepted": 3643,
+   "correct": 3610,
+   "precision": 0.9909415317046391,
+   "recall": 0.722,
+   "false_rate": 0.009058468295360944,
+   "false_with_outsider": 0,
+   "false_with_insider": 33
+  },
+  "leak": {
+   "candidate_pairs": 3841,
+   "wrong_pairs": 221,
+   "positions_revealed": 3662,
+   "positions_not_true_match": 217,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 101,
+   "positions_with_multiple_candidates": 176,
+   "max_candidates_per_record": 3,
+   "max_candidates_per_position": 3
+  },
+  "cnt": {
+   "K": 8,
+   "O_items": 38000,
+   "O_items_after_filter": 36551,
+   "O_items_dropped_nonunique": 1449,
+   "R_queries": 35392,
+   "R_key_hits": 21350
+  },
+  "em": {
+   "m": [
+    0.6888831072059427,
+    0.6696172900011071,
+    0.7039833409311973,
+    0.6959125265999785,
+    0.7099713657212238,
+    0.7034626429468239,
+    0.6998177597665688,
+    0.6868003159835708
+   ],
+   "u": [
+    4.803920326061493e-06,
+    1.144763992593377e-05,
+    8.381307802915795e-06,
+    5.314975679897821e-06,
+    4.1906539014578975e-06,
+    1.0527740289028377e-05,
+    4.803920326061493e-06,
+    5.928242104501416e-06
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.724,
+  "K": 8
+ },
+ "lsh/unique/k>=2": {
+  "eval": {
+   "accepted": 3268,
+   "correct": 3262,
+   "precision": 0.9981640146878825,
+   "recall": 0.6524,
+   "false_rate": 0.001835985312117483,
+   "false_with_outsider": 0,
+   "false_with_insider": 6
+  },
+  "leak": {
+   "candidate_pairs": 3841,
+   "wrong_pairs": 221,
+   "positions_revealed": 3662,
+   "positions_not_true_match": 217,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 101,
+   "positions_with_multiple_candidates": 176,
+   "max_candidates_per_record": 3,
+   "max_candidates_per_position": 3
+  },
+  "cnt": {
+   "K": 8,
+   "O_items": 38000,
+   "O_items_after_filter": 36551,
+   "O_items_dropped_nonunique": 1449,
+   "R_queries": 35392,
+   "R_key_hits": 21350
+  },
+  "em": {
+   "m": [
+    0.6888831072059427,
+    0.6696172900011071,
+    0.7039833409311973,
+    0.6959125265999785,
+    0.7099713657212238,
+    0.7034626429468239,
+    0.6998177597665688,
+    0.6868003159835708
+   ],
+   "u": [
+    4.803920326061493e-06,
+    1.144763992593377e-05,
+    8.381307802915795e-06,
+    5.314975679897821e-06,
+    4.1906539014578975e-06,
+    1.0527740289028377e-05,
+    4.803920326061493e-06,
+    5.928242104501416e-06
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.724,
+  "K": 8
+ },
+ "lsh/multi/k>=1": {
+  "eval": {
+   "accepted": 3642,
+   "correct": 3610,
+   "precision": 0.9912136188907194,
+   "recall": 0.722,
+   "false_rate": 0.00878638110928065,
+   "false_with_outsider": 0,
+   "false_with_insider": 32
+  },
+  "leak": {
+   "candidate_pairs": 4805,
+   "wrong_pairs": 1151,
+   "positions_revealed": 3859,
+   "positions_not_true_match": 941,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 797,
+   "positions_with_multiple_candidates": 773,
+   "max_candidates_per_record": 5,
+   "max_candidates_per_position": 5
+  },
+  "cnt": {
+   "K": 8,
+   "O_items": 38000,
+   "O_items_after_filter": 38000,
+   "O_items_dropped_nonunique": 0,
+   "R_queries": 35392,
+   "R_key_hits": 22283
+  },
+  "em": {
+   "m": [
+    0.5827263280578484,
+    0.6118626439450876,
+    0.6222684714876194,
+    0.6010405840481114,
+    0.5997918848377407,
+    0.6493236222647369,
+    0.5937565049959597,
+    0.5960457868922355
+   ],
+   "u": [
+    4.803920326061493e-06,
+    1.144763992593377e-05,
+    8.381307802915795e-06,
+    5.314975679897821e-06,
+    4.1906539014578975e-06,
+    1.0527740289028377e-05,
+    4.803920326061493e-06,
+    5.928242104501416e-06
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.7308,
+  "K": 8
+ },
+ "lsh/multi/k>=2": {
+  "eval": {
+   "accepted": 3291,
+   "correct": 3283,
+   "precision": 0.9975691279246429,
+   "recall": 0.6566,
+   "false_rate": 0.0024308720753570823,
+   "false_with_outsider": 0,
+   "false_with_insider": 8
+  },
+  "leak": {
+   "candidate_pairs": 4805,
+   "wrong_pairs": 1151,
+   "positions_revealed": 3859,
+   "positions_not_true_match": 941,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 797,
+   "positions_with_multiple_candidates": 773,
+   "max_candidates_per_record": 5,
+   "max_candidates_per_position": 5
+  },
+  "cnt": {
+   "K": 8,
+   "O_items": 38000,
+   "O_items_after_filter": 38000,
+   "O_items_dropped_nonunique": 0,
+   "R_queries": 35392,
+   "R_key_hits": 22283
+  },
+  "em": {
+   "m": [
+    0.5827263280578484,
+    0.6118626439450876,
+    0.6222684714876194,
+    0.6010405840481114,
+    0.5997918848377407,
+    0.6493236222647369,
+    0.5937565049959597,
+    0.5960457868922355
+   ],
+   "u": [
+    4.803920326061493e-06,
+    1.144763992593377e-05,
+    8.381307802915795e-06,
+    5.314975679897821e-06,
+    4.1906539014578975e-06,
+    1.0527740289028377e-05,
+    4.803920326061493e-06,
+    5.928242104501416e-06
+   ],
+   "prior": 0.999999
+  },
+  "candidate_recall": 0.7308,
+  "K": 8
+ },
+ "fs-fields/multi/p0.5": {
+  "eval": {
+   "accepted": 3981,
+   "correct": 3981,
+   "precision": 1.0,
+   "recall": 0.7962,
+   "false_rate": 0.0,
+   "false_with_outsider": 0,
+   "false_with_insider": 0
+  },
+  "leak": {
+   "candidate_pairs": 3983,
+   "wrong_pairs": 2,
+   "positions_revealed": 3983,
+   "positions_not_true_match": 2,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 2,
+   "positions_with_multiple_candidates": 0,
+   "max_candidates_per_record": 2,
+   "max_candidates_per_position": 1
+  },
+  "em": {
+   "m": [
+    0.7845844840572428,
+    0.8154657293497359,
+    0.7921164951041947,
+    0.8882751694702483,
+    0.9432588501129824,
+    0.948782324880743,
+    0.944514185287474,
+    0.9999,
+    0.8779814210394197
+   ],
+   "u": [
+    0.0024944969152342206,
+    0.004112727482486782,
+    0.0025290273217500603,
+    0.004018093260154695,
+    2.7167399548094804e-05,
+    0.010042139754269534,
+    0.0036860371413090466,
+    0.999999999,
+    0.0008899379875975195
+   ],
+   "prior": 0.999999
+  },
+  "K": 9,
+  "agreement_vectors_revealed": 3983,
+  "fields": [
+   "first",
+   "first_phon",
+   "last",
+   "last_soundex",
+   "dob",
+   "year",
+   "md_unordered",
+   "sex",
+   "post"
+  ]
+ },
+ "fs-fields/multi/p0.999": {
+  "eval": {
+   "accepted": 3981,
+   "correct": 3981,
+   "precision": 1.0,
+   "recall": 0.7962,
+   "false_rate": 0.0,
+   "false_with_outsider": 0,
+   "false_with_insider": 0
+  },
+  "leak": {
+   "candidate_pairs": 3983,
+   "wrong_pairs": 2,
+   "positions_revealed": 3983,
+   "positions_not_true_match": 2,
+   "positions_of_noncohort_people": 0,
+   "records_with_multiple_candidates": 2,
+   "positions_with_multiple_candidates": 0,
+   "max_candidates_per_record": 2,
+   "max_candidates_per_position": 1
+  },
+  "em": {
+   "m": [
+    0.7845844840572428,
+    0.8154657293497359,
+    0.7921164951041947,
+    0.8882751694702483,
+    0.9432588501129824,
+    0.948782324880743,
+    0.944514185287474,
+    0.9999,
+    0.8779814210394197
+   ],
+   "u": [
+    0.0024944969152342206,
+    0.004112727482486782,
+    0.0025290273217500603,
+    0.004018093260154695,
+    2.7167399548094804e-05,
+    0.010042139754269534,
+    0.0036860371413090466,
+    0.999999999,
+    0.0008899379875975195
+   ],
+   "prior": 0.999999
+  },
+  "K": 9,
+  "agreement_vectors_revealed": 3983,
+  "fields": [
+   "first",
+   "first_phon",
+   "last",
+   "last_soundex",
+   "dob",
+   "year",
+   "md_unordered",
+   "sex",
+   "post"
+  ]
+ },
+ "pr_curve": {
+  "multikey": [
+   {
+    "min_keys": 1,
+    "precision": 1.0,
+    "recall": 0.7962,
+    "accepted": 3981
+   },
+   {
+    "min_keys": 2,
+    "precision": 1.0,
+    "recall": 0.5748,
+    "accepted": 2874
+   },
+   {
+    "min_keys": 3,
+    "precision": 1.0,
+    "recall": 0.5008,
+    "accepted": 2504
+   },
+   {
+    "min_keys": 4,
+    "precision": 1.0,
+    "recall": 0.4552,
+    "accepted": 2276
+   },
+   {
+    "min_keys": 5,
+    "precision": 1.0,
+    "recall": 0.355,
+    "accepted": 1775
+   },
+   {
+    "min_keys": 6,
+    "precision": 1.0,
+    "recall": 0.355,
+    "accepted": 1775
+   },
+   {
+    "min_keys": 7,
+    "precision": 1.0,
+    "recall": 0.3546,
+    "accepted": 1773
+   }
+  ],
+  "lsh": [
+   {
+    "min_keys": 1,
+    "precision": 0.9909415317046391,
+    "recall": 0.722,
+    "accepted": 3643
+   },
+   {
+    "min_keys": 2,
+    "precision": 0.9981640146878825,
+    "recall": 0.6524,
+    "accepted": 3268
+   },
+   {
+    "min_keys": 3,
+    "precision": 0.9996632996632997,
+    "recall": 0.5938,
+    "accepted": 2970
+   },
+   {
+    "min_keys": 4,
+    "precision": 1.0,
+    "recall": 0.5402,
+    "accepted": 2701
+   },
+   {
+    "min_keys": 5,
+    "precision": 1.0,
+    "recall": 0.497,
+    "accepted": 2485
+   },
+   {
+    "min_keys": 6,
+    "precision": 1.0,
+    "recall": 0.4558,
+    "accepted": 2279
+   },
+   {
+    "min_keys": 7,
+    "precision": 1.0,
+    "recall": 0.4188,
+    "accepted": 2094
+   },
+   {
+    "min_keys": 8,
+    "precision": 1.0,
+    "recall": 0.3366,
+    "accepted": 1683
+   }
+  ]
+ }
+}

@@ -1,0 +1,32 @@
+\begin{table}[t]\centering\small
+\caption{The regression on each linkage (one world; the DP columns are medians or rates over 200 releases of setting~I
+and 400 of setting~P on the same linked rows). Ratio R/O: mean ratio of least-squares coefficients to the true $\bbeta$
+for $\Rp$'s and $\Op$'s slopes (sampling noise of one cohort is about $\pm0.01$--$0.02$). RMSE: median coefficient RMSE
+against $\bbeta$. cov.\ $\beta_R$: coverage of $\Rp$'s slopes by the bias-aware interval (nominal $0.95$).}
+\label{tab:regression}
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrrrrrrrrr@{}}\toprule
+ & & & \multicolumn{2}{c}{least squares} & \multicolumn{2}{c}{I, $\varepsilon=1$} & \multicolumn{2}{c}{I, $\varepsilon=4$} & P, $\varepsilon{=}1$\\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-10}
+linkage & $n$ & false & ratio R & ratio O & RMSE & cov.\ $\beta_R$ & RMSE & cov.\ $\beta_R$ & RMSE\\\midrule
+\multicolumn{10}{@{}l}{\emph{World 1 (corruption independent of the data)}}\\
+clean shared ID (today) & 40{,}000 & 0.00\% & 1.007 & 0.992 & 0.020 & 0.938 & 0.006 & 0.935 & 0.020 \\
+exact QIs ($K{=}1$) & 31{,}303 & 0.01\% & 1.014 & 0.988 & 0.025 & 0.959 & 0.009 & 0.935 & 0.026 \\
+multikey, filter, $\ge1$ key & 39{,}070 & 0.69\% & 1.004 & 0.997 & 0.021 & 0.959 & 0.007 & 0.927 & 0.020 \\
+multikey, filter, $\ge2$ keys & 35{,}086 & 0.03\% & 1.014 & 0.993 & 0.023 & 0.950 & 0.008 & 0.926 & 0.023 \\
+multikey, multi-label$^\dagger$ & 39{,}069 & 0.69\% & 1.004 & 0.997 & 0.021 & 0.941 & 0.007 & 0.917 & 0.021 \\
+LSH, filter, $\ge1$ band & 37{,}135 & 22.05\% & 0.766 & 1.025 & 0.044 & 0.419 & 0.039 & 0.001 & 0.043 \\
+LSH, filter, $\ge2$ bands & 21{,}047 & 2.87\% & 0.966 & 0.997 & 0.066 & 1.000 & 0.012 & 0.821 & 0.037 \\
+FS on field tokens (c1), $p\ge0.5$ & 39{,}066 & 0.67\% & 1.004 & 0.997 & 0.021 & 0.945 & 0.007 & 0.930 & 0.021 \\
+FS on field tokens (c1), $p\ge0.999$ & 39{,}049 & 0.63\% & 1.005 & 0.997 & 0.021 & 0.946 & 0.007 & 0.932 & 0.021 \\
+\addlinespace
+\multicolumn{10}{@{}l}{\emph{World 2 (MNAR: corruption doubled for $y$ below the median)}}\\
+clean shared ID (today) & 40{,}000 & 0.00\% & 0.988 & 1.029 & 0.020 & 0.959 & 0.006 & 0.974 & 0.019 \\
+exact QIs ($K{=}1$) & 25{,}112 & 0.01\% & 0.973 & 0.993 & 0.050 & 0.990 & 0.032 & 0.876 & 0.042 \\
+multikey, filter, $\ge1$ key & 35{,}810 & 0.88\% & 0.984 & 1.020 & 0.023 & 0.965 & 0.013 & 0.943 & 0.025 \\
+multikey, filter, $\ge2$ keys & 30{,}397 & 0.04\% & 0.991 & 1.014 & 0.031 & 0.963 & 0.020 & 0.950 & 0.031 \\
+multikey, multi-label$^\dagger$ & 35{,}810 & 0.88\% & 0.984 & 1.020 & 0.024 & 0.950 & 0.013 & 0.932 & 0.025 \\
+LSH, filter, $\ge1$ band & 35{,}395 & 27.91\% & 0.706 & 1.026 & 0.056 & 0.334 & 0.052 & 0.001 & 0.056 \\
+LSH, filter, $\ge2$ bands & 18{,}551 & 3.79\% & 0.956 & 1.017 & 0.083 & 1.000 & 0.024 & 0.801 & 0.047 \\
+FS on field tokens (c1), $p\ge0.5$ & 35{,}826 & 0.87\% & 0.983 & 1.021 & 0.024 & 0.968 & 0.013 & 0.939 & 0.024 \\
+FS on field tokens (c1), $p\ge0.999$ & 35{,}812 & 0.83\% & 0.984 & 1.021 & 0.024 & 0.953 & 0.013 & 0.929 & 0.024 \\
+\bottomrule\end{tabular}}\end{table}
