@@ -3,7 +3,9 @@
 Phases (spec Algorithms 1-5): Setup (scope padding, fresh shuffle tau, Calibrate, ledger admission, which charges
 the run's full planned cost atomically, threshold keygen), Link (fresh OPRF key, PSI preprocessing and evaluation
 with SanitizeBFV), Upload conversion, Aggregate and pack, Release (re-randomize, exact discrete Gaussian eta,
-h_O = c0' + c1' s_O + eta, send (c1', h_O) only).
+h_O = c0' + c1' s_O + eta, send (c1', h_O) only).  Every exact discrete Gaussian (the release noise and the flooding
+of SanitizeBFV) comes from the budgeted sampler (sampler.sample_residues; DEVIATIONS A24), whose work does not
+depend on the values it draws; a budget failure (probability at most sampler_xi per call, charged) refuses.
 """
 from __future__ import annotations
 
@@ -46,15 +48,19 @@ def _hold_until(t_end: float):
         time.sleep(rem - 0.002 if rem > 0.004 else 0)
 
 
-def calibrate_release_time(ck, sigma_c2: int, M, pk, sO, q0_towers, reps: int = dp.RELEASE_PAD_REPS) -> dict:
-    """Time one release on public inputs only: `reps` exact samplings of N values at sigma_c2 (with an independent
-    generator; the values are discarded) plus their residues, and one re-randomized partial decryption of M with
+def calibrate_release_time(ck, sigma_c2: int, M, pk, sO, q0_towers, reps: int = dp.RELEASE_PAD_REPS,
+                           xi: float = S.XI_DEFAULT) -> dict:
+    """Time one release on public inputs only: `reps` budgeted samplings of N values at sigma_c2 with their residues
+    (with an independent generator; the values are discarded), and one re-randomized partial decryption of M with
     eta = 0 (its output is discarded, never sent).  Returns the worst sampling time and the decryption time."""
     rng = S.CSPRNG()
     ts = []
     for _ in range(reps):
         t0 = time.perf_counter()
-        S.residues(S.sample_vector(sigma_c2, ck.N, rng), q0_towers)
+        try:
+            S.sample_residues(sigma_c2, ck.N, q0_towers, rng, xi)
+        except S.SamplerBudgetExhausted:                # (probability <= xi; the values are discarded anyway)
+            pass
         ts.append(time.perf_counter() - t0)
     t0 = time.perf_counter()
     out = ck.rerand_partial_decrypt(M, pk, sO, np.zeros((2, ck.N), dtype=np.uint64))
@@ -71,7 +77,7 @@ def release_deadline(ag: dp.Agreement, ck, cal, M, pk, sO, q0_towers, debug_no_d
     if ag.release_pad != 'auto':
         return float(ag.release_pad)
     s2 = max(int(r['sigma_c2']) for r in cal['releases'].values())
-    c = calibrate_release_time(ck, s2, M, pk, sO, q0_towers)
+    c = calibrate_release_time(ck, s2, M, pk, sO, q0_towers, xi=ag.sampler_xi)
     return float(ag.release_pad_margin) * (c['sample_max'] + c['rerand_pdec'])
 
 
@@ -86,6 +92,9 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     debug_no_dp = bool(opts.get('debug_no_dp', False))
     if debug_no_dp and os.environ.get(DEBUG_ENV) != '1':
         raise RuntimeError(f'debug_no_dp requires {DEBUG_ENV}=1 (test-only path)')
+    fail_hook = opts.get('test_sampler_fail')           # test only: simulate a sampler budget failure
+    if fail_hook is not None and os.environ.get(DEBUG_ENV) != '1':
+        raise RuntimeError(f'test_sampler_fail requires {DEBUG_ENV}=1 (test-only path)')
     if 'threads' in opts:
         from . import vfr_native as vn
         vn.set_threads(int(opts['threads']))
@@ -220,9 +229,17 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         T['psi_eval'] += time.time() - t0
         t0 = time.time()
         rep = {}
-        for (a, f), (Sct, Qct) in sorted(evals.items()):
-            rep[f'S{a}_{f}'] = bo.sanitize(Sct, pp.reply_towers, S.residues(S.sample_vector(flood2, pp.N_B, rng), keep))
-            rep[f'Q{a}_{f}'] = bo.sanitize(Qct, pp.reply_towers, S.residues(S.sample_vector(flood2, pp.N_B, rng), keep))
+        try:                                            # budgeted flooding samples (A24): fixed work per call
+            if fail_hook == 'psi':
+                raise S.SamplerBudgetExhausted('test hook')
+            for (a, f), (Sct, Qct) in sorted(evals.items()):
+                rep[f'S{a}_{f}'] = bo.sanitize(Sct, pp.reply_towers,
+                                               S.sample_residues(flood2, pp.N_B, keep, rng, pp.sampler_xi))
+                rep[f'Q{a}_{f}'] = bo.sanitize(Qct, pp.reply_towers,
+                                               S.sample_residues(flood2, pp.N_B, keep, rng, pp.sampler_xi))
+        except S.SamplerBudgetExhausted:                # probability <= p_sampler (PSIParams.check); abort the run
+            ch.send('refuse', meta=dict(reason='SanitizeBFV: sampler budget exhausted'))
+            return dict(refused='SanitizeBFV: sampler budget exhausted', transcript=tr.records, timings=T)
         T['psi_sanitize'] += time.time() - t0
         ch.send('psi_response', meta=dict(batch=bi), blobs=rep)
 
@@ -282,9 +299,15 @@ def run_O(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         if debug_no_dp:
             eta_res = np.zeros((2, ck.N), dtype=np.uint64)      # DEBUG ONLY (guarded above)
         else:
-            eta = S.sample_vector(rel['sigma_c2'], ck.N, rng)  # exact N_Z(0, sigma_c^2), fresh per release
-            eta_res = S.residues(eta, q0_towers)
-            del eta
+            try:                                        # exact N_Z(0, sigma_c^2), fresh per release, fixed work (A24)
+                if fail_hook == 'release':
+                    raise S.SamplerBudgetExhausted('test hook')
+                eta_res = S.sample_residues(rel['sigma_c2'], ck.N, q0_towers, rng, ag.sampler_xi)
+            except S.SamplerBudgetExhausted:            # probability <= sampler_xi, charged in gamma: refuse
+                released.add(s)
+                T['release'][str(s)] = dict(sampler_failed=True)
+                ch.send('refuse', meta=dict(reason='sampler budget exhausted', stage=str(s)))
+                break
         t1 = time.time()
         if opts.get('test_record_c0p') and os.environ.get(DEBUG_ENV) == '1':
             c1p, h, c0p = ck._test_rerand_partial_decrypt_c0p(Ms[s], pk, sO, eta_res)

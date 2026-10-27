@@ -1,0 +1,112 @@
+% ==============================================================
+\subsection{Release timing and the budgeted sampler}
+\label{sec:timing}
+
+The view of Definition~\ref{def:simcdp} contains the messages $\Rp$ receives, not the times at which they arrive. An honest-but-curious $\Rp$ can record those times, and the time $\Op$ takes to answer a release request depends on how long the noise $\eta_s$ took to draw. With the plain CKS20 sampler (Section~\ref{sec:corr}) that time grows with $|\eta_s|$: its discrete Laplace and $\mathrm{Bernoulli}(e^{-\gamma})$ loops run a value-dependent number of times. This subsection replaces it by a sampler with a \emph{fixed work budget}, proves that its timing depends on its output only on a failure event of probability at most $\xi_T$, and charges $\xi_T$ per release to the statistical slack. Throughout, $\tau_s$ is the time from $\Rp$'s request for release $s$ to the arrival of $\Op$'s answer (the release or a refusal).
+
+\paragraph{The sampler.} Fix an integer variance $S=\sigma^2\ge1$, a number $n$ of values, $r=128$ bits per coin, $t=2^b$ with $b$ a public function of $S$ (the implementation takes the $b$ near $\tfrac12\log_2S$ that maximizes $p_{\mathrm{lo}}$ below), $C=\lceil2^rS/(2t^2)\rceil$ and $c=C/2^r\ge S/(2t^2)$. Let $E_i=\lfloor2^re^{-i}\rfloor$ for $i\ge1$ and $J_0=\min\{i:E_i=0\}$ ($J_0=89$). A \emph{coin} is a uniform $U\in[0,1)$ of which only the first $r$ bits $R=\lfloor2^rU\rfloor$ are drawn. Public integers $T$, $J_v<J_0$ and $k_{\max}$ are fixed below.
+
+\begin{definition}[\textsc{SampleDGBudget}$(S,n)$]\label{def:budget}
+For $j=1,\dots,T$, with fresh coins for each $j$:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item a sign bit $s_j$, $u_j$ uniform on $\{0,\dots,t-1\}$, and $v_j=\#\{1\le i\le J_v:R^v_j<E_i\}$ from a coin $U^v_j$;
+  \item $m_j=u_j+tv_j$, and $y_j=m_j$ if $s_j=0$, $y_j=-(m_j+1)$ if $s_j=1$;
+  \item $G_j=\lfloor2^{r-1}y_j^2/S\rfloor-2^rv_j+C$, computed exactly; $n_j=\lfloor G_j/2^r\rfloor$ and $F_j=G_j\bmod2^r$;
+  \item $\alpha_j=1$ iff [$n_j=0$ or $R^a_j<E_{\min(n_j,J_0)}$] and $L_j$ is even, where $L_j$ is the number of leading $k\in\{1,\dots,k_{\max}\}$ with $R^{(k)}_j<\lfloor F_j/k\rfloor$, from coins $U^a_j,U^{(1)}_j,\dots,U^{(k_{\max})}_j$.
+\end{enumerate}
+Trial $j$ is \emph{undecided} if $v_j=J_v$; or $R^v_j=E_i$ for some $i\le J_v$; or $n_j\ge1$ and $R^a_j=E_{\min(n_j,J_0)}$; or $R^{(k)}_j=\lfloor F_j/k\rfloor$ for some $k\le k_{\max}$; or $L_j=k_{\max}$. The call \emph{fails} (event $\mathsf F$) if some trial is undecided or $A=\sum_{j\le T}\alpha_j<n$; otherwise it returns the $y_j$ of the first $n$ trials with $\alpha_j=1$.
+\end{definition}
+
+All $T$ trials are computed, whatever their outcome, and the surplus is discarded. Step~(iv) is $\mathrm{Bernoulli}(e^{-n_j})$ by one coin and $\mathrm{Bernoulli}(e^{-f_j})$, $f_j=g_j-n_j$, by Algorithm~1 of CKS20 with exactly $k_{\max}$ coins, where
+\[
+  g_j=\frac{y_j^2}{2S}-v_j+c .
+\]
+
+\paragraph{The ideal sampler.} On the same probability space, extended by fresh coins, let the \emph{ideal sampler} run an infinite sequence of trials with the same coins for $j\le T$ and new ones for $j>T$, read every coin to full precision, and use no bound: $v^*_j=\#\{i\ge1:U^v_j<e^{-i}\}$, $y^*_j$ from $(s_j,u_j,v^*_j)$ as in (ii), $g^*_j$ as above, and $\alpha^*_j=[U^a_j<e^{-\lfloor g^*_j\rfloor}]\cdot[K^*_j\text{ odd}]$, with $K^*_j$ the first $k\ge1$ such that $U^{(k)}_j\ge(g^*_j-\lfloor g^*_j\rfloor)/k$ (coins $U^{(k)}_j$ for $k>k_{\max}$ are fresh). Its output is the $y^*_j$ of the first $n$ trials with $\alpha^*_j=1$.
+
+\begin{lemma}[The ideal sampler is exact, and its acceptances carry no information]\label{lem:idealsampler}
+The trials $(y^*_j,\alpha^*_j)_{j\ge1}$ are i.i.d., $\Pr[\alpha^*_j=1]=p=(1-e^{-1})e^{-c}\Theta/(2t)$ with $\Theta=\sum_{y\in\Z}e^{-y^2/(2S)}$, and
+\[
+  \Pr[y^*_j=y,\ \alpha^*_j=1]=p\cdot\pi_S(y),\qquad \pi_S(y)=e^{-y^2/(2S)}/\Theta .
+\]
+Hence the ideal output is exactly $\DG(0,S)^n$ and is independent of the acceptance sequence $(\alpha^*_j)_{j\ge1}$, which is i.i.d.\ $\mathrm{Bernoulli}(p)$. Moreover $p\ge p_{\mathrm{lo}}:=(1-e^{-1})e^{-c}\sqrt{2\pi S}/(2t)$.
+\end{lemma}
+\begin{proof}
+\emph{Proposal.} $v^*_j$ is geometric, $\Pr[v^*_j\ge k]=\Pr[U^v_j<e^{-k}]=e^{-k}$. The map $(s,u,v)\mapsto y$ of (ii) is a bijection from $\{0,1\}\times\{0,\dots,t-1\}\times\mathbb{N}$ onto $\Z$ (nonnegative $y$ for $s=0$, negative for $s=1$), so $\Pr[y^*_j=y]=q(y)=(1-e^{-1})e^{-v(y)}/(2t)$ with $v(y)=\lfloor m(y)/t\rfloor$, $m(y)=y$ or $-y-1$.
+
+\emph{Acceptance.} $g(y)\ge0$: in both cases $|y|\ge m(y)\ge tv(y)$, so $g(y)\ge t^2v^2/(2S)-v+S/(2t^2)=\tfrac12(tv/\sigma-\sigma/t)^2\ge0$. Given $y$, the two factors of $\alpha^*_j$ use independent coins; the first is $1$ with probability $e^{-\lfloor g\rfloor}$, and the second with probability $e^{-\{g\}}$, since $\Pr[K^*>k]=\prod_{i\le k}\{g\}/i=\{g\}^k/k!$ and $\Pr[K^*\text{ odd}]=\sum_{k\ge0}(-1)^k\{g\}^k/k!$ (CKS20, Algorithm~1). Hence $\Pr[\alpha^*_j=1\mid y^*_j=y]=e^{-g(y)}$ and
+\[
+  \Pr[y^*_j=y,\alpha^*_j=1]=\frac{1-e^{-1}}{2t}\,e^{-v(y)}e^{-y^2/(2S)+v(y)-c}=\frac{(1-e^{-1})e^{-c}}{2t}\,e^{-y^2/(2S)} .
+\]
+Summing over $y$ gives $p$, and dividing gives $\pi_S$.
+
+\emph{Independence.} The trials use disjoint coins, so they are i.i.d. Since the joint law of $(y^*_j,\alpha^*_j)$ factorizes as above, conditionally on the whole sequence $(\alpha^*_j)_j$ the values $y^*_j$ of the accepted trials are i.i.d.\ $\pi_S$; so the output, the first $n$ of them, is $\DG(0,S)^n$ given every acceptance sequence.
+
+\emph{Lower bound.} By Poisson summation, $\Theta=\sqrt{2\pi S}\sum_{k\in\Z}e^{-2\pi^2Sk^2}\ge\sqrt{2\pi S}$.
+\end{proof}
+
+\begin{lemma}[Coupling]\label{lem:coupling}
+Outside $\mathsf F$, the budgeted sampler returns exactly the ideal sampler's output, and $A=A^*:=\sum_{j\le T}\alpha^*_j$.
+\end{lemma}
+\begin{proof}
+Let trial $j$ be decided. For a threshold $E=\lfloor2^rx\rfloor$ and a coin with $R\ne E$: if $R<E$ then $U<(R+1)/2^r\le E/2^r\le x$; if $R>E$ then $U\ge R/2^r\ge(E+1)/2^r>x$. So $[R<E]=[U<x]$. Applied with $x=e^{-i}$, $i\le J_v$: the indicators defining $v_j$ and $v^*_j$ agree for $i\le J_v$, and $v_j<J_v$ gives $U^v_j\ge e^{-J_v}$, so they agree for all $i$, and $v_j=v^*_j$, $y_j=y^*_j$. $G_j=\lfloor2^rg_j\rfloor$ exactly, because $2^rv_j$ and $C$ are integers; hence $n_j=\lfloor g_j\rfloor$, $F_j=\lfloor2^r\{g_j\}\rfloor$ and $\lfloor F_j/k\rfloor=\lfloor2^r\{g_j\}/k\rfloor$. Applied with $x=e^{-n_j}$ (and, for $n_j\ge J_0$, with $E=0$, where $R\ne0$ gives $U\ge2^{-r}>e^{-n_j}$) and with $x=\{g_j\}/k$ for $k\le k_{\max}$, the decisions agree with the ideal ones; $L_j<k_{\max}$ means that $K^*_j=L_j+1\le k_{\max}$, so the parity is decided by the coins drawn. Hence $\alpha_j=\alpha^*_j$ for every $j\le T$, $A=A^*$, and $A\ge n$ means that the ideal sampler's first $n$ acceptances lie among the first $T$ trials.
+\end{proof}
+
+\begin{lemma}[Failure bound]\label{lem:budgetfail}
+\[
+  \Pr[\mathsf F]\le\xi_{\mathrm{bound}}:=\exp\Bigl(-T\,\mathrm{KL}\Bigl(\frac{n-1}T\Bigm\Vert p_{\mathrm{lo}}\Bigr)\Bigr)+T\Bigl(e^{-J_v}+\frac1{k_{\max}!}+(J_v+1+k_{\max})2^{-r}\Bigr)\quad\text{whenever }n-1<Tp_{\mathrm{lo}},
+\]
+with $\mathrm{KL}(a\Vert p)=a\ln\frac ap+(1-a)\ln\frac{1-a}{1-p}$. \textsc{Calibrate} (implementation: \texttt{sampler.budget}) takes $T$ the smallest integer whose first term is at most $\xi_T/2$, $J_v=\lceil\ln(8T/\xi_T)\rceil$ and $k_{\max}$ the smallest with $T/k_{\max}!\le\xi_T/8$, and checks that the tie term is at most $\xi_T/8$; then $\xi_{\mathrm{bound}}\le\xi_T$.
+\end{lemma}
+\begin{proof}
+If no trial is undecided, $A=A^*$ by Lemma~\ref{lem:coupling}, so $\mathsf F\subseteq\{A^*<n\}\cup\bigcup_j\{j\text{ undecided}\}$. $A^*\sim\mathrm{Binomial}(T,p)$ with $p\ge p_{\mathrm{lo}}$ (Lemma~\ref{lem:idealsampler}); the lower tail is nonincreasing in $p$, and the Chernoff bound $\Pr[\mathrm{Bin}(T,p)\le k]\le e^{-T\mathrm{KL}(k/T\Vert p)}$ for $k<Tp$ gives the first term. For one trial: $v_j=J_v$ requires $R^v_j<E_{J_v}$, of probability $E_{J_v}2^{-r}\le e^{-J_v}$; $L_j=k_{\max}$ requires $U^{(k)}_j<\{g_j\}/k$ for all $k\le k_{\max}$, of probability at most $1/k_{\max}!$; and each of the $J_v+1+k_{\max}$ ties is a coin equal to a threshold computed from other coins, of probability $2^{-r}$. A union bound over the $T$ trials completes the proof. The constants are certified: $E_i$ is computed from rational bounds on $e^{-1}$ (consecutive partial sums of its alternating series) with directed rounding at $768$ bits, and both bounds must give the same floor.
+\end{proof}
+
+At $\xi_T=2^{-80}$, $N=2^{14}$ and the largest $\sigma_c^2$ of the $10^6$-row runs ($\sigma_c^2=2^{136.7}$, $\sigma_c\approx2^{68.4}$, quoted as $2^{68.5}$ elsewhere): $b=68$, $p_{\mathrm{lo}}=0.4457$, $T=39{,}088$ ($2.39N$), $J_v=69$, $k_{\max}=29$, $\xi_{\mathrm{bound}}=2^{-80.9}$. For the flooding of \textsc{SanitizeBFV} ($\sigma_\psi=2^{61}$, $N_B=2^{14}$): $p_{\mathrm{lo}}=0.4805$, $T=36{,}189$, the same $J_v$ and $k_{\max}$, $\xi_{\mathrm{bound}}=2^{-80.9}$.
+
+\paragraph{The cost assumption.} A side channel needs a model of what the observer measures. We use the following.
+
+\begin{assumption}[(W): work, not values, determines time]\label{as:W}
+The time $\Op$ takes to execute a sequence of operations is $\Phi(\varpi,Z)$, where the \emph{trace} $\varpi$ lists the operations together with their public shapes (array lengths, numbers of limbs, the native function called and the sizes of its operands, but not the operand values), $Z$ is machine noise (scheduling, other processes, the state of caches and of the allocator) independent of every secret of the run and of $D$, and $\Phi$ does not depend on the operand values.
+\end{assumption}
+
+\begin{lemma}[The trace of a call]\label{lem:sampletrace}
+In the implementation (\texttt{sampler.sample\_residues}), the trace of a call that does not fail is a function of $(S,n,\xi_T)$, the moduli and $A$ only.
+\end{lemma}
+\begin{proof}[Proof (by inspection of the code)]
+The call draws $4T(1+L_y+8+4k_{\max})$ bytes from the CSPRNG ($L_y$ limbs of $32$ bits hold $|y|<2^{b+\lceil\log_2(J_v+2)\rceil+1}$), and then executes a fixed sequence of numpy operations on arrays of shape $(\cdot,T)$ with limb counts that are functions of $(S,T,J_v,k_{\max})$: the comparisons for $v$ against the $J_v$ table values, the placement of $v$ at bit $b$, the limb products $y^2$, $y^2\lfloor2^{P}/S\rfloor$ and $\hat Q\cdot S$, one correction, the addition of $C$ and subtraction of $v$ at limb $4$, a gather from the $(J_0+1)$-entry table, and $k_{\max}$ long divisions of $F$ by $k$ (by multiplication with $\lceil2^{28}/k\rceil$ on 16-bit digits, not by a hardware division) and comparisons. No Python branch depends on a value. The only shape that varies is that of the index array of accepted trials (length $A$), from which the first $n$ are taken; the residues of these $n$ values modulo each $q$ are computed by a fixed reciprocal multiplication and one correction. The failure test is evaluated in every call.
+\end{proof}
+
+\begin{lemma}[Release timing]\label{lem:releasetiming}
+Under (W), for each release $s$ there is a random variable $\tau^*_s$, whose law depends only on the public parameters and the machine, which is independent of $\Rp$'s view with exact noise (and of $D$), and such that, with $V$ the rest of $\Rp$'s view (its tape and messages),
+\[
+  \mathrm{SD}\bigl((V,\tau_s),\ (V^*,\tau^*_s)\bigr)\le\xi_T ,
+\]
+where $V^*$ is $V$ with $\eta_s$ replaced by the ideal sampler's output on the same coins, which is exactly $D_{\Z^N,\sigma_{c,s}}$ and independent of everything else in the run.
+\end{lemma}
+\begin{proof}
+$\Op$'s work for release $s$ after the request is: the sampler call, the re-randomized partial decryption (a native call on fixed-shape polynomials), the deadline test and the hold, and the send. Let $\varpi(A)$ be the trace of a non-failing release with $A$ accepted trials (Lemma~\ref{lem:sampletrace}; the other steps have fixed traces). Set $\tau^*_s=\Psi(\Phi(\varpi(A^*),Z),Z')$, where $\Psi$ applies the deadline rule (hold until $D$, or refuse if the busy time exceeds $D$) and $Z'$ is the network and scheduling noise of the send. On $\mathsf F^c$, $\eta_s$ equals the ideal output and $A=A^*$ (Lemma~\ref{lem:coupling}), so $(V,\tau_s)=(V^*,\tau^*_s)$; hence the statistical distance is at most $\Pr[\mathsf F]\le\xi_T$ (Lemma~\ref{lem:budgetfail}). $A^*$ is a function of the acceptance sequence, which is independent of the ideal output (Lemma~\ref{lem:idealsampler}) and of every other coin of the run; $Z,Z'$ are independent of all secrets by (W); and $D$, the deadline, is fixed before the first release from timed dummy calls on public parameters with independent coins. So $\tau^*_s$ is independent of $V^*$ and of $D$.
+\end{proof}
+
+\begin{corollary}[Output privacy with release timing; the charge]\label{cor:timing}
+Under the hypotheses of Theorem~\ref{thm:output} and (W), with every release drawn by \textsc{SampleDGBudget} at failure bound $\xi_T$, $\Rp$'s view of one run \emph{including the arrival times} $(\tau_s)_s$ is $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{DP}})$-SIM-CDP with statistical slack
+\[
+  \gamma=n_{\mathrm{rel}}\bigl(\delta_B+2^{-\kappa}(1+2^{-80})+2^{-97}+\xi_T\bigr),
+\]
+for the mechanism $\mathcal M(D)$ of Theorem~\ref{thm:output} extended by the independent, data-independent component $(\tau^*_s)_s$. In the hockey-stick ledger of Part~C, the run's additive slack becomes $n_{\mathrm{rel}}(\delta_B+\delta'+\xi_T)$.
+\end{corollary}
+\begin{proof}
+Add a hybrid H0$'$ before H1: replace, for $s=1,\dots,n_{\mathrm{rel}}$ in turn, $(\eta_s,\tau_s)$ by $(\eta^*_s,\tau^*_s)$. Each step costs at most $\xi_T$ by Lemma~\ref{lem:releasetiming} (the lemma holds conditionally on everything outside release $s$, because the sampler's coins are fresh). After H0$'$ every $\eta_s$ is exact and independent of the rest, which is what H2 uses, and the $\tau^*_s$ are independent of everything else and have a law that does not depend on $D$. The remaining hybrids are unchanged and carry $(\tau^*_s)_s$ along. The extended mechanism is still $\rho_{\mathrm{run}}$-zCDP: a component independent of $D$ and of the rest does not change any R\'enyi divergence (Lemma~\ref{lem:zcomp}), and the simulator outputs it from $\mathcal M(D)$. The $n_{\mathrm{rel}}\xi_T$ is a statistical distance introduced before any other hybrid, exactly like $\delta_B$; in Part~C it enters the purely additive slack sum $\Gamma$ (the proofs of Theorem~5.2 and Corollary~5.4 there treat every such term identically), and by Lemma~\ref{lem:sim2ind} it is converted with the factor $1+e^{\varepsilon}$.
+\end{proof}
+
+\begin{remark}[The deadline is defence in depth; the overrun is not charged]
+The theorem rests on the work budget, not on the padding. Under (W) the busy time of a release is a function of $(A^*,Z)$, so whether it overruns the deadline is independent of $\eta_s$ and of $D$: an overrun refusal is part of $\tau^*_s$ and needs no charge, whatever the machine load. The padding still helps where (W) is only approximately true: residual value-dependent costs are hidden below $D$, and only an overrun could expose them.
+\end{remark}
+
+\begin{remark}[The flooding of \textsc{SanitizeBFV}]
+The flooding vectors of the PSI replies are drawn by the same sampler, one call per vector of $N_B$ values ($2\alpha F$ calls per cuckoo table, $n_{\mathrm{calls}}$ in total). By Lemmas~\ref{lem:coupling}--\ref{lem:releasetiming} applied to each call, the reply timing makes the view of the Link phase differ by at most $n_{\mathrm{calls}}\xi_T$ from one in which every flooding vector is exact and independent of the timing, which is what the smudging step of G4's second layer (Section~\ref{sec:G4}) needs; a failed call aborts the run, inside the same bound. This adds $n_{\mathrm{calls}}\xi_T$ to the statistical distance of the second layer, not to $\delta$: neighbouring datasets have the same identifiers and positions, so the Link phase, timing included, has the same law under both (Theorem~\ref{thm:output}). \textsc{Setup} checks $n_{\mathrm{calls}}\xi_T\le\delta_{\mathrm{psi}}$; at $10^6$ rows ($\alpha=5$, $F=2$, one table) it is $20\cdot2^{-80}=2^{-75.7}$.
+\end{remark}
+
+\begin{remark}[What (W) asks of the implementation, and what is not verified]\label{rem:Wstatus}
+(W) is an assumption about the platform, not a theorem. The implementation is written so that only operations whose cost plausibly does not depend on values remain: fixed-shape numpy loops over \texttt{uint64} ($+,-,\times$, shifts, bitwise operations, comparisons, boolean reductions), with no hardware division (whose latency depends on its operands on many x86 cores) and no Python branch on a value; ChaCha20 from OpenSSL for the coins; and OpenFHE's NTT-based polynomial arithmetic. Not verified: that numpy's loops have no value-dependent fast paths on this machine; the gather from the $2.9$\,kB table $(E_i)$, whose addresses depend on $n_j$ (a cache channel, invisible over a network but not on $\Op$'s machine); the CPython allocator; and OpenFHE's own samplers for $(u,e_0,e_1)$, which (CT) of Section~\ref{sec:corr} also covers. The measurements in \texttt{reports/v31\_timing/} support (W) for the sampler: on coins forced to the extreme values ($v=0$ everywhere, $v=J_v-1$ everywhere, $u=0$ everywhere) one call's trials take the same time as on random coins to within the machine's noise (medians within $6\%$ in two runs of $30$ and $100$ calls per kind, at a load average near $20$ from other jobs, with an ordering of the kinds that did not repeat), while the plain CKS20 sampler's median time per value grows with $|\eta|/\sigma$, from $9.7\,\mu$s below $1\sigma$ to $25.6\,\mu$s beyond $3\sigma$. This is evidence, not a proof.
+\end{remark}

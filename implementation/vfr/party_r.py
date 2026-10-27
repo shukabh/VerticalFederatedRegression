@@ -20,7 +20,8 @@ from .wire import Channel, Transcript
 
 
 class ReleaseRefused(RuntimeError):
-    """O refused a release because its computation overran the agreed release deadline (Agreement.release_pad)."""
+    """O refused a release: its computation overran the agreed release deadline (Agreement.release_pad), or the
+    budgeted sampler's fixed work budget did not suffice (probability at most Agreement.sampler_xi, charged)."""
 
 
 def round_published(x, sigma: float, digits: int = 2):
@@ -65,7 +66,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
               'zeta', 'kappa_min', 'delta_B', 't_eta', 'lambda_sec', 'ledger_eps', 'ledger_delta', 'ledger_zeta',
               'ledger_mode', 'ledger_xi', 'ledger_delta_prime', 'variant', 'theta_star', 'kappa_Psi', 'alpha',
               'alpha_L', 'alpha_U', 'r1_mode',
-              'intervals', 'release_pad', 'release_pad_margin'):
+              'intervals', 'release_pad', 'release_pad_margin', 'sampler_xi'):
         if a2[f] != getattr(ag, f):
             raise RuntimeError(f'agreement mismatch on {f}')
     a_L, a_U, _ = dp.alpha_split(ag)                    # validates the statistical setting
@@ -80,6 +81,8 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     for s, rel in cal['releases'].items():
         if rel['sigma_c2'] != pub['calibration']['releases'][s]['sigma_c2']:
             raise RuntimeError('calibration mismatch')
+        if rel['sampler'] != pub['calibration']['releases'][s]['sampler']:   # the public work budget (A24)
+            raise RuntimeError('sampler budget mismatch')
     if cal['Omega_V'] != pub['Omega_V']:
         raise RuntimeError('scale mismatch')
     joint = cal['joint']
@@ -140,7 +143,11 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
                 blobs={f'w{i}_{f}': bf.encrypt_sym(bkeys, w[f * nb:(f + 1) * nb]) for i, w in enumerate(wins)
                        for f in range(F)})
         T['psi_query'] += time.time() - ta
-        _, _, rb = ch.recv('psi_response')
+        mt, rmeta, rb = ch.recv()
+        if mt == 'refuse':                              # O's budgeted flooding sampler failed (DEVIATIONS A24)
+            return dict(refused=rmeta.get('reason'), transcript=tr.records, timings=T)
+        if mt != 'psi_response':
+            raise RuntimeError(f'expected psi_response, got {mt}')
         ta = time.time()
         Sl = [np.concatenate([bf.decrypt(bkeys, rb[f'S{a}_{f}']) for f in range(F)]) for a in range(alpha)]
         Ql = [np.concatenate([bf.decrypt(bkeys, rb[f'Q{a}_{f}']) for f in range(F)]) for a in range(alpha)]
@@ -199,7 +206,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
         ch.send('release_request', meta=dict(stage=str(stage)))
         mt, rm, rb = ch.recv()
         T.setdefault('release_latency_R', {})[str(stage)] = time.perf_counter() - tq
-        if mt == 'refuse':                              # O's release deadline was overrun (release_pad)
+        if mt == 'refuse':                              # deadline overrun or sampler budget failure (A24)
             raise ReleaseRefused(f"release {stage} refused by O: {rm.get('reason')}")
         if mt != 'release':
             raise RuntimeError(f'unexpected message {mt}')

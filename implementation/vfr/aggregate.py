@@ -118,5 +118,5 @@ def release_share(ck, M, pk, sO, sigma_c2, q0_towers, rng, debug_no_dp=False):
     if debug_no_dp:
         eta_res = np.zeros((len(q0_towers), ck.N), dtype=np.uint64)
     else:
-        eta_res = S.residues(S.sample_vector(sigma_c2, ck.N, rng), q0_towers)
+        eta_res = S.sample_residues(sigma_c2, ck.N, q0_towers, rng)      # budgeted exact sampler (A24)
     return ck.rerand_partial_decrypt(M, pk, sO, eta_res)

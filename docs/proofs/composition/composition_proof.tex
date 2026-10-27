@@ -756,6 +756,10 @@ One can also account the smudging steps in R\'enyi divergence. Truncate the erro
 $\delta_B$ remains multiplied by $1+e^{\varepsilon_L-E'_L}$. At $\varepsilon_L=20$, $\nrel(1+e^{20})\delta_B\approx8.6\cdot10^{-7}$ exceeds $\zeta_L\delta_L=10^{-7}$ for $\delta_L=10^{-6}$, so the paper's remark that $\delta_B$ must then be lowered stands.
 \end{remark}
 
+\begin{remark}[The budgeted sampler's failure bound]\label{rem:xiT}
+Each release draws its noise with the fixed-work sampler of Part~A, Section~5.5, whose failure probability is at most $\xi_T$ (Part~A, Lemma~5.17); outside the failure event the release's noise is exact and its timing independent of the noise and of the data (Part~A, Lemma~5.20, under the cost assumption (W)). Replacing every planned release of every admitted run by its ideal counterpart is a statistical hybrid made before any other, like the truncation that costs $\delta_B$; so $\xi_T$ enters the slack exactly as $\delta_B$ does, and the implementation charges $\hat\gamma_k=\nrel(\delta_B+\delta'+\xi_T)$ in rule~(F$'$) (and $\nrel\xi_T$ more in the statistical-distance rule). At $\xi_T=2^{-80}$ this is negligible beside $\delta_B=2^{-50}$.
+\end{remark}
+
 % ==============================================================
 \section{Issues found in the paper's current text}
 \label{sec:issues}
