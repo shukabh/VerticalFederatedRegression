@@ -97,3 +97,14 @@ decryption returns triu A to 1e-11.
 The whole-run ratio is (v3.1 run + measured extra work) / v3.1 run, with v3.1 runs of 21.2 and 33.2 s; the model's
 traffic ratios used a one-felt v3.1 baseline (two felts now). The releases cost the same. The U-side bound of the
 product vectors in B_tot was not re-derived (only re-evaluated with the larger entry counts).
+
+**Round 2 (`reports/baselines_v2`).** B_tot, the sensitivity of the centre and the decoding offset were re-derived for
+the full-record circuit (Lemma S10e, `docs/proofs/stats_s7_s10.tex`; `vfr/btot.py`, `CircuitParams.fullrecord`):
+R's vectors enter no error term, so B_tot changes only through |E| + 14 and O's row bound (+14 for the vector of
+ones), +0.15 / +0.18 bits as re-evaluated before; the U-side bound B_R^2 and the whole-record adjacency enter Delta_x
+(+1.7 bits, 2^-33 of the main term) and the offset (`fullrecord_btot.py`, `fullrecord_btot.json`). The v3.1 stage-2
+noise does not flood the larger bound, so the benchmark path now calibrates the full-record path on its own
+(`dp.calibrate(..., fullrecord_sens=...)`: kappa 40, same chain, scale +1/32 bit). Re-measured back to back with a
+`--calib v31` control on a shared machine (load 8-12, `OMP_NUM_THREADS=1`): aggregation x1.19 / x1.24 vs x1.26 / x1.21,
+run x1.10 / x1.13 vs x1.13 / x1.12, identical traffic (`fullrecord_fullcalib.json`, `fullrecord_v31calib_control.json`).
+The cost is unchanged; the idle-machine factors above stand.

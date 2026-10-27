@@ -59,9 +59,12 @@ def main_():
     ap = argparse.ArgumentParser()
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--out')
+    ap.add_argument('--draft', default=DRAFT, help='draft file (default paper/drafts/baselines.tex; also '
+                                                   'paper/drafts/fullrecord.tex)')
+    ap.add_argument('--main', default=MAIN, help='the text to splice into (default paper/main.tex, read only)')
     a = ap.parse_args()
-    main = open(MAIN).read()
-    bl = blocks(open(DRAFT).read())
+    main = open(a.main).read()
+    bl = blocks(open(a.draft).read())
     merged = apply(main, bl)
     print(f'{len(bl)} blocks apply cleanly')
     if a.out:

@@ -79,7 +79,7 @@ bootstrap uses our noise law (σ₂ on the O-dependent entries, zero on A). Leve
 **Sensitivity** (Proposition `prop:sens_full`, `experiments/baselines/sens_full.py`). The release adds triu(A) without
 the constant n; a whole record (x_R, x_O, y) is replaced. Bound by triu ≤ Frobenius per block, attained in two
 coordinates; the bracket is nondecreasing in the block norms (for blocks of dimension ≥ 2), so only (y, y') and the
-norms of 1-dimensional blocks are searched.
+norms of 1-dimensional blocks are searched. (Round 2, `reports/baselines_v2`: these values are now computed exactly, by Theorem S10c and, for the d_R = 1 datasets 3droad and tamielectric, Lemma S10d; they agree with the numbers below to 2e-15.)
 
 | bounds | Δ v3.1 → full | Δ without y'y | Δ_G (stage 1) |
 |---|---|---|---|
@@ -193,7 +193,7 @@ FWS has no test-MSE arm (it is an interval method on our own release).
 - TukeyEM's adjacency and PTR noise scale are taken from the reference code and the PTR threshold; the paper of Amin et
   al. was not reachable from this environment (arxiv.org and openreview.net do not resolve). Confirm both, and the
   choice of m.
-- The full-record sensitivity is computed numerically after the monotonicity reduction; a closed form is not derived.
+- The full-record sensitivity: resolved in round 2 (`reports/baselines_v2`): exact enumeration (Theorem S10c; Lemma S10d for a block of dimension 1); no number changes. The cost item (B_tot of the full-record circuit) is resolved there too.
 - An FWS-type interval for β from the unregularized stage-2 solve, gated by λ_min(Ĝ₂) ≥ 2σ₂√p, would give finite valid
   intervals where the bias-aware interval is unbounded; not part of the protocol, not proved for our noise structure.
 - FWS's s² is the plug-in from the released y'y (biased at order σ₂²); whether our bootstrap correction changes FWS's

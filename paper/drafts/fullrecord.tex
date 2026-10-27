@@ -1,0 +1,58 @@
+% =====================================================================================================
+% Draft: the two check items on the full-record SSP baseline (Section "Two further baselines"), resolved.
+%   Check "Full-record SSP: the measured cost assumes that R uploads the products b x-j x-k ..." (#13)
+%   Check "Full-record SSP: the closed form of the proofs (Part B, Theorem S10c) covers blocks ..." (#14)
+% Both \tocheck items are REMOVED (blocks F03, F04); the statement on secure-aggregation protocols stays, as a
+% plain remark (F04). Check items: 14 -> 12.
+%
+% How to merge into paper/main.tex (mechanical; the script never writes main.tex):
+%   Each block runs from "%B-BEGIN <id>" to "%B-END <id>". The lines starting with "%OLD| " give the exact old
+%   text of main.tex (strip the 6-character prefix "%OLD| "; "%OLD|" alone is an empty line; join with newlines);
+%   each old text occurs exactly once in main.tex as of commit 4447418. Replace it by the lines between
+%   "%NEW-BEGIN" and "%NEW-END", verbatim (an empty new text deletes the old one).
+%       python experiments/baselines/apply_baselines_draft.py --draft paper/drafts/fullrecord.tex --check
+%       python experiments/baselines/apply_baselines_draft.py --draft paper/drafts/fullrecord.tex --out /tmp/main_fr.tex
+%   No new labels, figures or citations. No table row or figure of main.tex changes: the exact sensitivities agree
+%   with the reported (numerical) ones to 2e-15 relative on all 29 datasets, the re-run benchmark reproduces every
+%   fold value to 9e-16 and every verdict and gap exactly, and the regenerated tables are identical
+%   (reports/baselines_v2/README.md).
+%
+% Sources: reports/baselines_v2/README.md, key_numbers.md; reports/eng/fullrecord_btot.json, fullrecord.json;
+% proofs: docs/proofs/stats_s7_s10.tex, Lemma S10d (exact enumeration, block of dimension one) and Lemma S10e
+% (B_tot, centre sensitivity and decoding offset of the full-record circuit).
+% =====================================================================================================
+
+%B-BEGIN F01 Proof sketch of prop:sens_full: the dimension-one case is exact (Lemma S10d), and so is every value
+%OLD| so the supremum has a closed form computed by exact enumeration, as for Proposition~\ref{prop:sens} (proofs, Part~B, Theorem~S10c); for a block of dimension one that value is a valid, conservative bound. The values below use the earlier numerical maximization (a dense grid refined by local search, rounded up by a relative $10^{-12}$), which agrees with the enumeration to $10^{-12}$ over $19$ bound vectors.
+%NEW-BEGIN
+so the supremum has a closed form computed by exact enumeration, as for Proposition~\ref{prop:sens} (proofs, Part~B, Theorem~S10c). For a block of dimension one, as $\Rp$'s block of 3droad and tamielectric, the bracket is exact for that block too and convex in $\lambda^2$ when $(u, u')$ or $(y, y')$ is scaled by $\lambda$, so a maximizer lies on one of five faces of the box of $(u, u', y, y')$. On each face the bracket is piecewise polynomial in at most two variables, and the supremum is the largest value over a finite set of vertices, stationary points on edges and interior stationary points (found from resultants), which the code enumerates in exact rational arithmetic (proofs, Part~B, Lemma~S10d). Every value reported below is exact in this sense and rounded up by a relative $10^{-12}$. The numerical maximization used before (a dense grid refined by local search) agrees with it to $2 \cdot 10^{-15}$ on the bounds of all 29 datasets, so no reported number changes.
+%NEW-END
+%B-END F01
+
+%B-BEGIN F02 Cost bullet: B_tot re-derived for the full-record circuit; its own calibration
+%OLD| With the larger entry counts, Calibrate raises $\log_2 B_{\mathrm{tot}}$ by $0.15$--$0.18$, with the same $\kappa$ and $\sigma$.
+%NEW-BEGIN
+We re-derived the worst-case error bound, the sensitivity of the centre and the decoding offset for this circuit (proofs, Part~B, Lemma~S10e). $\Rp$'s vectors enter no error term, so $B_{\mathrm{tot}}$ changes only through the $14$ more entries and the vector of ones in $\Op$'s row bound: $\log_2 B_{\mathrm{tot}}$ rises by $0.15$ at stage~2 and $0.18$ at stage~1, as the earlier re-evaluation with the larger entry counts gave. The bound $|b\,x_jx_k| \le B_R^2$ on the new vectors and the replacement of $\Rp$'s row enter only the sensitivity of the centre ($\Delta_{x,2}$ from $2^{27.6}$ to $2^{29.2}$, about $2^{-33}$ of the main term) and the decoding offset. The v3.1 stage-2 noise floods the old bound with a margin of only $0.03$ bits and so does not flood the new one; the full-record releases are therefore calibrated on their own, with their own sensitivities. Calibrate keeps $\kappa = 40$, $N$ and the modulus chain and raises the scale by one grid step ($\log_2\Omega_f$ from $62.625$ to $62.656$ at $\varepsilon = 1$ under setting I). The operations are the same at other plaintext scales, so the cost should not change, and it does not: re-measured with this calibration, back to back with a control run that keeps the v3.1 calibration (on a shared machine, so both slower than above), $\Op$'s aggregation grows by $1.19$ and $1.24$ at $16$k and $64$k rows against $1.26$ and $1.21$ in the control, a whole run by $1.10$--$1.13$ in both, with the same upload; the factors above, measured on an idle machine, stand.
+%NEW-END
+%B-END F02
+
+%B-BEGIN F03 Check item #13 (cost) removed; the statement on secure aggregation kept as a remark
+%OLD| \tocheck{Full-record SSP: the measured cost assumes that R uploads the products b x-j x-k. The U-side bound of those vectors (at most B-R squared) enters the derivation of B-tot, which was only re-evaluated with the larger entry counts, not re-derived. A secure-aggregation protocol of the kind of Karr et al. or Gascon et al. would have its own cost.}
+%NEW-BEGIN
+The cost of full-record SSP reported above is that of its statistics inside the encrypted architecture of v3.1, with $\Rp$ uploading the products $b\,x_jx_k$. A secure-aggregation protocol of the kind of Karr et al.~\cite{karr2009privacy} or Gasc\'on et al.~\cite{gascon2017privacy} would have its own cost, which we do not measure.
+%NEW-END
+%B-END F03
+
+%B-BEGIN F04 Check item #14 (dimension one) removed: the baseline code now uses the exact enumeration (F01)
+%OLD| \tocheck{Full-record SSP: the closed form of the proofs (Part B, Theorem S10c) covers blocks of dimension at least two; for tamielectric, whose block for R has dimension one, it is a conservative bound and the reported value comes from the numerical maximization. Decide whether the baseline code should switch to the enumeration.}
+%NEW-BEGIN
+%NEW-END
+%B-END F04
+
+%B-BEGIN F05 Status table: the full-record sensitivity is exact in both cases
+%OLD| Full-record sensitivity (Proposition~\ref{prop:sens_full}) & proven, closed form for blocks of dimension $\ge 2$ & exact enumeration; conservative for a block of dimension one \\
+%NEW-BEGIN
+Full-record sensitivity (Proposition~\ref{prop:sens_full}) & proven, exact & enumeration over $t = yy'$ for blocks of dimension $\ge 2$; over five faces, with resultants, for one block of dimension one; both blocks of dimension one not covered (no dataset needs it) \\
+Full-record circuit (cost benchmark only) & proven & $B_{\mathrm{tot}}$, sensitivity of the centre (whole-record adjacency) and decoding offset re-derived; own calibration \\
+%NEW-END
+%B-END F05

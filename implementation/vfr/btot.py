@@ -16,6 +16,16 @@ in four ways that the implementation needs, all inside the proof's own model (M1
   * Delta_x (Corollary sensZ) with separate scales.
 
 Every quantity is an l2 norm of a coefficient vector.  B_tot is a function of public parameters only.
+
+Full-record circuit (CircuitParams.fullrecord=True; the full-record SSP baseline, Lemma S10e of
+docs/proofs/stats_s7_s10.tex).  Stages 1 and 2 also release triu A without the constant n: n_A = d_R(d_R+3)/2 more
+entries, the d_R first moments sum_t b_t x_j,t (R's existing vector U = b xdot_j) and the d_R(d_R+1)/2 products
+sum_t b_t x_j,t x_k,t (R's extra vectors U = b x_j x_k), each against O's vector of ones (V = 1 on every row).
+Re-derived, not just re-evaluated: in the error decomposition (Proposition decomp of Part A) R's vectors enter only
+the centre, never an error term, so B_tot changes only through |E| (+ n_A) and the row bound Gamma_E (+ n_A, from
+V = 1).  The U-side bounds (B_R for the first moments, B_R^2 for the products) enter nu_U, hence Delta_x and the
+decoding offset, and zeta_E (+ r^2).  The adjacency of the full-record release replaces R's row as well, which adds
+cross terms to Delta_x (delta_x below).
 """
 from __future__ import annotations
 
@@ -52,6 +62,7 @@ class CircuitParams:
     v_u: float = 2 / 3
     varsigma_up: float | None = None    # override (None: 2 k_digit, OpenFHE's ApproxModUp)
     varsigma_down: float | None = None  # override (None: 2 k_P, OpenFHE's ApproxModDown)
+    fullrecord: bool = False   # the full-record circuit (triu A released too; whole-record adjacency)
 
     @property
     def L(self):               # number of rotations in EvalSum (log2 of the slot count)
@@ -74,42 +85,68 @@ class CircuitParams:
         return self.B_y ** 2
 
 
-def entry_counts(d_R: int, d_O: int, joint: bool):
+def n_A(d_R: int) -> int:
+    """Entries of triu A without the constant n (full-record circuit): d_R first moments + d_R(d_R+1)/2 products."""
+    return d_R * (d_R + 3) // 2
+
+
+def entry_counts(d_R: int, d_O: int, joint: bool, fullrecord: bool = False):
     nG = d_O * (d_O + 1) // 2 + (d_R + 1) * d_O
     n2 = nG + (d_R + 1) + d_O + (1 if joint else 0)
-    return {1: nG, 2: n2, 'y': 1}
+    a = n_A(d_R) if fullrecord else 0
+    return {1: nG + a, 2: n2 + a, 'y': 1}
 
 
-def gamma_E(cp: CircuitParams, stage, joint: bool):
-    """Lemma data: sum_e V_{e,t}^2 <= Gamma_E for every row t."""
+def gamma_E(cp: CircuitParams, stage, joint: bool, ones: bool = True):
+    """Lemma data: sum_e V_{e,t}^2 <= Gamma_E for every row t.  Full-record circuit: + n_A for O's vectors of ones
+    (ones=False leaves them out: they never change between neighbours, so nu_V does not count them)."""
     o, w, dR1 = cp.o, cp.w, cp.d_R + 1
+    a = n_A(cp.d_R) if (cp.fullrecord and ones and stage in (1, 2)) else 0
     if stage == 1:
-        return o * o + dR1 * o
+        return o * o + dR1 * o + a
     if stage == 2:
-        return o * o + dR1 * (o + w) + o * w + (w * w if joint else 0.0)
+        return o * o + dR1 * (o + w) + o * w + (w * w if joint else 0.0) + a
     return w * w  # separate y'y release
 
 
 def nu_U(cp: CircuitParams, stage, joint: bool):
-    """sqrt(sum_e U_max,e^2): 1 for entries that use b, B_R for entries that use xdot (conservative, as btot.py)."""
+    """sqrt(sum_e U_max,e^2): 1 for entries that use b, B_R for entries that use xdot (conservative, as btot.py).
+    Full-record circuit: + d_R B_R^2 (first moments, U = b xdot_j) + d_R(d_R+1)/2 B_R^4 (products, |b x_j x_k| <= B_R^2)."""
     nB, nC = cp.d_O * (cp.d_O + 1) // 2, (cp.d_R + 1) * cp.d_O
+    extra = 0.0
+    if cp.fullrecord and stage in (1, 2):
+        extra = cp.d_R * cp.B_R ** 2 + cp.d_R * (cp.d_R + 1) // 2 * cp.B_R ** 4
     if stage == 1:
-        return sqrt(nB * 1 + nC * cp.B_R ** 2)
+        return sqrt(nB * 1 + nC * cp.B_R ** 2 + extra)
     if stage == 2:
         n_b = nB + cp.d_O + (1 if joint else 0)
         n_x = nC + (cp.d_R + 1)
-        return sqrt(n_b + n_x * cp.B_R ** 2)
+        return sqrt(n_b + n_x * cp.B_R ** 2 + extra)
     return 1.0
+
+
+def nu_V_max(cp: CircuitParams, stage, joint: bool):
+    """sqrt(sum_e V_max,e^2), V_max,e = max_t |V_{e,t}|: o for triu B, B_O for C, B_y for c_R, B_O B_y for c_O, w for
+    y'y, 1 for O's vectors of ones (full-record circuit).  Enters only the whole-record adjacency of delta_x."""
+    o, w, dR1, dO = cp.o, cp.w, cp.d_R + 1, cp.d_O
+    v = dO * (dO + 1) // 2 * o * o + dR1 * dO * o + (n_A(cp.d_R) if cp.fullrecord else 0)
+    if stage == 1:
+        return sqrt(v)
+    if stage == 2:
+        return sqrt(v + dR1 * w + dO * o * w + (w * w if joint else 0.0))
+    return w
 
 
 def zeta_E(cp: CircuitParams, stage, joint: bool):
     """Largest contribution of one row to the statistic, sqrt(sup_t sum_e (U_{e,t} V_{e,t})^2) (crypto proofs,
-    docs/crypto_proofs.tex, Section 4, before Proposition 4.5, with r = B_R^2)."""
+    docs/crypto_proofs.tex, Section 4, before Proposition 4.5, with r = B_R^2).  Full-record circuit: + r^2, since
+    sum over triu(xdot xdot^T) without (0, 0) of (x_j x_k)^2 <= ||xdot||^4 - 1 < r^2."""
     r, o, w = cp.B_R ** 2, cp.o, cp.w
+    a = r * r if (cp.fullrecord and stage in (1, 2)) else 0.0
     if stage == 1:
-        return sqrt(o * o + r * o)
+        return sqrt(o * o + r * o + a)
     if stage == 2:
-        return sqrt(o * o + r * (o + w) + o * w + (w * w if joint else 0.0))
+        return sqrt(o * o + r * (o + w) + o * w + (w * w if joint else 0.0) + a)
     return w  # separate y'y release
 
 
@@ -118,7 +155,7 @@ def offset_bounds(cp: CircuitParams, stage, joint: bool, n_max: int) -> dict:
     n_max matched rows: d_bar (slot domain, on the slots of the entries) and d_max (coefficient domain, l2 norm of
     Zhat_s(D) - Omega_f tau^{-1}(z_s(D))), the d_max of the no-wraparound condition (Q).  Public parameters only."""
     N, m = cp.N, cp.m
-    nE = entry_counts(cp.d_R, cp.d_O, joint)[stage]
+    nE = entry_counts(cp.d_R, cp.d_O, joint, cp.fullrecord)[stage]
     Gam, nuU, zeta = gamma_E(cp, stage, joint), nu_U(cp, stage, joint), zeta_E(cp, stage, joint)
     OmU, OmV, Omu, q12 = cp.Omega_U, cp.Omega_V, cp.Omega_u, cp.q1 * cp.q2
     Omf = OmU * OmV * Omu / q12
@@ -134,7 +171,7 @@ def offset_bounds(cp: CircuitParams, stage, joint: bool, n_max: int) -> dict:
 def bounds(cp: CircuitParams, stage, joint: bool, variant: str = 'A', fresh: bool = True):
     """Return the dict of term bounds B1..B8 (Proposition terms of 03b_error_bound.tex, generalized)."""
     N, L, sig_e, v_s, v_u = cp.N, cp.L, cp.sigma_e, cp.v_s, cp.v_u
-    nE = entry_counts(cp.d_R, cp.d_O, joint)[stage]
+    nE = entry_counts(cp.d_R, cp.d_O, joint, cp.fullrecord)[stage]
     Gam = gamma_E(cp, stage, joint)
     m = cp.m
     t = log(cp.n_ev / cp.delta_B)
@@ -186,16 +223,32 @@ def B_tot(cp: CircuitParams, stage, joint: bool, variant: str = 'A') -> float:
     return float(sum(bounds(cp, stage, joint, variant).values()))
 
 
-def delta_x(cp: CircuitParams, stage, joint: bool, Delta_s: float) -> float:
-    """Extra sensitivity of the centre f_s (Corollary sensZ), separate scales, '+1' for omitted terms."""
+def epsilon_x(cp: CircuitParams, stage, joint: bool) -> float:
+    """The leftover of Lemma sensZdec (Part A), covered by the '+1' of Delta_x when at most 1; doubled for the
+    whole-record adjacency of the full-record circuit (Lemma S10e)."""
     N = cp.N
-    nE = entry_counts(cp.d_R, cp.d_O, joint)[stage]
-    nuV = 2 * sqrt(gamma_E(cp, stage, joint))
+    nE = entry_counts(cp.d_R, cp.d_O, joint, cp.fullrecord)[stage]
+    q12 = cp.q1 * cp.q2
+    e = cp.Omega_u / q12 * N ** 1.5 * sqrt(nE) / (2 * sqrt(2)) + N ** 2.5 * nE / (8 * q12)
+    return 2 * e if cp.fullrecord else e
+
+
+def delta_x(cp: CircuitParams, stage, joint: bool, Delta_s: float) -> float:
+    """Extra sensitivity of the centre f_s (Corollary sensZ), separate scales, '+1' for omitted terms.
+    Full-record circuit (Lemma S10e): the neighbour also changes R's row, so the slot value of each entry gains
+    Omega_U Delta U_e tau(r_V')_l* + sum_l tau(delta r_U)_l tau(m_V')_l, which adds Omega_U nu_dU + sqrt(N) Omega_V nu_Vmax
+    (nu_dU = 2 nu_U) to the bracket Omega_V nu_V + sqrt(N) Omega_U nu_U; Delta_s is the full-record sensitivity."""
+    N = cp.N
+    nE = entry_counts(cp.d_R, cp.d_O, joint, cp.fullrecord)[stage]
+    nuV = 2 * sqrt(gamma_E(cp, stage, joint, ones=False))
     nuU = nu_U(cp, stage, joint)
     q12 = cp.q1 * cp.q2
-    main = sqrt(N / 2) * (cp.Omega_u / q12) * (cp.Omega_V * nuV + sqrt(N) * cp.Omega_U * nuU)
+    K = cp.Omega_V * nuV + sqrt(N) * cp.Omega_U * nuU
+    if cp.fullrecord:
+        K += cp.Omega_U * 2 * nuU + sqrt(N) * cp.Omega_V * nu_V_max(cp, stage, joint)
+    main = sqrt(N / 2) * (cp.Omega_u / q12) * K
     spill = (sqrt(N) / 2) * (cp.Omega_U * cp.Omega_V / q12) * sqrt(nE) * Delta_s \
-        + N ** 1.5 / (4 * q12) * sqrt(nE) * (cp.Omega_V * nuV + sqrt(N) * cp.Omega_U * nuU)
+        + N ** 1.5 / (4 * q12) * sqrt(nE) * K
     return main + spill + 1.0
 
 

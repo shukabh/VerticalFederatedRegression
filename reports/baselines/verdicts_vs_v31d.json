@@ -49,7 +49,7 @@
     "better": 2,
     "worse": 23,
     "none": 4,
-    "median_gap": 0.08718527171533585
+    "median_gap": 0.08718527171533608
    },
    "4.0": {
     "better": 1,
@@ -93,7 +93,7 @@
     "better": 23,
     "worse": 0,
     "none": 6,
-    "median_gap": -0.03678521503695775
+    "median_gap": -0.03678521503695786
    }
   },
   "full_blocknorm_P_vs_v31_blocknorm_P2": {
@@ -371,7 +371,7 @@
     "better": 1,
     "worse": 23,
     "none": 5,
-    "median_gap": 0.08718527171533585
+    "median_gap": 0.08718527171533608
    },
    "4.0": {
     "better": 1,
@@ -415,7 +415,7 @@
     "better": 23,
     "worse": 0,
     "none": 6,
-    "median_gap": -0.03678521503695775
+    "median_gap": -0.03678521503695786
    }
   },
   "full_blocknorm_P_vs_v31_blocknorm_P2": {

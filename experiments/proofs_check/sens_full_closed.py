@@ -9,7 +9,7 @@ dimension >= 2, and scalar y (y^2 <= w).  Proved in the stats proofs (Part B):
 Psi is a piecewise quartic in t; its maximum is attained at t = +-w, at a breakpoint |iota + t| in {3 m1, m1 + 2 m2}, or at a
 real root of the cubic Psi' on a piece, which this script enumerates (as DeltaRep does for prop:sens).  If a block has
 dimension 1 the same value is a valid, conservative upper bound (a 1-dimensional configuration embeds in 2 dimensions).
-The script compares the enumeration with experiments/baselines/sens_full.delta_full (grid + local search).
+The script compares the enumeration with experiments/baselines/sens_full.delta_full_grid (the earlier grid + local search; sens_full.delta_full is now this enumeration, and Lemma S10d for a block of dimension 1).
 """
 import math, os, sys
 import numpy as np
@@ -73,7 +73,7 @@ def delta2_closed(B_R, B_O, B_y, intercept, stage=2, joint=True):
 def check(cases):
     worst = 0.0
     for (BR, BO, By, ic) in cases:
-        D, Dn, DG = sf.delta_full(BR, BO, By, ic, 3, 3)
+        D, Dn, DG = sf.delta_full_grid(BR, BO, By, ic, 3, 3)
         c2, t2 = delta2_closed(BR, BO, By, ic, 2, True)
         c2n, _ = delta2_closed(BR, BO, By, ic, 2, False)
         c1 = delta2_closed(BR, BO, By, ic, 1)
@@ -96,6 +96,6 @@ if __name__ == '__main__':
     check(cases)
     # dimension-1 block: the closed form is an upper bound
     for (BR, BO, By, ic) in [(1.4142, 1.0, 2.89, True), (5.59, 6.24, 2.89, True), (2.0, 1.5, 3.0, True)]:
-        D1, Dn1, DG1 = sf.delta_full(BR, BO, By, ic, 1, 2)
+        D1, Dn1, DG1 = sf.delta_full_grid(BR, BO, By, ic, 1, 2)
         print(f'd_u=1 B=({BR},{BO},{By}): grid {D1:.6f} <= closed {math.sqrt(delta2_closed(BR,BO,By,ic)[0]):.6f};'
               f' no yy {Dn1:.6f} <= {math.sqrt(delta2_closed(BR,BO,By,ic,2,False)[0]):.6f}; stage 1 {DG1:.6f} <= {math.sqrt(delta2_closed(BR,BO,By,ic,1)):.6f}')
