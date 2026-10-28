@@ -13,7 +13,7 @@
 \label{alg:setup}
 \small
 \begin{algorithmic}[1]
-\State \Bdo agree on the parameter vector $\mathcal P$ (Table~\ref{tab:params}): the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the ledger parameters $(\varepsilon_L,\delta_L,\zeta_L,\xi_L,\delta')$, $f_1$ (and $f_y$), $\zeta$, $\kappa_{\min}$ (or a fixed $\kappa$), $\delta_B$, $t_\eta$, $\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, $\eta_B$, $B$, the PSI parameters, $N$, the chain, $\Omega_U$ and $\Omega_u$
+\State \Bdo agree on the parameter vector $\mathcal P$ (Table~\ref{tab:params}): the scope $\Phi$ (public attributes only), the caps $n_R^{\max}$ and $\bar n_O$, the budget $(\varepsilon_{\mathrm{run}},\delta_{\mathrm{run}})$, the ledger parameters $(\varepsilon_L,\delta_L,\zeta_L,\xi_L,\delta')$, $f_1$ (and $f_y$), $\zeta$, $\kappa_{\min}$ (or a fixed $\kappa$), $\delta_B$, $t_\eta$, $\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\bar\sigma^2$, $\kappa_\Psi$, $\eta_B$, $B$, the PSI parameters, $N$, the chain, $\Omega_U$ and $\Omega_u$
 \State \Odo $D_\Phi\gets\{j:\Phi(j)\}$; pad with dummy rows (fresh random identifiers, $\bx_O=\mathbf 0$, $y=0$) to $\bar n_O$; draw a fresh secret permutation $\tau$ of $[\bar n_O]$
 \State \Bdo optional: screen the features on public reference data that carries both schemas and drop nearly collinear ones \Comment{no budget}
 \State \Rdo and \Odo, each on its own columns only: $\textsc{Preprocess}$ with constants from public reference data or domain knowledge
@@ -101,7 +101,7 @@
 \label{alg:solve}
 \small
 \begin{algorithmic}[1]
-\Require $\bA$, $n$, $p$, slot-domain s.d.\ $\sigma_1,\sigma_2$ (and $\sigma_y$); from $\mathcal P$: $\vartheta^\star$, $\alpha=\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, bootstrap truncation $\eta_B$ and size $B$
+\Require $\bA$, $n$, $p$, slot-domain s.d.\ $\sigma_1,\sigma_2$ (and $\sigma_y$); from $\mathcal P$: $\vartheta^\star$, $\alpha=\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U$, $B_\beta^{\mathrm{pub}}$, the variance bound $\bar\sigma^2$, $\kappa_\Psi$, bootstrap truncation $\eta_B$ and size $B$
 \State $(\hat\bB_1,\hat\bC_1)\gets\textsc{Release}(M_1,\sigma_{c,1})$;\quad $\hat\bG_1\gets\begin{psmallmatrix}\bA&\hat\bC_1\\ \hat\bC_1^\top&\hat\bB_1\end{psmallmatrix}$
 \State $r_1\gets\sigma_1\bigl(2\sqrt p+2\sqrt{\ln(1/\alpha_L)}\bigr)$, or $r_1\gets\sigma_1q_{1-\alpha_L}$ (exact quantile) \Comment{$\Pr[\lambda_{\max}(\hat\bG_1-\bG)>r_1]\le\alpha_L$ (one-sided)}
 \State $\hat L\gets\max\{0,\ \lambda_{\min}(\hat\bG_1)-r_1\}$;\quad $g^\star\gets2\vartheta^\star\sigma_2\sqrt p$
@@ -119,11 +119,13 @@
 \EndFor
 \State $\bV_{\mathrm{mech}}\gets\widehat{\mathrm{Cov}}_b(\btheta^*_b)$;\quad $\mathrm{Corr}\gets\overline{\mathrm{RSS}^*}-\widetilde{\mathrm{RSS}}$;\quad $\tilde s^2\gets\max\{\widetilde{\mathrm{RSS}}-\mathrm{Corr},0\}/(n-p)$
 \State \textbf{CI for the protocol estimand} $\btheta_\lambda=(\bG+\lambda\Psi)^{-1}\bc$:\quad $\tilde\theta_j\pm z_{1-\alpha_{\mathrm{CI}}/2}\sqrt{(\bV_{\mathrm{mech}})_{jj}}$
-\State $\bV\gets\bV_{\mathrm{mech}}+\tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{adds sampling variance under the homoskedastic working model}
+\State $\bV\gets\bV_{\mathrm{mech}}+\bar\sigma^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{sampling variance from the public bound $\bar\sigma^2\ge\max_i\operatorname{Var}(\tilde y_i\mid\bX)$}
+\State $\bV^{\mathrm{wm}}\gets\bV_{\mathrm{mech}}+\tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{sampling variance under the homoskedastic working model}
 \State $U_{yy}\gets\min\bigl\{\widehat{yy}+z_{1-\alpha_U/2}\,\sigma_{yy}+B_y^2\sqrt{n\ln(2/\alpha_U)/2},\ nB_y^2\bigr\}$;\quad $\hat B_\beta\gets\min\{B_\beta^{\mathrm{pub}},\sqrt{U_{yy}/\hat L}\}$ \Comment{$\infty$ if $\hat L=0$; $U_{yy}$ valid at level $\alpha_U$}
 \State $\bar b_j\gets\lambda\,\|\Psi\tilde\bP\mathbf e_j\|_2\,\hat B_\beta$ \Comment{worst-case ridge bias of coordinate $j$ (first order)}
-\State \textbf{CI for} $\beta_j$ (bias-aware): $\tilde\theta_j\pm\mathrm{cv}_{\alpha_{\mathrm{CI}}}\bigl(\bar b_j/\sqrt{V_{jj}}\bigr)\sqrt{V_{jj}}$, where $\mathrm{cv}_\alpha(t)$ is the $(1-\alpha)$ quantile of $|Z+t|$, $Z\sim\mathcal N(0,1)$
-\State \Return $\tilde\btheta$, both intervals, $(\lambda,\Psi)$, the shrinkage $-\lambda\tilde\bP\Psi\tilde\btheta$, $\hat\vartheta$, $\sigma_2\tr(\tilde\bP)$, and the $(\varepsilon,\delta)$ spent
+\State \textbf{CI for} $\beta_j$ (bias-aware): $\tilde\theta_j\pm\mathrm{cv}_{\alpha_{\mathrm{CI}}}\bigl(\bar b_j/\sqrt{V_{jj}}\bigr)\sqrt{V_{jj}}$, where $\mathrm{cv}_\alpha(t)$ is the $(1-\alpha)$ quantile of $|Z+t|$, $Z\sim\mathcal N(0,1)$ \Comment{valid whether or not clipping binds}
+\State \textbf{working-model CI for} $\beta_j$: the same with $\bV^{\mathrm{wm}}$ in place of $\bV$ \Comment{valid only under the working model}
+\State \Return $\tilde\btheta$, the three intervals, each labelled, $(\lambda,\Psi)$, the shrinkage $-\lambda\tilde\bP\Psi\tilde\btheta$, $\hat\vartheta$, $\sigma_2\tr(\tilde\bP)$, and the $(\varepsilon,\delta)$ spent
 \end{algorithmic}
 \end{algorithm}
 
