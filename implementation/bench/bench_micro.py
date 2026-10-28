@@ -80,9 +80,12 @@ def main():
     R['ckks_rescale_det_L1'], M = timeit(lambda: ck.rescale(tm, False), reps)
     sig2 = cal['releases']['2']['sigma_c2']
     srng = S.CSPRNG()
-    R['dg_sample_N'], eta = timeit(lambda: S.sample_vector(sig2, N, srng), max(1, reps // 2))
+    # the protocol's budgeted sampler returns the residues directly (DEVIATIONS A24): dg_sample_N includes them
+    R['dg_sample_N'], er = timeit(lambda: S.sample_residues(sig2, N, qs[:2], srng), max(1, reps // 2))
+    R['dg_residues_N'] = 0.0
+    R['dg_sample_plain_N'], eta = timeit(lambda: S.sample_vector(sig2, N, srng), max(1, reps // 2))
+    R['dg_residues_plain_N'], _ = timeit(lambda: S.residues(eta, qs[:2]), reps)
     R['dg_log2_sigma_c'] = 0.5 * math.log2(sig2)
-    R['dg_residues_N'], er = timeit(lambda: S.residues(eta, qs[:2]), reps)
     R['ckks_rerand_partial_dec'], (c1p, h) = timeit(lambda: ck.rerand_partial_decrypt(M, pk, sO, er), reps)
     R['ckks_combine_R'], (hi, lo) = timeit(lambda: ck.combine(c1p, h, sR), reps)
     R['ckks_decode_dd_R'], _ = timeit(lambda: ck.decode_i128(hi, lo, OmV), reps)
@@ -134,7 +137,7 @@ def main():
     R['bfv_eval_partition_D64'], (Sct, Qct) = timeit(lambda: bo.eval_partition(pw, Pc, Qc), max(1, reps // 2))
     fl = pp.flood_sigma2()
     keep = bo.moduli()[:pp.reply_towers]
-    R['bfv_flood_sample_N'], fe = timeit(lambda: S.residues(S.sample_vector(fl, pp.N_B, srng), keep), max(1, reps // 2))
+    R['bfv_flood_sample_N'], fe = timeit(lambda: S.sample_residues(fl, pp.N_B, keep, srng), max(1, reps // 2))
     R['bfv_sanitize_excl_sampling'], rep = timeit(lambda: bo.sanitize(Sct, pp.reply_towers, fe), reps)
     R['size_bfv_reply_ct_bytes'] = len(rep)
     R['bfv_decrypt'], _ = timeit(lambda: bf.decrypt(keys, rep), reps)

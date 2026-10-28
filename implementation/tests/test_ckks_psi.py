@@ -160,8 +160,8 @@ def test_labeled_psi_exact_recovery():
             pw = bo.compute_powers([bf.encrypt_sym(keys, w[f * nb:(f + 1) * nb]) for w in wins], D)
             for a, (Sc, Qc) in enumerate(layers):
                 Sct, Qct = bo.eval_partition(pw, psi.felt_slice(Sc, f, nb), psi.felt_slice(Qc, f, nb))
-                Sl[a].append(bf.decrypt(keys, bo.sanitize(Sct, pp.reply_towers, S.residues(S.sample_vector(fl, pp.N_B, rng), keep))))
-                Ql[a].append(bf.decrypt(keys, bo.sanitize(Qct, pp.reply_towers, S.residues(S.sample_vector(fl, pp.N_B, rng), keep))))
+                Sl[a].append(bf.decrypt(keys, bo.sanitize(Sct, pp.reply_towers, S.sample_residues(fl, pp.N_B, keep, rng))))
+                Ql[a].append(bf.decrypt(keys, bo.sanitize(Qct, pp.reply_towers, S.sample_residues(fl, pp.N_B, keep, rng))))
         f_, amb, bad = psi.receiver_decode([np.concatenate(x) for x in Sl], [np.concatenate(x) for x in Ql],
                                            bt_['slot_item'], outsR, pp.t, n_bar, felts=F, n_bins=nb, stats=stats)
         assert not amb and not bad

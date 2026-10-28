@@ -2,7 +2,9 @@
 Calibrate (scale chosen so that the DP noise floods the worst-case error), and O's ledger.
 
 Follows paper/algorithms.tex (Algorithm 7, Calibrate): the statistical slack is
-gamma = n_rel (delta_B + 2^-kappa (1 + 2^-80) + 2^-97) and delta_DP = delta_run - (1 + e^eps) gamma; the encoded
+gamma = n_rel (delta_B + 2^-kappa (1 + 2^-80) + 2^-97 + xi_T) and delta_DP = delta_run - (1 + e^eps) gamma, where
+xi_T (Agreement.sampler_xi, default 2^-80) bounds the probability that the budgeted sampler of one release fails,
+the only event on which the timing of a release depends on its noise (DEVIATIONS A24); the encoded
 sensitivity includes Delta_x (centred mechanism, exact final scale); sigma_c^2 is the integer
 ceil(Delta_enc^2 / (2 rho)) so that the exact sampler gets a rational variance.
 
@@ -34,6 +36,7 @@ import numpy as np
 from scipy.optimize import brentq, minimize_scalar
 
 from . import btot as bt
+from . import sampler as smp
 
 # =============================================================================================
 # DeltaRep (Proposition sens / Part B Theorem S1): exact enumeration in every regime
@@ -247,6 +250,10 @@ class Agreement:
     # is refused (O sends 'refuse'; the run's cost stays charged, as for any abort).
     release_pad: float | str | None = 'auto'
     release_pad_margin: float = 2.0
+    # budgeted sampler (DEVIATIONS A24; proofs, Part A, "Release timing"): each release draws its noise with a fixed
+    # work budget (sampler.budget) whose failure probability is at most sampler_xi; a failed release is refused, and
+    # sampler_xi is charged per release in the statistical slack gamma (and in the ledger's Gamma)
+    sampler_xi: float = 2.0 ** -80
     researcher: str = 'R'
     project: str = 'demo'
 
@@ -296,6 +303,8 @@ def alpha_split(ag: 'Agreement'):
         raise ValueError('with intervals on, alpha_L + alpha_U must be below alpha')
     check_release_pad(ag)
     sigma_bar2_of(ag)
+    if not (0 < float(ag.sampler_xi) <= 2.0 ** -40):
+        raise ValueError('sampler_xi must lie in (0, 2^-40]')
     return aL, aU, aCI
 
 
@@ -381,16 +390,18 @@ def floods(sigma_c2: int, B_tot: float, kappa: int) -> bool:
     return Fraction(int(sigma_c2)) >= Fraction(flood_needed(B_tot, kappa)) ** 2
 
 
-def slack_per_release(kappa: int, delta_B: float) -> float:
-    """Statistical distance charged per release: delta_B + 2^-kappa (1 + 2^-80) + 2^-97 (Lemma smudge), computed
-    exactly and rounded up to a float (in double precision 2^-kappa (1 + 2^-80) would round down to 2^-kappa)."""
-    return _ceil_float(Fraction(delta_B) + Fraction(1, 2 ** kappa) * (1 + Fraction(1, 2 ** 80)) + Fraction(1, 2 ** 97))
+def slack_per_release(kappa: int, delta_B: float, xi_T: float = 0.0) -> float:
+    """Statistical distance charged per release: delta_B + 2^-kappa (1 + 2^-80) + 2^-97 (Lemma smudge) + xi_T (the
+    budgeted sampler's failure bound, Lemma "Release timing"), computed exactly and rounded up to a float (in
+    double precision 2^-kappa (1 + 2^-80) would round down to 2^-kappa)."""
+    return _ceil_float(Fraction(delta_B) + Fraction(1, 2 ** kappa) * (1 + Fraction(1, 2 ** 80)) + Fraction(1, 2 ** 97)
+                       + Fraction(xi_T))
 
 
-def _kappa_for_slack(budget: float, n_rel: int, delta_B: float, kappa_max: int = 256):
+def _kappa_for_slack(budget: float, n_rel: int, delta_B: float, kappa_max: int = 256, xi_T: float = 0.0):
     """Smallest integer kappa >= 1 with n_rel * slack_per_release(kappa) <= budget, or None."""
     for k in range(1, kappa_max + 1):
-        if n_rel * slack_per_release(k, delta_B) <= budget:
+        if n_rel * slack_per_release(k, delta_B, xi_T) <= budget:
             return k
     return None
 
@@ -437,14 +448,17 @@ def ledger_capacities(eps_L: float, delta_L: float, zeta_L: float, xi_L: float |
                 Gamma=(zeta_L * delta_L / (1 + math.exp(eps_L - E))) * (1 - _REL))
 
 
-def run_cost(n_rel: int, kappa: int, delta_B: float, rho_run: float, xi: float | None, delta_prime: float | None):
+def run_cost(n_rel: int, kappa: int, delta_B: float, rho_run: float, xi: float | None, delta_prime: float | None,
+             xi_T: float = 0.0):
     """The cost of a run that the ledger charges at admission, each part rounded up.  Statistical-distance accounting:
-    (rho_run, gamma = n_rel (delta_B + 2^-kappa (1 + 2^-80) + 2^-97)).  Hockey-stick accounting: (rho_run,
-    eps' = n_rel eps'(kappa, delta'), gamma = n_rel (delta_B + delta'))."""
+    (rho_run, gamma = n_rel (delta_B + 2^-kappa (1 + 2^-80) + 2^-97 + xi_T)).  Hockey-stick accounting: (rho_run,
+    eps' = n_rel eps'(kappa, delta'), gamma = n_rel (delta_B + delta' + xi_T)).  xi_T is the budgeted sampler's
+    failure bound per release (Agreement.sampler_xi)."""
     if xi is None:
-        return dict(rho=float(rho_run), eps_prime=0.0, gamma=_ceil_float(n_rel * Fraction(slack_per_release(kappa, delta_B))))
+        return dict(rho=float(rho_run), eps_prime=0.0,
+                    gamma=_ceil_float(n_rel * Fraction(slack_per_release(kappa, delta_B, xi_T))))
     return dict(rho=float(rho_run), eps_prime=n_rel * eps_smudge(kappa, delta_prime) * (1 + _REL),
-                gamma=_ceil_float(n_rel * (Fraction(delta_B) + Fraction(delta_prime))))
+                gamma=_ceil_float(n_rel * (Fraction(delta_B) + Fraction(delta_prime) + Fraction(xi_T))))
 
 
 def choose_kappa(ag: Agreement, n_rel: int):
@@ -454,7 +468,8 @@ def choose_kappa(ag: Agreement, n_rel: int):
         return int(ag.kappa), dict(rule='fixed')
     if not 0 < ag.zeta < 1:
         raise ValueError('zeta must lie in (0, 1)')
-    k_run = _kappa_for_slack(ag.zeta * ag.delta_run / (1 + math.exp(ag.eps_run)), n_rel, ag.delta_B)
+    k_run = _kappa_for_slack(ag.zeta * ag.delta_run / (1 + math.exp(ag.eps_run)), n_rel, ag.delta_B,
+                             xi_T=ag.sampler_xi)
     if k_run is None:
         raise CalibrationRefused(f'no kappa keeps (1 + e^eps) gamma <= zeta delta_run: n_rel (1 + e^eps)'
                                  f' (delta_B + 2^-97) alone exceeds it; lower delta_B')
@@ -466,14 +481,14 @@ def choose_kappa(ag: Agreement, n_rel: int):
         rho_low = rho_tight(ag.eps_run, (1 - ag.zeta) * ag.delta_run)   # rho_run >= rho_low once kappa >= kappa_run
         share = rho_low / cap['rho']                                     # this run's share of the ledger
         if led['xi'] is None:                                            # statistical-distance ledger
-            k_L = _kappa_for_slack(share * cap['Gamma'], n_rel, ag.delta_B)
+            k_L = _kappa_for_slack(share * cap['Gamma'], n_rel, ag.delta_B, xi_T=ag.sampler_xi)
             if k_L is None:
                 raise CalibrationRefused('the ledger slack share of this run is below n_rel (delta_B + 2^-97); '
                                          'lower delta_B or the ledger eps')
             info.update(kappa_L=k_L, ledger_rule='sd', rho_L=cap['rho'], Gamma_L=cap['Gamma'])
         else:                                                            # hockey-stick ledger (Proposition 5.5)
-            if n_rel * (ag.delta_B + led['delta_prime']) > share * cap['Gamma']:
-                raise CalibrationRefused("the ledger slack share of this run is below n_rel (delta_B + delta'); "
+            if n_rel * (ag.delta_B + led['delta_prime'] + ag.sampler_xi) > share * cap['Gamma']:
+                raise CalibrationRefused("the ledger slack share of this run is below n_rel (delta_B + delta' + xi_T); "
                                          'lower delta_B or the ledger eps')
             k_L = _kappa_for_smudging(share * cap['E'], n_rel, led['delta_prime'])
             if k_L is None:
@@ -502,7 +517,7 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
     if log2_QP > QP_max:
         raise CalibrationRefused(f'log QP = {log2_QP:.1f} exceeds the {ag.lambda_sec}-bit bound {QP_max} for N = {N}')
     kappa, kappa_info = choose_kappa(ag, n_rel)
-    gamma = _ceil_float(n_rel * Fraction(slack_per_release(kappa, ag.delta_B)))
+    gamma = _ceil_float(n_rel * Fraction(slack_per_release(kappa, ag.delta_B, ag.sampler_xi)))
     delta_DP = ag.delta_run - _up((1 + math.exp(ag.eps_run)) * gamma)
     if delta_DP <= 0:
         raise CalibrationRefused(f"delta_run too small for the statistical slack at kappa = {kappa}")
@@ -518,7 +533,7 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
     rest = Fraction(rho_run) - sum(Fraction(v) for v in rho.values())
     rho[2] = float(rest) if Fraction(float(rest)) <= rest else _down(float(rest))
     led = ledger_cap(ag)
-    ledger_cost = run_cost(n_rel, kappa, ag.delta_B, rho_run, led['xi'], led['delta_prime'])
+    ledger_cost = run_cost(n_rel, kappa, ag.delta_B, rho_run, led['xi'], led['delta_prime'], ag.sampler_xi)
     stages = list(sens.keys())
     OmU, Omu = scales_from_primes(q1, q2, resolve_log2_Omega_U(ag.log2_Omega_U, ag.variant))
 
@@ -554,6 +569,12 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
         raise CalibrationRefused(f"no admissible scale below 2^{lg:.0f} floods at kappa = {kappa}: the error bound "
                                  "grows as fast as the scale (raise Omega_U or lower kappa)")
     Om, OmV, rows = chosen
+    for s in stages:                                    # the public work budget of each release's sampler (A24)
+        try:
+            sb = smp.budget(rows[s]['sigma_c2'], N, ag.sampler_xi)
+        except ValueError as exc:                       # e.g. sampler_xi too small for the 128-bit coins
+            raise CalibrationRefused(f'sampler budget: {exc}')
+        rows[s]['sampler'] = {k: sb[k] for k in ('T', 'J_v', 'k_max', 'b', 'xi', 'xi_bound', 'p_lo')}
     r, o, w = ag.B_R ** 2, ag.B_O ** 2, ag.B_y ** 2
     S_max = ag.n_bar_O * max(r, o, w, math.sqrt(r * o), math.sqrt(r * w), math.sqrt(o * w))
     sig_max = max(v['sigma_c'] for v in rows.values())
@@ -584,7 +605,7 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
                 log2_QP=log2_QP, log2_QP_max=QP_max,
                 releases={str(s): v for s, v in rows.items()}, variant=ag.variant, kappa=kappa,
                 kappa_info=kappa_info, delta_B=ag.delta_B, entries={str(k): v for k, v in nE.items()},
-                ledger=led, ledger_cost=ledger_cost)
+                ledger=led, ledger_cost=ledger_cost, sampler_xi=float(ag.sampler_xi))
 
 
 # =============================================================================================
@@ -607,10 +628,10 @@ class Ledger:
     refunding the delta_B part would not be sound).  The sums are kept as exact fractions, the capacities are rounded
     down and the costs up, and the tests have no tolerance.
 
-    Statistical-distance accounting, costs (rho, gamma) with gamma = n_rel (delta_B + 2^-kappa (1 + 2^-80) + 2^-97):
+    Statistical-distance accounting, costs (rho, gamma) with gamma = n_rel (delta_B + 2^-kappa (1 + 2^-80) + 2^-97 + xi_T):
       mode 'fixed'  (runs fixed in advance): admit iff delta(rho+, eps_cap) + (1 + e^eps_cap) Gamma+ <= delta_cap;
       mode 'filter' (runs chosen after seeing earlier outputs): admit iff rho+ <= rho_cap and Gamma+ <= Gamma_cap.
-    Hockey-stick accounting, costs (rho, eps', gamma) with eps' = n_rel eps'(kappa, delta'), gamma = n_rel (delta_B + delta'):
+    Hockey-stick accounting, costs (rho, eps', gamma) with eps' = n_rel eps'(kappa, delta'), gamma = n_rel (delta_B + delta' + xi_T):
       mode 'fixed':  admit iff e^E+ delta(rho+, eps_cap - 2 E+) + (1 + e^(eps_cap - E+)) Gamma+ <= delta_cap;
       mode 'filter': admit iff rho+ <= rho_cap, E+ <= E_cap and Gamma+ <= Gamma_cap.
     Here x+ is the sum after adding the run, and the capacities are those of ledger_capacities.  Either way the joint

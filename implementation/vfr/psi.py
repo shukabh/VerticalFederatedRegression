@@ -68,6 +68,7 @@ class PSIParams:
     cuckoo_load: float = 0.9    # hard cap on the load of one cuckoo table (the table count also meets delta_psi)
     felts: int = 2              # field elements per item (64-bit items at t ~ 2^32)
     t_eta: float = 10.0         # SanitizeBFV: tail factor of the flooding noise in the switch condition
+    sampler_xi: float = 2.0 ** -80   # failure bound of one budgeted flooding sampling call (N_B values; A24)
 
     @property
     def n_bins(self):
@@ -196,6 +197,16 @@ class PSIParams:
                            f' > delta_psi')
         out = dict(false_match=fm, tables=k, per_table=per, p_cuckoo=pc,
                    log2_p_cuckoo=math.log2(pc) if pc > 0 else float('-inf'))
+        # SanitizeBFV draws 2 alpha F vectors of N_B flooding values per cuckoo table with the budgeted sampler; the
+        # timing of the replies depends on the flooding noise only if one of these calls fails, which aborts the run
+        # (probability <= p_sampler, added to the statistical distance of G4's second layer; DEVIATIONS A24)
+        D_, alpha_, _ = self.sizes(n_bar_O)
+        n_calls = 2 * alpha_ * self.felts * k
+        p_sampler = n_calls * float(self.sampler_xi)
+        out.update(sampler_calls=n_calls, p_sampler=p_sampler, log2_p_sampler=math.log2(p_sampler))
+        if not (0 < self.sampler_xi <= 2.0 ** -40) or p_sampler > self.delta_psi:
+            reasons.append(f'SanitizeBFV sampler: {n_calls} calls fail with probability up to '
+                           f'2^{math.log2(p_sampler):.1f} > delta_psi (lower sampler_xi)')
         if moduli is not None:
             sc = self.sanitize_check(moduli)
             out['sanitize'] = sc

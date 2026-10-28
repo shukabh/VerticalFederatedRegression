@@ -1,8 +1,9 @@
-"""Padded release timing (Agreement.release_pad; DEVIATIONS A24).
+"""Release timing (DEVIATIONS A24): the budgeted sampler and the padded deadline.
 
-O holds every release until a deadline fixed before the first release, measured from the receipt of the request,
-so that the latency R observes does not depend on the noise drawn by the (not constant-time) exact sampler.  An
-overrun release is refused, never sent late.
+The noise of every release (and the flooding of SanitizeBFV) comes from the budgeted sampler, whose work does not
+depend on the values drawn; its failure (probability at most Agreement.sampler_xi per release, charged in gamma)
+refuses the release.  As defence in depth O also holds every release until a deadline fixed before the first
+release, measured from the receipt of the request; an overrun release is refused, never sent late.
 """
 import os
 import time
@@ -17,10 +18,11 @@ from vfr.party_o import _hold_until
 SLACK = 0.25        # socket, framing and scheduling time on top of the deadline (two local processes)
 
 
-def _toy_run(tmp_path, name, **kw):
+def _toy_run(tmp_path, name, opts_O=None, **kw):
     dR_, dO_, b = data.toy()
     ag = dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, **b, **kw)
-    return protocol.run(ag, C.CKKSParams(), dR_, dO_, {}, dict(ledger_path=str(tmp_path / f'{name}.json')), timeout=300)
+    return protocol.run(ag, C.CKKSParams(), dR_, dO_, {},
+                        dict(ledger_path=str(tmp_path / f'{name}.json'), **(opts_O or {})), timeout=300)
 
 
 def test_hold_until_masks_the_work_time():
@@ -91,3 +93,53 @@ def test_no_padding_and_bad_values(tmp_path):
         dp.check_release_pad(dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, B_R=1, B_O=1, B_y=1, release_pad_margin=0.5))
     R, O = _toy_run(tmp_path, 'neg', release_pad=-1.0)
     assert R['refused'].startswith('Setting')
+
+
+def test_sampler_budget_is_public_and_charged(tmp_path):
+    """Calibrate publishes each release's work budget (R checks it) and charges sampler_xi per release in gamma and
+    in the ledger cost."""
+    dR_, dO_, b = data.toy()
+    ag = dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, **b)
+    ag0 = dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, **b, sampler_xi=2.0 ** -100)
+    ck = C.make_ckks(C.CKKSParams())
+    qs = list(ck.qs)
+    cal = dp.calibrate(ag, ck.N, qs[2], qs[3], qs[0] * qs[1], C.gadget_constants(ck))
+    cal0 = dp.calibrate(ag0, ck.N, qs[2], qs[3], qs[0] * qs[1], C.gadget_constants(ck))
+    n_rel = cal['n_rel']
+    for s, rel in cal['releases'].items():
+        sb = rel['sampler']
+        assert sb['xi_bound'] <= ag.sampler_xi and sb['T'] > ck.N
+        assert sb['T'] == dp.smp.budget(rel['sigma_c2'], ck.N, ag.sampler_xi)['T']
+    assert cal['gamma'] - cal0['gamma'] == pytest.approx(n_rel * (ag.sampler_xi - ag0.sampler_xi), rel=1e-2)
+    assert cal['gamma'] == dp._ceil_float(n_rel * dp.Fraction(dp.slack_per_release(cal['kappa'], ag.delta_B, ag.sampler_xi)))
+    with pytest.raises(ValueError):
+        dp.alpha_split(dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, **b, sampler_xi=0.0))
+    with pytest.raises(dp.CalibrationRefused):          # too small for the 128-bit coins: Calibrate refuses
+        dp.calibrate(dp.Agreement(n_R_max=4, n_bar_O=6, d_R=2, d_O=2, **b, sampler_xi=2.0 ** -200),
+                     ck.N, qs[2], qs[3], qs[0] * qs[1], C.gadget_constants(ck))
+
+
+def test_sampler_failure_refuses_the_release(tmp_path, debug_env):
+    R, O = _toy_run(tmp_path, 'sfail', opts_O=dict(test_sampler_fail='release'))
+    assert 'sampler budget exhausted' in R['refused']
+    assert O['timings']['release']['1'] == dict(sampler_failed=True)
+    types = [r['type'] for r in O['transcript']]
+    assert 'release' not in types and types[-1] == 'refuse'
+
+
+def test_sampler_failure_in_psi_aborts(tmp_path, debug_env):
+    R, O = _toy_run(tmp_path, 'pfail', opts_O=dict(test_sampler_fail='psi'))
+    assert 'sampler budget exhausted' in R['refused'] and 'sampler budget exhausted' in O['refused']
+    types = [r['type'] for r in O['transcript']]
+    assert 'psi_response' not in types and types[-1] == 'refuse'
+
+
+def test_psi_check_charges_the_flooding_sampler():
+    from vfr import psi
+    pp = psi.PSIParams()
+    chk = pp.check(1_000_000, 20_000)
+    D, alpha, _ = pp.sizes(1_000_000)
+    assert chk['sampler_calls'] == 2 * alpha * pp.felts * chk['tables']
+    assert chk['p_sampler'] == chk['sampler_calls'] * pp.sampler_xi <= pp.delta_psi
+    bad = psi.PSIParams(sampler_xi=2.0 ** -30).check(1_000_000, 20_000)
+    assert not bad['ok'] and any('sampler' in r for r in bad['reasons'])

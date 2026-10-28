@@ -93,7 +93,7 @@ The $q_0$ condition in \textsc{Calibrate} is sufficient once $\Omega=\Omf$ (Prop
 \begin{correction}[Sampler]\label{cor:sampler}
 \begin{itemize}[nosep]
   \item Set $\sigma_{c,s}^2$ to a rational, for example $\lceil\widehat\Delta_{\mathrm{enc},s}^2/(2\rho_s)\rceil$, as CKS20's exact sampler requires.
-  \item ``Constant-time'' must mean (CT) of Section~\ref{sec:corr}. A direct implementation of CKS20 does not satisfy (CT).
+  \item ``Constant-time'' must mean (CT) of Section~\ref{sec:corr}. A direct implementation of CKS20 does not satisfy (CT). The budgeted sampler of Section~\ref{sec:timing} does for $\eta$, under the cost assumption (W), up to a failure probability $\xi_T$ per release that is added to $\gamma$.
   \item The slot-domain noise has variance at most $\sigma_{c,s}^2N/(2\Omf^2)$ per real slot component. The variance of $\DG(0,\sigma^2)$ is below $\sigma^2$, and at $\sigma\gg1$ the difference is negligible. So $\sigma_s=\sigma_{c,s}\sqrt{N/2}/\Omf$ is an upper bound on the noise s.d., not an exact value.
 \end{itemize}
 \end{correction}
