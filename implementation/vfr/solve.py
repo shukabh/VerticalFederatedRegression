@@ -9,7 +9,12 @@ and intervals can be compared draw for draw), with the corrections of the paper:
   * lambda_O by the closed form of Lemma S3(c) instead of bisection (paper tocheck: "replace the bisection");
   * bootstrap truncation ||P~^{1/2} E* P~^{1/2}||_op <= 1/2 (paper: required for the moments to exist);
   * U_yy = min{ yy^ + z_{1-alpha_U/2} sigma_yy + B_y^2 sqrt(n ln(2/alpha_U)/2), n B_y^2 }, sigma_yy = sigma_2 (joint)
-    or sigma_y (separate)  (alg6.py's U_spec uses z_{1-alpha_U} and ln(1/alpha_U); both are returned).
+    or sigma_y (separate)  (alg6.py's U_spec uses z_{1-alpha_U} and ln(1/alpha_U); both are returned);
+  * two bias-aware intervals for beta (paper check item #9): 'guaranteed', with the sampling variance
+    sigma_bar^2 P~ G2 P~ from the public bound sigma_bar^2 on the conditional variances of the clipped response
+    (Agreement.sigma_bar2, default B_y^2; valid for the projection coefficient beta* whether or not clipping binds,
+    proofs Part B, Proposition S10b), and 'model', with the data-driven s~^2 (valid only under the working model:
+    homoskedastic clipped errors, e.g. clipping not binding).  The Wald interval for theta_lambda is unchanged.
 """
 from __future__ import annotations
 
@@ -151,6 +156,14 @@ def cv_alpha(t, alpha):
     return brentq(f, 0.0, t + 10.0)
 
 
+def bias_aware_half(bbar, V, alpha):
+    """Half-widths cv_alpha(bbar_j / sd_j) sd_j of the bias-aware interval, sd_j = sqrt(V_jj); inf where the bias
+    bound is infinite."""
+    sd = np.sqrt(np.diag(V))
+    return np.array([cv_alpha(bbar[j] / sd[j], alpha) * sd[j] if np.isfinite(bbar[j]) else np.inf
+                     for j in range(len(bbar))])
+
+
 def assemble(A, B_triu, C):
     """G from R's exact A, the released upper triangle of B (mirrored) and C."""
     dA, dO = A.shape[0], B_triu.shape[0]
@@ -189,10 +202,19 @@ def rss_fun(G, c, yy, lam, Psi):
 
 
 def stage2_infer(G2, c2, yy2, n, dA, s1, sigma2, sigma_yy, B_y, alpha, alpha_L, alpha_U, B_pub, rng,
-                 Bboot=2000, truncate=True, antithetic=True, intervals=True):
-    """Gate, estimate, parametric bootstrap, RSS correction, both intervals.  rng: numpy Generator.
+                 Bboot=2000, truncate=True, antithetic=True, intervals=True, sigma_bar2=None):
+    """Gate, estimate, parametric bootstrap, RSS correction, the intervals.  rng: numpy Generator.
     intervals=False (a setting without the interval guarantee, e.g. the prediction setting): gate and estimate
-    only; alpha and alpha_U are then unused and alpha_L only sized the stage-1 radius."""
+    only; alpha and alpha_U are then unused and alpha_L only sized the stage-1 radius.
+
+    sigma_bar2: public bound on Var(y~_i | X) (None: B_y^2).  Returned intervals (half-widths):
+      half_theta            Wald interval for theta_lambda (mechanism variance only);
+      half_beta_guaranteed  bias-aware interval for beta with V_guaranteed = Vmech + sigma_bar2 P~ G2 P~: the one
+                            the protocol reports as guaranteed (Proposition S10b);
+      half_beta_model       bias-aware interval with V_model = Vmech + s~^2 P~ G2 P~: valid only under the working
+                            model (homoskedastic clipped errors, clipping not binding).
+    half_beta and V are kept as aliases of half_beta_model and V_model (the earlier output, so that earlier results
+    reproduce); new code should use the explicit names.  The random-number consumption is unchanged."""
     p = G2.shape[0]
     lam, Psi = s1['lam'], s1['Psi']
     Gl2 = G2 + lam * Psi
@@ -209,6 +231,9 @@ def stage2_infer(G2, c2, yy2, n, dA, s1, sigma2, sigma_yy, B_y, alpha, alpha_L, 
         out.update(theta=th, RSS=float(RSS), P2=P2, shrinkage=-lam * P2 @ Psi @ th,
                    sigma2_trP=float(sigma2 * np.trace(P2)), intervals=False)
         return out
+    sb2 = float(B_y) ** 2 if sigma_bar2 is None else float(sigma_bar2)
+    if not (np.isfinite(sb2) and sb2 > 0):
+        raise ValueError('sigma_bar2 must be a positive finite number')
     a_CI = alpha - alpha_L - alpha_U
     if not a_CI > 0:
         raise ValueError('alpha_CI = alpha - alpha_L - alpha_U must be positive when intervals are computed')
@@ -230,18 +255,20 @@ def stage2_infer(G2, c2, yy2, n, dA, s1, sigma2, sigma_yy, B_y, alpha, alpha_L, 
     s2 = max(RSS - Corr, 0.0) / (n - p)
     z = Z(1 - a_CI / 2)
     se_m = np.sqrt(np.diag(Vmech))
-    V = Vmech + s2 * P2 @ G2 @ P2
+    PGP = P2 @ G2 @ P2
+    V = Vmech + s2 * PGP                       # working model (data-driven s~^2)
+    V_g = Vmech + sb2 * PGP                    # guaranteed (public bound sigma_bar^2)
     U_spec = yy2 + Z(1 - alpha_U) * sigma_yy + B_y ** 2 * np.sqrt(n * np.log(1 / alpha_U) / 2)
     U_yy = min(yy2 + Z(1 - alpha_U / 2) * sigma_yy + B_y ** 2 * np.sqrt(n * np.log(2 / alpha_U) / 2), n * B_y ** 2)
     L_hat = s1['L_hat']
     priv = np.sqrt(U_yy / L_hat) if L_hat > 0 else np.inf
     Bb = min(B_pub, priv)
     bbar = lam * np.linalg.norm(Psi @ P2, axis=0) * Bb
-    sdV = np.sqrt(np.diag(V))
-    half_beta = np.array([cv_alpha(bbar[j] / sdV[j], a_CI) * sdV[j] if np.isfinite(bbar[j]) else np.inf
-                          for j in range(p)])
+    half_beta = bias_aware_half(bbar, V, a_CI)
+    half_g = bias_aware_half(bbar, V_g, a_CI)
     out.update(theta=th, RSS=float(RSS), Corr=float(Corr), s2=float(s2), Vmech=Vmech, V=V, half_theta=z * se_m,
-               half_beta=half_beta, U_yy=float(U_yy), U_spec=float(U_spec), B_beta=float(Bb), bbar=bbar, P2=P2,
+               half_beta=half_beta, half_beta_model=half_beta, V_model=V, half_beta_guaranteed=half_g,
+               V_guaranteed=V_g, sigma_bar2=sb2, U_yy=float(U_yy), U_spec=float(U_spec), B_beta=float(Bb), bbar=bbar, P2=P2,
                kept=float(keep.mean()), shrinkage=-lam * P2 @ Psi @ th, sigma2_trP=float(sigma2 * np.trace(P2)),
                z=float(z), alpha_CI=float(a_CI), intervals=True)
     return out

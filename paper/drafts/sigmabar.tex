@@ -1,0 +1,182 @@
+% =====================================================================================================
+% Draft: check item #9 (the variance of the bias-aware interval when clipping binds).
+%
+% Decision (approved): the bias-aware interval that the protocol reports as guaranteed uses a public bound
+% sigma_bar^2 on the conditional variances of the clipped response, an Agreement parameter fixed before the run
+% (default B_y^2; optionally a declared bound on the pre-clipping error variance, admissible when only y is
+% clipped). The interval with the data-driven s~^2 is still reported, labelled as valid only under the working
+% model. The Wald interval for theta_lambda is unchanged.
+%
+% How to merge into paper/main.tex (mechanical, same format as paper/drafts/more.tex):
+%   Each block runs from "%R-BEGIN <id>" to "%R-END <id>". The lines starting with "%OLD| " give the exact old
+%   text of main.tex (strip the 6-character prefix; join with newlines). Each old text occurs exactly once in
+%   main.tex as of commit 4447418. Replace it by the lines between "%NEW-BEGIN" and "%NEW-END", verbatim.
+%       python experiments/v31_more/apply_more_draft.py --draft paper/drafts/sigmabar.tex --check
+%       python experiments/v31_more/apply_more_draft.py --draft paper/drafts/sigmabar.tex --out <copy.tex>
+%   Blocks Z00-Z03 at the end apply to paper/algorithms.tex instead (--main paper/algorithms.tex); the check
+%   script reports them as "not found" against main.tex, and the S-blocks as "not found" against algorithms.tex.
+%   The \tocheck of item #9 is removed by block S01. New label: tab:sigmabar.
+%
+% Sources: reports/v31_sigmabar/README.md and key_numbers.md (experiments/v31_sigmabar/sim_sigmabar.py,
+% tables_sigmabar.py); implementation: Agreement.sigma_bar2, solve.stage2_infer (DEVIATIONS.md A26).
+% =====================================================================================================
+
+%R-BEGIN S01 Estimands: the public variance bound is part of the protocol; remove the tocheck of item 9
+%OLD| When clipping binds, the clipped errors are heteroskedastic even if the errors before clipping are homoskedastic, and the homoskedastic sampling variance of the bias-aware interval (Section~\ref{sec:stats:ci}) need not hold. The interval stays valid for the projection coefficient, to the same order, if $\tilde s^2$ is replaced by a public bound $\bar\sigma^2$ on the conditional variances of the clipped response: $B_y^2$ always, or any bound on the error variance before clipping when only $\by$ is clipped, since clipping is $1$-Lipschitz and cannot increase a variance (proofs, Part~B, Proposition~S10b). On the synthetic population $B_y^2 = 8.35$ widens the sampling part of the interval by a factor of about $4$.
+%OLD|
+%OLD| \tocheck{With the data-driven residual variance the bias-aware interval is not guaranteed when clipping binds: $\tilde s^2$ estimates an average of the conditional variances, not their maximum, and a sandwich variance would need a further release. Decide whether to report the interval with a public variance bound.}
+%NEW-BEGIN
+When clipping binds, the clipped errors are heteroskedastic even if the errors before clipping are homoskedastic. A data-driven residual variance then estimates an average of the conditional variances, not their maximum, and a sandwich variance would need per-record residuals of $\Op$'s data, that is, a further release. The protocol therefore takes the sampling variance of the bias-aware interval from a public bound $\bar\sigma^2 \ge \max_i \operatorname{Var}(\tilde y_i \mid \bX)$, a parameter fixed in Setup before the data are used (Table~\ref{tab:params}). With it the interval is valid for the projection coefficient, to the same order as under the working model, whether or not clipping binds (proofs, Part~B, Proposition~S10b). Two choices are admissible: $\bar\sigma^2 = B_y^2$, the default, which holds with no model because $|\tilde y_i| \le B_y$; and, when only $\by$ is clipped and the errors before clipping have conditional variance at most $\sigma_0^2$, any declared $\bar\sigma^2 \ge \sigma_0^2$, since clipping is $1$-Lipschitz and cannot increase a variance. Neither party can check the second kind of bound, so it rests on the agreement. The interval with the data-driven $\tilde s^2$ is still reported, but only as valid under the working model (Section~\ref{sec:stats:ci}).
+%NEW-END
+%R-END S01
+
+%R-BEGIN S02 Intervals: the bias-aware interval uses sigma_bar^2; the working-model interval uses s~^2
+%OLD| \paragraph{Bias-aware interval for $\bbeta$.} The total variance adds the sampling term, $\bV = \bV_{\mathrm{mech}} + \tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$. The ridge bias
+%NEW-BEGIN
+\paragraph{Bias-aware interval for $\bbeta$.} The total variance adds the sampling term from the public variance bound of Section~\ref{sec:stats:estimands}, $\bV = \bV_{\mathrm{mech}} + \bar\sigma^2\,\tilde\bP\hat\bG_2\tilde\bP$. The ridge bias
+%NEW-END
+%R-END S02
+
+%R-BEGIN S03 Intervals: the working-model interval, after the bias-aware interval
+%OLD| where $\mathrm{cv}_\alpha(t)$ is the $(1 - \alpha)$ quantile of $|Z + t|$ for $Z \sim \mathcal N(0, 1)$. The private bound is usually infinite while the ridge is on ($\hat L = 0$), so without a public $B_\beta^{\mathrm{pub}}$ the interval for $\bbeta$ is unbounded exactly when the ridge is needed. This is the honest answer: the data cannot rule out large coefficients in the directions the ridge suppresses.
+%NEW-BEGIN
+where $\mathrm{cv}_\alpha(t)$ is the $(1 - \alpha)$ quantile of $|Z + t|$ for $Z \sim \mathcal N(0, 1)$. The private bound is usually infinite while the ridge is on ($\hat L = 0$), so without a public $B_\beta^{\mathrm{pub}}$ the interval for $\bbeta$ is unbounded exactly when the ridge is needed. This is the honest answer: the data cannot rule out large coefficients in the directions the ridge suppresses.
+
+\paragraph{Working-model interval for $\bbeta$.} $\Rp$ also reports the same interval with $\bV^{\mathrm{wm}} = \bV_{\mathrm{mech}} + \tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$ in place of $\bV$. It is valid only under the working model, with homoskedastic clipped errors; it is not guaranteed when clipping binds. The two intervals differ only in the sampling term, so they nearly coincide where the mechanism noise or the ridge bias dominates, and the guaranteed one is wider by up to $\sqrt{\bar\sigma^2/\tilde s^2}$ where the sampling variance dominates: on the synthetic population ($B_y^2 = 8.34$, $\tilde s^2 \approx 0.50$) the median ratio of half-widths is $1.26$--$1.46$ at $\varepsilon = 1$ and $2.3$--$3.7$ at $\varepsilon = 8$ once the ridge is off (Section~\ref{sec:eval:coverage}).
+%NEW-END
+%R-END S03
+
+%R-BEGIN S04 Table of parameters: the variance bound
+%OLD| $B_\beta^{\mathrm{pub}}$ & public a-priori bound on $\|\bbeta\|$ & $> 0$, or $\infty$ & $\infty$ unless stated \\
+%NEW-BEGIN
+$B_\beta^{\mathrm{pub}}$ & public a-priori bound on $\|\bbeta\|$ & $> 0$, or $\infty$ & $\infty$ unless stated \\
+$\bar\sigma^2$ & public bound on $\operatorname{Var}(\tilde y_i \mid \bX)$ for the bias-aware interval & $0 < \bar\sigma^2 \le B_y^2$, fixed before the data are used; below $B_y^2$ only as a declared bound on the error variance before clipping when only $\by$ is clipped & $B_y^2$ \\
+%NEW-END
+%R-END S04
+
+%R-BEGIN S05 What the proofs establish: the guarantee is with sigma_bar^2
+%OLD| When clipping binds, the bias-aware interval stays valid with a public bound on the conditional variance of the clipped response in place of $\tilde s^2$ (Part~B, Proposition~S10b); a guarantee with $\tilde s^2$ itself is open.
+%NEW-BEGIN
+The bias-aware interval uses a public bound on the conditional variance of the clipped response, with which it is valid whether or not clipping binds (Part~B, Proposition~S10b); a guarantee for the working-model interval, with $\tilde s^2$, is open when clipping binds.
+%NEW-END
+%R-END S05
+
+%R-BEGIN S06 Coverage section: which bias-aware interval the earlier simulations used
+%OLD| The bias-aware interval for $\bbeta$ is conservative, because it uses the worst-case bias and a cautious variance, and it is unbounded when the ridge is on and no public bound on $\|\bbeta\|$ is given.
+%NEW-BEGIN
+The bias-aware interval for $\bbeta$ in Table~\ref{tab:coverage} is the working-model interval, with $\tilde s^2$; it is conservative, because it uses the worst-case bias, and it is unbounded when the ridge is on and no public bound on $\|\bbeta\|$ is given. Table~\ref{tab:sigmabar} compares it with the guaranteed interval, with $\bar\sigma^2$, including populations where clipping binds.
+%NEW-END
+%R-END S06
+
+%R-BEGIN S07 Table coverage: column header
+%OLD|     Scenario & $n$ & Ridge & Wald for $\btheta_\lambda$ (target 0.955) & Bias-aware for $\bbeta$ (target $\ge 0.95$) \\
+%NEW-BEGIN
+    Scenario & $n$ & Ridge & Wald for $\btheta_\lambda$ (target 0.955) & Bias-aware for $\bbeta$, working model (target $\ge 0.95$) \\
+%NEW-END
+%R-END S07
+
+%R-BEGIN S08 New paragraph and table after Table coverage: the guaranteed interval when clipping binds
+%OLD| \paragraph{Real data with calibrated noise.} Table~\ref{tab:coverage} sets the noise levels directly.
+%NEW-BEGIN
+\paragraph{The guaranteed interval when clipping binds.} Table~\ref{tab:sigmabar} compares the two bias-aware intervals for $\bbeta$ under setting I with the calibrated noise ($\delta = 10^{-9}$; $1{,}000$ cohorts per cell, a fresh pair of releases per cohort, the implementation's bootstrap), on three populations with the features, feature bounds and slopes of the synthetic population ($R^2 = 0.5$ before clipping). \emph{Base} is the synthetic population ($B_y = 2.89$; $y$ clipped in $0.5\%$ of rows). \emph{$y$-clip} has the same homoskedastic errors and $B_y = 1.27$, the $80\%$ quantile of $|y|$, so that $20\%$ of the responses are clipped. \emph{Heteroskedastic} has errors whose standard deviation grows with $|x|$ in $\Op$'s first (lognormal) feature, with mean variance $0.5$, and $B_y = 1.51$ ($10\%$ clipped); the noisier records are those of high leverage. Each population is calibrated with its own $B_y$. Coverage is of the projection coefficient $\bbeta^\ast = \bG^{-1}\tilde\bX^\top\E[\tilde\by \mid \bX]$ of each cohort, the estimand of Proposition~S10b, computed in closed form from the Gaussian errors; coverage of the population coefficient of the clipped data differs from it by at most $0.04$ (reports/v31\_sigmabar).
+\begin{itemize}[noitemsep]
+  \item The guaranteed interval, with $\bar\sigma^2 = B_y^2$, covers every slope in every cell: $0.956$--$1.000$ for single slopes, $0.967$--$1.000$ pooled. Where the sampling variance dominates it is close to $1$ and wide: on the synthetic population at $\varepsilon = 8$ its median half-width is $2.3$--$3.7$ times that of the working-model interval, close to $\sqrt{B_y^2/\tilde s^2} = 4.1$ at $n = 10^5$. With a smaller $B_y$ the factor is smaller: $1.4$--$1.9$ for $y$-clip and $1.6$--$2.4$ for the heteroskedastic population at $\varepsilon = 8$, and at most $1.5$ at $\varepsilon = 1$.
+  \item The working-model interval covers the slopes as well as the Wald interval covers $\btheta_\lambda$ on the base and $y$-clip populations ($0.936$--$0.977$ per slope). With homoskedastic errors before clipping, clipping lowers the variance of the records near the bound, which are not the ones of high leverage, so $\tilde s^2$ is not too small there. On the heteroskedastic population it under-covers the slope of the feature that drives the variance at $\varepsilon = 8$, increasingly with $n$: $0.923$, $0.894$ and $0.829$ at $n = 10$k, $25$k and $10^5$ (the population coefficient: $0.908$, $0.867$ and $0.788$), while it is still $0.945$--$0.967$ at $\varepsilon = 1$, where the mechanism noise dominates.
+  \item With the declared bound $\bar\sigma^2 = 0.5$, the error variance before clipping, which is admissible for the base and $y$-clip populations, the interval covers $0.936$--$0.985$ per slope and is as wide as the working-model interval on the base population and at most $14\%$ wider on $y$-clip.
+\end{itemize}
+Where the ridge is on, both intervals are unbounded while $\hat L = 0$, and dominated by the bias bound otherwise (half-widths within $3\%$ of each other at $n = 25$k, $\varepsilon = 1$).
+
+\begin{table}[ht]
+  \centering\small
+  \caption{The two bias-aware intervals for $\bbeta$, setting I, $\delta = 10^{-9}$, $1{,}000$ cohorts per cell, ridge off in every release: coverage of the projection coefficient $\bbeta^\ast$ (pooled over the ten slopes, and the lowest slope) and median half-width. Guaranteed: $\bar\sigma^2 = B_y^2$; working model: $\tilde s^2$. Target $0.955$ per slope.}
+  \label{tab:sigmabar}
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lrrcccccc@{}}
+    \toprule
+    & & & \multicolumn{3}{c}{guaranteed ($\bar\sigma^2 = B_y^2$)} & \multicolumn{3}{c}{working model ($\tilde s^2$)} \\
+    \cmidrule(lr){4-6} \cmidrule(l){7-9}
+    population ($B_y^2$) & $\varepsilon$ & $n$ & pooled & lowest & half-width & pooled & lowest & half-width \\
+    \midrule
+    base ($8.34$) & 1 & 100{,}000 & $0.996$ & $0.994$ & $0.026$ & $0.948$ & $0.936$ & $0.018$ \\
+     & 8 & 25{,}000 & $1.000$ & $1.000$ & $0.040$ & $0.952$ & $0.944$ & $0.014$ \\
+     & 8 & 100{,}000 & $1.000$ & $1.000$ & $0.020$ & $0.953$ & $0.937$ & $0.0054$ \\
+    \addlinespace
+    $y$-clip ($1.61$) & 1 & 100{,}000 & $0.977$ & $0.971$ & $0.017$ & $0.957$ & $0.947$ & $0.015$ \\
+     & 8 & 25{,}000 & $0.999$ & $0.997$ & $0.019$ & $0.961$ & $0.948$ & $0.012$ \\
+     & 8 & 100{,}000 & $1.000$ & $1.000$ & $0.0088$ & $0.963$ & $0.950$ & $0.0046$ \\
+    \addlinespace
+    heteroskedastic ($2.28$) & 1 & 100{,}000 & $0.981$ & $0.974$ & $0.018$ & $0.956$ & $0.945$ & $0.015$ \\
+     & 8 & 25{,}000 & $1.000$ & $0.998$ & $0.022$ & $0.953$ & $0.894$ & $0.011$ \\
+     & 8 & 100{,}000 & $1.000$ & $0.999$ & $0.010$ & $0.950$ & $0.829$ & $0.0043$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Real data with calibrated noise.} Table~\ref{tab:coverage} sets the noise levels directly.
+%NEW-END
+%R-END S08
+
+%R-BEGIN S09 FWS comparison, table caption: which bias-aware interval
+%OLD| $\btheta_\lambda$: ridge target; $\bbeta$: population least-squares coefficient of the clipped data. ``ridge'': share of releases with $\lambda > 0$. Bias-aware:
+%NEW-BEGIN
+$\btheta_\lambda$: ridge target; $\bbeta$: population least-squares coefficient of the clipped data. ``ridge'': share of releases with $\lambda > 0$. Bias-aware: the working-model interval, with $\tilde s^2$ (the guaranteed interval, with $\bar\sigma^2 = B_y^2$, is compared in Table~\ref{tab:sigmabar});
+%NEW-END
+%R-END S09
+
+%R-BEGIN S10 FWS comparison, ridge-off bullet: name the interval
+%OLD|   \item \emph{Ridge off: FWS on our release is our bias-aware interval.} In the 27 cells where the ridge is off in every release, the two intervals for $\bbeta$ have the same median half-width to within $1\%$
+%NEW-BEGIN
+  \item \emph{Ridge off: FWS on our release is our working-model bias-aware interval.} In the 27 cells where the ridge is off in every release, the two intervals for $\bbeta$ have the same median half-width to within $1\%$
+%NEW-END
+%R-END S10
+
+%R-BEGIN S11 Open items
+%OLD| a guarantee for the data-driven variance of the bias-aware interval when clipping binds (a public variance bound gives a valid interval);
+%NEW-BEGIN
+a guarantee for the working-model interval, with the data-driven variance, when clipping binds (the reported bias-aware interval uses a public variance bound and is valid);
+%NEW-END
+%R-END S11
+
+%R-BEGIN S12 Table status: coverage row
+%OLD| Coverage & partly first order & Wald remainder exact; plug-in variance first order; normality asymptotic; under binding clipping valid with a public variance bound, open with $\tilde s^2$ \\
+%NEW-BEGIN
+Coverage & partly first order & Wald remainder exact; plug-in variance first order; normality asymptotic; bias-aware interval with the public variance bound $\bar\sigma^2$ valid under binding clipping; working-model interval (with $\tilde s^2$) open under binding clipping \\
+%NEW-END
+%R-END S12
+
+%R-BEGIN Z00 algorithms.tex, Algorithm setup: sigma_bar^2 among the agreed parameters
+%OLD| $\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$,
+%NEW-BEGIN
+$\vartheta^\star$, $\alpha_{\mathrm{CI}},\alpha_L,\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\bar\sigma^2$, $\kappa_\Psi$,
+%NEW-END
+%R-END Z00
+
+% ----------------------------------------------------------------------------------------------------
+% Blocks for paper/algorithms.tex (Algorithm alg:solve).
+% ----------------------------------------------------------------------------------------------------
+
+%R-BEGIN Z01 algorithms.tex, Algorithm solve: Require line
+%OLD| \Require $\bA$, $n$, $p$, slot-domain s.d.\ $\sigma_1,\sigma_2$ (and $\sigma_y$); from $\mathcal P$: $\vartheta^\star$, $\alpha=\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U$, $B_\beta^{\mathrm{pub}}$, $\kappa_\Psi$, bootstrap truncation $\eta_B$ and size $B$
+%NEW-BEGIN
+\Require $\bA$, $n$, $p$, slot-domain s.d.\ $\sigma_1,\sigma_2$ (and $\sigma_y$); from $\mathcal P$: $\vartheta^\star$, $\alpha=\alpha_{\mathrm{CI}}+\alpha_L+\alpha_U$, $B_\beta^{\mathrm{pub}}$, the variance bound $\bar\sigma^2$, $\kappa_\Psi$, bootstrap truncation $\eta_B$ and size $B$
+%NEW-END
+%R-END Z01
+
+%R-BEGIN Z02 algorithms.tex, Algorithm solve: the two variances
+%OLD| \State $\bV\gets\bV_{\mathrm{mech}}+\tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{adds sampling variance under the homoskedastic working model}
+%NEW-BEGIN
+\State $\bV\gets\bV_{\mathrm{mech}}+\bar\sigma^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{sampling variance from the public bound $\bar\sigma^2\ge\max_i\operatorname{Var}(\tilde y_i\mid\bX)$}
+\State $\bV^{\mathrm{wm}}\gets\bV_{\mathrm{mech}}+\tilde s^2\,\tilde\bP\hat\bG_2\tilde\bP$ \Comment{sampling variance under the homoskedastic working model}
+%NEW-END
+%R-END Z02
+
+%R-BEGIN Z03 algorithms.tex, Algorithm solve: the two bias-aware intervals and the return line
+%OLD| \State \textbf{CI for} $\beta_j$ (bias-aware): $\tilde\theta_j\pm\mathrm{cv}_{\alpha_{\mathrm{CI}}}\bigl(\bar b_j/\sqrt{V_{jj}}\bigr)\sqrt{V_{jj}}$, where $\mathrm{cv}_\alpha(t)$ is the $(1-\alpha)$ quantile of $|Z+t|$, $Z\sim\mathcal N(0,1)$
+%OLD| \State \Return $\tilde\btheta$, both intervals,
+%NEW-BEGIN
+\State \textbf{CI for} $\beta_j$ (bias-aware): $\tilde\theta_j\pm\mathrm{cv}_{\alpha_{\mathrm{CI}}}\bigl(\bar b_j/\sqrt{V_{jj}}\bigr)\sqrt{V_{jj}}$, where $\mathrm{cv}_\alpha(t)$ is the $(1-\alpha)$ quantile of $|Z+t|$, $Z\sim\mathcal N(0,1)$ \Comment{valid whether or not clipping binds}
+\State \textbf{working-model CI for} $\beta_j$: the same with $\bV^{\mathrm{wm}}$ in place of $\bV$ \Comment{valid only under the working model}
+\State \Return $\tilde\btheta$, the three intervals, each labelled,
+%NEW-END
+%R-END Z03

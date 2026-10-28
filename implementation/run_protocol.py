@@ -67,6 +67,9 @@ def main():
     ap.add_argument('--alpha_L', type=float, default=None)
     ap.add_argument('--r1_mode', default=None, choices=['union', 'exact'])
     ap.add_argument('--no_intervals', action='store_true', help='estimate only (no interval guarantee)')
+    ap.add_argument('--sigma_bar2', type=float, default=None,
+                    help='public bound on Var(y~ | X) for the guaranteed bias-aware interval (default B_y^2); a smaller '
+                         'value only as a declared bound on the pre-clipping error variance when only y is clipped')
     a = ap.parse_args()
     a.log2_Omega_U = {'auto': 'auto', 'q2': None}.get(a.log2_Omega_U) if a.log2_Omega_U in ('auto', 'q2') \
         else float(a.log2_Omega_U)
@@ -81,6 +84,8 @@ def main():
             stat[k] = getattr(a, k)
     if a.no_intervals:
         stat['intervals'] = False
+    if a.sigma_bar2 is not None:
+        stat['sigma_bar2'] = a.sigma_bar2
     priv.update(stat)
     if a.dataset == 'toy':
         dR_, dO_, b = data.toy()
@@ -113,7 +118,8 @@ def main():
         print('theta~       ', res['theta'])
         if res.get('intervals', True):
             print('Wald half    ', res['half_theta'])
-            print('beta half    ', res['half_beta'])
+            print(f"beta half, guaranteed (sigma_bar^2 = {res['sigma_bar2']:.4g})", res['half_beta_guaranteed'])
+            print(f"beta half, working model (s~^2 = {res['s2']:.4g})", res['half_beta_model'])
         else:
             print('(no intervals in this setting)')
         print(f"gate theta_hat = {res['theta_hat_gate']:.3f}; sigma_2 tr(P~) = {res['sigma2_trP']:.3f}")

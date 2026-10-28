@@ -64,7 +64,7 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     for f in ('n_R_max', 'n_bar_O', 'd_R', 'd_O', 'B_R', 'B_O', 'B_y', 'eps_run', 'delta_run', 'f1', 'f_y', 'kappa',
               'zeta', 'kappa_min', 'delta_B', 't_eta', 'lambda_sec', 'ledger_eps', 'ledger_delta', 'ledger_zeta',
               'ledger_mode', 'ledger_xi', 'ledger_delta_prime', 'variant', 'theta_star', 'kappa_Psi', 'alpha',
-              'alpha_L', 'alpha_U', 'r1_mode',
+              'alpha_L', 'alpha_U', 'r1_mode', 'sigma_bar2',
               'intervals', 'release_pad', 'release_pad_margin'):
         if a2[f] != getattr(ag, f):
             raise RuntimeError(f'agreement mismatch on {f}')
@@ -257,7 +257,8 @@ def run_R(sock, ag: dp.Agreement, cp: C.CKKSParams, data: dict, opts: dict):
     if n > G2.shape[0]:
         res = solve.stage2_infer(G2, c2, yy2, n, dA, s1, sig['2'], sig_yy, ag.B_y, ag.alpha, a_L, a_U,
                                  ag.B_beta_pub, np.random.default_rng(opts.get('solve_seed')), Bboot=opts.get('Bboot', 2000),
-                                 truncate=True, antithetic=opts.get('antithetic', True), intervals=ag.intervals)
+                                 truncate=True, antithetic=opts.get('antithetic', True), intervals=ag.intervals,
+                                 sigma_bar2=dp.sigma_bar2_of(ag))
     T['solve'] = time.time() - t0
     C.mark(MK, 'solve')
     out = dict(I=[ids[i] for i in I], pi=pi, n=n, A=A, rel1=rel1, rel2=rel2, yy=yy2, G1=G1, G2=G2, c2=c2,
