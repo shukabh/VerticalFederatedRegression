@@ -87,7 +87,7 @@
 \begin{algorithmic}[1]
 \State \Odo sample fresh $u$ from the key distribution and $e_0,e_1$ from the error distribution
 \State \Odo $c_0'\gets c_0+p_0u+e_0$;\quad $c_1'\gets c_1+au+e_1$ \Comment{re-randomize $M=(c_0,c_1)$ under the joint $\pk$}
-\State \Odo $\eta\gets(\textsc{SampleDG}(\sigma_c))^{N}$, fresh \Comment{exact discrete Gaussian on $\Z^N$}
+\State \Odo $\eta\gets\textsc{SampleDGBudget}(\sigma_c^2,N)$, fresh; \textbf{refuse} the release if it fails \Comment{exact on $\Z^N$; fixed work; fails w.p.\ $\le\xi_T$}
 \State \Odo $h_O\gets c_0'+c_1's_O+\eta\bmod q_0$
 \State \Odo send $(c_1',h_O)$; erase $c_0',u,e_0,e_1,\eta$ \Comment{$c_0'$ is never sent; the ledger was charged at admission}
 \State \Rdo $v\gets h_O+c_1's_R\bmod q_0$;\quad \Return $\Dcd(v)$ restricted to the slots of this release \Comment{exact final scale; $v$ never leaves $\Rp$}
@@ -143,10 +143,10 @@
 \Statex
 \Function{Calibrate}{$\mathcal P$} \Comment{public values only; refuses when a step has no solution}
   \State \textit{mode}, $n_{\mathrm{rel}}\in\{2,3\}$ and $\{\Delta_s\}$ as in \textsc{Setup};\quad \textbf{refuse if} $\log_2(QP)>L_{\max}(N,\lambda_{\mathrm{sec}})$
-  \State $\gamma(k):=n_{\mathrm{rel}}\bigl(\delta_B+2^{-k}(1+2^{-80})+2^{-97}\bigr)$;\quad $\varepsilon'(k):=\min\{\varepsilon:\delta(\pi4^{-k},\varepsilon)\le\delta'\}$ \Comment{per run; per release}
+  \State $\gamma(k):=n_{\mathrm{rel}}\bigl(\delta_B+2^{-k}(1+2^{-80})+2^{-97}+\xi_T\bigr)$;\quad $\varepsilon'(k):=\min\{\varepsilon:\delta(\pi4^{-k},\varepsilon)\le\delta'\}$ \Comment{per run; per release}
   \State \textbf{unless} $\mathcal P$ fixes $\kappa$: $\kappa\gets\max\{\kappa_{\min},\kappa_{\mathrm{run}},\kappa_L\}$ \Comment{\eqref{eq:kappa}; refuse if none exists}
   \Statex \hspace{\algorithmicindent}$\kappa_{\mathrm{run}}=\min\{k:(1+e^{\varepsilon_{\mathrm{run}}})\gamma(k)\le\zeta\delta_{\mathrm{run}}\}$;\quad $\kappa_L=\min\{k:n_{\mathrm{rel}}\varepsilon'(k)\le(\tilde\rho_{\mathrm{run}}/\rho_L)\,E'_L\}$,
-  \Statex \hspace{\algorithmicindent}with $\rho_L$, $E'_L=\xi_L\varepsilon_L/2$ and $\Gamma_L$ of Section~\ref{sec:privacy:ledger}; \textbf{refuse if} $n_{\mathrm{rel}}(\delta_B+\delta')>(\tilde\rho_{\mathrm{run}}/\rho_L)\,\Gamma_L$
+  \Statex \hspace{\algorithmicindent}with $\rho_L$, $E'_L=\xi_L\varepsilon_L/2$ and $\Gamma_L$ of Section~\ref{sec:privacy:ledger}; \textbf{refuse if} $n_{\mathrm{rel}}(\delta_B+\delta'+\xi_T)>(\tilde\rho_{\mathrm{run}}/\rho_L)\,\Gamma_L$
   \State $\gamma\gets\gamma(\kappa)$;\quad $\delta_{\mathrm{DP}}\gets\delta_{\mathrm{run}}-(1+e^{\varepsilon_{\mathrm{run}}})\gamma$;\quad \textbf{refuse if} $\delta_{\mathrm{DP}}\le0$
   \State $\rho_{\mathrm{run}}\gets\max\{\rho:\ \inf_{a>1}\frac{e^{(a-1)(a\rho-\varepsilon_{\mathrm{run}})}}{a-1}\bigl(1-\tfrac1a\bigr)^{a}\le\delta_{\mathrm{DP}}\}$ \Comment{tight zCDP conversion}
   \State $\rho_1\gets f_1\rho_{\mathrm{run}}$;\quad $\rho_y\gets f_y\rho_{\mathrm{run}}$ (0 in joint mode);\quad $\rho_2\gets\rho_{\mathrm{run}}-\rho_1-\rho_y$
@@ -156,15 +156,21 @@
   \EndFor \Comment{refuse if no scale floods}
   \State $\sigma_s\gets\sigma_{c,s}\sqrt{N/2}/\Omega_f$;\quad \textbf{refuse unless} $q_0>2\bigl(\Omega_fS_{\max}+2^{\kappa}B_{\mathrm{tot},\max}+t_\eta\sigma_{c,\max}\bigr)$
   \Statex \hspace{\algorithmicindent}with $S_{\max}=\bar n_O\max(r,o,w,\sqrt{ro},\sqrt{rw},\sqrt{ow})$ \Comment{no wraparound}
-  \State \Return $\kappa$, $\Omega_V$, $\Omega_f$, $\{\sigma_{c,s}^2,\sigma_s,\rho_s\}_s$ and the run's ledger cost $(\rho_{\mathrm{run}},\ n_{\mathrm{rel}}\varepsilon'(\kappa),\ n_{\mathrm{rel}}(\delta_B+\delta'))$
+  \State $T_s\gets$ the work budget of \textsc{SampleDGBudget}$(\sigma_{c,s}^2,N)$ at $\xi_T$ \Comment{public; $\Rp$ checks it}
+  \State \Return $\kappa$, $\Omega_V$, $\Omega_f$, $\{\sigma_{c,s}^2,\sigma_s,\rho_s,T_s\}_s$ and the run's ledger cost $(\rho_{\mathrm{run}},\ n_{\mathrm{rel}}\varepsilon'(\kappa),\ n_{\mathrm{rel}}(\delta_B+\delta'+\xi_T))$
 \EndFunction
 \Statex
-\Function{SampleDG}{$\sigma$} exact discrete Gaussian on $\Z$ by rejection from a discrete Laplace, with big-integer
-\Statex \hspace{\algorithmicindent}arithmetic, a rational $\sigma^2$ and a CSPRNG; never by rounding a floating-point normal
+\Function{SampleDGBudget}{$\sigma^2,n$} $n$ exact samples of $\mathcal N_{\Z}(0,\sigma^2)$, integer $\sigma^2$, with a fixed work budget
+  \State $t\gets2^b\approx\sigma$;\quad $c\gets\lceil2^{128}\sigma^2/(2t^2)\rceil/2^{128}$;\quad $(T,J_v,k_{\max})$ public functions of $(\sigma^2,n,\xi_T)$
+  \For{$j=1,\dots,T$, every one with the same fixed-width operations} \Comment{128-bit coins from a CSPRNG}
+    \State sign $s$;\ $u\gets\mathrm U[0,t)$;\ $v\gets\#\{1\le i\le J_v:U<e^{-i}\}$;\ $y_j\gets u+tv$ if $s=0$, else $-(u+tv+1)$
+    \State $g\gets y_j^2/(2\sigma^2)-v+c\ (\ge0)$;\quad $a_j\gets\mathrm{Bern}(e^{-\lfloor g\rfloor})\wedge\mathrm{Bern}(e^{-(g-\lfloor g\rfloor)})$ \Comment{the latter with exactly $k_{\max}$ coins}
+  \EndFor
+  \State \textbf{fail} if a trial is undecided or $\sum_ja_j<n$;\quad \Return the first $n$ values $y_j$ with $a_j=1$ \Comment{$\Pr[\textbf{fail}]\le\xi_T$}
 \EndFunction
 \Statex
 \Function{SanitizeBFV}{$\mathit{ct}$} \Comment{statistical flooding; BFV decryption stays exact}
-  \State $\mathit{ct}\gets\mathsf{ModSwitch}_{q'}(\mathit{ct})\boxplus\mathsf{ModSwitch}_{q'}\bigl(\mathsf{BFV.Enc}_{\pk_B}(\mathbf 0)\bigr)$;\quad $\mathbf e\gets\mathcal D_{\Z^{N_B},\,\sigma_\psi}$ \Comment{switch both, then add}
+  \State $\mathit{ct}\gets\mathsf{ModSwitch}_{q'}(\mathit{ct})\boxplus\mathsf{ModSwitch}_{q'}\bigl(\mathsf{BFV.Enc}_{\pk_B}(\mathbf 0)\bigr)$;\quad $\mathbf e\gets\textsc{SampleDGBudget}(\sigma_\psi^2,N_B)$ \Comment{switch both, then add; abort on failure}
   \State \Return $\mathit{ct}\boxplus(\mathbf e,0)$ \Comment{$\sigma_\psi\ge\max\{2^{\kappa_\psi}B_\psi/\sqrt{2\pi},2^{42}\}$, $q'/(2t)>t_\eta\sigma_\psi+B_\psi+t$ (Section~\ref{sec:input})}
 \EndFunction
 \Statex
