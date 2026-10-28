@@ -32,7 +32,7 @@ NTTs, hybrid key switching and BFV evaluation.
 scripts/build_openfhe.sh /opt/openfhe-1.5.1          # once (about 5 min on 4 cores)
 python3 -m pip install numpy scipy cryptography pybind11 pytest
 native/build.sh /opt/openfhe-1.5.1                   # builds vfr/vfr_native*.so
-python3 -m pytest -q tests/                          # 107 tests, about 3 min (8 min on a loaded machine)
+python3 -m pytest -q tests/                          # 123 tests, about 3 min (8 min on a loaded machine)
 python3 run_protocol.py toy
 python3 run_protocol.py synthetic --n_bar_O 4096 --n_R 500 --n 300   # [--eps 8] [--kappa auto|48] [--ledger_eps none]
 #                                                     [--setting prev|I|P] [--r1_mode union|exact] [--f1 F] ...
@@ -48,7 +48,7 @@ python3 ../experiments/eng/refresh_cost_model.py         # re-measure the cost-m
 | phase (spec algorithm) | where | what |
 |---|---|---|
 | 0 Setup (Alg. 1, 7) | `vfr/dp.py` | `delta_rep` (exact enumeration over the three cubics, all regimes; Delta and Delta_noyy), `delta_G`, joint/separate mode, `rho_tight` (Canonne-Kamath-Steinke, rounded down), `eps_smudge` (eps'(kappa, delta') of the hockey-stick smudging lemma, rounded up), `choose_kappa` (derived flooding parameter: max(kappa_min, kappa_run, kappa_L), with the hockey-stick kappa_L rule by default), `calibrate` (paper's Algorithm 7: gamma with (1+e^eps), Delta_x of the centred mechanism, integer sigma_c^2, smallest admissible scale with sigma_c >= max(2^kappa B_tot / sqrt(2 pi), 2^42) (tested exactly, with B_tot rounded up), q0 check (diagnostic (Q) with the proved decoding offset), log QP against the 128-bit bound for N; the run's ledger cost; raises `CalibrationRefused`), `Ledger` (cap per base register; hockey-stick accounting with three sums rho, eps', Gamma and the share xi_L = 1e-3 of eps_L for smudging, or the earlier statistical-distance accounting with `xi=None`; 'filter' rule for adaptive runs, 'fixed' rule for runs fixed in advance; the full cost of a run is charged once, at admission, under a file lock, and never refunded; exact fractions, capacities rounded down, no tolerance; OPRF quota) |
-| | `vfr/btot.py` | worst-case, data-independent B_tot (port of the proofs' btot.py, generalized to separate scales and OpenFHE's gadget; reproduces the proofs' table) and Delta_x |
+| | `vfr/btot.py` | worst-case, data-independent B_tot (port of the proofs' btot.py, generalized to separate scales and OpenFHE's gadget; reproduces the proofs' table) and Delta_x; `CircuitParams.fullrecord` gives the full-record SSP baseline's circuit (triu A released too, whole-record adjacency; Lemma S10e), used by `dp.calibrate(..., fullrecord_sens=...)` for the cost benchmark only |
 | | `native: CKKSCore.pk_share / make_pk / rotkey_share / make_rotkeys` | threshold keygen with a CRS (SHAKE-256): `p0 = -a s + e` with `s = s_R + s_O`; joint rotation keys for the 13 shifts 2^i in OpenFHE's hybrid layout; no relinearization or conjugation key |
 | 1 Link (Alg. 2) | `vfr/oprf.py` | 2HashDH OPRF, RFC 9497 mode 0, ristretto255-SHA512 over libsodium; passes the RFC test vectors; fresh key k per run; exactly n_R^max blinded queries |
 | | `vfr/oprf.py` `evaluate_batch`, `blind_evaluate_batch`; `native: oprf_evaluate_batch, oprf_blind_evaluate_batch` | O's OPRF over its register and its answer to the blinded queries, batched and parallel over the items (OpenMP, the run's threads), the same libsodium calls and key; bit-identical to the item-by-item functions (DEVIATIONS A25) |
@@ -92,7 +92,7 @@ t = 4293918721, 2 felts per item (64-bit items; `PSIParams.felts`), 7 x 60-bit l
 SanitizeBFV flooding kappa_psi = 40. delta_B = 2^-50, delta_psi = 2^-40. At 1M rows and n_R^max = 20,000 the
 false-match bound p_pass is 2^-67.5 and R's two cuckoo tables fail with probability at most 2^-43.4 (DEVIATIONS A22, A23).
 
-## Tests (`tests/`, 107 passing)
+## Tests (`tests/`, 123 passing)
 
 - `test_primitives.py`: RFC 9497 vectors; exact sampler (chi-square at sigma^2 = 3, moments and low bits at
   sigma = 2^55); DeltaRep against the closed forms, the paper's (1, 1, 5) example and a random search; rho_run =
@@ -146,3 +146,12 @@ false-match bound p_pass is 2^-67.5 and R's two cuckoo tables fail with probabil
   cost stays charged; release_pad=None restores the earlier behaviour; ill-formed values are refused in Setup.
 - `test_noise.py`: 40 + 20 releases of one packed ciphertext: pooled s.d. of (decoded - true) within 6% of
   sigma_s from Calibrate, per-entry s.d. within [0.4, 1.9] sigma_s.
+- `test_fullrecord_btot.py` (the full-record SSP baseline's circuit, not a protocol mode; Lemma S10e of
+  `docs/proofs/stats_s7_s10.tex`): 14 more entries at d_R = 4; B_tot of the full-record circuit is the v3.1 one with
+  |E| + n_A and Gamma_E + n_A, and does not depend on B_R; the U-side terms (nu_U, zeta_E, nu_Vmax) and Delta_x with the
+  whole-record adjacency; Calibrate with `fullrecord_sens` floods, keeps kappa = 40 and raises the scale one grid step
+  at the evaluation agreement, where the v3.1 stage-2 noise does not flood the full-record B_tot.
+- `test_sens_full_exact.py` (needs sympy; `experiments/baselines/sens_full.py`): the exact full-record sensitivity,
+  32/3 at unit bounds (Theorem S10c); for a block of dimension 1 (Lemma S10d) the values of 3droad and tamielectric,
+  never above Theorem S10c's value, never below a dense search, symmetric in the two blocks; both blocks of dimension 1
+  refused.

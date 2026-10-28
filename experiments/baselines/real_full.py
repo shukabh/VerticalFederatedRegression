@@ -272,6 +272,43 @@ def cmd_benchmark(a):
     print('wrote', path)
 
 
+def _sens_dataset(name):
+    """Exact full-record sensitivities (sens_full.delta_full) against the earlier grid values (delta_full_grid) for
+    every fold and both preprocessings of one dataset."""
+    D = rdm.Data(name)
+    rows = []
+    for f in range(K):
+        te, ref, m = D.split(f)
+        _, _, _, b, _ = ev.per_party_preprocess(D.F, D.y, ref, D.dR, 'blocknorm')
+        for pp, bnd, ic in (('blocknorm', (b['B_R'], b['B_O'], b['B_y']), True), ('joint', (1.0, 1.0, 1.0), False)):
+            if pp == 'joint' and f > 0:
+                continue                                  # the same bounds in every fold
+            info = bc.sens_full.delta_full_info(*map(float, bnd), ic, D.dR, D.dO)
+            new = (info['Delta'], info['Delta_noyy'], info['Delta_G'])
+            old = bc.sens_full.delta_full_grid(*map(float, bnd), ic, D.dR, D.dO)
+            rows.append(dict(fold=f, preprocessing=pp, bounds=list(bnd), method=info['method'], exact=list(new),
+                             grid=list(old), rel=[a / b_ - 1 for a, b_ in zip(new, old)]))
+    return dict(name=name, d=D.d, d_R=D.dR, d_O=D.dO, rows=rows)
+
+
+def cmd_sens(a):
+    names = a.datasets or list(WD.PUBLISHED_ORDER)
+    with ProcessPoolExecutor(max_workers=a.workers) as ex:
+        res = list(ex.map(_sens_dataset, names))
+    rel = [x for r in res for row in r['rows'] for x in row['rel']]
+    dim1 = sorted({r['name'] for r in res for row in r['rows'] if row['method'] == 'dim1'})
+    out = dict(note='exact (Theorem S10c / Lemma S10d) vs the earlier grid + local search, both rounded up by 1e-12',
+               datasets_dim1=dim1, max_abs_rel=max(abs(x) for x in rel), min_rel=min(rel), max_rel=max(rel),
+               max_abs_rel_dim1=max(abs(x) for r in res for row in r['rows'] if row['method'] == 'dim1'
+                                    for x in row['rel']),
+               datasets=res)
+    path = os.path.join(bc.ROOT, 'reports', 'baselines_v2', 'sens_full_datasets.json')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    ev.save_json(out, path)
+    print({k: v for k, v in out.items() if k != 'datasets'})
+    print('wrote', path)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -282,8 +319,11 @@ def main():
     b.add_argument('--datasets', nargs='+')
     b.add_argument('--R', type=int, default=50)
     b.add_argument('--workers', type=int, default=4)
+    s = sub.add_parser('sens')
+    s.add_argument('--datasets', nargs='+')
+    s.add_argument('--workers', type=int, default=4)
     a = ap.parse_args()
-    {'radii': cmd_radii, 'benchmark': cmd_benchmark}[a.cmd](a)
+    {'radii': cmd_radii, 'benchmark': cmd_benchmark, 'sens': cmd_sens}[a.cmd](a)
 
 
 if __name__ == '__main__':

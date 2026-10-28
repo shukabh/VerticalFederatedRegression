@@ -500,13 +500,22 @@ def choose_kappa(ag: Agreement, n_rel: int):
 
 
 def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, log2_grid_step=1 / 32,
-              log2_start=40.0):
+              log2_start=40.0, fullrecord_sens=None):
     """Algorithm 7, Calibrate.  `gadget` holds the key-switching constants of the context (public).
     q0 is the product of the last-level primes; log QP = log2(q0 q1 q2) + log2(P) is checked against the
     security bound for N.  Returns a JSON-able dict with kappa, Omega_f, sigma_c^2 (integers), rho_s, sigma_s,
-    B_tot, Delta_x and the q0 and log QP checks.  Raises CalibrationRefused when the parameters are not admissible."""
-    Delta, Delta_noyy = delta_rep(ag.B_R, ag.B_O, ag.B_y)
-    DG = delta_G(ag.B_R, ag.B_O)
+    B_tot, Delta_x and the q0 and log QP checks.  Raises CalibrationRefused when the parameters are not admissible.
+
+    fullrecord_sens = (Delta, Delta_noyy, Delta_G): calibrate the FULL-RECORD circuit of the full-record SSP baseline
+    instead (not a protocol mode; experiments/baselines, experiments/eng): these whole-record sensitivities (computed
+    by experiments/baselines/sens_full.py), the full-record entry counts, and B_tot, Delta_x and the decoding offset
+    re-derived for that circuit (btot.CircuitParams.fullrecord; Lemma S10e of docs/proofs/stats_s7_s10.tex)."""
+    fullrecord = fullrecord_sens is not None
+    if fullrecord:
+        Delta, Delta_noyy, DG = (float(v) for v in fullrecord_sens)
+    else:
+        Delta, Delta_noyy = delta_rep(ag.B_R, ag.B_O, ag.B_y)
+        DG = delta_G(ag.B_R, ag.B_O)
     Dy = ag.B_y ** 2
     joint = (Delta - Delta_noyy) <= 1e-9 * Delta
     n_rel = 2 if joint else 3
@@ -540,7 +549,7 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
     def cparams(Omega_V):
         return bt.CircuitParams(N=N, n_bar=ag.n_bar_O, d_R=ag.d_R, d_O=ag.d_O, B_R=ag.B_R, B_O=ag.B_O, B_y=ag.B_y,
                                 q1=q1, q2=q2, Omega_U=float(OmU), Omega_V=Omega_V, Omega_u=float(Omu),
-                                delta_B=ag.delta_B, **gadget)
+                                delta_B=ag.delta_B, fullrecord=fullrecord, **gadget)
 
     chosen = None
     lg = log2_start
@@ -580,13 +589,17 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
     sig_max = max(v['sigma_c'] for v in rows.values())
     B_max = max(v['B_tot'] for v in rows.values())
     q0_need = 2 * (Om * S_max + 2.0 ** kappa * B_max + ag.t_eta * sig_max)
-    nE = bt.entry_counts(ag.d_R, ag.d_O, joint)
+    nE = bt.entry_counts(ag.d_R, ag.d_O, joint, fullrecord)    # (S_max covers triu A too: |sum b x_j x_k| <= n r)
     # diagnostic only: the sharper condition (Q) of the proofs, with the proved decoding offset d_max
     # (crypto proofs, Proposition 4.5) for at most n_max = min(n_R^max, n_bar_O) matched rows
     n_max = min(ag.n_R_max, ag.n_bar_O)
     cp = cparams(OmV)
     for s in stages:
         rows[s]['d_max'] = bt.offset_bounds(cp, s, joint, n_max)['d_max']
+        if fullrecord:
+            rows[s]['epsilon_x'] = bt.epsilon_x(cp, s, joint)
+            if not rows[s]['epsilon_x'] <= 1.0:                          # the '+1' of Delta_x must cover it
+                raise CalibrationRefused(f"epsilon_x = {rows[s]['epsilon_x']:.3g} > 1 for release {s}")
     q0_need_Q = max(2 * (Om * 2 * nE[s] / N * S_max + rows[s]['d_max'] + 0.5 + rows[s]['B_tot']
                          + ag.t_eta * rows[s]['sigma_c']) for s in stages)
     if q0 <= q0_need:
@@ -605,7 +618,8 @@ def calibrate(ag: Agreement, N: int, q1: int, q2: int, q0: int, gadget: dict, lo
                 log2_QP=log2_QP, log2_QP_max=QP_max,
                 releases={str(s): v for s, v in rows.items()}, variant=ag.variant, kappa=kappa,
                 kappa_info=kappa_info, delta_B=ag.delta_B, entries={str(k): v for k, v in nE.items()},
-                ledger=led, ledger_cost=ledger_cost, sampler_xi=float(ag.sampler_xi))
+                ledger=led, ledger_cost=ledger_cost, sampler_xi=float(ag.sampler_xi),
+                **({'fullrecord': True} if fullrecord else {}))
 
 
 # =============================================================================================
